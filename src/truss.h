@@ -1,0 +1,1 @@
+// C++ truss header
