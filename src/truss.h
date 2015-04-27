@@ -1,5 +1,8 @@
 // C++ truss header
 
+#ifndef TRSS_H_HEADER_GUARD
+#define TRSS_H_HEADER_GUARD
+
 #include "trussapi.h"
 #include <string>
 #include <vector>
@@ -85,3 +88,5 @@ namespace trss {
 	static int run_interpreter_thread(void* interpreter);
 
 }
+
+#endif
