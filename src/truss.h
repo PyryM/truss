@@ -94,6 +94,8 @@ namespace trss {
 	public:
 		static Core* getCore();
 
+		logMessage(int log_level, const char* msg);
+
 		Interpreter* getInterpreter(int idx);
 		int findInterpreter(const char* name);
 		int spawnInterpreter(const char* name);
@@ -108,6 +110,9 @@ namespace trss {
 		trss_message* copyMessage(trss_message* src);
 		trss_message* allocateMessage(int dataLength);
 		void deallocateMessage(trss_message* msg);
+
+		trss_message* loadFile(const char* filename, int path_type);
+		void saveFile(const char* filename, int path_type, trss_message* data);
 
 		~Core();
 	private:

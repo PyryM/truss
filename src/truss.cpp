@@ -2,6 +2,7 @@
 
 // TODO: switch to a better logging framework
 #include <iostream>
+#include <fstream>
 
 using namespace trss;
 
@@ -155,7 +156,7 @@ int run_interpreter_thread(void* interpreter) {
 }
 
 void trss_log(int log_level, const char* str){
-	Core::getCore()->log(log_level, str);
+	Core::getCore()->logMessage(log_level, str);
 }
 
 trss_message* trss_load_file(const char* filename, int path_type){
@@ -232,6 +233,11 @@ Core* Core::getCore() {
 		__core = new Core();
 	}
 	return __core;
+}
+
+void Core::logMessage(int log_level, const char* msg) {
+	// just dump to standard out for the moment
+	std::cout << log_level << "|" << msg << std::endl;
 }
 
 Interpreter* Core::getInterpreter(int idx){
@@ -320,6 +326,41 @@ trss_message* Core::allocateMessage(int dataLength){
 void Core::deallocateMessage(trss_message* msg){
 	delete[] msg->data;
 	delete msg;
+}
+
+std::string Core::_resolvePath(const char* filename, int path_type) {
+	// just return the filename for now
+	std::string ret(filename);
+	return ret;
+}
+
+trss_message* Core::loadFile(const char* filename, int path_type) {
+	std::string truepath = _resolvePath(filename, path_type);
+
+	std::streampos size;
+	std::ifstream file(truepath.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
+	if (file.is_open())
+	{
+		size = file.tellg();
+		trss_message* ret = allocateMessage(size);
+		file.seekg (0, ios::beg);
+		file.read (ret->data, size);
+		file.close();
+
+		return ret;
+	} else {
+		std::cout << "Unable to open file\n";
+		return NULL;	
+	} 
+}
+
+void Core::saveFile(const char* filename, int path_type, trss_message* data) {
+	std::string truepath = _resolvePath(filename, path_type);
+
+	std::ofstream outfile;
+	outfile.open(truepath.c_str(), std::ios::binary | std::ios::out);
+	outfile.write(data->data, data->data_length);
+	outfile.close();
 }
 
 Core::~Core(){
