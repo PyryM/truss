@@ -205,6 +205,33 @@ trss_message* trss_get_message(trss_interpreter_id idx, int message_index){
 	}
 }
 
+int trss_get_addon_count(trss_interpreter_id target_id) {
+	Interpreter* interpreter = Core::getCore()->getInterpreter(target_id);
+	if(interpreter) {
+		return interpreter->numAddons();
+	} else {
+		return -1;
+	}
+}
+
+Addon* trss_get_addon(trss_interpreter_id target_id, int addon_idx) {
+	Interpreter* interpreter = Core::getCore()->getInterpreter(target_id);
+	if(interpreter) {
+		return interpreter->getAddon(addon_idx);
+	} else {
+		return NULL;
+	}
+}
+
+const char* trss_get_addon_header(trss_interpreter_id target_id, int addon_idx) {
+	Addon* addon = trss_get_addon(target_id, addon_idx);
+	if(addon) {
+		return addon->getCHeader().c_str();
+	} else {
+		return "";
+	}
+}
+
 /* Message management functions */
 trss_message* trss_create_message(unsigned int data_length){
 	return Core::getCore()->allocateMessage(data_length);
