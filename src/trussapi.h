@@ -21,7 +21,7 @@
 /* Message struct */
 typedef struct {
 	unsigned int message_type;
-	unsigned int message_length;
+	unsigned int data_length;
 	unsigned char* data;
 	unsigned int _refcount;
 } trss_message;
@@ -45,15 +45,11 @@ TRSS_C_API trss_message* trss_load_file(const char* filename, int path_type);
 /* Note that when saving the message_type field is not saved */
 TRSS_C_API int trss_save_file(const char* filename, int path_type, trss_message* data);
 
-/* Top level window management */
-TRSS_C_API int trss_create_window(const char* title_str, int width, int height, int fullscreen);
-TRSS_C_API int trss_destroy_window(int window_id);
-TRSS_C_API void trss_shutdown(); // shut it all down
-
 /* Interpreter management functions */
-TRSS_C_API int trss_spawn_interpreter(trss_interpreter_id target_id, trss_message* arg_message);
+TRSS_C_API int trss_spawn_interpreter(const char* name, trss_message* arg_message);
 TRSS_C_API int trss_stop_interpreter(trss_interpreter_id target_id);
 TRSS_C_API void trss_execute_interpreter(trss_interpreter_id target_id);
+TRSS_C_API int trss_find_interpreter(const char* name);
 
 TRSS_C_API void trss_send_message(trss_interpreter_id dest, trss_message* message);
 TRSS_C_API int trss_fetch_messages(trss_interpreter_id interpreter);
@@ -62,7 +58,7 @@ TRSS_C_API trss_message* trss_get_message(trss_interpreter_id interpreter, int m
 /* Message management functions */
 TRSS_C_API trss_message* trss_create_message(unsigned int data_length);
 TRSS_C_API void trss_acquire_message(trss_message* msg);
-TRSS_C_API trss_message* trss_release_message(trss_message* msg);
+TRSS_C_API void trss_release_message(trss_message* msg);
 TRSS_C_API trss_message* trss_copy_message(trss_message* src);
 
 #endif

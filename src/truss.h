@@ -26,16 +26,21 @@ namespace trss {
 
 	class Interpreter {
 	public:
-		Interpreter();
+		Interpreter(const char* name);
 		~Interpreter();
+
+		// Get the interpreter's name
+		const std::string& getName() const;
 
 		// the attached addon is considered to be owned by 
 		// the interpreter and will be deleted by it when the
 		// interpreter shuts down
 		void attachAddon(Addon* addon);
+		int numAddons();
+		Addon* getAddon(int idx);
 
 		// Starting and stopping
-		void start(trss_message* arg, const char* name);
+		void start(trss_message* arg);
 		void stop();
 
 		// Request an execution
@@ -49,6 +54,9 @@ namespace trss {
 		// Inner thread
 		void _threadEntry();
 	private:
+		// Name
+		std::string _name;
+
 		// Call into the actual lua/terra interpreter
 		void _safeLuaCall(const char* funcname);
 
@@ -80,13 +88,34 @@ namespace trss {
 		bool _executeNext;
 	};
 
-	class Core {
-	public:
-	private:
-	};
-
 	static int run_interpreter_thread(void* interpreter);
 
+	class Core {
+	public:
+		static Core* getCore();
+
+		Interpreter* getInterpreter(int idx);
+		int findInterpreter(const char* name);
+		int spawnInterpreter(const char* name);
+		void startInterpreter(int idx, trss_message* arg);
+		void stopInterpreter(int idx);
+		void executeInterpreter(int idx);
+		int numInterpreters();
+		void dispatchMessage(int targetIdx, trss_message* msg);
+
+		void acquireMessage(trss_message* msg);
+		void releaseMessage(trss_message* msg);
+		trss_message* copyMessage(trss_message* src);
+		trss_message* allocateMessage(int dataLength);
+		void deallocateMessage(trss_message* msg);
+
+		~Core();
+	private:
+		Core();
+
+		static Core* __core;
+		std::vector<Interpreter*> _interpreters;
+	};
 }
 
 #endif

@@ -9,9 +9,16 @@ public:
 	void init(trss::Interpreter* owner);
 	void shutdown();
 	void update(double dt);
+
+	void createWindow(int width, int height, const char* name);
+	void registerBGFX();
+	void destroyWindow();
+
 	~SDLAddon(); // needed so it can be deleted cleanly
 private:
 	SDL_Window* _window;
+	SDL_Event _event;
+	trss:Interpreter* _owner;
 };
 
 extern "C" {

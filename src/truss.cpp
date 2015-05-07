@@ -5,7 +5,7 @@
 
 using namespace trss;
 
-Interpreter::Interpreter() {
+Interpreter::Interpreter(const char* name) {
 		_thread = NULL;
 		_messageLock = SDL_CreateMutex();
 		_execLock = SDL_CreateMutex();
@@ -14,10 +14,15 @@ Interpreter::Interpreter() {
 		_autoExecute = true;
 		_executeOnMessage = false;
 		_executeNext = false;
+		_name = name;
 }
 
 Interpreter::~Interpreter() {
 	// Nothing special to do
+}
+
+const std::string& Interpreter::getName() {
+	return _name;
 }
 
 void Interpreter::attachAddon(Addon* addon) {
@@ -26,6 +31,18 @@ void Interpreter::attachAddon(Addon* addon) {
 	} else {
 		std::cout << "Cannot attach addon to running interpreter.\n";
 		delete addon;
+	}
+}
+
+int Interpreter::numAddons() {
+	return _addons.size();
+}
+
+Addon* Interpreter::getAddon(int idx) {
+	if(idx >= 0 && idx < _addons.size()) {
+		return _addons[idx];
+	} else {
+		return NULL;
 	}
 }
 
@@ -135,4 +152,180 @@ void Interpreter::_safeLuaCall(const char* funcname) {
 int run_interpreter_thread(void* interpreter) {
 	Interpreter* target = (Interpreter*)interpreter;
 	target->_threadEntry();
+}
+
+void trss_log(int log_level, const char* str){
+	Core::getCore()->log(log_level, str);
+}
+
+trss_message* trss_load_file(const char* filename, int path_type){
+	return Core::getCore()->loadFile(filename, path_type);
+}
+
+/* Note that when saving the message_type field is not saved */
+int trss_save_file(const char* filename, int path_type, trss_message* data){
+	return Core::getCore()->saveFile(filename, path_type, data);
+}
+
+/* Interpreter management functions */
+int trss_spawn_interpreter(const char* name, trss_message* arg_message){
+	return Core::getCore()->spawnInterpreter(name, arg_message);
+}
+
+int trss_stop_interpreter(trss_interpreter_id target_id){
+	return Core::getCore()->stopInterpreter(target_id);
+}
+
+void trss_execute_interpreter(trss_interpreter_id target_id){
+	return Core::getCore()->executeInterpreter(target_id);
+}
+
+int trss_find_interpreter(const char* name){
+	return Core::getCore()->findInterpreter(name);
+}
+
+void trss_send_message(trss_interpreter_id dest, trss_message* message){
+	Core::getCore()->dispatchMessage(dest, message);
+}
+
+int trss_fetch_messages(trss_interpreter_id idx){
+	Interpreter* interpreter = Core::getCore()->getInterpreter(idx);
+	if(interpreter) {
+		interpreter->fetchMessages();
+	}
+}
+
+trss_message* trss_get_message(trss_interpreter_id idx, int message_index){
+	Interpreter* interpreter = Core::getCore()->getInterpreter(idx);
+	if(interpreter) {
+		return interpreter->getMessage(message_index);
+	} else {
+		return NULL;
+	}
+}
+
+/* Message management functions */
+trss_message* trss_create_message(unsigned int data_length){
+	return Core::getCore()->allocateMessage(data_length);
+}
+
+void trss_acquire_message(trss_message* msg){
+	++(msg->_refcount);
+}
+
+void trss_release_message(trss_message* msg){
+	--(msg->_refcount);
+	if(msg->_refcount <= 0) {
+		Core::getCore()->deallocateMessage(msg);
+	}
+}
+
+trss_message* trss_copy_message(trss_message* src){
+	trss_message* newmsg = Core::getCore()->allocateMessage(src->data_length);
+	newmsg->message_type = src->message_type;
+	memcpy(newmsg->data, src->data, newmsg->data_length);
+	return newmsg;
+}
+
+Core* Core::getCore() {
+	if(__core == NULL) {
+		__core = new Core();
+	}
+	return __core;
+}
+
+Interpreter* Core::getInterpreter(int idx){
+	if(idx >= 0 && idx < _interpreters.size()) {
+		return _interpreters[idx];
+	} else {
+		return NULL;
+	}
+}
+
+int Core::findInterpreter(const char* name){
+	std::string sname(name);
+	for(size_t i = 0; i < _interpreters.size(); ++i) {
+		if(_interpreters[i]->getName() == sname) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+int Core::spawnInterpreter(const char* name){
+	Interpreter* interpreter = new Interpreter(name);
+	_interpreters.push_back(interpreter);
+	int idx = _interpreters.size() - 1;
+	return idx;
+}
+
+void Core::startInterpreter(int idx, trss_message* arg) {
+	Interpreter* interpreter = getInterpreter(idx);
+	if(interpreter) {
+		interpreter->start(arg);
+	}
+}
+
+void Core::stopInterpreter(int idx){
+	Interpreter* interpreter = getInterpreter(idx);
+	if(interpreter) {
+		interpreter->stop();
+	}
+}
+
+void Core::executeInterpreter(int idx){
+	Interpreter* interpreter = getInterpreter(idx);
+	if(interpreter) {
+		interpreter->execute();
+	}
+}
+
+int Core::numInterpreters(){
+	return _interpreters.size();
+}
+
+void Core::dispatchMessage(int targetIdx, trss_message* msg){
+	Interpreter* interpreter = getInterpreter(idx);
+	if(interpreter) {
+		interpreter->sendMessage(msg);
+	}
+}
+
+void Core::acquireMessage(trss_message* msg){
+	++(msg->_refcount);
+}
+
+void Core::releaseMessage(trss_message* msg){
+	--(msg->_refcount);
+	if(msg->_refcount <= 0) {
+		deallocateMessage(msg);
+	}
+}
+
+trss_message* Core::copyMessage(trss_message* src){
+	trss_message* newmsg = allocateMessage(src->data_length);
+	newmsg->message_type = src->message_type;
+	memcpy(newmsg->data, src->data, newmsg->data_length);
+	return newmsg;
+}
+
+trss_message* Core::allocateMessage(int dataLength){
+	trss_message* ret = new trss_message;
+	ret->data = new unsigned char[dataLength];
+	ret->data_length = dataLength;
+	ret->_refcount = 1;
+	return ret;
+}
+
+void Core::deallocateMessage(trss_message* msg){
+	delete[] msg->data;
+	delete msg;
+}
+
+Core::~Core(){
+	// eeeehn
+}
+
+Core::Core(){
+	// nothing special to do here
 }
