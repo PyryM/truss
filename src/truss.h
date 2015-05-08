@@ -26,8 +26,11 @@ namespace trss {
 
 	class Interpreter {
 	public:
-		Interpreter(const char* name);
+		Interpreter(int id, const char* name);
 		~Interpreter();
+
+		// Get the interpreter's ID
+		int getID() const;
 
 		// Get the interpreter's name
 		const std::string& getName() const;
@@ -40,7 +43,7 @@ namespace trss {
 		Addon* getAddon(int idx);
 
 		// Starting and stopping
-		void start(trss_message* arg);
+		void start(const char* arg);
 		void stop();
 
 		// Request an execution
@@ -54,11 +57,14 @@ namespace trss {
 		// Inner thread
 		void _threadEntry();
 	private:
+		// ID
+		int _ID;
+
 		// Name
 		std::string _name;
 
 		// Call into the actual lua/terra interpreter
-		void _safeLuaCall(const char* funcname);
+		void _safeLuaCall(const char* funcname, const char* argstr = NULL);
 
 		// List of addons
 		std::vector<Addon*> _addons;
@@ -97,11 +103,12 @@ namespace trss {
 		logMessage(int log_level, const char* msg);
 
 		Interpreter* getInterpreter(int idx);
-		int findInterpreter(const char* name);
-		int spawnInterpreter(const char* name);
-		void startInterpreter(int idx, trss_message* arg);
-		void stopInterpreter(int idx);
-		void executeInterpreter(int idx);
+		Interpreter* getNamedInterpreter(const char* name);
+		Interpreter* spawnInterpreter(const char* name);
+
+		// block until all interpreters have finished
+		void waitForInterpreters();
+
 		int numInterpreters();
 		void dispatchMessage(int targetIdx, trss_message* msg);
 
@@ -121,6 +128,8 @@ namespace trss {
 		static Core* __core;
 		std::vector<Interpreter*> _interpreters;
 	};
+
+	Core* core(); // syntax sugar for Core::getCore()
 }
 
 #endif

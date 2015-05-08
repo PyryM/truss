@@ -2,6 +2,16 @@
 #define TRUSS_SDL_HEADER
 
 #include <vector>
+#include <SDL.h>
+#include <SDL_syswm.h>
+
+#include "truss.h"
+
+// tell bgfx that it's using a shared library
+#define BGFX_SHARED_LIB_USE 1
+
+#include <bgfx.c99.h>
+#include <bgfxplatform.c99.h>
 
 extern "C" {
 	#define TRSS_SDL_EVENT_KEYDOWN 		1

@@ -3,10 +3,12 @@
 // TODO: switch to a better logging framework
 #include <iostream>
 #include <fstream>
+#include "trussapi.h"
+#include "truss.h"
 
 using namespace trss;
 
-Interpreter::Interpreter(const char* name) {
+Interpreter::Interpreter(int id, const char* name) {
 		_thread = NULL;
 		_messageLock = SDL_CreateMutex();
 		_execLock = SDL_CreateMutex();
@@ -16,6 +18,7 @@ Interpreter::Interpreter(const char* name) {
 		_executeOnMessage = false;
 		_executeNext = false;
 		_name = name;
+		_ID = id;
 }
 
 Interpreter::~Interpreter() {
@@ -24,6 +27,10 @@ Interpreter::~Interpreter() {
 
 const std::string& Interpreter::getName() {
 	return _name;
+}
+
+int Interpreter::getID() {
+	return _ID;
 }
 
 void Interpreter::attachAddon(Addon* addon) {
@@ -47,16 +54,26 @@ Addon* Interpreter::getAddon(int idx) {
 	}
 }
 
-void Interpreter::start(trss_message* arg, const char* name) {
-	if(_thread != NULL) {
+void Interpreter::start(const char* arg) {
+	if(_thread != NULL || _running) {
 		std::cout << "Can't start interpreter twice: already running\n"; 
 		return;
 	}
 
 	_running = true;
 	_thread = SDL_CreateThread(run_interpreter_thread, 
-								name, 
+								_name, 
 								(void*)this);
+}
+
+void Interpreter::startUnthreaded(const char* arg) {
+	if(_thread != NULL || _running) {
+		std::cout << "Can't start interpreter twice: already running\n"; 
+		return;
+	}
+
+	_running = true;
+	_threadEntry();
 }
 
 void Interpreter::stop() {
@@ -142,9 +159,14 @@ trss_message* Interpreter::getMessage(int index) {
 	return _fetchedMessages[index];
 }
 
-void Interpreter::_safeLuaCall(const char* funcname) {
+void Interpreter::_safeLuaCall(const char* funcname, const char* argstr) {
+	int nargs = 0;
 	lua_getglobal(_terraState, funcname);
-	int res = lua_pcall(_terraState, 0, 0, 0);
+	if(argstr != NULL) {
+		nargs = 1;
+		lua_pushcstr(_terraState, argstr);	
+	}
+	int res = lua_pcall(_terraState, nargs, 0, 0);
 	if(res != 0) {
 		std::cout << lua_tostring(_terraState, -1) << std::endl;
 	}
@@ -169,20 +191,25 @@ int trss_save_file(const char* filename, int path_type, trss_message* data){
 }
 
 /* Interpreter management functions */
-int trss_spawn_interpreter(const char* name, trss_message* arg_message){
-	return Core::getCore()->spawnInterpreter(name, arg_message);
+int trss_spawn_interpreter(const char* name){
+	Interpreter* spawned = Core::getCore()->spawnInterpreter(name);
+	return spawned->getID();
 }
 
-int trss_stop_interpreter(trss_interpreter_id target_id){
-	return Core::getCore()->stopInterpreter(target_id);
+void trss_start_interpreter(trss_interpreter_id target_id, const char* msgstr) {
+	Core::getCore()->getInterpreter(target_id)->start(msgstr);
+}
+
+void trss_stop_interpreter(trss_interpreter_id target_id){
+	Core::getCore()->getInterpreter(target_id)->stop();
 }
 
 void trss_execute_interpreter(trss_interpreter_id target_id){
-	return Core::getCore()->executeInterpreter(target_id);
+	return Core::getCore()->getInterpreter(target_id)->execute();
 }
 
 int trss_find_interpreter(const char* name){
-	return Core::getCore()->findInterpreter(name);
+	return Core::getCore()->getInterpreterByName(name)->getID();
 }
 
 void trss_send_message(trss_interpreter_id dest, trss_message* message){
@@ -255,6 +282,10 @@ trss_message* trss_copy_message(trss_message* src){
 	return newmsg;
 }
 
+Core* core() {
+	return Core::getCore();
+}
+
 Core* Core::getCore() {
 	if(__core == NULL) {
 		__core = new Core();
@@ -275,42 +306,24 @@ Interpreter* Core::getInterpreter(int idx){
 	}
 }
 
-int Core::findInterpreter(const char* name){
+Interpreter* Core::findInterpreter(const char* name){
 	std::string sname(name);
 	for(size_t i = 0; i < _interpreters.size(); ++i) {
 		if(_interpreters[i]->getName() == sname) {
-			return i;
+			return _interpreters[i];
 		}
 	}
-	return -1;
+	return NULL;
 }
 
-int Core::spawnInterpreter(const char* name){
+Interpreter* Core::spawnInterpreter(const char* name){
 	Interpreter* interpreter = new Interpreter(name);
 	_interpreters.push_back(interpreter);
-	int idx = _interpreters.size() - 1;
-	return idx;
+	return interpreter;
 }
 
-void Core::startInterpreter(int idx, trss_message* arg) {
-	Interpreter* interpreter = getInterpreter(idx);
-	if(interpreter) {
-		interpreter->start(arg);
-	}
-}
+void Core::waitForInterpreters() {
 
-void Core::stopInterpreter(int idx){
-	Interpreter* interpreter = getInterpreter(idx);
-	if(interpreter) {
-		interpreter->stop();
-	}
-}
-
-void Core::executeInterpreter(int idx){
-	Interpreter* interpreter = getInterpreter(idx);
-	if(interpreter) {
-		interpreter->execute();
-	}
 }
 
 int Core::numInterpreters(){
