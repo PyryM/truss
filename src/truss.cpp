@@ -294,40 +294,50 @@ Core* Core::getCore() {
 }
 
 void Core::logMessage(int log_level, const char* msg) {
+	SDL_LockMutex(_coreLock);
 	// just dump to standard out for the moment
 	std::cout << log_level << "|" << msg << std::endl;
+	SDL_UnlockMutex(_coreLock);
 }
 
 Interpreter* Core::getInterpreter(int idx){
+	Interpreter* ret = NULL;
+	SDL_LockMutex(_coreLock);
 	if(idx >= 0 && idx < _interpreters.size()) {
-		return _interpreters[idx];
-	} else {
-		return NULL;
+		ret = _interpreters[idx];
 	}
+	SDL_UnlockMutex(_coreLock);
+	return ret;
 }
 
 Interpreter* Core::findInterpreter(const char* name){
 	std::string sname(name);
+	Interpreter* ret = NULL;
+	SDL_LockMutex(_coreLock);
 	for(size_t i = 0; i < _interpreters.size(); ++i) {
 		if(_interpreters[i]->getName() == sname) {
-			return _interpreters[i];
+			ret = _interpreters[i];
+			break;
 		}
 	}
-	return NULL;
+	SDL_UnlockMutex(_coreLock);
+	return ret;
 }
 
 Interpreter* Core::spawnInterpreter(const char* name){
-	Interpreter* interpreter = new Interpreter(name);
+	SDL_LockMutex(_coreLock);
+	Interpreter* interpreter = new Interpreter(_interpreters.size(), name);
 	_interpreters.push_back(interpreter);
+	SDL_UnlockMutex(_coreLock);
 	return interpreter;
 }
 
-void Core::waitForInterpreters() {
-
-}
-
 int Core::numInterpreters(){
-	return _interpreters.size();
+	int ret = 0;
+	SDL_LockMutex(_coreLock);
+	ret = _interpreters.size();
+	SDL_UnlockMutex(_coreLock);
+	return ret;
 }
 
 void Core::dispatchMessage(int targetIdx, trss_message* msg){
@@ -338,20 +348,26 @@ void Core::dispatchMessage(int targetIdx, trss_message* msg){
 }
 
 void Core::acquireMessage(trss_message* msg){
+	SDL_LockMutex(_coreLock);
 	++(msg->_refcount);
+	SDL_UnlockMutex(_coreLock);
 }
 
 void Core::releaseMessage(trss_message* msg){
+	SDL_LockMutex(_coreLock);
 	--(msg->_refcount);
 	if(msg->_refcount <= 0) {
 		deallocateMessage(msg);
 	}
+	SDL_UnlockMutex(_coreLock);
 }
 
 trss_message* Core::copyMessage(trss_message* src){
+	SDL_LockMutex(_coreLock);
 	trss_message* newmsg = allocateMessage(src->data_length);
 	newmsg->message_type = src->message_type;
 	memcpy(newmsg->data, src->data, newmsg->data_length);
+	SDL_UnlockMutex(_coreLock);
 	return newmsg;
 }
 
@@ -408,5 +424,5 @@ Core::~Core(){
 }
 
 Core::Core(){
-	// nothing special to do here
+	_coreLock = SDL_CreateMutex();
 }

@@ -123,9 +123,10 @@ namespace trss {
 
 		~Core();
 	private:
-		Core();
-
 		static Core* __core;
+
+		Core();
+		SDL_Mutex* _coreLock;
 		std::vector<Interpreter*> _interpreters;
 	};
 
