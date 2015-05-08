@@ -48,11 +48,52 @@ void SDLAddon::shutdown(){
 	SDL_Quit();
 }
 
+void SDLAddon::_convertAndPushEvent(SDL_Event& event) {
+	trss_sdl_event newEvent;
+	switch(event.type) {
+	case SDL_KEYDOWN:
+		// TODO
+		break;
+	case SDL_KEYUP:
+		// TODO
+		break;
+	case SDL_MOUSEMOTION:
+		newEvent.event_type = TRSS_SDL_EVENT_MOUSEMOVE;
+		newEvent.x = event.motion.x;
+		newEvent.y = event.motion.y;
+		newEvent.flags = event.motion.state;
+		break;
+	case SDL_MOUSEBUTTONDOWN:
+		newEvent.event_type = TRSS_SDL_EVENT_MOUSEDOWN;
+		newEvent.x = event.button.x;
+		newEvent.y = event.button.y;
+		newEvent.flags = event.button.button;
+		break;
+	case SDL_MOUSEBUTTONUP:
+		newEvent.event_type = TRSS_SDL_EVENT_MOUSEUP;
+		newEvent.x = event.button.x;
+		newEvent.y = event.button.y;
+		newEvent.flags = event.button.button;
+		break;
+	case SDL_MOUSEWHEEL:
+		newEvent.event_type = TRSS_SDL_EVENT_MOUSEWHEEL;
+		newEvent.x = event.wheel.x;
+		newEvent.y = event.wheel.y;
+		newEvent.flags = event.wheel.direction;
+		break;
+	default:
+		break;
+	}
+	_eventBuffer.push_back(newEvent);
+}
+
 void SDLAddon::update(double dt){
+	_eventBuffer.clear();
+
 	// empty SDL event buffer by polling
 	// until none left
 	while (SDL_PollEvent(&_event)) {
-		// Do something with the event here...
+		_convertAndPushEvent(_event);
 	}
 }
 
@@ -80,10 +121,30 @@ SDLAddon::~SDLAddon(){
 	shutdown();
 }
 
-void create_window(SDLAddon* addon, int width, int height, const char* name){
+int SDLAddon::numEvents() {
+	return _eventBuffer.size();
+}
+
+trss_sdl_event& SDLAddon::getEvent(int index) {
+	if(index >= 0 && index < _eventBuffer.size()) {
+		return _eventBuffer[index];
+	} else {
+		return _errorEvent;
+	}
+}
+
+void trss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name){
 	addon->createWindow(width, height, name);
 }
 
-void destroy_window(SDLAddon* addon){
+void trss_sdl_destroy_window(SDLAddon* addon){
 	addon->destroyWindow();
+}
+
+int  trss_sdl_num_events(SDLAddon* addon) {
+	return addon->numEvents();
+}
+
+trss_sdl_event trss_sdl_get_event(SDLAddon* addon, int index) {
+	return addon->getEvent(index);
 }
