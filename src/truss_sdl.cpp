@@ -1,5 +1,6 @@
 #include "truss.h"
 #include "truss_sdl.h"
+#include <iostream>
 
 bool sdlSetWindow(SDL_Window* _window)
 {
@@ -97,7 +98,7 @@ void SDLAddon::_convertAndPushEvent(SDL_Event& event) {
 		newEvent.event_type = TRSS_SDL_EVENT_MOUSEWHEEL;
 		newEvent.x = event.wheel.x;
 		newEvent.y = event.wheel.y;
-		newEvent.flags = event.wheel.direction;
+		newEvent.flags = event.wheel.which;
 		break;
 	default:
 		break;
@@ -140,13 +141,14 @@ SDLAddon::~SDLAddon(){
 }
 
 int SDLAddon::numEvents() {
-	return _eventBuffer.size();
+	return (int)(_eventBuffer.size());
 }
 
 trss_sdl_event& SDLAddon::getEvent(int index) {
-	if(index >= 0 && index < _eventBuffer.size()) {
+	if (index >= 0 && index < _eventBuffer.size()) {
 		return _eventBuffer[index];
-	} else {
+	}
+	else {
 		return _errorEvent;
 	}
 }

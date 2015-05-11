@@ -13,12 +13,19 @@
 #include <bgfx.c99.h>
 #include <bgfxplatform.c99.h>
 
+#ifdef __cplusplus
+class SDLAddon;
+#else
+typedef struct SDLAddon SDLAddon;
+#endif
+
 extern "C" {
 	#define TRSS_SDL_EVENT_KEYDOWN 		1
 	#define TRSS_SDL_EVENT_KEYUP		2
 	#define TRSS_SDL_EVENT_MOUSEDOWN 	3
 	#define TRSS_SDL_EVENT_MOUSEUP	 	4
 	#define TRSS_SDL_EVENT_MOUSEMOVE 	5
+	#define TRSS_SDL_EVENT_MOUSEWHEEL   6
 
 	/* Simplified SDL Event */
 	typedef struct {
@@ -57,7 +64,7 @@ private:
 
 	SDL_Window* _window;
 	SDL_Event _event;
-	trss:Interpreter* _owner;
+	trss::Interpreter* _owner;
 	std::vector<trss_sdl_event> _eventBuffer;
 	trss_sdl_event _errorEvent;
 };

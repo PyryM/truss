@@ -8,6 +8,9 @@
 #include <vector>
 
 #include "SDL_thread.h"
+#include "SDL_mutex.h"
+
+#include "terra.h"
 
 namespace trss {
 
@@ -21,7 +24,9 @@ namespace trss {
 		virtual void init(Interpreter* owner) = 0;
 		virtual void shutdown() = 0;
 		virtual void update(double dt) = 0;
-		virtual ~Addon(); // needed so it can be deleted cleanly
+		virtual ~Addon(){
+			// needed so it can be deleted cleanly
+		} 
 	};
 
 	class Interpreter {
@@ -44,6 +49,7 @@ namespace trss {
 
 		// Starting and stopping
 		void start(const char* arg);
+		void startUnthreaded(const char* arg);
 		void stop();
 
 		// Request an execution
@@ -73,15 +79,15 @@ namespace trss {
 		SDL_Thread* _thread;
 
 		// Lock for messaging
-		SDL_Mutex* _messageLock;
+		SDL_mutex* _messageLock;
 
 		// Messages
-		std::vector<trss_message*> _curMessages;
-		std::vector<trss_message*> _fetchedMessages;
+		std::vector<trss_message*>* _curMessages;
+		std::vector<trss_message*>* _fetchedMessages;
 
 		// Lock for execution
 		// (only used if not autoexecuting)
-		SDL_Mutex* _execLock;
+		SDL_mutex* _execLock;
 
 		// Terra state
 		lua_State* _terraState;
@@ -94,13 +100,11 @@ namespace trss {
 		bool _executeNext;
 	};
 
-	static int run_interpreter_thread(void* interpreter);
-
 	class Core {
 	public:
 		static Core* getCore();
 
-		logMessage(int log_level, const char* msg);
+		void logMessage(int log_level, const char* msg);
 
 		Interpreter* getInterpreter(int idx);
 		Interpreter* getNamedInterpreter(const char* name);
@@ -125,8 +129,10 @@ namespace trss {
 	private:
 		static Core* __core;
 
+		std::string _resolvePath(const char* filename, int path_type);
+
 		Core();
-		SDL_Mutex* _coreLock;
+		SDL_mutex* _coreLock;
 		std::vector<Interpreter*> _interpreters;
 	};
 

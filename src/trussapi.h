@@ -6,11 +6,14 @@
 #ifndef TRSSAPI_H_HEADER_GUARD
 #define TRSSAPI_H_HEADER_GUARD
 
-
 #if defined(__cplusplus)
 #   define TRSS_C_API extern "C"
+namespace trss {
+	class Addon;
+}
 #else
 #   define TRSS_C_API
+typedef Addon Addon;
 #endif
 
 /* Message types */
@@ -45,15 +48,18 @@ TRSS_C_API trss_message* trss_load_file(const char* filename, int path_type);
 /* Note that when saving the message_type field is not saved */
 TRSS_C_API int trss_save_file(const char* filename, int path_type, trss_message* data);
 
+/* Interpreter IDs are just ints for now */
+typedef int trss_interpreter_id;
+
 /* Interpreter management functions */
 TRSS_C_API int trss_spawn_interpreter(const char* name, trss_message* arg_message);
-TRSS_C_API int trss_stop_interpreter(trss_interpreter_id target_id);
+TRSS_C_API void trss_stop_interpreter(trss_interpreter_id target_id);
 TRSS_C_API void trss_execute_interpreter(trss_interpreter_id target_id);
 TRSS_C_API int trss_find_interpreter(const char* name);
 
 /* Addon management */
 TRSS_C_API int trss_get_addon_count(trss_interpreter_id target_id);
-TRSS_C_API Addon* trss_get_addon(trss_interpreter_id target_id, int addon_idx);
+TRSS_C_API trss::Addon* trss_get_addon(trss_interpreter_id target_id, int addon_idx);
 TRSS_C_API const char* trss_get_addon_header(trss_interpreter_id target_id, int addon_idx);
 
 /* Message transport */

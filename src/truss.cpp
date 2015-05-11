@@ -5,6 +5,7 @@
 #include <fstream>
 #include "trussapi.h"
 #include "truss.h"
+#include "terra.h"
 
 using namespace trss;
 
@@ -19,17 +20,19 @@ Interpreter::Interpreter(int id, const char* name) {
 		_executeNext = false;
 		_name = name;
 		_ID = id;
+		_curMessages = new std::vector < trss_message* > ;
+		_fetchedMessages = new std::vector < trss_message* >;
 }
 
 Interpreter::~Interpreter() {
 	// Nothing special to do
 }
 
-const std::string& Interpreter::getName() {
+const std::string& Interpreter::getName() const {
 	return _name;
 }
 
-int Interpreter::getID() {
+int Interpreter::getID() const {
 	return _ID;
 }
 
@@ -43,7 +46,7 @@ void Interpreter::attachAddon(Addon* addon) {
 }
 
 int Interpreter::numAddons() {
-	return _addons.size();
+	return (int)(_addons.size());
 }
 
 Addon* Interpreter::getAddon(int idx) {
@@ -54,6 +57,12 @@ Addon* Interpreter::getAddon(int idx) {
 	}
 }
 
+int run_interpreter_thread(void* interpreter) {
+	Interpreter* target = (Interpreter*)interpreter;
+	target->_threadEntry();
+	return 0;
+}
+
 void Interpreter::start(const char* arg) {
 	if(_thread != NULL || _running) {
 		std::cout << "Can't start interpreter twice: already running\n"; 
@@ -62,7 +71,7 @@ void Interpreter::start(const char* arg) {
 
 	_running = true;
 	_thread = SDL_CreateThread(run_interpreter_thread, 
-								_name, 
+								_name.c_str(), 
 								(void*)this);
 }
 
@@ -80,6 +89,11 @@ void Interpreter::stop() {
 	_running = false;
 }
 
+void Interpreter::execute() {
+	std::cout << "Interpreter::execute not implemented!\n";
+	// TODO: make this do something
+}
+
 void Interpreter::_threadEntry() {
 	_terraState = luaL_newstate();
 	luaL_openlibs(_terraState);
@@ -92,8 +106,8 @@ void Interpreter::_threadEntry() {
 	// load and execute the bootstrap script
 	trss_message* bootstrap = trss_load_file("bootstrap.t", TRSS_CORE_PATH);
 	terra_loadbuffer(_terraState, 
-                     bootstrap->data, 
-                     bootstrap->message_length, 
+                     (char*)bootstrap->data, 
+                     bootstrap->data_length, 
                      "bootstrap.t");
 	int res = lua_pcall(_terraState, 0, 0, 0);
 	if(res != 0) {
@@ -130,7 +144,7 @@ void Interpreter::_threadEntry() {
 void Interpreter::sendMessage(trss_message* message) {
 	SDL_LockMutex(_messageLock);
 	trss_acquire_message(message);
-	_curMessages.push_back(message);
+	_curMessages->push_back(message);
 	SDL_UnlockMutex(_messageLock);
 }
 
@@ -142,21 +156,21 @@ int Interpreter::fetchMessages() {
 	_fetchedMessages = temp;
 
 	// clear the 'current' messages (i.e., the old fetched messages)
-	for(unsigned int i = 0; i < _curMessages.size(); ++i) {
-		trss_release_message(_curMessages[i]);
+	for(unsigned int i = 0; i < _curMessages->size(); ++i) {
+		trss_release_message((*_curMessages)[i]);
 	}
-	_curMessages.clear();
-	int numMessages = _fetchedMessages.size();
+	_curMessages->clear();
+	size_t numMessages = _fetchedMessages->size();
 
 	SDL_UnlockMutex(_messageLock);
-	return numMessages;
+	return (int)(numMessages);
 }
 
 trss_message* Interpreter::getMessage(int index) {
 	// Note: don't need to lock because only 'our' thread
 	// should call fetchMessages (which is the only other function
 	// that touches _fetchedMessages)
-	return _fetchedMessages[index];
+	return (*_fetchedMessages)[index];
 }
 
 void Interpreter::_safeLuaCall(const char* funcname, const char* argstr) {
@@ -164,17 +178,12 @@ void Interpreter::_safeLuaCall(const char* funcname, const char* argstr) {
 	lua_getglobal(_terraState, funcname);
 	if(argstr != NULL) {
 		nargs = 1;
-		lua_pushcstr(_terraState, argstr);	
+		lua_pushstring(_terraState, argstr);	
 	}
 	int res = lua_pcall(_terraState, nargs, 0, 0);
 	if(res != 0) {
 		std::cout << lua_tostring(_terraState, -1) << std::endl;
 	}
-}
-
-int run_interpreter_thread(void* interpreter) {
-	Interpreter* target = (Interpreter*)interpreter;
-	target->_threadEntry();
 }
 
 void trss_log(int log_level, const char* str){
@@ -187,7 +196,8 @@ trss_message* trss_load_file(const char* filename, int path_type){
 
 /* Note that when saving the message_type field is not saved */
 int trss_save_file(const char* filename, int path_type, trss_message* data){
-	return Core::getCore()->saveFile(filename, path_type, data);
+	Core::getCore()->saveFile(filename, path_type, data);
+	return 0; // TODO: actually check for errors
 }
 
 /* Interpreter management functions */
@@ -209,7 +219,7 @@ void trss_execute_interpreter(trss_interpreter_id target_id){
 }
 
 int trss_find_interpreter(const char* name){
-	return Core::getCore()->getInterpreterByName(name)->getID();
+	return Core::getCore()->getNamedInterpreter(name)->getID();
 }
 
 void trss_send_message(trss_interpreter_id dest, trss_message* message){
@@ -219,7 +229,9 @@ void trss_send_message(trss_interpreter_id dest, trss_message* message){
 int trss_fetch_messages(trss_interpreter_id idx){
 	Interpreter* interpreter = Core::getCore()->getInterpreter(idx);
 	if(interpreter) {
-		interpreter->fetchMessages();
+		return interpreter->fetchMessages();
+	} else {
+		return -1;
 	}
 }
 
@@ -286,6 +298,8 @@ Core* core() {
 	return Core::getCore();
 }
 
+Core* Core::__core = NULL;
+
 Core* Core::getCore() {
 	if(__core == NULL) {
 		__core = new Core();
@@ -310,7 +324,7 @@ Interpreter* Core::getInterpreter(int idx){
 	return ret;
 }
 
-Interpreter* Core::findInterpreter(const char* name){
+Interpreter* Core::getNamedInterpreter(const char* name){
 	std::string sname(name);
 	Interpreter* ret = NULL;
 	SDL_LockMutex(_coreLock);
@@ -326,7 +340,7 @@ Interpreter* Core::findInterpreter(const char* name){
 
 Interpreter* Core::spawnInterpreter(const char* name){
 	SDL_LockMutex(_coreLock);
-	Interpreter* interpreter = new Interpreter(_interpreters.size(), name);
+	Interpreter* interpreter = new Interpreter((int)(_interpreters.size()), name);
 	_interpreters.push_back(interpreter);
 	SDL_UnlockMutex(_coreLock);
 	return interpreter;
@@ -335,13 +349,13 @@ Interpreter* Core::spawnInterpreter(const char* name){
 int Core::numInterpreters(){
 	int ret = 0;
 	SDL_LockMutex(_coreLock);
-	ret = _interpreters.size();
+	ret = (int)(_interpreters.size());
 	SDL_UnlockMutex(_coreLock);
 	return ret;
 }
 
 void Core::dispatchMessage(int targetIdx, trss_message* msg){
-	Interpreter* interpreter = getInterpreter(idx);
+	Interpreter* interpreter = getInterpreter(targetIdx);
 	if(interpreter) {
 		interpreter->sendMessage(msg);
 	}
@@ -398,9 +412,9 @@ trss_message* Core::loadFile(const char* filename, int path_type) {
 	if (file.is_open())
 	{
 		size = file.tellg();
-		trss_message* ret = allocateMessage(size);
-		file.seekg (0, ios::beg);
-		file.read (ret->data, size);
+		trss_message* ret = allocateMessage((int)size);
+		file.seekg (0, std::ios::beg);
+		file.read ((char*)(ret->data), size);
 		file.close();
 
 		return ret;
@@ -415,7 +429,7 @@ void Core::saveFile(const char* filename, int path_type, trss_message* data) {
 
 	std::ofstream outfile;
 	outfile.open(truepath.c_str(), std::ios::binary | std::ios::out);
-	outfile.write(data->data, data->data_length);
+	outfile.write((char*)(data->data), data->data_length);
 	outfile.close();
 }
 
