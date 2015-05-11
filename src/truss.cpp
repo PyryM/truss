@@ -105,6 +105,11 @@ void Interpreter::_threadEntry() {
 
 	// load and execute the bootstrap script
 	trss_message* bootstrap = trss_load_file("bootstrap.t", TRSS_CORE_PATH);
+	if (!bootstrap) {
+		std::cout << "Error loading bootstrap script.\n";
+		_running = false;
+		return;
+	}
 	terra_loadbuffer(_terraState, 
                      (char*)bootstrap->data, 
                      bootstrap->data_length, 
@@ -113,6 +118,8 @@ void Interpreter::_threadEntry() {
 	if(res != 0) {
 		std::cout << "Error bootstrapping interpreter: " 
 				  << lua_tostring(_terraState, -1) << std::endl;
+		_running = false;
+		return;
 	}
 
 	// Init all the addons
@@ -419,7 +426,7 @@ trss_message* Core::loadFile(const char* filename, int path_type) {
 
 		return ret;
 	} else {
-		std::cout << "Unable to open file\n";
+		std::cout << "Unable to open file " << filename << "\n";
 		return NULL;	
 	} 
 }
