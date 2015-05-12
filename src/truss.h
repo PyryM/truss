@@ -136,7 +136,11 @@ namespace trss {
 		std::vector<Interpreter*> _interpreters;
 	};
 
-	Core* core(); // syntax sugar for Core::getCore()
+	// syntax sugar to avoid the verbose
+	// trss::Core::getCore()
+	inline Core* core() {
+		return Core::getCore();
+	}
 }
 
 #endif

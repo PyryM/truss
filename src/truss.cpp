@@ -301,10 +301,6 @@ trss_message* trss_copy_message(trss_message* src){
 	return newmsg;
 }
 
-Core* core() {
-	return Core::getCore();
-}
-
 Core* Core::__core = NULL;
 
 Core* Core::getCore() {
