@@ -19,28 +19,26 @@ class SDLAddon;
 typedef struct SDLAddon SDLAddon;
 #endif
 
-extern "C" {
-	#define TRSS_SDL_EVENT_KEYDOWN 		1
-	#define TRSS_SDL_EVENT_KEYUP		2
-	#define TRSS_SDL_EVENT_MOUSEDOWN 	3
-	#define TRSS_SDL_EVENT_MOUSEUP	 	4
-	#define TRSS_SDL_EVENT_MOUSEMOVE 	5
-	#define TRSS_SDL_EVENT_MOUSEWHEEL   6
+#define TRSS_SDL_EVENT_KEYDOWN 		1
+#define TRSS_SDL_EVENT_KEYUP		2
+#define TRSS_SDL_EVENT_MOUSEDOWN 	3
+#define TRSS_SDL_EVENT_MOUSEUP	 	4
+#define TRSS_SDL_EVENT_MOUSEMOVE 	5
+#define TRSS_SDL_EVENT_MOUSEWHEEL   6
 
-	/* Simplified SDL Event */
-	typedef struct {
-		unsigned int event_type;
-		char keycode[10]; /* 10 characters should be enough for anybody */
-		double x;
-		double y;
-		int flags;
-	} trss_sdl_event;
+/* Simplified SDL Event */
+typedef struct {
+	unsigned int event_type;
+	char keycode[10]; /* 10 characters should be enough for anybody */
+	double x;
+	double y;
+	int flags;
+} trss_sdl_event;
 
-	void trss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name);
-	void trss_sdl_destroy_window(SDLAddon* addon);
-	int  trss_sdl_num_events(SDLAddon* addon);
-	trss_sdl_event trss_sdl_get_event(SDLAddon* addon, int index);
-}
+TRSS_C_API void trss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name);
+TRSS_C_API void trss_sdl_destroy_window(SDLAddon* addon);
+TRSS_C_API int trss_sdl_num_events(SDLAddon* addon);
+TRSS_C_API trss_sdl_event trss_sdl_get_event(SDLAddon* addon, int index);
 
 class SDLAddon : public trss::Addon {
 public:
