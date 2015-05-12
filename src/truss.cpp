@@ -269,6 +269,16 @@ Addon* trss_get_addon(trss_interpreter_id target_id, int addon_idx) {
 	}
 }
 
+const char* trss_get_addon_name(trss_interpreter_id target_id, int addon_idx) {
+	Addon* addon = trss_get_addon(target_id, addon_idx);
+	if (addon) {
+		return addon->getName().c_str();
+	}
+	else {
+		return "";
+	}
+}
+
 const char* trss_get_addon_header(trss_interpreter_id target_id, int addon_idx) {
 	Addon* addon = trss_get_addon(target_id, addon_idx);
 	if(addon) {

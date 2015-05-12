@@ -107,6 +107,10 @@ void SDLAddon::_convertAndPushEvent(SDL_Event& event) {
 }
 
 void SDLAddon::update(double dt){
+	if (_window == NULL) {
+		return;
+	}
+
 	_eventBuffer.clear();
 
 	// empty SDL event buffer by polling
