@@ -69,6 +69,9 @@ namespace trss {
 		// Name
 		std::string _name;
 
+		// Argument when starting
+		std::string _arg;
+
 		// Call into the actual lua/terra interpreter
 		void _safeLuaCall(const char* funcname, const char* argstr = NULL);
 

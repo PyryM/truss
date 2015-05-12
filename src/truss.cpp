@@ -22,6 +22,7 @@ Interpreter::Interpreter(int id, const char* name) {
 		_ID = id;
 		_curMessages = new std::vector < trss_message* > ;
 		_fetchedMessages = new std::vector < trss_message* >;
+		_arg = "";
 }
 
 Interpreter::~Interpreter() {
@@ -69,6 +70,7 @@ void Interpreter::start(const char* arg) {
 		return;
 	}
 
+	_arg = arg;
 	_running = true;
 	_thread = SDL_CreateThread(run_interpreter_thread, 
 								_name.c_str(), 
@@ -81,6 +83,7 @@ void Interpreter::startUnthreaded(const char* arg) {
 		return;
 	}
 
+	_arg = arg;
 	_running = true;
 	_threadEntry();
 }
@@ -128,7 +131,7 @@ void Interpreter::_threadEntry() {
 	}
 
 	// Call init
-	_safeLuaCall("_core_init");
+	_safeLuaCall("_coreInit", _arg.c_str());
 
 	double dt = 1.0 / 60.0; // just fudge this at the moment
 
@@ -140,7 +143,7 @@ void Interpreter::_threadEntry() {
 		}
 
 		// update lua
-		_safeLuaCall("_core_update");
+		_safeLuaCall("_coreUpdate");
 	}
 
 	// Shutdown
