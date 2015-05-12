@@ -147,7 +147,7 @@ void Interpreter::_threadEntry() {
 	}
 
 	// Shutdown
-	std::cout << "Shuttind down.\n";
+	std::cout << "Shutting down.\n";
 	// TODO: actually shutdown stuff here
 }
 
@@ -194,6 +194,10 @@ void Interpreter::_safeLuaCall(const char* funcname, const char* argstr) {
 	if(res != 0) {
 		std::cout << lua_tostring(_terraState, -1) << std::endl;
 	}
+}
+
+void trss_test() {
+	std::cout << ">>>>>>>>>>>>>> TRSS_TEST CALLED <<<<<<<<<<<<<\n";
 }
 
 void trss_log(int log_level, const char* str){

@@ -5,6 +5,7 @@
 #include <iostream>
 
 int main(int, char**){
+	trss_test();
 	trss_log(0, "Entered main!");
 	trss::Interpreter* interpreter = trss::core()->spawnInterpreter("interpreter_0");
 	interpreter->attachAddon(new SDLAddon);

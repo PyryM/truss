@@ -6,14 +6,20 @@
 #ifndef TRSSAPI_H_HEADER_GUARD
 #define TRSSAPI_H_HEADER_GUARD
 
+/* Windows needs dllexports for Terra / luajit ffi to be able
+   to link against the truss api functions (even when statically built) */
 #if defined(__cplusplus)
-#   define TRSS_C_API extern "C"
+#if defined(_WIN32)
+#   define TRSS_C_API extern "C" __declspec(dllexport)
+#else
+#	define TRSS_C_API extern "C"
+#endif
 namespace trss {
 	class Addon;
 }
 #else
 #   define TRSS_C_API
-typedef Addon Addon;
+typedef struct Addon Addon;
 #endif
 
 /* Message types */
@@ -36,6 +42,7 @@ typedef struct {
 #define TRSS_LOG_INFO 3
 #define TRSS_LOG_DEBUG 4
 
+TRSS_C_API void trss_test();
 TRSS_C_API void trss_log(int log_level, const char* str);
 
 /* File IO */
