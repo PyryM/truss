@@ -25,32 +25,32 @@ bool sdlSetWindow(SDL_Window* _window)
 SDLAddon::SDLAddon(){
 	_window = NULL;
 	_owner = NULL;
+	_name = "sdl";
+	_header = "/*SDLAddon Embedded Header*/\n"
+		"#define TRSS_SDL_EVENT_KEYDOWN 1\n"
+		"#define TRSS_SDL_EVENT_KEYUP		2\n"
+		"#define TRSS_SDL_EVENT_MOUSEDOWN 	3\n"
+		"#define TRSS_SDL_EVENT_MOUSEUP	 	4\n"
+		"#define TRSS_SDL_EVENT_MOUSEMOVE 	5\n"
+		"typedef struct {\n"
+		"    unsigned int event_type;\n"
+		"    char keycode[10];\n"
+		"    double x;\n"
+		"    double y;\n"
+		"    int flags;\n"
+		"} trss_sdl_event;\n"
+		"void trss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name);\n"
+		"void trss_sdl_destroy_window(SDLAddon* addon);\n"
+		"int  trss_sdl_num_events(SDLAddon* addon);\n"
+		"trss_sdl_event trss_sdl_get_event(SDLAddon* addon, int index);\n";
 }
 
-std::string SDLAddon::getName(){
-	return "SDLAddon";
+const std::string& SDLAddon::getName(){
+	return _name;
 }
 
-std::string SDLAddon::getCHeader(){
-	std::string ret = "/*SDLAddon Embedded Header*/\n"
-	"#define TRSS_SDL_EVENT_KEYDOWN 1\n"
-	"#define TRSS_SDL_EVENT_KEYUP		2\n"
-	"#define TRSS_SDL_EVENT_MOUSEDOWN 	3\n"
-	"#define TRSS_SDL_EVENT_MOUSEUP	 	4\n"
-	"#define TRSS_SDL_EVENT_MOUSEMOVE 	5\n"
-	"typedef struct {\n"
-	"    unsigned int event_type;\n"
-	"    char keycode[10];\n"
-	"    double x;\n"
-	"    double y;\n"
-	"    int flags;\n"
-	"} trss_sdl_event;\n"
-	"void trss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name);\n"
-	"void trss_sdl_destroy_window(SDLAddon* addon);\n"
-	"int  trss_sdl_num_events(SDLAddon* addon);\n"
-	"trss_sdl_event trss_sdl_get_event(SDLAddon* addon, int index);\n";
-
-	return ret;
+const std::string& SDLAddon::getCHeader(){
+	return _header;
 }
 
 void SDLAddon::init(trss::Interpreter* owner){

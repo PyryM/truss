@@ -43,8 +43,8 @@ TRSS_C_API trss_sdl_event trss_sdl_get_event(SDLAddon* addon, int index);
 class SDLAddon : public trss::Addon {
 public:
 	SDLAddon();
-	std::string getName();
-	std::string getCHeader();
+	const std::string& getName();
+	const std::string& getCHeader();
 	void init(trss::Interpreter* owner);
 	void shutdown();
 	void update(double dt);
@@ -59,6 +59,8 @@ public:
 	~SDLAddon(); // needed so it can be deleted cleanly
 private:
 	void _convertAndPushEvent(SDL_Event& event);
+	std::string _name;
+	std::string _header;
 
 	SDL_Window* _window;
 	SDL_Event _event;

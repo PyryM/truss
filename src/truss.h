@@ -19,8 +19,8 @@ namespace trss {
 	// Pure virtual class for addons
 	class Addon {
 	public:
-		virtual std::string getName() = 0;
-		virtual std::string getCHeader() = 0;
+		virtual const std::string& getName() = 0;
+		virtual const std::string& getCHeader() = 0;
 		virtual void init(Interpreter* owner) = 0;
 		virtual void shutdown() = 0;
 		virtual void update(double dt) = 0;
