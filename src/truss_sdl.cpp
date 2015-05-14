@@ -33,6 +33,8 @@ SDLAddon::SDLAddon(){
 		"#define TRSS_SDL_EVENT_MOUSEDOWN 	3\n"
 		"#define TRSS_SDL_EVENT_MOUSEUP	 	4\n"
 		"#define TRSS_SDL_EVENT_MOUSEMOVE 	5\n"
+		"#define TRSS_SDL_EVENT_MOUSEWHEEL  6\n"
+		"#define TRSS_SDL_EVENT_WINDOW      7\n"
 		"typedef struct {\n"
 		"    unsigned int event_type;\n"
 		"    char keycode[10];\n"
@@ -101,6 +103,9 @@ void SDLAddon::_convertAndPushEvent(SDL_Event& event) {
 		newEvent.y = event.wheel.y;
 		newEvent.flags = event.wheel.which;
 		break;
+	case SDL_WINDOWEVENT:
+		newEvent.event_type = TRSS_SDL_EVENT_WINDOW;
+		newEvent.flags = event.window.event;
 	default:
 		break;
 	}

@@ -25,6 +25,7 @@ typedef struct SDLAddon SDLAddon;
 #define TRSS_SDL_EVENT_MOUSEUP	 	4
 #define TRSS_SDL_EVENT_MOUSEMOVE 	5
 #define TRSS_SDL_EVENT_MOUSEWHEEL   6
+#define TRSS_SDL_EVENT_WINDOW       7
 
 /* Simplified SDL Event */
 typedef struct {
