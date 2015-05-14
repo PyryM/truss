@@ -117,6 +117,7 @@ void Interpreter::_threadEntry() {
                      (char*)bootstrap->data, 
                      bootstrap->data_length, 
                      "bootstrap.t");
+	trss_release_message(bootstrap);
 	int res = lua_pcall(_terraState, 0, 0, 0);
 	if(res != 0) {
 		std::cout << "Error bootstrapping interpreter: " 
