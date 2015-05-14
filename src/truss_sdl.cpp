@@ -27,6 +27,7 @@ SDLAddon::SDLAddon(){
 	_owner = NULL;
 	_name = "sdl";
 	_header = "/*SDLAddon Embedded Header*/\n"
+		"typedef struct Addon Addon;\n"
 		"#define TRSS_SDL_EVENT_KEYDOWN 1\n"
 		"#define TRSS_SDL_EVENT_KEYUP		2\n"
 		"#define TRSS_SDL_EVENT_MOUSEDOWN 	3\n"
@@ -39,10 +40,10 @@ SDLAddon::SDLAddon(){
 		"    double y;\n"
 		"    int flags;\n"
 		"} trss_sdl_event;\n"
-		"void trss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name);\n"
-		"void trss_sdl_destroy_window(SDLAddon* addon);\n"
-		"int  trss_sdl_num_events(SDLAddon* addon);\n"
-		"trss_sdl_event trss_sdl_get_event(SDLAddon* addon, int index);\n";
+		"void trss_sdl_create_window(Addon* addon, int width, int height, const char* name);\n"
+		"void trss_sdl_destroy_window(Addon* addon);\n"
+		"int  trss_sdl_num_events(Addon* addon);\n"
+		"trss_sdl_event trss_sdl_get_event(Addon* addon, int index);\n";
 }
 
 const std::string& SDLAddon::getName(){
