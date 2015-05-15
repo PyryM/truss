@@ -72,50 +72,46 @@ namespace trss {
 		trss_message* getMessage(int index);
 
 		// Inner thread
-		void _threadEntry();
+		void threadEntry();
 	private:
 		// ID
-		int _ID;
+		int id_;
 
 		// Name
-		std::string _name;
+		std::string name_;
 
 		// Argument when starting
-		std::string _arg;
+		std::string arg_;
 
 		// Debug settings (ints because that's what terra wants)
-		int _verboseLevel;
-		int _debugEnabled;
+		int verboseLevel_;
+		int debugEnabled_;
 
 		// Call into the actual lua/terra interpreter
-		void _safeLuaCall(const char* funcname, const char* argstr = NULL);
+		void safeLuaCall(const char* funcname, const char* argstr = NULL);
 
 		// List of addons
-		std::vector<Addon*> _addons;
+		std::vector<Addon*> addons_;
 
 		// Actual thread
-		SDL_Thread* _thread;
+		SDL_Thread* thread_;
 
 		// Lock for messaging
-		SDL_mutex* _messageLock;
+		SDL_mutex* messageLock_;
 
 		// Messages
-		std::vector<trss_message*>* _curMessages;
-		std::vector<trss_message*>* _fetchedMessages;
+		std::vector<trss_message*>* curMessages_;
+		std::vector<trss_message*>* fetchedMessages_;
 
 		// Lock for execution
 		// (only used if not autoexecuting)
-		SDL_mutex* _execLock;
+		SDL_mutex* execLock_;
 
 		// Terra state
-		lua_State* _terraState;
+		lua_State* terraState_;
 
 		// Whether to continue running
-		bool _running;
-
-		bool _autoExecute;
-		bool _executeOnMessage;
-		bool _executeNext;
+		bool running_;
 	};
 
 	class Core {
@@ -145,13 +141,13 @@ namespace trss {
 
 		~Core();
 	private:
-		static Core* __core;
+		static Core* core__;
 
-		std::string _resolvePath(const char* filename, int path_type);
+		std::string resolvePath(const char* filename, int path_type);
 
 		Core();
-		SDL_mutex* _coreLock;
-		std::vector<Interpreter*> _interpreters;
+		SDL_mutex* coreLock_;
+		std::vector<Interpreter*> interpreters_;
 	};
 
 	// syntax sugar to avoid the verbose

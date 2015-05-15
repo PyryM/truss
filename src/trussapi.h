@@ -32,7 +32,7 @@ typedef struct {
 	unsigned int message_type;
 	unsigned int data_length;
 	unsigned char* data;
-	unsigned int _refcount;
+	unsigned int refcount;
 } trss_message;
 
 /* Logging */

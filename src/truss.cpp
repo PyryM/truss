@@ -10,19 +10,16 @@
 using namespace trss;
 
 Interpreter::Interpreter(int id, const char* name) {
-		_thread = NULL;
-		_messageLock = SDL_CreateMutex();
-		_execLock = SDL_CreateMutex();
-		_terraState = NULL;
-		_running = false;
-		_autoExecute = true;
-		_executeOnMessage = false;
-		_executeNext = false;
-		_name = name;
-		_ID = id;
-		_curMessages = new std::vector < trss_message* > ;
-		_fetchedMessages = new std::vector < trss_message* >;
-		_arg = "";
+		thread_ = NULL;
+		messageLock_ = SDL_CreateMutex();
+		execLock_ = SDL_CreateMutex();
+		terraState_ = NULL;
+		running_ = false;
+		name_ = name;
+		id_ = id;
+		curMessages_ = new std::vector < trss_message* > ;
+		fetchedMessages_ = new std::vector < trss_message* >;
+		arg_ = "";
 }
 
 Interpreter::~Interpreter() {
@@ -30,16 +27,16 @@ Interpreter::~Interpreter() {
 }
 
 const std::string& Interpreter::getName() const {
-	return _name;
+	return name_;
 }
 
 int Interpreter::getID() const {
-	return _ID;
+	return id_;
 }
 
 void Interpreter::attachAddon(Addon* addon) {
-	if(!_running && _thread == NULL) {
-		_addons.push_back(addon);
+	if(!running_ && thread_ == NULL) {
+		addons_.push_back(addon);
 	} else {
 		std::cout << "Cannot attach addon to running interpreter.\n";
 		delete addon;
@@ -47,64 +44,64 @@ void Interpreter::attachAddon(Addon* addon) {
 }
 
 int Interpreter::numAddons() {
-	return (int)(_addons.size());
+	return (int)(addons_.size());
 }
 
 Addon* Interpreter::getAddon(int idx) {
-	if(idx >= 0 && idx < _addons.size()) {
-		return _addons[idx];
+	if(idx >= 0 && idx < addons_.size()) {
+		return addons_[idx];
 	} else {
 		return NULL;
 	}
 }
 
 void Interpreter::setDebug(int debugLevel) {
-	if (_running) {
+	if (running_) {
 		std::cout << "Warning: Changing debug level on a running interpreter has no effect!\n";
 	}
 
 	if (debugLevel > 0) {
-		_verboseLevel = debugLevel;
-		_debugEnabled = 1;
+		verboseLevel_ = debugLevel;
+		debugEnabled_ = 1;
 	}
 	else {
-		_verboseLevel = 0;
-		_debugEnabled = 0;
+		verboseLevel_ = 0;
+		debugEnabled_ = 0;
 	}
 }
 
 int run_interpreter_thread(void* interpreter) {
 	Interpreter* target = (Interpreter*)interpreter;
-	target->_threadEntry();
+	target->threadEntry();
 	return 0;
 }
 
 void Interpreter::start(const char* arg) {
-	if(_thread != NULL || _running) {
+	if(thread_ != NULL || running_) {
 		std::cout << "Can't start interpreter twice: already running\n"; 
 		return;
 	}
 
-	_arg = arg;
-	_running = true;
-	_thread = SDL_CreateThread(run_interpreter_thread, 
-								_name.c_str(), 
+	arg_ = arg;
+	running_ = true;
+	thread_ = SDL_CreateThread(run_interpreter_thread, 
+								name_.c_str(), 
 								(void*)this);
 }
 
 void Interpreter::startUnthreaded(const char* arg) {
-	if(_thread != NULL || _running) {
+	if(thread_ != NULL || running_) {
 		std::cout << "Can't start interpreter twice: already running\n"; 
 		return;
 	}
 
-	_arg = arg;
-	_running = true;
-	_threadEntry();
+	arg_ = arg;
+	running_ = true;
+	threadEntry();
 }
 
 void Interpreter::stop() {
-	_running = false;
+	running_ = false;
 }
 
 void Interpreter::execute() {
@@ -112,54 +109,54 @@ void Interpreter::execute() {
 	// TODO: make this do something
 }
 
-void Interpreter::_threadEntry() {
-	_terraState = luaL_newstate();
-	luaL_openlibs(_terraState);
+void Interpreter::threadEntry() {
+	terraState_ = luaL_newstate();
+	luaL_openlibs(terraState_);
 	terra_Options* opts = new terra_Options;
-	opts->verbose = _verboseLevel;
-	opts->debug = _debugEnabled;
-	terra_initwithoptions(_terraState, opts);
+	opts->verbose = verboseLevel_;
+	opts->debug = debugEnabled_;
+	terra_initwithoptions(terraState_, opts);
 	delete opts; // not sure if necessary or desireable
 
 	// load and execute the bootstrap script
 	trss_message* bootstrap = trss_load_file("scripts/core/bootstrap.t", TRSS_CORE_PATH);
 	if (!bootstrap) {
 		std::cout << "Error loading bootstrap script.\n";
-		_running = false;
+		running_ = false;
 		return;
 	}
-	terra_loadbuffer(_terraState, 
+	terra_loadbuffer(terraState_, 
                      (char*)bootstrap->data, 
                      bootstrap->data_length, 
                      "bootstrap.t");
 	trss_release_message(bootstrap);
-	int res = lua_pcall(_terraState, 0, 0, 0);
+	int res = lua_pcall(terraState_, 0, 0, 0);
 	if(res != 0) {
 		std::cout << "Error bootstrapping interpreter: " 
-				  << lua_tostring(_terraState, -1) << std::endl;
-		_running = false;
+				  << lua_tostring(terraState_, -1) << std::endl;
+		running_ = false;
 		return;
 	}
 
 	// Init all the addons
-	for(size_t i = 0; i < _addons.size(); ++i) {
-		_addons[i]->init(this);
+	for(size_t i = 0; i < addons_.size(); ++i) {
+		addons_[i]->init(this);
 	}
 
 	// Call init
-	_safeLuaCall("_coreInit", _arg.c_str());
+	safeLuaCall("_coreInit", arg_.c_str());
 
 	double dt = 1.0 / 60.0; // just fudge this at the moment
 
 	// Enter thread main loop
-	while(_running) {
+	while(running_) {
 		// update addons
-		for(unsigned int i = 0; i < _addons.size(); ++i) {
-			_addons[i]->update(dt);
+		for(unsigned int i = 0; i < addons_.size(); ++i) {
+			addons_[i]->update(dt);
 		}
 
 		// update lua
-		_safeLuaCall("_coreUpdate");
+		safeLuaCall("_coreUpdate");
 	}
 
 	// Shutdown
@@ -168,47 +165,47 @@ void Interpreter::_threadEntry() {
 }
 
 void Interpreter::sendMessage(trss_message* message) {
-	SDL_LockMutex(_messageLock);
+	SDL_LockMutex(messageLock_);
 	trss_acquire_message(message);
-	_curMessages->push_back(message);
-	SDL_UnlockMutex(_messageLock);
+	curMessages_->push_back(message);
+	SDL_UnlockMutex(messageLock_);
 }
 
 int Interpreter::fetchMessages() {
-	SDL_LockMutex(_messageLock);
+	SDL_LockMutex(messageLock_);
 	// swap messages
-	std::vector<trss_message*>* temp = _curMessages;
-	_curMessages = _fetchedMessages;
-	_fetchedMessages = temp;
+	std::vector<trss_message*>* temp = curMessages_;
+	curMessages_ = fetchedMessages_;
+	fetchedMessages_ = temp;
 
 	// clear the 'current' messages (i.e., the old fetched messages)
-	for(unsigned int i = 0; i < _curMessages->size(); ++i) {
-		trss_release_message((*_curMessages)[i]);
+	for(unsigned int i = 0; i < curMessages_->size(); ++i) {
+		trss_release_message((*curMessages_)[i]);
 	}
-	_curMessages->clear();
-	size_t numMessages = _fetchedMessages->size();
+	curMessages_->clear();
+	size_t numMessages = fetchedMessages_->size();
 
-	SDL_UnlockMutex(_messageLock);
+	SDL_UnlockMutex(messageLock_);
 	return (int)(numMessages);
 }
 
 trss_message* Interpreter::getMessage(int index) {
 	// Note: don't need to lock because only 'our' thread
 	// should call fetchMessages (which is the only other function
-	// that touches _fetchedMessages)
-	return (*_fetchedMessages)[index];
+	// that touches fetchedMessages_)
+	return (*fetchedMessages_)[index];
 }
 
-void Interpreter::_safeLuaCall(const char* funcname, const char* argstr) {
+void Interpreter::safeLuaCall(const char* funcname, const char* argstr) {
 	int nargs = 0;
-	lua_getglobal(_terraState, funcname);
+	lua_getglobal(terraState_, funcname);
 	if(argstr != NULL) {
 		nargs = 1;
-		lua_pushstring(_terraState, argstr);	
+		lua_pushstring(terraState_, argstr);	
 	}
-	int res = lua_pcall(_terraState, nargs, 0, 0);
+	int res = lua_pcall(terraState_, nargs, 0, 0);
 	if(res != 0) {
-		std::cout << lua_tostring(_terraState, -1) << std::endl;
+		std::cout << lua_tostring(terraState_, -1) << std::endl;
 	}
 }
 
@@ -321,12 +318,12 @@ trss_message* trss_create_message(unsigned int data_length){
 }
 
 void trss_acquire_message(trss_message* msg){
-	++(msg->_refcount);
+	++(msg->refcount);
 }
 
 void trss_release_message(trss_message* msg){
-	--(msg->_refcount);
-	if(msg->_refcount <= 0) {
+	--(msg->refcount);
+	if(msg->refcount <= 0) {
 		Core::getCore()->deallocateMessage(msg);
 	}
 }
@@ -338,59 +335,59 @@ trss_message* trss_copy_message(trss_message* src){
 	return newmsg;
 }
 
-Core* Core::__core = NULL;
+Core* Core::core__ = NULL;
 
 Core* Core::getCore() {
-	if(__core == NULL) {
-		__core = new Core();
+	if(core__ == NULL) {
+		core__ = new Core();
 	}
-	return __core;
+	return core__;
 }
 
 void Core::logMessage(int log_level, const char* msg) {
-	SDL_LockMutex(_coreLock);
+	SDL_LockMutex(coreLock_);
 	// just dump to standard out for the moment
 	std::cout << log_level << "|" << msg << std::endl;
-	SDL_UnlockMutex(_coreLock);
+	SDL_UnlockMutex(coreLock_);
 }
 
 Interpreter* Core::getInterpreter(int idx){
 	Interpreter* ret = NULL;
-	SDL_LockMutex(_coreLock);
-	if(idx >= 0 && idx < _interpreters.size()) {
-		ret = _interpreters[idx];
+	SDL_LockMutex(coreLock_);
+	if(idx >= 0 && idx < interpreters_.size()) {
+		ret = interpreters_[idx];
 	}
-	SDL_UnlockMutex(_coreLock);
+	SDL_UnlockMutex(coreLock_);
 	return ret;
 }
 
 Interpreter* Core::getNamedInterpreter(const char* name){
 	std::string sname(name);
 	Interpreter* ret = NULL;
-	SDL_LockMutex(_coreLock);
-	for(size_t i = 0; i < _interpreters.size(); ++i) {
-		if(_interpreters[i]->getName() == sname) {
-			ret = _interpreters[i];
+	SDL_LockMutex(coreLock_);
+	for(size_t i = 0; i < interpreters_.size(); ++i) {
+		if(interpreters_[i]->getName() == sname) {
+			ret = interpreters_[i];
 			break;
 		}
 	}
-	SDL_UnlockMutex(_coreLock);
+	SDL_UnlockMutex(coreLock_);
 	return ret;
 }
 
 Interpreter* Core::spawnInterpreter(const char* name){
-	SDL_LockMutex(_coreLock);
-	Interpreter* interpreter = new Interpreter((int)(_interpreters.size()), name);
-	_interpreters.push_back(interpreter);
-	SDL_UnlockMutex(_coreLock);
+	SDL_LockMutex(coreLock_);
+	Interpreter* interpreter = new Interpreter((int)(interpreters_.size()), name);
+	interpreters_.push_back(interpreter);
+	SDL_UnlockMutex(coreLock_);
 	return interpreter;
 }
 
 int Core::numInterpreters(){
 	int ret = 0;
-	SDL_LockMutex(_coreLock);
-	ret = (int)(_interpreters.size());
-	SDL_UnlockMutex(_coreLock);
+	SDL_LockMutex(coreLock_);
+	ret = (int)(interpreters_.size());
+	SDL_UnlockMutex(coreLock_);
 	return ret;
 }
 
@@ -402,26 +399,26 @@ void Core::dispatchMessage(int targetIdx, trss_message* msg){
 }
 
 void Core::acquireMessage(trss_message* msg){
-	SDL_LockMutex(_coreLock);
-	++(msg->_refcount);
-	SDL_UnlockMutex(_coreLock);
+	SDL_LockMutex(coreLock_);
+	++(msg->refcount);
+	SDL_UnlockMutex(coreLock_);
 }
 
 void Core::releaseMessage(trss_message* msg){
-	SDL_LockMutex(_coreLock);
-	--(msg->_refcount);
-	if(msg->_refcount <= 0) {
+	SDL_LockMutex(coreLock_);
+	--(msg->refcount);
+	if(msg->refcount <= 0) {
 		deallocateMessage(msg);
 	}
-	SDL_UnlockMutex(_coreLock);
+	SDL_UnlockMutex(coreLock_);
 }
 
 trss_message* Core::copyMessage(trss_message* src){
-	SDL_LockMutex(_coreLock);
+	SDL_LockMutex(coreLock_);
 	trss_message* newmsg = allocateMessage(src->data_length);
 	newmsg->message_type = src->message_type;
 	memcpy(newmsg->data, src->data, newmsg->data_length);
-	SDL_UnlockMutex(_coreLock);
+	SDL_UnlockMutex(coreLock_);
 	return newmsg;
 }
 
@@ -429,7 +426,7 @@ trss_message* Core::allocateMessage(int dataLength){
 	trss_message* ret = new trss_message;
 	ret->data = new unsigned char[dataLength];
 	ret->data_length = dataLength;
-	ret->_refcount = 1;
+	ret->refcount = 1;
 	return ret;
 }
 
@@ -438,14 +435,14 @@ void Core::deallocateMessage(trss_message* msg){
 	delete msg;
 }
 
-std::string Core::_resolvePath(const char* filename, int path_type) {
+std::string Core::resolvePath(const char* filename, int path_type) {
 	// just return the filename for now
 	std::string ret(filename);
 	return ret;
 }
 
 trss_message* Core::loadFile(const char* filename, int path_type) {
-	std::string truepath = _resolvePath(filename, path_type);
+	std::string truepath = resolvePath(filename, path_type);
 
 	std::streampos size;
 	std::ifstream file(truepath.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
@@ -465,7 +462,7 @@ trss_message* Core::loadFile(const char* filename, int path_type) {
 }
 
 void Core::saveFile(const char* filename, int path_type, trss_message* data) {
-	std::string truepath = _resolvePath(filename, path_type);
+	std::string truepath = resolvePath(filename, path_type);
 
 	std::ofstream outfile;
 	outfile.open(truepath.c_str(), std::ios::binary | std::ios::out);
@@ -478,5 +475,5 @@ Core::~Core(){
 }
 
 Core::Core(){
-	_coreLock = SDL_CreateMutex();
+	coreLock_ = SDL_CreateMutex();
 }
