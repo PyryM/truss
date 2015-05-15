@@ -56,7 +56,7 @@ trss.trss_log(0, "SDL header: [" .. sdlheader .. "]")
 sdlPointer = trss.trss_get_addon(0, 0)
 sdl = terralib.includecstring(sdlheader)
 
-bgfx = terralib.includec("bgfx.c99.h")
+bgfx = terralib.includec("include/bgfx/bgfx.c99.h")
 
 width = 800
 height = 600
@@ -107,7 +107,7 @@ function updateBGFX()
 	-- Use debug font to print information about this example.
 	bgfx.bgfx_dbg_text_clear(0, false);
 
-	bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "bootstrap.t");
+	bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/core/bootstrap.t");
 	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "(frame " .. globals.frame .. ")");
 	bgfx.bgfx_dbg_text_printf(0, 3, 0x6f, "x: " .. globals.x .. ", y: " .. globals.y);
 

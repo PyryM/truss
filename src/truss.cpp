@@ -107,7 +107,7 @@ void Interpreter::_threadEntry() {
 	delete opts; // not sure if necessary or desireable
 
 	// load and execute the bootstrap script
-	trss_message* bootstrap = trss_load_file("bootstrap.t", TRSS_CORE_PATH);
+	trss_message* bootstrap = trss_load_file("scripts/core/bootstrap.t", TRSS_CORE_PATH);
 	if (!bootstrap) {
 		std::cout << "Error loading bootstrap script.\n";
 		_running = false;
