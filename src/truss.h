@@ -54,6 +54,10 @@ namespace trss {
 		int numAddons();
 		Addon* getAddon(int idx);
 
+		// Set debug mode on/off (default: off)
+		// Must be called before starting
+		void setDebug(int debugLevel);
+
 		// Starting and stopping
 		void start(const char* arg);
 		void startUnthreaded(const char* arg);
@@ -78,6 +82,10 @@ namespace trss {
 
 		// Argument when starting
 		std::string _arg;
+
+		// Debug settings (ints because that's what terra wants)
+		int _verboseLevel;
+		int _debugEnabled;
 
 		// Call into the actual lua/terra interpreter
 		void _safeLuaCall(const char* funcname, const char* argstr = NULL);

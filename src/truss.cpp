@@ -58,6 +58,21 @@ Addon* Interpreter::getAddon(int idx) {
 	}
 }
 
+void Interpreter::setDebug(int debugLevel) {
+	if (_running) {
+		std::cout << "Warning: Changing debug level on a running interpreter has no effect!\n";
+	}
+
+	if (debugLevel > 0) {
+		_verboseLevel = debugLevel;
+		_debugEnabled = 1;
+	}
+	else {
+		_verboseLevel = 0;
+		_debugEnabled = 0;
+	}
+}
+
 int run_interpreter_thread(void* interpreter) {
 	Interpreter* target = (Interpreter*)interpreter;
 	target->_threadEntry();
@@ -101,8 +116,8 @@ void Interpreter::_threadEntry() {
 	_terraState = luaL_newstate();
 	luaL_openlibs(_terraState);
 	terra_Options* opts = new terra_Options;
-	opts->verbose = 2; // very verbose
-	opts->debug = 1; // debug enabled
+	opts->verbose = _verboseLevel;
+	opts->debug = _debugEnabled;
 	terra_initwithoptions(_terraState, opts);
 	delete opts; // not sure if necessary or desireable
 
@@ -219,6 +234,10 @@ int trss_save_file(const char* filename, int path_type, trss_message* data){
 int trss_spawn_interpreter(const char* name){
 	Interpreter* spawned = Core::getCore()->spawnInterpreter(name);
 	return spawned->getID();
+}
+
+void trss_set_interpreter_debug(trss_interpreter_id target_id, int debug_level) {
+	Core::getCore()->getInterpreter(target_id)->setDebug(debug_level);
 }
 
 void trss_start_interpreter(trss_interpreter_id target_id, const char* msgstr) {

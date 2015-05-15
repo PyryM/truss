@@ -59,7 +59,9 @@ TRSS_C_API int trss_save_file(const char* filename, int path_type, trss_message*
 typedef int trss_interpreter_id;
 
 /* Interpreter management functions */
-TRSS_C_API int trss_spawn_interpreter(const char* name, trss_message* arg_message);
+TRSS_C_API int trss_spawn_interpreter(const char* name);
+TRSS_C_API void trss_set_interpreter_debug(trss_interpreter_id target_id, int debug_level);
+TRSS_C_API void trss_start_interpreter(trss_interpreter_id target_id, const char* msgstr);
 TRSS_C_API void trss_stop_interpreter(trss_interpreter_id target_id);
 TRSS_C_API void trss_execute_interpreter(trss_interpreter_id target_id);
 TRSS_C_API int trss_find_interpreter(const char* name);
