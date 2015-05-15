@@ -120,6 +120,9 @@ function _coreInit(argstring)
 	trss.trss_log(0, "Core init called with string: [" .. argstring .. "]")
 	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
+	local rendererType = bgfx.bgfx_get_renderer_type()
+	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
+	trss.trss_log(0, "Renderer type: " .. rendererName)
 end
 
 function _coreUpdate()
