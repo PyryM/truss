@@ -127,6 +127,8 @@ namespace trss {
 		// block until all interpreters have finished
 		void waitForInterpreters();
 
+		void stopAllInterpreters();
+
 		int numInterpreters();
 		void dispatchMessage(int targetIdx, trss_message* msg);
 

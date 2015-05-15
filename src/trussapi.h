@@ -45,6 +45,9 @@ typedef struct {
 TRSS_C_API void trss_test();
 TRSS_C_API void trss_log(int log_level, const char* str);
 
+/* Quit program by stopping all interpreters */
+TRSS_C_API void trss_shutdown();
+
 /* File IO */
 #define TRSS_ASSET_PATH 0 /* Path where assets are stored */
 #define TRSS_SAVE_PATH 1  /* Path for saving stuff e.g. preferences */

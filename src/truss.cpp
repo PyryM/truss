@@ -217,6 +217,10 @@ void trss_log(int log_level, const char* str){
 	Core::getCore()->logMessage(log_level, str);
 }
 
+void trss_shutddown() {
+	Core::getCore()->stopAllInterpreters();
+}
+
 trss_message* trss_load_file(const char* filename, int path_type){
 	return Core::getCore()->loadFile(filename, path_type);
 }
@@ -381,6 +385,14 @@ Interpreter* Core::spawnInterpreter(const char* name){
 	interpreters_.push_back(interpreter);
 	SDL_UnlockMutex(coreLock_);
 	return interpreter;
+}
+
+void Core::stopAllInterpreters() {
+	SDL_LockMutex(coreLock_);
+	for (unsigned int i = 0; i < interpreters_.size(); ++i) {
+		interpreters_[i]->stop();
+	}
+	SDL_UnlockMutex(coreLock_);
 }
 
 int Core::numInterpreters(){
