@@ -1,0 +1,12 @@
+Key value database of some kind?
+-- Store trss_messages indexed by string keys
+-- Save / load entire database to file
+-- Thread safe
+
+PhysFS?
+-- Extra dependency but might be nice
+-- Maybe compile time flag to enable
+
+Better logging
+-- Save to file
+-- Streams for C++ side
