@@ -118,6 +118,10 @@ void Interpreter::threadEntry() {
 	terra_initwithoptions(terraState_, opts);
 	delete opts; // not sure if necessary or desireable
 
+	// Set some globals
+	lua_pushnumber(terraState_, id_);
+	lua_setglobal(terraState_, "TRSS_INTERPRETER_ID");
+
 	// load and execute the bootstrap script
 	trss_message* bootstrap = trss_load_file("scripts/core/bootstrap.t", TRSS_CORE_PATH);
 	if (!bootstrap) {

@@ -43,17 +43,18 @@ trss_message* trss_copy_message(trss_message* src);
 ]])
 
 trss.trss_test()
-trss.trss_log(0, "Bootstrapping.")
+trss.trss_log(TRSS_INTERPRETER_ID, "Bootstrapping [" .. TRSS_INTERPRETER_ID .. "]")
+local TRSS_ID = TRSS_INTERPRETER_ID
 
 ffi = require("ffi")
 
-local numAddons = trss.trss_get_addon_count(0)
-trss.trss_log(0, "Found " .. numAddons .. " addons.")
+local numAddons = trss.trss_get_addon_count(TRSS_ID)
+trss.trss_log(TRSS_ID, "Found " .. numAddons .. " addons.")
 
-local sdlheader = ffi.string(trss.trss_get_addon_header(0, 0))
-trss.trss_log(0, "SDL header: [" .. sdlheader .. "]")
+local sdlheader = ffi.string(trss.trss_get_addon_header(TRSS_ID, 0))
+trss.trss_log(TRSS_ID, "SDL header: [" .. sdlheader .. "]")
 
-sdlPointer = trss.trss_get_addon(0, 0)
+sdlPointer = trss.trss_get_addon(TRSS_ID, 0)
 sdl = terralib.includecstring(sdlheader)
 
 bgfx = terralib.includec("include/bgfx/bgfx.c99.h")
@@ -79,7 +80,7 @@ function initBGFX()
 	1.0,
 	0)
 
-	trss.trss_log(0, "Initted bgfx I hope?")
+	trss.trss_log(TRSS_ID, "Initted bgfx I hope?")
 end
 
 function updateEvents()
@@ -90,8 +91,8 @@ function updateEvents()
 			globals.x = evt.x
 			globals.y = evt.y
 		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
-			trss.trss_log(0, "Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(0)
+			trss.trss_log(TRSS_ID, "Received window close, stopping interpreter...")
+			trss.trss_stop_interpreter(TRSS_ID)
 		end
 	end
 end
@@ -117,12 +118,12 @@ function updateBGFX()
 end
 
 function _coreInit(argstring)
-	trss.trss_log(0, "Core init called with string: [" .. argstring .. "]")
+	trss.trss_log(TRSS_ID, "Core init called with string: [" .. argstring .. "]")
 	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(0, "Renderer type: " .. rendererName)
+	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
 end
 
 function _coreUpdate()
