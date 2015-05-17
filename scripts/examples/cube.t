@@ -248,7 +248,7 @@ function drawCube()
 	setViewMatrices()
 
 	-- Render our cube
-	mtxRotateXY(modelmat, math.cos(time) * math.pi, math.sin(time) * math.pi)
+	mtxRotateXY(modelmat, math.cos(time*0.2) * math.pi, math.sin(time*0.2) * math.pi)
 	modelmat[14] = 10.0 -- put it in front of the camera (which faces z?)
 
 	bgfx.bgfx_set_transform(modelmat, 1) -- only one matrix in array
@@ -260,9 +260,20 @@ function drawCube()
 	bgfx.bgfx_submit(0, 0)
 end
 
+terra calcDeltaTime(startTime: uint64)
+	var curtime = trss.trss_get_hp_time()
+	var freq = trss.trss_get_hp_freq()
+	var deltaF : float = curtime - startTime
+	return deltaF / [float](freq)
+end
+
+frametime = 0.0
+
 function update()
 	frame = frame + 1
 	time = time + 1.0 / 60.0
+
+	local startTime = trss.trss_get_hp_time()
 
 	-- Deal with input events
 	updateEvents()
@@ -278,11 +289,13 @@ function update()
 	bgfx.bgfx_dbg_text_clear(0, false)
 
 	bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/cube.t")
-	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "(frame " .. frame .. ")")
+	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
 
 	drawCube()
 
 	-- Advance to next frame. Rendering thread will be kicked to
 	-- process submitted rendering primitives.
 	bgfx.bgfx_frame()
+
+	frametime = calcDeltaTime(startTime)
 end
