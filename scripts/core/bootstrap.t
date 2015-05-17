@@ -8,6 +8,7 @@ end
 
 -- Link in truss api
 trss = terralib.includecstring([[
+#include <stdint.h>
 #define TRSS_MESSAGE_UNKNOWN 0
 #define TRSS_MESSAGE_CSTR 1
 #define TRSS_MESSAGE_BLOB 2
@@ -25,6 +26,8 @@ typedef struct Addon Addon;
 #define TRSS_LOG_DEBUG 4
 void trss_test();
 void trss_log(int log_level, const char* str);
+uint64_t trss_get_hp_time();
+uint64_t trss_get_hp_freq();
 #define TRSS_ASSET_PATH 0 /* Path where assets are stored */
 #define TRSS_SAVE_PATH 1  /* Path for saving stuff e.g. preferences */
 #define TRSS_CORE_PATH 2  /* Path for core files e.g. bootstrap.t */
@@ -85,8 +88,16 @@ subenv = lsubenv
 subenv.libs = libs
 subenv.ffi = ffi
 
+terra calcDeltaTime(startTime: uint64)
+	var curtime = trss.trss_get_hp_time()
+	var freq = trss.trss_get_hp_freq()
+	var deltaF : float = curtime - startTime
+	return deltaF / [float](freq)
+end
+
 function _coreInit(argstring)
 	-- Load in argstring
+	local startTime = trss.trss_get_hp_time()
 	local fn = "scripts/" .. argstring
 	trss.trss_log(TRSS_ID, "Loading " .. fn)
 	local script = loadStringFromFile(fn)
@@ -94,6 +105,8 @@ function _coreInit(argstring)
 	setfenv(scriptfunc, subenv)
 	scriptfunc()
 	subenv.init()	
+	local delta = calcDeltaTime(startTime)
+	trss.trss_log(0, "Time to init: " .. delta)
 end
 
 function _coreUpdate()

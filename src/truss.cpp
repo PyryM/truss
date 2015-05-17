@@ -3,6 +3,7 @@
 // TODO: switch to a better logging framework
 #include <iostream>
 #include <fstream>
+#include "bx_utils.h" // has to be included early or else luaconfig.h will clobber winver
 #include "trussapi.h"
 #include "truss.h"
 #include "terra.h"
@@ -223,6 +224,14 @@ void trss_log(int log_level, const char* str){
 
 void trss_shutddown() {
 	Core::getCore()->stopAllInterpreters();
+}
+
+uint64_t trss_get_hp_time() {
+	return bx::getHPCounter();
+}
+
+uint64_t trss_get_hp_freq() {
+	return bx::getHPFrequency();
 }
 
 trss_message* trss_load_file(const char* filename, int path_type){

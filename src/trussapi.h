@@ -6,6 +6,8 @@
 #ifndef TRSSAPI_H_HEADER_GUARD
 #define TRSSAPI_H_HEADER_GUARD
 
+#include <stdint.h> /* Needed for uint64_t etc. */
+
 /* Windows needs dllexports for Terra / luajit ffi to be able
    to link against the truss api functions (even when statically built) */
 #if defined(__cplusplus)
@@ -47,6 +49,10 @@ TRSS_C_API void trss_log(int log_level, const char* str);
 
 /* Quit program by stopping all interpreters */
 TRSS_C_API void trss_shutdown();
+
+/* High precision timer */
+TRSS_C_API uint64_t trss_get_hp_time();
+TRSS_C_API uint64_t trss_get_hp_freq();
 
 /* File IO */
 #define TRSS_ASSET_PATH 0 /* Path where assets are stored */
