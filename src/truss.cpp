@@ -24,7 +24,7 @@ Interpreter::Interpreter(int id, const char* name) {
 }
 
 Interpreter::~Interpreter() {
-	// Nothing special to do
+	// TODO: delete message queues here
 }
 
 const std::string& Interpreter::getName() const {
@@ -64,8 +64,7 @@ void Interpreter::setDebug(int debugLevel) {
 	if (debugLevel > 0) {
 		verboseLevel_ = debugLevel;
 		debugEnabled_ = 1;
-	}
-	else {
+	} else {
 		verboseLevel_ = 0;
 		debugEnabled_ = 0;
 	}
