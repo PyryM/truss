@@ -164,7 +164,7 @@ namespace
 
 		for (i = 0; i < gl->ntextures; i++)
 		{
-			if (gl->textures[i].id.idx == BGFX_INVALID_HANDLE)
+			if (gl->textures[i].id.idx == BGFX_INVALID_HANDLE_IDX)
 			{
 				tex = &gl->textures[i];
 				break;
@@ -213,13 +213,13 @@ namespace
 		{
 			if (gl->textures[ii].id.idx == id)
 			{
-				if (gl->textures[ii].id.idx != BGFX_INVALID_HANDLE
+				if (gl->textures[ii].id.idx != BGFX_INVALID_HANDLE_IDX
 				&& (gl->textures[ii].flags & NVG_IMAGE_NODELETE) == 0)
 				{
 					bgfx_destroy_texture(gl->textures[ii].id);
 				}
 				memset(&gl->textures[ii], 0, sizeof(gl->textures[ii]));
-				gl->textures[ii].id.idx = BGFX_INVALID_HANDLE;
+				gl->textures[ii].id.idx = BGFX_INVALID_HANDLE_IDX;
 				return 1;
 			}
 		}
@@ -275,7 +275,7 @@ namespace
 		}
 		else
 		{
-			gl->u_halfTexel.idx = BGFX_INVALID_HANDLE;
+			gl->u_halfTexel.idx = BGFX_INVALID_HANDLE_IDX;
 		}
 
 		bgfx_vertex_decl_begin(&s_nvgDecl, bgfx_get_renderer_type());
@@ -355,7 +355,7 @@ namespace
 		struct GLNVGcontext* gl = (struct GLNVGcontext*)_userPtr;
 		struct GLNVGtexture* tex = glnvg__findTexture(gl, image);
 
-		if ( tex->id.idx == BGFX_INVALID_HANDLE )
+		if ( tex->id.idx == BGFX_INVALID_HANDLE_IDX )
 		{
 			return 0;
 		}
@@ -439,7 +439,8 @@ namespace
 		memcpy(frag->extent, paint->extent, sizeof(frag->extent));
 		frag->strokeMult = (width*0.5f + fringe*0.5f) / fringe;
 
-		bgfx_texture_handle_t invalid = BGFX_INVALID_HANDLE;
+		bgfx_texture_handle_t invalid;
+		invalid.idx = BGFX_INVALID_HANDLE_IDX;
 		gl->th = invalid;
 		if (paint->image != 0)
 		{
@@ -497,7 +498,8 @@ namespace
 		bgfx_set_uniform(gl->u_extentRadius,    &frag->extent[0], 1);
 		bgfx_set_uniform(gl->u_params,          &frag->feather, 1);
 
-		bgfx_texture_handle_t handle = BGFX_INVALID_HANDLE;
+		bgfx_texture_handle_t handle;
+		handle.idx = BGFX_INVALID_HANDLE_IDX;
 
 		if (image != 0)
 		{
@@ -506,7 +508,7 @@ namespace
 			{
 				handle = tex->id;
 
-				if ( !(BGFX_INVALID_HANDLE == gl->u_halfTexel.idx) )
+				if ( !(BGFX_INVALID_HANDLE_IDX == gl->u_halfTexel.idx) )
 				{
 					float halfTexel[4] = { 0.5f / tex->width, 0.5f / tex->height };
 					bgfx_set_uniform(gl->u_halfTexel, halfTexel, 1);
@@ -540,7 +542,7 @@ namespace
 			data[ii*3+2] = _start + ii + 2;
 		}
 
-		bgfx_set_index_buffer(&tib, 0, UINT32_MAX);
+		bgfx_set_transient_index_buffer(&tib, 0, UINT32_MAX);
 	}
 
 	static void glnvg__fill(struct GLNVGcontext* gl, struct GLNVGcall* call)
@@ -570,7 +572,7 @@ namespace
 					| BGFX_STENCIL_OP_FAIL_Z_KEEP
 					| BGFX_STENCIL_OP_PASS_Z_DECR
 					);
-				bgfx_set_vertex_buffer(&gl->tvb, 0, UINT32_MAX);
+				bgfx_set_transient_vertex_buffer(&gl->tvb, 0, UINT32_MAX);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 				fan(paths[i].fillOffset, paths[i].fillCount);
 				bgfx_submit(gl->viewid, 0);
@@ -596,7 +598,7 @@ namespace
 					| BGFX_STENCIL_OP_FAIL_Z_KEEP
 					| BGFX_STENCIL_OP_PASS_Z_KEEP
 					, 0);
-				bgfx_set_vertex_buffer(&gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
+				bgfx_set_transient_vertex_buffer(&gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 				bgfx_submit(gl->viewid, 0);
 			}
@@ -605,7 +607,7 @@ namespace
 		// Draw fill
 		bgfx_set_program(gl->prog);
 		bgfx_set_state(gl->state, 0);
-		bgfx_set_vertex_buffer(&gl->tvb, call->vertexOffset, call->vertexCount);
+		bgfx_set_transient_vertex_buffer(&gl->tvb, call->vertexOffset, call->vertexCount);
 		bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 		bgfx_set_stencil(0
 				| BGFX_STENCIL_TEST_NOTEQUAL
@@ -629,7 +631,7 @@ namespace
 			if (paths[i].fillCount == 0) continue;
 			bgfx_set_program(gl->prog);
 			bgfx_set_state(gl->state, 0);
-			bgfx_set_vertex_buffer(&gl->tvb, 0, UINT32_MAX);
+			bgfx_set_transient_vertex_buffer(&gl->tvb, 0, UINT32_MAX);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 			fan(paths[i].fillOffset, paths[i].fillCount);
 			bgfx_submit(gl->viewid, 0);
@@ -644,7 +646,7 @@ namespace
 				bgfx_set_state(gl->state
 					| BGFX_STATE_PT_TRISTRIP
 					, 0);
-				bgfx_set_vertex_buffer(&gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
+				bgfx_set_transient_vertex_buffer(&gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 				bgfx_submit(gl->viewid, 0);
 			}
@@ -665,7 +667,7 @@ namespace
 			bgfx_set_state(gl->state
 				| BGFX_STATE_PT_TRISTRIP
 				, 0);
-			bgfx_set_vertex_buffer(&gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
+			bgfx_set_transient_vertex_buffer(&gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 			bgfx_submit(gl->viewid, 0);
@@ -680,7 +682,7 @@ namespace
 
 			bgfx_set_program(gl->prog);
 			bgfx_set_state(gl->state, 0);
-			bgfx_set_vertex_buffer(&gl->tvb, call->vertexOffset, call->vertexCount);
+			bgfx_set_transient_vertex_buffer(&gl->tvb, call->vertexOffset, call->vertexCount);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 			bgfx_submit(gl->viewid, 0);
 		}
@@ -992,14 +994,14 @@ namespace
 		bgfx_destroy_uniform(gl->u_params);
 		bgfx_destroy_uniform(gl->s_tex);
 
-		if ((BGFX_INVALID_HANDLE != gl->u_halfTexel) )
+		if ((BGFX_INVALID_HANDLE_IDX != gl->u_halfTexel.idx) )
 		{
-			bgfx_destroy_uniform(gl->u_halfTexel.idx);
+			bgfx_destroy_uniform(gl->u_halfTexel);
 		}
 
 		for (uint32_t ii = 0, num = gl->ntextures; ii < num; ++ii)
 		{
-			if ((BGFX_INVALID_HANDLE != gl->textures[ii].id.idx)
+			if ((BGFX_INVALID_HANDLE_IDX != gl->textures[ii].id.idx)
 			&& (gl->textures[ii].flags & NVG_IMAGE_NODELETE) == 0)
 			{
 				bgfx_destroy_texture(gl->textures[ii].id);
