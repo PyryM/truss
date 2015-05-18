@@ -19,6 +19,7 @@ class SDLAddon;
 typedef struct SDLAddon SDLAddon;
 #endif
 
+#define TRSS_SDL_EVENT_OUTOFBOUNDS  0
 #define TRSS_SDL_EVENT_KEYDOWN 		1
 #define TRSS_SDL_EVENT_KEYUP		2
 #define TRSS_SDL_EVENT_MOUSEDOWN 	3
@@ -59,15 +60,15 @@ public:
 
 	~SDLAddon(); // needed so it can be deleted cleanly
 private:
-	void _convertAndPushEvent(SDL_Event& event);
-	std::string _name;
-	std::string _header;
+	void convertAndPushEvent_(SDL_Event& event);
+	std::string name_;
+	std::string header_;
 
-	SDL_Window* _window;
-	SDL_Event _event;
-	trss::Interpreter* _owner;
-	std::vector<trss_sdl_event> _eventBuffer;
-	trss_sdl_event _errorEvent;
+	SDL_Window* window_;
+	SDL_Event event_;
+	trss::Interpreter* owner_;
+	std::vector<trss_sdl_event> eventBuffer_;
+	trss_sdl_event errorEvent_;
 };
 
 #endif

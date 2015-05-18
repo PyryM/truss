@@ -2,11 +2,11 @@
 #include "truss_sdl.h"
 #include <iostream>
 
-bool sdlSetWindow(SDL_Window* _window)
+bool sdlSetWindow(SDL_Window* window_)
 {
 	SDL_SysWMinfo wmi;
 	SDL_VERSION(&wmi.version);
-	if (!SDL_GetWindowWMInfo(_window, &wmi))
+	if (!SDL_GetWindowWMInfo(window_, &wmi))
 	{
 		return false;
 	}
@@ -23,11 +23,12 @@ bool sdlSetWindow(SDL_Window* _window)
 }
 
 SDLAddon::SDLAddon(){
-	_window = NULL;
-	_owner = NULL;
-	_name = "sdl";
-	_header = "/*SDLAddon Embedded Header*/\n"
+	window_ = NULL;
+	owner_ = NULL;
+	name_ = "sdl";
+	header_ = "/*SDLAddon Embedded Header*/\n"
 		"typedef struct Addon Addon;\n"
+		"#define TRSS_SDL_EVENT_OUTOFBOUNDS 0\n"
 		"#define TRSS_SDL_EVENT_KEYDOWN 1\n"
 		"#define TRSS_SDL_EVENT_KEYUP		2\n"
 		"#define TRSS_SDL_EVENT_MOUSEDOWN 	3\n"
@@ -46,18 +47,19 @@ SDLAddon::SDLAddon(){
 		"void trss_sdl_destroy_window(Addon* addon);\n"
 		"int  trss_sdl_num_events(Addon* addon);\n"
 		"trss_sdl_event trss_sdl_get_event(Addon* addon, int index);\n";
+	errorEvent_.event_type = TRSS_SDL_EVENT_OUTOFBOUNDS;
 }
 
 const std::string& SDLAddon::getName(){
-	return _name;
+	return name_;
 }
 
 const std::string& SDLAddon::getCHeader(){
-	return _header;
+	return header_;
 }
 
 void SDLAddon::init(trss::Interpreter* owner){
-	_owner = owner;
+	owner_ = owner;
 
 	// Init SDL
 	if (SDL_Init(SDL_INIT_VIDEO) != 0){
@@ -70,7 +72,7 @@ void SDLAddon::shutdown(){
 	SDL_Quit();
 }
 
-void SDLAddon::_convertAndPushEvent(SDL_Event& event) {
+void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	trss_sdl_event newEvent;
 	switch(event.type) {
 	case SDL_KEYDOWN:
@@ -109,25 +111,25 @@ void SDLAddon::_convertAndPushEvent(SDL_Event& event) {
 	default:
 		break;
 	}
-	_eventBuffer.push_back(newEvent);
+	eventBuffer_.push_back(newEvent);
 }
 
 void SDLAddon::update(double dt){
-	if (_window == NULL) {
+	if (window_ == NULL) {
 		return;
 	}
 
-	_eventBuffer.clear();
+	eventBuffer_.clear();
 
 	// empty SDL event buffer by polling
 	// until none left
-	while (SDL_PollEvent(&_event)) {
-		_convertAndPushEvent(_event);
+	while (SDL_PollEvent(&event_)) {
+		convertAndPushEvent_(event_);
 	}
 }
 
 void SDLAddon::createWindow(int width, int height, const char* name){
-	_window = SDL_CreateWindow(name
+	window_ = SDL_CreateWindow(name
 			, SDL_WINDOWPOS_UNDEFINED
 			, SDL_WINDOWPOS_UNDEFINED
 			, width
@@ -139,7 +141,7 @@ void SDLAddon::createWindow(int width, int height, const char* name){
 }
 
 void SDLAddon::registerBGFX(){
-	sdlSetWindow(_window);
+	sdlSetWindow(window_);
 }
 
 void SDLAddon::destroyWindow(){
@@ -151,15 +153,15 @@ SDLAddon::~SDLAddon(){
 }
 
 int SDLAddon::numEvents() {
-	return (int)(_eventBuffer.size());
+	return (int)(eventBuffer_.size());
 }
 
 trss_sdl_event& SDLAddon::getEvent(int index) {
-	if (index >= 0 && index < _eventBuffer.size()) {
-		return _eventBuffer[index];
+	if (index >= 0 && index < eventBuffer_.size()) {
+		return eventBuffer_[index];
 	}
 	else {
-		return _errorEvent;
+		return errorEvent_;
 	}
 }
 
