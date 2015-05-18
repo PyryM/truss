@@ -16,7 +16,7 @@ typedef struct {
 	unsigned int message_type;
 	unsigned int data_length;
 	unsigned char* data;
-	unsigned int _refcount;
+	unsigned int refcount;
 } trss_message;
 typedef struct Addon Addon;
 #define TRSS_LOG_CRITICAL 0

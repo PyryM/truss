@@ -29,6 +29,8 @@
 #include "nanovg.h"
 
 #include <bgfx.c99.h>
+// TODO: move this define somewhere more useful
+#define BGFX_INVALID_HANDLE_IDX UINT16_MAX
 
 #include <bx/bx.h>
 

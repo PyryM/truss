@@ -14,7 +14,7 @@ public:
 	void update(double dt);
 
 	// loads an image
-	trss_message* loadImage(const char* filename);
+	trss_message* loadImage(const char* filename, int& width, int& height, int& numChannels);
 
 	~NanoVGAddon(); // needed so it can be deleted cleanly
 private:

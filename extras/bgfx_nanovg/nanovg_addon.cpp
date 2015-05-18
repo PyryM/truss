@@ -1,9 +1,19 @@
 #include "nanovg_addon.h"
 #include <stb/stb_image.c>
+#include <iostream>
 
 NanoVGAddon::NanoVGAddon() {
 	name_ = "nanovg";
-	header_ = ""; // TODO: put header here
+	// TODO: have bootstrap.t prepend the standard trss_message struct onto all addon headers?
+	header_ = "/*NanoVGAddon Embedded Header*/\n"
+		"typedef struct Addon Addon;\n"
+		"typedef struct {\n"
+		"unsigned int message_type;\n"
+		"unsigned int data_length;\n"
+		"unsigned char* data;\n"
+		"unsigned int refcount;\n"
+		"} trss_message;\n"
+		"trss_message* trss_nanovg_load_image(Addon* addon, const char* filename, int* w, int* h, int* n)\n";
 }
 
 const std::string& NanoVGAddon::getName() {

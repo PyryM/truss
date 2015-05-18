@@ -30,9 +30,18 @@ BX_PRAGMA_DIAGNOSTIC_IGNORED_MSVC(4505) // error C4505: '' : unreferenced local 
 BX_PRAGMA_DIAGNOSTIC_PUSH();
 BX_PRAGMA_DIAGNOSTIC_IGNORED_CLANG_GCC("-Wunused-parameter");
 BX_PRAGMA_DIAGNOSTIC_IGNORED_GCC("-Wunused-result");
+
+// windows has apparently deprecated fopen so let's ignore that
+#ifdef _WIN32
+#pragma warning (disable : 4996)
+#endif
 #define FONTSTASH_IMPLEMENTATION
 #include "fontstash.h"
 BX_PRAGMA_DIAGNOSTIC_POP();
+
+// Need to have stb truetype actually implemented somehwhere
+#define STB_TRUETYPE_IMPLEMENTATION
+#include <stb/stb_truetype.h>
 
 BX_PRAGMA_DIAGNOSTIC_PUSH();
 BX_PRAGMA_DIAGNOSTIC_IGNORED_CLANG_GCC("-Wmissing-field-initializers");
