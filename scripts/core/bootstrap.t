@@ -58,10 +58,39 @@ local TRSS_ID = TRSS_INTERPRETER_ID
 
 ffi = require("ffi")
 
+terra_ticStartTime = global(uint64, 0)
+
+tic = trss.trss_get_hp_time
+
+terra toc(startTime: uint64)
+	var curtime = trss.trss_get_hp_time()
+	var freq = trss.trss_get_hp_freq()
+	var deltaF : float = curtime - startTime
+	return deltaF / [float](freq)
+end
+
 function loadStringFromFile(filename)
 	local temp = trss.trss_load_file(filename, 0)
-	local ret = ffi.string(temp.data, temp.data_length)
-	return ret
+	if temp ~= nil then
+		local ret = ffi.string(temp.data, temp.data_length)
+		return ret
+	else
+		trss_log(0, "Unable to load " .. filename)
+		return nil
+	end
+end
+
+loadedLibs = {}
+function truss_import(filename)
+	if loadedLibs[filename] == nil then
+		loadedLibs[filename] = {} -- prevent possible infinite recursion by a module trying to import itself
+		local t0 = tic()
+		local modulefunc = terralib.loadstring(loadStringFromFile("scripts/" .. filename))
+		loadedLibs[filename] = modulefunc()
+		local dt = toc(t0) * 1000.0
+		trss.trss_log(0, "Loaded library [" .. filename .. "] in " .. dt .. " ms")
+	end
+	return loadedLibs[filename]
 end
 
 local numAddons = trss.trss_get_addon_count(TRSS_ID)
@@ -88,17 +117,11 @@ libs.terralib = terralib
 subenv = lsubenv
 subenv.libs = libs
 subenv.ffi = ffi
-
-terra calcDeltaTime(startTime: uint64)
-	var curtime = trss.trss_get_hp_time()
-	var freq = trss.trss_get_hp_freq()
-	var deltaF : float = curtime - startTime
-	return deltaF / [float](freq)
-end
+subenv.truss_import = truss_import
 
 function _coreInit(argstring)
 	-- Load in argstring
-	local startTime = trss.trss_get_hp_time()
+	local t0 = tic()
 	local fn = "scripts/" .. argstring
 	trss.trss_log(TRSS_ID, "Loading " .. fn)
 	local script = loadStringFromFile(fn)
@@ -106,7 +129,7 @@ function _coreInit(argstring)
 	setfenv(scriptfunc, subenv)
 	scriptfunc()
 	subenv.init()	
-	local delta = calcDeltaTime(startTime)
+	local delta = toc(t0)
 	trss.trss_log(0, "Time to init: " .. delta)
 end
 
