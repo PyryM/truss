@@ -88,7 +88,7 @@ namespace trss {
 		int debugEnabled_;
 
 		// Call into the actual lua/terra interpreter
-		void safeLuaCall(const char* funcname, const char* argstr = NULL);
+		bool safeLuaCall(const char* funcname, const char* argstr = NULL);
 
 		// List of addons
 		std::vector<Addon*> addons_;

@@ -148,7 +148,10 @@ void Interpreter::threadEntry() {
 	}
 
 	// Call init
-	safeLuaCall("_coreInit", arg_.c_str());
+	if (!safeLuaCall("_coreInit", arg_.c_str())) {
+		std::cout << "Error in coreInit, stopping interpreter [" << id_ << "]\n";
+		running_ = false;
+	}
 
 	double dt = 1.0 / 60.0; // just fudge this at the moment
 
@@ -200,7 +203,7 @@ trss_message* Interpreter::getMessage(int index) {
 	return (*fetchedMessages_)[index];
 }
 
-void Interpreter::safeLuaCall(const char* funcname, const char* argstr) {
+bool Interpreter::safeLuaCall(const char* funcname, const char* argstr) {
 	int nargs = 0;
 	lua_getglobal(terraState_, funcname);
 	if(argstr != NULL) {
@@ -211,6 +214,7 @@ void Interpreter::safeLuaCall(const char* funcname, const char* argstr) {
 	if(res != 0) {
 		std::cout << lua_tostring(terraState_, -1) << std::endl;
 	}
+	return res == 0; // return true is no errors
 }
 
 void trss_test() {
