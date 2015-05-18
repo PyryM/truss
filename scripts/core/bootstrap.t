@@ -26,6 +26,7 @@ typedef struct Addon Addon;
 #define TRSS_LOG_DEBUG 4
 void trss_test();
 void trss_log(int log_level, const char* str);
+void trss_shutdown();
 uint64_t trss_get_hp_time();
 uint64_t trss_get_hp_freq();
 #define TRSS_ASSET_PATH 0 /* Path where assets are stored */
