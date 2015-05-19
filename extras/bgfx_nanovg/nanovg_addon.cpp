@@ -48,7 +48,7 @@ trss_message* NanoVGAddon::loadImage(const char* filename, int& width, int& heig
 				  << ": " << stbi_failure_reason() << std::endl;
 		return NULL;
 	}
-	size_t datalength = width * height * numChannels;
+	unsigned int datalength = width * height * numChannels;
 	trss_message* ret = trss_create_message(datalength);
 	memcpy(ret->data, img, datalength);
 	stbi_image_free(img);
