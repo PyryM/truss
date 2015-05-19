@@ -79,10 +79,11 @@ function initNVG()
 	-- create context, indicate to bgfx that drawcalls to view
 	-- 0 should happen in the order that they were submitted
 	nvg = nanovg.nvgCreate(1, 0)
-	bgfx.bgfx_set_view_seq(0, true)
+	bgfx.bgfx_set_view_seq(0, false) -- true indicates we want special antialiasing
 
 	-- load font
-	nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/roboto-regular.ttf")
+	--nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/roboto-regular.ttf")
+	nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/VeraMono.ttf")
 end
 
 frametime = 0.0
@@ -90,23 +91,43 @@ frametime = 0.0
 lines = {"this is a set of text lines",
 		 "here is the next one",
 		 "woo yay",
-		 "text"}
+		 "/* Begin some code to see how it aligns */",
+		 "#define TRSS_LOG_CRITICAL 0",
+		 "#define TRSS_LOG_ERROR    1",
+		 "#define TRSS_LOG_WARNING  2",
+		 "#define TRSS_LOG_INFO     3",
+		 "#define TRSS_LOG_DEBUG    4",
+		 "All random numbers changing every frame:"}
+
+function makeRandomLines(startpos, endpos)
+	for i = startpos,endpos do
+		lines[i] = "[" .. math.random() .. "]"
+	end
+end
 
 function drawNVG()
+		makeRandomLines(11, 30)
+
 		nanovg.nvgBeginFrame(nvg, width, height, 1.0)
 
 		nanovg.nvgSave(nvg)
 		nanovg.nvgBeginPath(nvg)
 		--nanovg.nvgRect(nvg, 100, 100, width-200, height-200)
-		nanovg.nvgCircle(nvg, 100, 100, 100)
-		local color = nanovg.nvgRGBA(128,128,128,128)
-		nanovg.nvgFillColor(nvg, color)
+		nanovg.nvgCircle(nvg, width / 2, height / 2, height / 2)
+		local color0 = nanovg.nvgRGBA(0,0,0,255)
+		local color1 = nanovg.nvgRGBA(255,0,0,255)
+		local bg = nanovg.nvgRadialGradient(nvg, width/2 - 100, height/2 - 100, 0, height / 2,
+						   color0, color1)
+		--nanovg.nvgFillColor(nvg, color)
+		nanovg.nvgFillPaint(nvg, bg)
 		nanovg.nvgFill(nvg)
 		nanovg.nvgRestore(nvg)
 
 		nanovg.nvgSave(nvg)
-		nanovg.nvgFontFace(nvg, "sans");
-		local lineheight = 15
+		nanovg.nvgFontSize(nvg, 14)
+		nanovg.nvgFontFace(nvg, "sans")
+		lines[1] = "example of a line that is changing: " .. time
+		local lineheight = 14
 		local x0 = 30
 		local y0 = 100
 		local nlines = #lines
@@ -121,7 +142,7 @@ end
 
 function update()
 	frame = frame + 1
-	time = time + 1.0 / 60.0
+	time = time + frametime
 
 	local startTime = tic()
 
@@ -138,7 +159,7 @@ function update()
 	-- Use debug font to print information about this example.
 	bgfx.bgfx_dbg_text_clear(0, false)
 
-	bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/cube.t")
+	bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/nanovg.t")
 	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
 
 	drawNVG()
