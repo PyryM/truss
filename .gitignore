@@ -1,6 +1,10 @@
 build/
-include/
 lib/
+font/
+include/bgfx/
+include/stb/
+include/SDL/
+include/terra/
 *.exe
 *.pdb
 *.lib
