@@ -104,7 +104,7 @@ sdl = terralib.includecstring(sdlheader)
 
 nanovg = terralib.includec("include/nanovg_terra.h")
 
-bgfx = terralib.includec("include/bgfx/bgfx_truss.c99.h")
+bgfx = terralib.includec("include/bgfx_truss.c99.h")
 terralib.loadstring(loadStringFromFile("scripts/bgfx_constants.t"))()
 
 libs = {}
