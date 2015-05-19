@@ -13,6 +13,7 @@ int main(int, char**){
 	interpreter->attachAddon(new SDLAddon);
 	interpreter->attachAddon(new NanoVGAddon);
 	trss_log(0, "Starting interpreter!");
-	interpreter->startUnthreaded("examples/cube.t"); // will block until this interpreter terminates
+	//interpreter->startUnthreaded("examples/cube.t"); // will block until this interpreter terminates
+	interpreter->startUnthreaded("examples/nanovg.t");
 	return 0;
 }

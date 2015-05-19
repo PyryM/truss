@@ -102,6 +102,8 @@ trss.trss_log(TRSS_ID, "SDL header: [" .. sdlheader .. "]")
 sdlPointer = trss.trss_get_addon(TRSS_ID, 0)
 sdl = terralib.includecstring(sdlheader)
 
+nanovg = terralib.includec("include/nanovg_terra.h")
+
 bgfx = terralib.includec("include/bgfx/bgfx_truss.c99.h")
 terralib.loadstring(loadStringFromFile("scripts/bgfx_constants.t"))()
 
@@ -113,11 +115,14 @@ libs.trss = trss
 libs.TRSS_ID = TRSS_ID
 libs.sdlPointer = sdlPointer
 libs.terralib = terralib
+libs.nanovg = nanovg
 
 subenv = lsubenv
 subenv.libs = libs
 subenv.ffi = ffi
 subenv.truss_import = truss_import
+subenv.tic = tic
+subenv.toc = toc
 
 function _coreInit(argstring)
 	-- Load in argstring
