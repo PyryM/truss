@@ -6,6 +6,8 @@
 #ifndef TRSSAPI_H_HEADER_GUARD
 #define TRSSAPI_H_HEADER_GUARD
 
+#define TRSS_VERSION_STRING "0.0.1"
+
 #include <stdint.h> /* Needed for uint64_t etc. */
 
 /* Windows needs dllexports for Terra / luajit ffi to be able
@@ -36,6 +38,9 @@ typedef struct {
 	unsigned char* data;
 	unsigned int refcount;
 } trss_message;
+
+/* Info */
+TRSS_C_API const char* trss_get_version_string();
 
 /* Logging */
 #define TRSS_LOG_CRITICAL 0

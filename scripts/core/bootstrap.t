@@ -24,6 +24,7 @@ typedef struct Addon Addon;
 #define TRSS_LOG_WARNING 2
 #define TRSS_LOG_INFO 3
 #define TRSS_LOG_DEBUG 4
+const char* trss_get_version_string();
 void trss_test();
 void trss_log(int log_level, const char* str);
 void trss_shutdown();
@@ -107,6 +108,8 @@ nanovg = terralib.includec("include/nanovg_terra.h")
 bgfx = terralib.includec("include/bgfx_truss.c99.h")
 terralib.loadstring(loadStringFromFile("scripts/bgfx_constants.t"))()
 
+local vstr = ffi.string(trss.trss_get_version_string())
+
 libs = {}
 libs.bgfx = bgfx
 libs.bgfx_const = bgfx_const
@@ -116,6 +119,7 @@ libs.TRSS_ID = TRSS_ID
 libs.sdlPointer = sdlPointer
 libs.terralib = terralib
 libs.nanovg = nanovg
+libs.TRSS_VERSION = vstr
 
 subenv = lsubenv
 subenv.libs = libs

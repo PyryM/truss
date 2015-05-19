@@ -217,6 +217,10 @@ bool Interpreter::safeLuaCall(const char* funcname, const char* argstr) {
 	return res == 0; // return true is no errors
 }
 
+const char* trss_get_version_string() {
+	return TRSS_VERSION_STRING;
+}
+
 void trss_test() {
 	std::cout << ">>>>>>>>>>>>>> TRSS_TEST CALLED <<<<<<<<<<<<<\n";
 }

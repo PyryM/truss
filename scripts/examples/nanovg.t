@@ -9,6 +9,7 @@ trss = libs.trss
 sdl = libs.sdl
 sdlPointer = libs.sdlPointer
 TRSS_ID = libs.TRSS_ID
+TRSS_VERSION = libs.TRSS_VERSION
 nanovg = libs.nanovg
 
 width = 800
@@ -19,7 +20,7 @@ mousex, mousey = 0, 0
 
 function init()
 	trss.trss_log(TRSS_ID, "nanovg.t init")
-	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
+	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS (' .. TRSS_VERSION ..') TEST')
 	initBGFX()
 	initNVG()
 	local rendererType = bgfx.bgfx_get_renderer_type()
