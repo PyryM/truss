@@ -100,6 +100,8 @@ terra loadFileToBGFX(filename: &int8)
 end
 
 function loadProgram(vshadername, fshadername)
+	trss.trss_log(0, "Warning: loadProgram in cube.t only works with dx11 at the moment!")
+
 	local vspath = "shaders/dx11/" .. vshadername .. ".bin"
 	local fspath = "shaders/dx11/" .. fshadername .. ".bin"
 
@@ -145,7 +147,7 @@ function initBGFX()
 	local debug = bgfx_const.BGFX_DEBUG_TEXT
 	local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
 
-	bgfx.bgfx_init(7, 0, 0, nil, nil)
+	bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, nil, nil)
 	bgfx.bgfx_reset(width, height, reset)
 
 	-- Enable debug text.
