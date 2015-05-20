@@ -30,6 +30,7 @@ terra m.readFloat32(buffer: &uint8, startpos: uint32)
 	return @retptr
 end
 
+-- adapted from http://threejs.org/examples/js/loaders/STLLoader.js
 function m.parseBinarySTL(databuf, datalength)
 
 	local faces = m.readUint32LE( databuf, 80 )
@@ -92,6 +93,11 @@ function m.parseBinarySTL(databuf, datalength)
 	        normals = normals,
 	        indices = indices,
 	        color = {defaultR, defaultG, defaultB, alpha}}
+end
+
+terra m.stringToUint8Ptr(src: &int8)
+	var ret: &uint8 = [&uint8](src)
+	return ret
 end
 
 return m
