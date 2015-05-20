@@ -19,6 +19,11 @@ Linux:
 			cd bgfx
 			make linux-release64
 
+			Note: if you want bgfx to use opengl > 2.1, then you need to compile it with
+			e.g. #define BGFX_CONFIG_RENDERER_OPENGL 31
+			either by manually setting this define (ex: in bgfx/src/config.h) or through
+			the build process somehow
+
 		Get terra (linux binaries available):
 			https://github.com/zdevito/terra/releases
 
