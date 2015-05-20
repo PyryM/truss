@@ -1,0 +1,25 @@
+Windows:
+todo
+
+Linux:
+	Dependencies: bgfx, bx, terra, sdl
+		Get and build bgfx + bx (bx is header only and needed by bgfx):
+			git clone git://github.com/bkaradzic/bx.git
+			git clone git://github.com/bkaradzic/bgfx.git
+			[needed?] sudo apt-get install libgl1-mesa-dev
+			cd bgfx
+			make linux-release64
+
+		Get terra (linux binaries available):
+			https://github.com/zdevito/terra/releases
+
+		Get SDL:
+			sudo apt-get install libsdl2-dev
+
+		Make install whatever:
+			cd truss
+			mkdir build
+			cd build
+			cmake ..
+			make
+			[linker errors]
