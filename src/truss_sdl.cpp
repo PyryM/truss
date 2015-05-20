@@ -12,11 +12,33 @@ bool sdlSetWindow(SDL_Window* window_)
 	}
 
 #	if BX_PLATFORM_LINUX || BX_PLATFORM_FREEBSD
-	x11SetDisplayWindow(wmi.info.x11.display, wmi.info.x11.window);
+	bgfx_platform_data pd;
+	pd.ndt          = wmi.info.x11.display;
+	pd.nwh          = (void*)(uintptr_t)wmi.info.x11.window;
+	pd.context      = NULL;
+	pd.backBuffer   = NULL;
+	pd.backBufferDS = NULL;
+	bgfx_set_platform_data(&pd);
 #	elif BX_PLATFORM_OSX
-	osxSetNSWindow(wmi.info.cocoa.window);
+	pd.ndt          = NULL;
+	pd.nwh          = wmi.info.cocoa.window;
+	pd.context      = NULL;
+	pd.backBuffer   = NULL;
+	pd.backBufferDS = NULL;
+	bgfx_set_platform_data(&pd);
 #	elif BX_PLATFORM_WINDOWS
+	// Note: this is the old bgfx version way of doing this
 	bgfx_win_set_hwnd(wmi.info.win.window);
+	// New way (uncomment when bgfx is updated):
+	/*
+	bgfx_platform_data pd;
+	pd.ndt          = NULL;
+	pd.nwh          = wmi.info.win.window;
+	pd.context      = NULL;
+	pd.backBuffer   = NULL;
+	pd.backBufferDS = NULL;
+	bgfx_set_platform_data(&pd);
+	*/
 #	endif // BX_PLATFORM_
 
 	return true;
