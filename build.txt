@@ -1,5 +1,14 @@
-Windows:
-todo
+Windows (vs2013):
+	Dependencies: bgfx, bx, terra, sdl
+		Get and build bgfx + bx (bx is header only and needed by bgfx):
+			git clone git://github.com/bkaradzic/bx.git
+			git clone git://github.com/bkaradzic/bgfx.git
+			cd bgfx
+			..\bx\tools\bin\windows\genie --with-shared-lib --with-tools vs2013
+			(might also want --with-ovr)
+			(note: what does --with-sdl do? It doesn't seem to be needed...)
+			start .build\projects\vs2013\bgfx.sln
+			make sure to build in x64!
 
 Linux:
 	Dependencies: bgfx, bx, terra, sdl

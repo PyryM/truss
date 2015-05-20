@@ -27,10 +27,6 @@ bool sdlSetWindow(SDL_Window* window_)
 	pd.backBufferDS = NULL;
 	bgfx_set_platform_data(&pd);
 #	elif BX_PLATFORM_WINDOWS
-	// Note: this is the old bgfx version way of doing this
-	bgfx_win_set_hwnd(wmi.info.win.window);
-	// New way (uncomment when bgfx is updated):
-	/*
 	bgfx_platform_data pd;
 	pd.ndt          = NULL;
 	pd.nwh          = wmi.info.win.window;
@@ -38,7 +34,6 @@ bool sdlSetWindow(SDL_Window* window_)
 	pd.backBuffer   = NULL;
 	pd.backBufferDS = NULL;
 	bgfx_set_platform_data(&pd);
-	*/
 #	endif // BX_PLATFORM_
 
 	return true;
