@@ -1,6 +1,5 @@
 build/
 lib/
-font/
 include/bgfx/
 include/stb/
 include/SDL/
