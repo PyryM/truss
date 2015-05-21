@@ -9,6 +9,11 @@ struct m.PosColorVertex {
 	color: uint8[4];
 }
 
+struct m.PosNormalVertex {
+	position: float[3];
+	normal: float[3];
+}
+
 terra m.declarePosColorVertex(vertDecl : &bgfx.bgfx_vertex_decl_t)
 	bgfx.bgfx_vertex_decl_begin(vertDecl, bgfx.bgfx_get_renderer_type())
 	bgfx.bgfx_vertex_decl_add(vertDecl, bgfx.BGFX_ATTRIB_POSITION, 3, bgfx.BGFX_ATTRIB_TYPE_FLOAT, false, false)
@@ -17,10 +22,23 @@ terra m.declarePosColorVertex(vertDecl : &bgfx.bgfx_vertex_decl_t)
 	bgfx.bgfx_vertex_decl_end(vertDecl)
 end
 
+terra m.declarePosNormalVertex(vertDecl: &bgfx.bgfx_vertex_decl_t)
+	bgfx.bgfx_vertex_decl_begin(vertDecl, bgfx.bgfx_get_renderer_type())
+	bgfx.bgfx_vertex_decl_add(vertDecl, bgfx.BGFX_ATTRIB_POSITION, 3, bgfx.BGFX_ATTRIB_TYPE_FLOAT, false, false)
+	bgfx.bgfx_vertex_decl_add(vertDecl, bgfx.BGFX_ATTRIB_NORMAL, 3, bgfx.BGFX_ATTRIB_TYPE_FLOAT, false, false)
+	bgfx.bgfx_vertex_decl_end(vertDecl)
+end
+
 function m.createPosColorVertexInfo()
 	local vspec = terralib.new(bgfx.bgfx_vertex_decl_t)
 	m.declarePosColorVertex(vspec)
 	return {vertType = m.PosColorVertex, vertDecl = vspec}
+end
+
+function m.createPosNormalVertexInfo()
+	local vspec = terralib.new(bgfx.bgfx_vertex_decl_t)
+	m.declarePosNormalVertex(vspec)
+	return {vertType = m.PosNormalVertex, vertDecl = vspec}
 end
 
 return m

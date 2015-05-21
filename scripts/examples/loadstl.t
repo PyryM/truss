@@ -102,20 +102,27 @@ function initBGFX()
 	trss.trss_log(0, "Initted bgfx I hope?")
 
 	-- Create vertex defs
-	vertexInfo = vertexdefs.createPosColorVertexInfo()
+	vertexInfo = vertexdefs.createPosNormalVertexInfo()
 
 	-- Load the model
-	modeldata = stlloader.loadSTL("models/test_small.STL", true) -- invert windings
+	modeldata = stlloader.loadSTL("models/segway_wheel_left.STL", true) -- invert windings
 	modelbuffers = buffers.allocateData(vertexInfo, #(modeldata.positions), #(modeldata.indices))
 	buffers.setIndices(modelbuffers, modeldata.indices)
 	buffers.setAttributes(modelbuffers, buffers.positionSetter, modeldata.positions)
-	buffers.setAttributes(modelbuffers, buffers.randomColorSetter, modeldata.normals)
+	buffers.setAttributes(modelbuffers, buffers.normalSetter, modeldata.normals)
+	--buffers.setAttributes(modelbuffers, buffers.randomColorSetter, modeldata.normals)
 	buffers.createStaticBGFXBuffers(modelbuffers)
 	-- model is now in modelbuffers.vbh and modelbuffers.ibh
 
+	-- create uniforms
+	numLights = 4;
+	u_lightDir = bgfx.bgfx_create_uniform("u_lightDir", bgfx.BGFX_UNIFORM_TYPE_UNIFORM3FV, numLights)
+	u_lightRgb = bgfx.bgfx_create_uniform("u_lightRgb", bgfx.BGFX_UNIFORM_TYPE_UNIFORM3FV, numLights)
+	u_baseColor = bgfx.bgfx_create_uniform("u_baseColor", bgfx.BGFX_UNIFORM_TYPE_UNIFORM3FV, 1)
+
 	-- load shader program
 	log("Loading program")
-	program = loadProgram("vs_cubes", "fs_cubes")
+	program = loadProgram("vs_untextured", "fs_untextured")
 
 	-- create matrices
 	projmat = terralib.new(float[16])
@@ -123,13 +130,89 @@ function initBGFX()
 	modelmat = terralib.new(float[16])
 end
 
+struct LightDir {
+	x: float;
+	y: float;
+	z: float;
+	w: float;
+}
+
+struct LightColor {
+	r: float;
+	g: float;
+	b: float;
+	a: float;
+}
+
+lightDirs = nil
+lightColors = nil
+modelColor = nil
+
+function setLightDirections(dirs)
+	if lightDirs == nil then
+		lightDirs = terralib.new(LightDir[numLights])
+	end
+	for i = 1,numLights do
+		lightDirs[i-1].x = dirs[i][1]
+		lightDirs[i-1].y = dirs[i][2]
+		lightDirs[i-1].z = dirs[i][3]
+	end
+	bgfx.bgfx_set_uniform(u_lightDir, lightDirs, numLights)
+end
+
+function setLightColors(colors)
+	if lightColors == nil then
+		lightColors = terralib.new(LightColor[numLights])
+	end
+	for i = 1,numLights do
+		lightColors[i-1].r = colors[i][1]
+		lightColors[i-1].g = colors[i][2]
+		lightColors[i-1].b = colors[i][3]
+	end
+	bgfx.bgfx_set_uniform(u_lightRgb, lightColors, numLights)
+end
+
+function setModelColor(r, g, b)
+	if modelColor == nil then
+		modelColor = terralib.new(float[4])
+	end
+	modelColor[0] = r
+	modelColor[1] = g
+	modelColor[2] = b
+	bgfx.bgfx_set_uniform(u_baseColor, modelColor, 1)
+end
+
+function normalizeDir(d)
+	local m = 1.0 / math.sqrt(d[1]*d[1] + d[2]*d[2] + d[3]*d[3])
+	return {m*d[1], m*d[2], m*d[3]}
+end
+
 function drawCube()
 	-- Set viewprojection matrix
 	setViewMatrices()
 
+	-- set lights ( {0,0,0} disables the light )
+	setLightDirections({
+			normalizeDir({1, 1, 1}),
+			normalizeDir({0,-1, 1}),
+			normalizeDir{0.0, -1.0, 0.5},
+			{  0.0,   1.0,   0.0}
+		})
+
+	local off = {0.0, 0.0, 0.0}
+	setLightColors({
+			off, --{0.4, 0.4, 0.4},
+			{0.6, 0.6, 0.6},
+			{0.2, 0.1, 0.0},
+			{0.1, 0.1, 0.2}
+		})
+
+	-- set model color
+	setModelColor(1.0,1.0,1.0)
+
 	-- Render our cube
 	mtx.rotateXY(modelmat, math.cos(time*0.2) * math.pi, math.sin(time*0.2) * math.pi)
-	modelmat[14] = 0.12 -- put it in front of the camera (which faces z?)
+	modelmat[14] = 0.5 -- put it in front of the camera (which faces z?)
 						-- the stl is really small so put it really close
 
 	bgfx.bgfx_set_transform(modelmat, 1) -- only one matrix in array

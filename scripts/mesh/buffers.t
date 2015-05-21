@@ -68,6 +68,7 @@ end
 
 -- convenience setters
 m.positionSetter = m.makeSetter("position", 3)
+m.normalSetter = m.makeSetter("normal", 3)
 m.colorSetter = m.makeSetter("color", 4)
 
 -- setter for when you just need random colors, ignores attribVal

@@ -78,11 +78,14 @@ function m.parseBinarySTL(databuf, datalength, invert)
 	local normals = {}
 	local indices = {}
 
+	local normalMult = 1.0
+	if invert then normalMult = -1.0 end
+
 	for face = 0, faces-1 do
 		local start = dataOffset + face * faceLength
-		local normalX = m.readFloat32(databuf, start)
-		local normalY = m.readFloat32(databuf, start + 4)
-		local normalZ = m.readFloat32(databuf, start + 8)
+		local normalX = normalMult * m.readFloat32(databuf, start)
+		local normalY = normalMult * m.readFloat32(databuf, start + 4)
+		local normalZ = normalMult * m.readFloat32(databuf, start + 8)
 
 		-- indices is a normal lua array and 1-indexed
 		if invert then
