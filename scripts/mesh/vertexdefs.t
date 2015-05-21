@@ -4,21 +4,9 @@
 
 local m = {}
 
-struct m.Color {
-	b: uint8;
-	g: uint8;
-	r: uint8;
-	a: uint8;
-}
-
 struct m.PosColorVertex {
-	x: float;
-	y: float;
-	z: float;
-    union {
-    	int32_color: uint32;
-    	color: m.Color;
-	}
+	position: float[3];
+	color: uint8[4];
 }
 
 terra m.declarePosColorVertex(vertDecl : &bgfx.bgfx_vertex_decl_t)

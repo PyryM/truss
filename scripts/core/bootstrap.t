@@ -76,7 +76,7 @@ function loadStringFromFile(filename)
 		local ret = ffi.string(temp.data, temp.data_length)
 		return ret
 	else
-		trss_log(0, "Unable to load " .. filename)
+		trss.trss_log(0, "Unable to load " .. filename)
 		return nil
 	end
 end

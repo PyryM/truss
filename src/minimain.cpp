@@ -14,6 +14,6 @@ int main(int, char**){
 	interpreter->attachAddon(new NanoVGAddon);
 	trss_log(0, "Starting interpreter!");
 	//interpreter->startUnthreaded("examples/cube.t"); // will block until this interpreter terminates
-	interpreter->startUnthreaded("examples/nanovg.t");
+	interpreter->startUnthreaded("examples/loadstl.t");
 	return 0;
 }

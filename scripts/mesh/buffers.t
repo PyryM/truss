@@ -10,11 +10,12 @@ m.vertex_index_type = uint16
 -- 
 -- allocates vertex and index buffer storage, but doesn't
 -- create the buffers (you need to load in the actual data first!)
-function m.allocateData(vertInfo, nvertices, nindices)
+function m.allocateData(vertInfo, nvertices, nfaces)
 	local data = {}
+	local nindices = nfaces * 3 -- assume triangles
 	data.vertInfo = vertInfo
 	data.verts = terralib.new(vertInfo.vertType[nvertices])
-	data.nverts = nvertices
+	data.nvertices = nvertices
 	data.indices = terralib.new(m.vertex_index_type[nindices])
 	data.nindices = nindices
 	data.vertDataSize = sizeof(vertInfo.vertType[nvertices])
@@ -55,7 +56,7 @@ function m.makeSetter(attribname, nvals)
 		return function(vdata, vindex, attribVal)
 			for i = 1,nvals do
 				-- vdata is C-style struct and so zero indexed
-				vdata[vindex][attribname][i-1] = attribVal
+				vdata[vindex][attribname][i-1] = attribVal[i]
 			end
 		end
 	else 
@@ -63,6 +64,18 @@ function m.makeSetter(attribname, nvals)
 			vdata[vindex][attribname] = attribVal
 		end
 	end
+end
+
+-- convenience setters
+m.positionSetter = m.makeSetter("position", 3)
+m.colorSetter = m.makeSetter("color", 4)
+
+-- setter for when you just need random colors, ignores attribVal
+function m.randomColorSetter(vdata, vindex, attribVal)
+	vdata[vindex].color[0] = math.random() * 255.0
+	vdata[vindex].color[1] = math.random() * 255.0
+	vdata[vindex].color[2] = math.random() * 255.0
+	vdata[vindex].color[3] = math.random() * 255.0
 end
 
 -- setAttributes
