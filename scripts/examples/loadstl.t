@@ -13,11 +13,13 @@ trss = libs.trss
 sdl = libs.sdl
 sdlPointer = libs.sdlPointer
 TRSS_ID = libs.TRSS_ID
+nanovg = libs.nanovg
 
 function init()
 	trss.trss_log(TRSS_ID, "loadstl.t init")
 	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
+	initNVG()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
 	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
@@ -48,6 +50,58 @@ function loadProgram(vshadername, fshadername)
 	log("fidx: " .. fshader.idx)
 
 	return bgfx.bgfx_create_program(vshader, fshader, true)
+end
+
+function initNVG()
+	-- create context, indicate to bgfx that drawcalls to view
+	-- 1 should happen in the order that they were submitted
+	nvg = nanovg.nvgCreate(0, 1) -- create into view 1
+	bgfx.bgfx_set_view_seq(1, true)
+
+	-- load font
+	--nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/roboto-regular.ttf")
+	nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/VeraMono.ttf")
+end
+
+frametime = 0.0
+
+lines = {"this is a set of text lines",
+		 "here is the next one",
+		 "woo yay",
+		 "/* Begin some code to see how it aligns */",
+		 "#define TRSS_LOG_CRITICAL 0",
+		 "#define TRSS_LOG_ERROR    1",
+		 "#define TRSS_LOG_WARNING  2",
+		 "#define TRSS_LOG_INFO     3",
+		 "#define TRSS_LOG_DEBUG    4",
+		 "All random numbers changing every frame:"}
+
+function makeRandomLines(startpos, endpos)
+	for i = startpos,endpos do
+		lines[i] = "[" .. math.random() .. "]"
+	end
+end
+
+function drawNVG()
+		makeRandomLines(11, 30)
+
+		nanovg.nvgBeginFrame(nvg, width, height, 1.0)
+
+		nanovg.nvgSave(nvg)
+		nanovg.nvgFontSize(nvg, 14)
+		nanovg.nvgFontFace(nvg, "sans")
+		lines[1] = "example of a line that is changing: " .. time
+		local lineheight = 14
+		local x0 = 30
+		local y0 = 100
+		local nlines = #lines
+		for i = 1,nlines do
+			local y = y0 + lineheight * (i-1)
+			nanovg.nvgText(nvg, x0, y, lines[i], nil)
+		end
+		nanovg.nvgRestore(nvg)
+
+		nanovg.nvgEndFrame(nvg)
 end
 
 CMath = terralib.includec("math.h")
@@ -86,6 +140,7 @@ function initBGFX()
 
 	local debug = bgfx_const.BGFX_DEBUG_TEXT
 	local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
+	--local reset = bgfx_const.BGFX_RESET_MSAA_X8
 
 	bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, nil, nil)
 	bgfx.bgfx_reset(width, height, reset)
@@ -96,6 +151,12 @@ function initBGFX()
 	bgfx.bgfx_set_view_clear(0, 
 	0x0001 + 0x0002, -- clear color + clear depth
 	0x303030ff,
+	1.0,
+	0)
+
+	bgfx.bgfx_set_view_clear(1, 
+	bgfx_const.BGFX_CLEAR_DEPTH, -- clear depth so gui will draw
+	0,
 	1.0,
 	0)
 
@@ -242,8 +303,9 @@ function update()
 	-- Deal with input events
 	updateEvents()
 
-	-- Set view 0 default viewport.
+	-- Set view 0,1 default viewport.
 	bgfx.bgfx_set_view_rect(0, 0, 0, width, height)
+	bgfx.bgfx_set_view_rect(1, 0, 0, width, height)
 
 	-- This dummy draw call is here to make sure that view 0 is cleared
 	-- if no other draw calls are submitted to view 0.
@@ -256,6 +318,7 @@ function update()
 	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
 
 	drawCube()
+	drawNVG()
 
 	-- Advance to next frame. Rendering thread will be kicked to
 	-- process submitted rendering primitives.
