@@ -124,6 +124,11 @@ function updateEvents()
 		if evt.event_type == sdl.TRSS_SDL_EVENT_MOUSEMOVE then
 			mousex = evt.x
 			mousey = evt.y
+		elseif evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRSS_SDL_EVENT_KEYUP then
+			local sname = "up"
+			if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN then sname = "down" end
+			trss.trss_log(0, "Key event: " .. sname .. " " .. ffi.string(evt.keycode))
+			trss.trss_log(0, "x: " .. evt.x .. ", y: " .. evt.y .. ", flags: " .. evt.flags)
 		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
 			trss.trss_log(TRSS_ID, "Received window close, stopping interpreter...")
 			trss.trss_stop_interpreter(TRSS_ID)

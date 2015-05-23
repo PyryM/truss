@@ -28,10 +28,12 @@ typedef struct SDLAddon SDLAddon;
 #define TRSS_SDL_EVENT_MOUSEWHEEL   6
 #define TRSS_SDL_EVENT_WINDOW       7
 
+#define TRSS_SDL_MAX_KEYCODE_LENGTH 15 /* should be enough for anybody */
+
 /* Simplified SDL Event */
 typedef struct {
 	unsigned int event_type;
-	char keycode[10]; /* 10 characters should be enough for anybody */
+	char keycode[TRSS_SDL_MAX_KEYCODE_LENGTH + 1]; // reserve 1 byte for \0 
 	double x;
 	double y;
 	int flags;

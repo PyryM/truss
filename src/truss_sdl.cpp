@@ -55,7 +55,7 @@ SDLAddon::SDLAddon(){
 		"#define TRSS_SDL_EVENT_WINDOW      7\n"
 		"typedef struct {\n"
 		"    unsigned int event_type;\n"
-		"    char keycode[10];\n"
+		"    char keycode[16];\n"
 		"    double x;\n"
 		"    double y;\n"
 		"    int flags;\n"
@@ -89,14 +89,24 @@ void SDLAddon::shutdown(){
 	SDL_Quit();
 }
 
+void copyKeyName(trss_sdl_event& newEvent, SDL_Event& event) {
+	const char* keyname = SDL_GetKeyName(event.key.keysym.sym);
+	size_t namelength = min(TRSS_SDL_MAX_KEYCODE_LENGTH, strlen(keyname));
+	memcpy(newEvent.keycode, keyname, namelength);
+	newEvent.keycode[namelength] = '\0'; // zero terminate
+}
+
 void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	trss_sdl_event newEvent;
 	switch(event.type) {
 	case SDL_KEYDOWN:
-		// TODO
-		break;
 	case SDL_KEYUP:
-		// TODO
+		newEvent.event_type = (event.type == SDL_KEYDOWN ?
+								TRSS_SDL_EVENT_KEYDOWN : TRSS_SDL_EVENT_KEYUP);
+		newEvent.flags = event.key.keysym.mod;
+		newEvent.x = event.key.keysym.scancode;
+		newEvent.y = event.key.keysym.sym;
+		copyKeyName(newEvent, event);
 		break;
 	case SDL_MOUSEMOTION:
 		newEvent.event_type = TRSS_SDL_EVENT_MOUSEMOVE;
@@ -105,13 +115,9 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 		newEvent.flags = event.motion.state;
 		break;
 	case SDL_MOUSEBUTTONDOWN:
-		newEvent.event_type = TRSS_SDL_EVENT_MOUSEDOWN;
-		newEvent.x = event.button.x;
-		newEvent.y = event.button.y;
-		newEvent.flags = event.button.button;
-		break;
 	case SDL_MOUSEBUTTONUP:
-		newEvent.event_type = TRSS_SDL_EVENT_MOUSEUP;
+		newEvent.event_type = (event.type == SDL_MOUSEBUTTONDOWN ? 
+								TRSS_SDL_EVENT_MOUSEDOWN : TRSS_SDL_EVENT_MOUSEUP);
 		newEvent.x = event.button.x;
 		newEvent.y = event.button.y;
 		newEvent.flags = event.button.button;
@@ -125,6 +131,7 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	case SDL_WINDOWEVENT:
 		newEvent.event_type = TRSS_SDL_EVENT_WINDOW;
 		newEvent.flags = event.window.event;
+		break;
 	default:
 		break;
 	}

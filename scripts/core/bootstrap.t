@@ -134,7 +134,10 @@ function _coreInit(argstring)
 	local fn = "scripts/" .. argstring
 	trss.trss_log(TRSS_ID, "Loading " .. fn)
 	local script = loadStringFromFile(fn)
-	local scriptfunc = terralib.loadstring(script)
+	local scriptfunc, loaderror = terralib.loadstring(script)
+	if scriptfunc == nil then
+		trss.trss_log(0, "Script error: " .. loaderror)
+	end
 	setfenv(scriptfunc, subenv)
 	scriptfunc()
 	subenv.init()	
