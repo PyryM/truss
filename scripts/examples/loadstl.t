@@ -109,6 +109,7 @@ mtx = truss_import("math/matrix.t")
 stlloader = truss_import("loaders/stlloader.t")
 buffers = truss_import("mesh/buffers.t")
 vertexdefs = truss_import("mesh/vertexdefs.t")
+testloadingerror = truss_import("misc/haserrors.t")
 
 function setViewMatrices()
 	mtx.makeProjMat(projmat, 60.0, width / height, 0.01, 100.0)

@@ -82,14 +82,20 @@ function loadStringFromFile(filename)
 end
 
 loadedLibs = {}
-function truss_import(filename)
-	if loadedLibs[filename] == nil then
+function truss_import(filename, force)
+	if loadedLibs[filename] == nil or force then
+		local oldmodule = loadedLibs[filename] -- only relevant if force==true
 		loadedLibs[filename] = {} -- prevent possible infinite recursion by a module trying to import itself
 		local t0 = tic()
-		local modulefunc = terralib.loadstring(loadStringFromFile("scripts/" .. filename))
-		loadedLibs[filename] = modulefunc()
-		local dt = toc(t0) * 1000.0
-		trss.trss_log(0, "Loaded library [" .. filename .. "] in " .. dt .. " ms")
+		local modulefunc, loaderror = terralib.loadstring(loadStringFromFile("scripts/" .. filename))
+		if modulefunc then
+			loadedLibs[filename] = modulefunc()
+			local dt = toc(t0) * 1000.0
+			trss.trss_log(0, "Loaded library [" .. filename .. "] in " .. dt .. " ms")
+		else
+			loadedLibs[filename] = oldmodule
+			trss.trss_log(0, "Error loading library [" .. filename .. "]: " .. loaderror)
+		end
 	end
 	return loadedLibs[filename]
 end
