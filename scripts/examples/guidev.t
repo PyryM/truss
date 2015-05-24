@@ -99,7 +99,7 @@ end
 function initNVG()
 	-- create context, indicate to bgfx that drawcalls to view
 	-- 0 should happen in the order that they were submitted
-	nvg = nanovg.nvgCreate(0, 0) -- don't need special antialiasing
+	nvg = nanovg.nvgCreate(1, 0) -- make sure to have antialiasing on
 	bgfx.bgfx_set_view_seq(0, true)
 
 	-- load font
@@ -110,12 +110,14 @@ end
 frametime = 0.0
 scripttime = 0.0
 
-guiSrc = "gui/console.t"
+guiSrc = "gui/widgetdrawing.t"
 gui = truss_import(guiSrc)
 
 function reloadModule()
 	gui = truss_import(guiSrc, true) -- force reload
-	gui.init(width, height)
+	if gui and gui.init then
+		gui.init(width, height)
+	end
 end
 
 function drawNVG()
