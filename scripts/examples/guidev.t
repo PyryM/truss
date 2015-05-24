@@ -33,6 +33,8 @@ function onKeyDown(keyname)
 	if keyname == "F5" then
 		log("Reloading module")
 		reloadModule()
+	elseif gui ~= nil and gui.onKeyDown ~= nil then
+		gui.onKeyDown(keyname)
 	end
 end
 

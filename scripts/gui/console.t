@@ -66,7 +66,7 @@ m.bgcolor = nanovg.nvgRGBA(100,100,100,255)
 m.fgcolor = nanovg.nvgRGBA(200,255,255,255)
 m.bufferlines = makeTestLines(m.numBuffersLines)
 m.bufferpos = 0
-m.editlines = {{str = "this is a line that is being edited"}}
+m.editlines = {{str = ">"}}
 
 function m.renderLine_(nvg, line, ypos)
 	if not line then return end
@@ -125,12 +125,36 @@ function m.render_(nvg)
 	m.renderBorders_(nvg)
 end
 
+function m.typeLetter_(keyname, modifiers)
+	m.editlines[1].str = m.editlines[1].str .. keyname
+end
+
+function m.execute_()
+	for i = 1,m.numEditLines do
+		table.insert(m.bufferlines, {str = m.editlines[i].str})
+		m.editlines[i].str = ""
+		m.bufferpos = m.bufferpos + 1
+	end
+end
+
 function m.draw(nvg, width, height)
 	m.render_(nvg)
 end
 
 function m.init(width, height)
 	-- todo
+end
+
+function m.onKeyDown(keyname, modifiers)
+	if #keyname == 1 then
+		m.typeLetter_(keyname, modifiers)
+	elseif keyname == "Space" then
+		m.typeLetter_(" ", 0)
+	elseif keyname == "Backspace" then
+		-- todo
+	elseif keyname == "Return" then
+		m.execute_()
+	end
 end
 
 return m
