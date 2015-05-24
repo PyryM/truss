@@ -108,6 +108,7 @@ function initNVG()
 end
 
 frametime = 0.0
+scripttime = 0.0
 
 guiSrc = "gui/console.t"
 gui = truss_import(guiSrc)
@@ -125,6 +126,12 @@ function drawNVG()
 		end
 
 		nanovg.nvgEndFrame(nvg)
+end
+
+-- converts a floating point value in seconds to
+-- milliseconds, truncated to 3 decimal places
+function to_ms(s)
+	return math.floor(s * 1000000.0) / 1000.0
 end
 
 function update()
@@ -147,9 +154,11 @@ function update()
 	bgfx.bgfx_dbg_text_clear(0, false)
 
 	bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/guidev.t")
-	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
+	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "ft: " .. to_ms(frametime) .. " ms, st: " .. to_ms(scripttime) .. " ms")
 
 	drawNVG()
+
+	scripttime = toc(startTime)
 
 	-- Advance to next frame. Rendering thread will be kicked to
 	-- process submitted rendering primitives.
