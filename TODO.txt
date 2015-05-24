@@ -1,12 +1,30 @@
-Key value database of some kind?
--- Store trss_messages indexed by string keys
--- Save / load entire database to file
--- Thread safe
+Lua:
+	Gui
+		-- Console
+		-- Mouse camera control
 
-PhysFS?
--- Extra dependency but might be nice
--- Maybe compile time flag to enable
+	Scenegraph
+		-- Basic transform math
+		-- Actual scenegraph
+		-- How to handle materials etc.? (just have nodes implement 'draw' however they want, let actual scenegraph just deal with keeping transformations consistent)
 
-Better logging
--- Save to file
--- Streams for C++ side
+	Simplify mesh loading
+		-- Wrappers for static buffer construction
+
+	Materials / Lighting
+		--??
+
+
+C++:
+	Key value database of some kind?
+	-- Store trss_messages indexed by string keys
+	-- Save / load entire database to file
+	-- Thread safe
+
+	PhysFS?
+	-- Extra dependency but might be nice
+	-- Maybe compile time flag to enable
+
+	Better logging
+	-- Save to file
+	-- Streams for C++ side
