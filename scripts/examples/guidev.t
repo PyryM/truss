@@ -112,6 +112,7 @@ gui = truss_import(guiSrc)
 
 function reloadModule()
 	gui = truss_import(guiSrc, true) -- force reload
+	gui.init(width, height)
 end
 
 function drawNVG()
