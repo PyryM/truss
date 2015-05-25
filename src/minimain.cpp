@@ -3,6 +3,7 @@
 #include "truss.h"
 #include "truss_sdl.h"
 #include "nanovg_addon.h"
+#include "wsclient_addon.h"
 #include <iostream>
 
 int main(int, char**){
@@ -12,6 +13,7 @@ int main(int, char**){
 	interpreter->setDebug(0); // want most verbose debugging output
 	interpreter->attachAddon(new SDLAddon);
 	interpreter->attachAddon(new NanoVGAddon);
+	interpreter->attachAddon(new WSClientAddon);
 	trss_log(0, "Starting interpreter!");
 	//interpreter->startUnthreaded("examples/cube.t"); // will block until this interpreter terminates
 	interpreter->startUnthreaded("examples/guidev.t");
