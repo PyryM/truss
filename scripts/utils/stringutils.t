@@ -30,4 +30,14 @@ function m.split(delimiter, text)
   return list
 end
 
+-- trims whitespace around a string
+-- 'trim5' from: http://lua-users.org/wiki/StringTrim
+function m.strip(str)
+  return str:match'^%s*(.*%S)' or ''
+end
+
+function m.splitLines(str)
+  return m.split("\n", str)
+end
+
 return m

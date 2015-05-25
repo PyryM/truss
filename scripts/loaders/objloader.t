@@ -24,11 +24,40 @@ local tinsert = table.insert
 local strsub = string.sub
 
 local stringutils = truss_import("utils/stringutils.t")
+--local stringutils = require("scripts/utils/stringutils")
 local strsplit = stringutils.split
 
 local function isComment(linegps)
 	local firstChar = strsub(linegps[1], 1, 1)
 	return firstChar == "#"
+end
+
+local attributeTable = {["v"] = "positions",
+                        ["vn"] = "normals",
+                        ["vt"] = "uvs",
+                        ["vp"] = "pspaces"}
+
+local function isAttribute(linegps)
+  local g1 = linegps[1]
+  return attributeTable[g1] ~= nil
+end
+
+local function parseAttribute(linegps, attribs)
+  local atype = attributeTable[linegps[1]]
+  local aval = {}
+  for i = 2,#linegps do
+    aval[i-1] = tonumber(linegps[i])
+  end
+  if attribs[atype] == nil then attribs[atype] = {} end
+  tinsert(attribs[atype], aval)
+end
+
+local function isFace(linegps)
+  return #linegps == 4 and linegps[1] == "f"
+end
+
+local function parseFace(linegps, rawfaces)
+  tinsert(rawfaces, {linegps[2], linegps[3], linegps[4]})
 end
 
 local function parseIndex(idxstr)
@@ -40,7 +69,11 @@ local function parseIndex(idxstr)
       ret[i] = tonumber(gps[i])
     end
   end
-  return unpack(ret)
+  -- can't use unpack(ret) because ret[2] might be nil
+  -- in a .obj with normals but not uvs, and unpack uses
+  -- the length (which breaks on embedded nils) 
+  -- to determine how many values to unpack
+  return ret[1],ret[2],ret[3]
 end
 
 -- reindexVertices(rawfaces) --> indexedfaces, vertexlist
@@ -87,23 +120,24 @@ function m.gatherVertices(vertexlist, posList, texList, normalList)
   local positions, uvs, normals = {}, {}, {}
   for i = 1,nvertices do
     local posIndex, texIndex, normalIndex = parseIndex(vertexlist[i])
-    if posIndex    then positions[i] =    posList[posIndex+1])    end
-    if texIndex    then uvs[i]       =    texList[texIndex+1])    end
-    if normalIndex then normals[i]   = normalList[normalIndex+1]) end
+    if posIndex    then positions[i] =    posList[posIndex]    end
+    if texIndex    then uvs[i]       =    texList[texIndex]    end
+    if normalIndex then normals[i]   = normalList[normalIndex] end
   end
   return {positions = positions, uvs = uvs, normals = normals}
 end
 
 function m.parseOBJ(objstring, invert)
-	local lines = splitLines(objstring)
+	local lines = stringutils.splitLines(objstring)
   local nlines = #lines
-  local attributes = {positions = {}, uvs = {}, normals = {}}
+  local attributes = {}
   local rawfaces = {}
+  local strip = stringutils.strip
 
   -- read in raw data
   for i = 1,nlines do
-    local curline = lines[i]
-    local gps = strsplit(curline)
+    local curline = strip(lines[i])
+    local gps = strsplit("%s+", curline)
     if not isComment(gps) then
       if isAttribute(gps) then
         parseAttribute(gps, attributes)
@@ -119,12 +153,16 @@ function m.parseOBJ(objstring, invert)
   local faces, vertexlist = m.reindexVertices(rawfaces)
 
   -- produce attribute lists
-  local ret = m.gatherVertices(vertexlist, attributes.positions,
-                                           attributes.uvs,
-                                           attributes.normals)
+  local ret = m.gatherVertices(vertexlist, attributes.positions or {},
+                                           attributes.uvs or {},
+                                           attributes.normals or {})
 
   -- add in face index list
   ret.indices = faces
   ret.vertices = ret.positions -- aliased for reasons
+  if #(ret.normals) == 0 then ret.normals = nil end
+  if #(ret.uvs) == 0 then ret.uvs = nil end
   return ret
 end
+
+return m
