@@ -9,14 +9,22 @@ local m = {}
 function m.makeImport(importPath)
 	local p = importPath
 
+	local loaded_ = {}
 	local function ret(fn)
-		local truepath = importPath .. fn
-		local f, err = terralib.loadfile(truepath)
-		if err then 
-			print(err) 
-		else 
-			return f() 
+		if loaded_[fn] == nil then
+			loaded_[fn] = {} -- avoid infinite loops
+
+			local truepath = importPath .. fn
+			local f, err = terralib.loadfile(truepath)
+			if err then 
+				print(err)
+				loaded_[fn] = nil
+			else 
+				loaded_[fn] = f()
+			end
 		end
+
+		return loaded_[fn]
 	end
 
 	return ret
