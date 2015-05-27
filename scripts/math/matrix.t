@@ -212,4 +212,44 @@ terra m.getMatrixInverse(dest: &float, src: &float)
 		end
 end
 
+-- assumes pure rotation upper 3x3 (unscaled)
+terra m.matrixToQuaternion(src: &float)
+
+	var m11, m12, m13 = src[ 0 ], src[ 4 ], src[ 8 ]
+	var m21, m22, m23 = src[ 1 ], src[ 5 ], src[ 9 ]
+	var m31, m32, m33 = src[ 2 ], src[ 6 ], src[ 10 ]
+
+	var trace = m11 + m22 + m33
+	var s: float = 0.0
+	var x,y,z,w = 0.0f, 0.0f, 0.0f, 1.0f
+
+	if trace > 0.0 then
+		s = 0.5 / CMath.sqrt( trace + 1.0 )
+		w = 0.25 / s
+		x = ( m32 - m23 ) * s
+		y = ( m13 - m31 ) * s
+		z = ( m21 - m12 ) * s
+	elseif m11 > m22 && m11 > m33 then
+		s = 2.0 * CMath.sqrt( 1.0 + m11 - m22 - m33 )
+		w = ( m32 - m23 ) / s
+		x = 0.25 * s
+		y = ( m12 + m21 ) / s
+		z = ( m13 + m31 ) / s
+	elseif m22 > m33 then
+		s = 2.0 * CMath.sqrt( 1.0 + m22 - m11 - m33 )
+		w = ( m13 - m31 ) / s
+		x = ( m12 + m21 ) / s
+		y = 0.25 * s
+		z = ( m23 + m32 ) / s
+	else
+		s = 2.0 * CMath.sqrt( 1.0 + m33 - m11 - m22 )
+		w = ( m21 - m12 ) / s
+		x = ( m13 + m31 ) / s
+		y = ( m23 + m32 ) / s
+		z = 0.25 * s
+	end
+
+	return x,y,z,w
+end
+
 return m

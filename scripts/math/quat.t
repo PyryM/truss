@@ -11,10 +11,15 @@ local class = truss_import("core/30log.lua")
 local Quaternion = class("Quaternion")
 
 function Quaternion:init(x, y, z, w)
-	self.x = x or 0
-	self.y = y or 0
-	self.z = z or 0
-	self.w = w or 1
+	self:set(x,y,z,w)
+end
+
+function Quaternion:set(x, y, z, w)
+	self.x = x or 0.0
+	self.y = y or 0.0
+	self.z = z or 0.0
+	self.w = w or 1.0
+	return self
 end
 
 function Quaternion:fromArray(arr)
@@ -126,6 +131,14 @@ end
 
 function Quaternion:invert()
 	return self:conjugate():normalize()
+end
+
+local matrix = truss_import("math/matrix.t")
+
+-- Note: assumes m is a 4x4 matrix from matrix.4 (i.e., a terra float[16])
+-- assumes the upper 3x3 of m is a pure rotation matrix (i.e, unscaled)
+function Quaternion:fromRotationMatrix(m)
+	return self:set(matrix.matrixToQuaternion(m))
 end
 
 -- 'export' classes
