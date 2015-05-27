@@ -5,6 +5,8 @@
 local m = {}
 local CMath = terralib.includec("math.h")
 
+local class = truss_import("core/30log.lua")
+
 terra m.rotateXY(mat: &float, ax: float, ay: float)
 	var sx = CMath.sinf(ax)
 	var cx = CMath.cosf(ax)
@@ -104,35 +106,24 @@ end
 
 -- applies scaling to a transform (4x4 matrix) in place
 terra m.scaleMatrix(mat: &float, sx: float, sy: float, sz: float)
-	mat[ 0 ] *= sx
-	mat[ 4 ] *= sy
-	mat[ 8 ] *= sz
-	mat[ 1 ] *= sx
-	mat[ 5 ] *= sy
-	mat[ 9 ] *= sz
-	mat[ 2 ] *= sx
-	mat[ 6 ] *= sy
-	mat[ 10 ] *= sz
-	mat[ 3 ] *= sx
-	mat[ 7 ] *= sy
-	mat[ 11 ] *= sz
+	mat[ 0 ]  = mat[0] * sx
+	mat[ 4 ]  = mat[4] * sy
+	mat[ 8 ]  = mat[8] * sz
+	mat[ 1 ]  = mat[1] * sx
+	mat[ 5 ]  = mat[5] * sy
+	mat[ 9 ]  = mat[9] * sz
+	mat[ 2 ]  = mat[2] * sx
+	mat[ 6 ]  = mat[6] * sy
+	mat[ 10 ] = mat[10] * sz
+	mat[ 3 ]  = mat[3] * sx
+	mat[ 7 ]  = mat[7] * sy
+	mat[ 11 ] = mat[11] * sz
 end
 
 terra m.setMatrixPosition(mat: &float, x: float, y: float, z: float)
 	mat[ 12 ] = x
 	mat[ 13 ] = y
 	mat[ 14 ] = z
-end
-
--- takes a rotation (quaternion), scaling (vec3), and translation (vec3)
--- and composes them together into one 4x4 transformation
-function m.composeMatrix(destmat, rotationQuat, scaleVec, posVec)
-	m.setMatrixFromQuat(destmat, rotationQuat.x, 
-								 rotationQuat.y, 
-								 rotationQuat.z, 
-								 rotationQuat.w)
-	m.scaleMatrix(destmat, scaleVec.x, scaleVec.y, scaleVec.z)
-	m.setMatrixPosition(destmat, posVec.x, posVec.y, posVec.z)
 end
 
 -- multiplies 4x4 matrices so that dest = a * b
@@ -179,6 +170,7 @@ terra m.multiplyMatrixScalar(mat: &float, scale: float)
 end
 
 -- gets the inverse of a 4x4 matrix
+-- safe to use in place (src == dest)
 terra m.getMatrixInverse(dest: &float, src: &float)
 		-- based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
 		var n11, n12, n13, n14 = src[ 0 ], src[ 4 ], src[ 8 ],  src[ 12 ]
@@ -214,7 +206,6 @@ end
 
 -- assumes pure rotation upper 3x3 (unscaled)
 terra m.matrixToQuaternion(src: &float)
-
 	var m11, m12, m13 = src[ 0 ], src[ 4 ], src[ 8 ]
 	var m21, m22, m23 = src[ 1 ], src[ 5 ], src[ 9 ]
 	var m31, m32, m33 = src[ 2 ], src[ 6 ], src[ 10 ]
@@ -229,7 +220,7 @@ terra m.matrixToQuaternion(src: &float)
 		x = ( m32 - m23 ) * s
 		y = ( m13 - m31 ) * s
 		z = ( m21 - m12 ) * s
-	elseif m11 > m22 && m11 > m33 then
+	elseif m11 > m22 and m11 > m33 then
 		s = 2.0 * CMath.sqrt( 1.0 + m11 - m22 - m33 )
 		w = ( m32 - m23 ) / s
 		x = 0.25 * s
@@ -251,5 +242,131 @@ terra m.matrixToQuaternion(src: &float)
 
 	return x,y,z,w
 end
+
+terra m.matrixCopy(dest: &float, src: &float)
+	for i = 0,16 do
+		dest[i] = src[i]
+	end
+end
+
+local Matrix4 = class("Matrix4")
+
+function Matrix4:init()
+	self.data = terralib.new(float[16])
+end
+
+function Matrix4:identity()
+	m.setIdentity(self.data)
+	return self
+end
+
+function Matrix4:copy(src)
+	m.matrixCopy(self.data, src.data)
+	return self
+end
+
+function Matrix4:clone()
+	local ret = Matrix4()
+	ret:copy(self)
+	return ret
+end
+
+function Matrix4:fromArray(arr)
+	for i = 1,16 do
+		-- self.data is zero indexed
+		self.data[i-1] = arr[i] 
+	end
+	return self
+end
+
+function Matrix4:toArray()
+	local ret = {}
+	for i = 1,16 do
+		-- self.data is zero indexed
+		ret[i] = self.data[i-1]
+	end
+	return ret
+end
+
+function Matrix4:fromQuaternion(q)
+	m.setMatrixFromQuat(self.data, q.x, q.y, q.z, q.w)
+	return self
+end
+
+function Matrix4:toQuaternion()
+	-- import 'late' to avoid mutual recursion issues
+	local quat = truss_import("math/quat.t")
+	local qret = quat.Quaternion()
+	qret:set(m.matrixToQuaternion(self.data))
+	return qret
+end
+
+function Matrix4:scale(sx, sy, sz)
+	-- if sy or sz are not provided, assume uniform
+	-- scaling (sx == sy == sz)
+	sy = sy or sx
+	sz = sz or sx
+	m.scaleMatrix(self.data, sx, sy, sz)
+	return self
+end
+
+function Matrix4:setTranslation(tx, ty, tz)
+	m.setMatrixPosition(self.data, tx, ty, tz)
+	return self
+end
+
+-- takes a rotation (quaternion), scaling (vec3), and translation (vec3)
+-- and composes them together into one 4x4 transformation
+function Matrix4:compose(rotationQuat, scaleVec, posVec)
+	local destmat = self.data
+	m.setMatrixFromQuat(destmat, rotationQuat.x, 
+								 rotationQuat.y, 
+								 rotationQuat.z, 
+								 rotationQuat.w)
+	m.scaleMatrix(destmat, scaleVec.x, scaleVec.y, scaleVec.z)
+	m.setMatrixPosition(destmat, posVec.x, posVec.y, posVec.z)
+	return self
+end
+
+-- if src==nil (or not provided), then inverts the matrix
+-- itself in place, otherwise inverts src into this matrix
+function Matrix4:invert(src)
+	src = src or self
+	m.getMatrixInverse(self.data, src.data)
+	return self
+end
+
+-- matrix multiplication:
+-- self = self * b
+function Matrix4:multiply(b)
+	m.multiplyMatrices(self.data, self.data, b.data)
+	return self
+end
+
+-- matrix multiplication:
+-- self = a * b
+function Matrix4:multiplyInto(a,b)
+	m.multiplyMatrices(self.data, a.data, b.data)
+	return self
+end
+
+function Matrix4:prettystr()
+	local ret = "["
+	local data = self.data
+	for row = 0,3 do
+		for col = 0,3 do
+			-- column major
+			local v = data[col*4 + row]
+			ret = ret .. v
+			if col < 3 then ret = ret .. ", " end
+		end
+		if row < 3 then ret = ret .. "\n" end
+	end
+	ret = ret .. "]"
+	return ret
+end
+
+-- 'export' the class
+m.Matrix4 = Matrix4
 
 return m

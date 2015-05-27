@@ -105,19 +105,20 @@ end
 function Quaternion:normalize()
 	local length = self:length()
 
-	if ( length == 0 ) {
+	if length == 0 then
 		self.x = 0
 		self.y = 0
 		self.z = 0
 		self.w = 1
-	} else {
+	else
 		length = 1.0 / length
 
 		self.x = self.x * length
 		self.y = self.y * length
 		self.z = self.z * length
 		self.w = self.w * length
-	}
+	end
+	
 	return self
 end
 
@@ -133,12 +134,20 @@ function Quaternion:invert()
 	return self:conjugate():normalize()
 end
 
-local matrix = truss_import("math/matrix.t")
-
 -- Note: assumes m is a 4x4 matrix from matrix.4 (i.e., a terra float[16])
 -- assumes the upper 3x3 of m is a pure rotation matrix (i.e, unscaled)
 function Quaternion:fromRotationMatrix(m)
-	return self:set(matrix.matrixToQuaternion(m))
+	-- Note: we import 'late' to avoid mutual import issues
+	local matrix = truss_import("math/matrix.t")
+
+	return self:set(matrix.matrixToQuaternion(m.data))
+end
+
+function Quaternion:prettystr()
+	return "<" .. self.x .. ", " 
+			   .. self.y .. ", " 
+			   .. self.z .. ", " 
+			   .. self.w .. ">"
 end
 
 -- 'export' classes
