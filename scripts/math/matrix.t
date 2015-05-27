@@ -170,4 +170,46 @@ terra m.multiplyMatrices(dest: &float, a: &float, b: &float)
 	dest[ 15 ] = a41 * b14 + a42 * b24 + a43 * b34 + a44 * b44
 end
 
+-- multiplies a 4x4 matrix by a scalar in place
+terra m.multiplyMatrixScalar(mat: &float, scale: float)
+	-- note terra is 0 indexed so this is like a c loop
+	for i = 0,16 do
+		mat[i] = mat[i] * scale
+	end
+end
+
+-- gets the inverse of a 4x4 matrix
+terra m.getMatrixInverse(dest: &float, src: &float)
+		-- based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
+		var n11, n12, n13, n14 = src[ 0 ], src[ 4 ], src[ 8 ],  src[ 12 ]
+		var n21, n22, n23, n24 = src[ 1 ], src[ 5 ], src[ 9 ],  src[ 13 ]
+		var n31, n32, n33, n34 = src[ 2 ], src[ 6 ], src[ 10 ], src[ 14 ]
+		var n41, n42, n43, n44 = src[ 3 ], src[ 7 ], src[ 11 ], src[ 15 ]
+
+		dest[ 0 ] = n23 * n34 * n42 - n24 * n33 * n42 + n24 * n32 * n43 - n22 * n34 * n43 - n23 * n32 * n44 + n22 * n33 * n44
+		dest[ 4 ] = n14 * n33 * n42 - n13 * n34 * n42 - n14 * n32 * n43 + n12 * n34 * n43 + n13 * n32 * n44 - n12 * n33 * n44
+		dest[ 8 ] = n13 * n24 * n42 - n14 * n23 * n42 + n14 * n22 * n43 - n12 * n24 * n43 - n13 * n22 * n44 + n12 * n23 * n44
+		dest[ 12 ] = n14 * n23 * n32 - n13 * n24 * n32 - n14 * n22 * n33 + n12 * n24 * n33 + n13 * n22 * n34 - n12 * n23 * n34
+		dest[ 1 ] = n24 * n33 * n41 - n23 * n34 * n41 - n24 * n31 * n43 + n21 * n34 * n43 + n23 * n31 * n44 - n21 * n33 * n44
+		dest[ 5 ] = n13 * n34 * n41 - n14 * n33 * n41 + n14 * n31 * n43 - n11 * n34 * n43 - n13 * n31 * n44 + n11 * n33 * n44
+		dest[ 9 ] = n14 * n23 * n41 - n13 * n24 * n41 - n14 * n21 * n43 + n11 * n24 * n43 + n13 * n21 * n44 - n11 * n23 * n44
+		dest[ 13 ] = n13 * n24 * n31 - n14 * n23 * n31 + n14 * n21 * n33 - n11 * n24 * n33 - n13 * n21 * n34 + n11 * n23 * n34
+		dest[ 2 ] = n22 * n34 * n41 - n24 * n32 * n41 + n24 * n31 * n42 - n21 * n34 * n42 - n22 * n31 * n44 + n21 * n32 * n44
+		dest[ 6 ] = n14 * n32 * n41 - n12 * n34 * n41 - n14 * n31 * n42 + n11 * n34 * n42 + n12 * n31 * n44 - n11 * n32 * n44
+		dest[ 10 ] = n12 * n24 * n41 - n14 * n22 * n41 + n14 * n21 * n42 - n11 * n24 * n42 - n12 * n21 * n44 + n11 * n22 * n44
+		dest[ 14 ] = n14 * n22 * n31 - n12 * n24 * n31 - n14 * n21 * n32 + n11 * n24 * n32 + n12 * n21 * n34 - n11 * n22 * n34
+		dest[ 3 ] = n23 * n32 * n41 - n22 * n33 * n41 - n23 * n31 * n42 + n21 * n33 * n42 + n22 * n31 * n43 - n21 * n32 * n43
+		dest[ 7 ] = n12 * n33 * n41 - n13 * n32 * n41 + n13 * n31 * n42 - n11 * n33 * n42 - n12 * n31 * n43 + n11 * n32 * n43
+		dest[ 11 ] = n13 * n22 * n41 - n12 * n23 * n41 - n13 * n21 * n42 + n11 * n23 * n42 + n12 * n21 * n43 - n11 * n22 * n43
+		dest[ 15 ] = n12 * n23 * n31 - n13 * n22 * n31 + n13 * n21 * n32 - n11 * n23 * n32 - n12 * n21 * n33 + n11 * n22 * n33
+
+		var det = n11 * dest[ 0 ] + n21 * dest[ 4 ] + n31 * dest[ 8 ] + n41 * dest[ 12 ]
+
+		if det == 0.0 then
+			m.setIdentity(dest)
+		else
+			m.multiplyMatrixScalar(dest, 1.0 / det)
+		end
+end
+
 return m
