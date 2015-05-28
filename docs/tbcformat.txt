@@ -1,0 +1,91 @@
+-- Musings on tbc (truss binary container)
+
+-- Goals:
+-- Simple to load:
+--  * fixed offsets for everything in header
+--  * data specified as fixed offsets from file beginning
+--  * only one vertex format: position (3f), normal (3f), uv (2f)
+--     Don't need normals or UVs? Tough.
+--  * only one index format: uint16
+--     Need more than 2^16 vertices? Tough.
+--
+-- Minimize possibility of loading error:
+--  * Use floats/doubles whenever feasible, even for byte offsets, because
+--    floats don't have an endianness.
+--  * Fixed sized fields even for strings
+--  * No 'size' fields for indexes / header 
+--
+-- Embed textures & materials:
+--  * Textures stored as encoded binary blobs (e.g., png, jpeg)
+--  
+
+struct IndexEntry {
+	magic: float;     -- 4
+	datatype: float;  -- 4
+	offset: double;   -- 8
+	length: double;   -- 8
+	name: char[76];   -- 76
+}                     -- Total: 100
+
+struct IndexValueBytes {
+	low: uchar;
+	high: uchar;
+}
+
+struct VertexValue {
+	pos: float[3];
+	normal: float[3];
+	uv: float[2];
+} -- Total: 32
+
+struct TBCFile {
+	header: IndexEntry;
+	meta_index: IndexEntry;
+	vertexbuf0_index: IndexEntry;
+	indexbuf0_index: IndexEntry;
+	texture0_index: IndexEntry;
+	extra_data: IndexEntry[15]; 
+}
+
+-- fixes endianness of an index buffer
+terra fixIndexBuffer(startpos: &char, nvalues: uint32)
+	var asUInt16: &uint16 = [&uint16](startpos)
+	var asBytes: &IndexValueBytes = [&IndexValueBytes](startpos)
+	for i = 0,nvalues do
+		var temp: uint16 = asBytes[i].high
+		temp = temp << 8
+		temp = temp or asBytes[i].low
+		asUInt16[i] = temp
+	end
+end
+
+struct IndexBuffer {
+	numindices: int32;
+	data: &uint16;
+}
+
+struct VertexBuffer {
+	numvertices: int32;
+	data: &VertexValue;
+}
+
+terra getBuffers(f: &char)
+	var bf: &TBCFile = [&TBCFile](f)
+	var ret_ib: IndexBuffer
+	var offset: int32 = bf.indexbuf0_index.offset
+	ret_ib.numindices = bf.indexbuf0_index.length / 2 -- 16 bits per index
+	ret_ib.data = [&uint16](f + offset)
+	fixIndexBuffer(f + offset, nindices)
+
+	var ret_vb: VertexBuffer
+	offset = bf.vertexbuf0_index.offset
+	ret_vb.numvertices = bf.vertexbuf0_index.length / 32 -- 32 bytes per vertex
+	ret_vb.data = [&VertexBuffer](f + offset)
+
+	return ret_ib, ret_vb
+end
+
+terra verifyHeader(header: &IndexEntry)
+	return header.magic == 1723.0f and header.datatype == 1000000
+end
+
