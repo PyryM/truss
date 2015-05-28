@@ -1,4 +1,4 @@
--- Musings on tbc (truss binary container)
+-- Musings on .tbc (truss binary container)
 
 -- Goals:
 -- Simple to load:
@@ -8,6 +8,12 @@
 --     Don't need normals or UVs? Tough.
 --  * only one index format: uint16
 --     Need more than 2^16 vertices? Tough.
+--  * NO SCENEGRAPH IN MODEL
+--     You get one rigid mesh per file
+--  * No options about which way is up
+--     +Y is 'up', +X is 'right', -Z is into the screen (away from camera)
+--
+-- Relatively simple to write
 --
 -- Minimize possibility of loading error:
 --  * Use floats/doubles whenever feasible, even for byte offsets, because
