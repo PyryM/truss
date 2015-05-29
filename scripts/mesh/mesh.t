@@ -21,6 +21,8 @@ function Mesh:init(geo, mat)
 	self.quaternion = Quaternion():identity()
 	self.position = {x = 0.0, y = 0.0, z = 0.0}
 	self.scale = {x = 1.0, y = 1.0, z = 1.0}
+
+	self.visible = true
 end
 
 function Mesh:updateMatrixWorld()
