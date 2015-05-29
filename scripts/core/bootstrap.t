@@ -82,6 +82,14 @@ function loadStringFromFile(filename)
 end
 
 loadedLibs = {}
+local import_nest_level = 0
+local function makeindent(n)
+	if n == 0 then return "" end
+	local ret = ">"
+	for i = 1,n do ret = "=" .. ret end
+	return ret
+end
+
 function truss_import(filename, force)
 	if loadedLibs[filename] == nil or force then
 		local oldmodule = loadedLibs[filename] -- only relevant if force==true
@@ -89,9 +97,13 @@ function truss_import(filename, force)
 		local t0 = tic()
 		local modulefunc, loaderror = terralib.loadstring(loadStringFromFile("scripts/" .. filename))
 		if modulefunc then
+			import_nest_level = import_nest_level + 1
 			loadedLibs[filename] = modulefunc()
+			import_nest_level = import_nest_level - 1
 			local dt = toc(t0) * 1000.0
-			trss.trss_log(0, "Loaded library [" .. filename .. "] in " .. dt .. " ms")
+			trss.trss_log(0, makeindent(import_nest_level) .. 
+							"Loaded library [" .. filename .. "]" ..
+							" in " .. dt .. " ms")
 		else
 			loadedLibs[filename] = oldmodule
 			trss.trss_log(0, "Error loading library [" .. filename .. "]: " .. loaderror)
