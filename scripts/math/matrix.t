@@ -40,8 +40,8 @@ terra m.projXYWH(mat: &float, x: float, y: float, width: float, height: float, n
 	mat[ 5] = height;
 	mat[ 8] =  x;
 	mat[ 9] = -y;
-	mat[10] = aa;
-	mat[11] = 1.0f;
+	mat[10] = -aa;
+	mat[11] = -1.0f;
 	mat[14] = bb;
 end
 
@@ -50,6 +50,52 @@ terra m.setIdentity(mat: &float)
 	mat[ 4], mat[ 5], mat[ 6], mat[ 7] = 0.0f, 1.0f, 0.0f, 0.0f
 	mat[ 8], mat[ 9], mat[10], mat[11] = 0.0f, 0.0f, 1.0f, 0.0f
 	mat[12], mat[13], mat[14], mat[15] = 0.0f, 0.0f, 0.0f, 1.0f
+end
+
+-- Convert LH to RH projection matrix and vice versa.
+terra m.flipProjMatrixHandedness(dest: &float, src: &float)
+	dest[ 0] = -src[ 0]
+	dest[ 1] = -src[ 1]
+	dest[ 2] = -src[ 2]
+	dest[ 3] = -src[ 3]
+	dest[ 4] =  src[ 4]
+	dest[ 5] =  src[ 5]
+	dest[ 6] =  src[ 6]
+	dest[ 7] =  src[ 7]
+	dest[ 8] = -src[ 8]
+	dest[ 9] = -src[ 9]
+	dest[10] = -src[10]
+	dest[11] = -src[11]
+	dest[12] =  src[12]
+	dest[13] =  src[13]
+	dest[14] =  src[14]
+	dest[15] =  src[15]
+end
+
+-- Convert LH to RH view matrix and vice versa.
+terra m.flipViewMatrixHandedness(dest: &float, src: &float)
+	dest[ 0] = -src[ 0]
+	dest[ 1] =  src[ 1]
+	dest[ 2] = -src[ 2]
+	dest[ 3] =  src[ 3]
+	dest[ 4] = -src[ 4]
+	dest[ 5] =  src[ 5]
+	dest[ 6] = -src[ 6]
+	dest[ 7] =  src[ 7]
+	dest[ 8] = -src[ 8]
+	dest[ 9] =  src[ 9]
+	dest[10] = -src[10]
+	dest[11] =  src[11]
+	dest[12] = -src[12]
+	dest[13] =  src[13]
+	dest[14] = -src[14]
+	dest[15] =  src[15]
+end
+
+terra m.zeroMatrix(dest: &float)
+	for i = 0,16 do
+		dest[i] = 0.0f
+	end
 end
 
 function m.toRad(deg)
@@ -260,6 +306,11 @@ function Matrix4:identity()
 	return self
 end
 
+function Matrix4:zero()
+	m.zeroMatrix(self.data)
+	return self
+end
+
 function Matrix4:copy(src)
 	m.matrixCopy(self.data, src.data)
 	return self
@@ -364,6 +415,23 @@ function Matrix4:prettystr()
 	end
 	ret = ret .. "]"
 	return ret
+end
+
+-- fovy in degrees
+function Matrix4:makeProjection(fovy, aspect, near, far)
+	self:zero()
+	m.makeProjMat(self.data, fovy, aspect, near, far)
+	return self
+end
+
+function Matrix4:flipViewHandedness()
+	m.flipViewMatrixHandedness(self.data, self.data)
+	return self
+end
+
+function Matrix4:flipProjHandedness()
+	m.flipProjMatrixHandedness(self.data, self.data)
+	return self
 end
 
 -- 'export' the class
