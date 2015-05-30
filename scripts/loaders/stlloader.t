@@ -37,14 +37,17 @@ terra m.readUint8(buffer: &uint8, startpos: uint32)
 	return buffer[startpos]
 end
 
-terra m.readFloat32_old(buffer: &uint8, startpos: uint32)
-	var retptr: &float = [&float](buffer + startpos)
-	return @retptr
+terra santizeNaN(v: float)
+	if v == v then
+		return v
+	else
+		return 0.0f
+	end
 end
 
 terra m.readFloat32(buffer: &uint8, startpos: uint32)
 	var retptr: &float = [&float](&(buffer[startpos]))
-	return @retptr
+	return santizeNaN(@retptr)
 end
 
 terra m.stringToUint8Ptr(src: &int8)
