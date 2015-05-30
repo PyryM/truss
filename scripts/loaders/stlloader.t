@@ -4,6 +4,8 @@
 
 local m = {}
 
+m.verbose = false
+
 function m.loadSTL(filename, invert)
 	local starttime = tic()
 	local srcMessage = trss.trss_load_file(filename, 0)
@@ -35,8 +37,13 @@ terra m.readUint8(buffer: &uint8, startpos: uint32)
 	return buffer[startpos]
 end
 
-terra m.readFloat32(buffer: &uint8, startpos: uint32)
+terra m.readFloat32_old(buffer: &uint8, startpos: uint32)
 	var retptr: &float = [&float](buffer + startpos)
+	return @retptr
+end
+
+terra m.readFloat32(buffer: &uint8, startpos: uint32)
+	var retptr: &float = [&float](&(buffer[startpos]))
 	return @retptr
 end
 
@@ -46,8 +53,14 @@ terra m.stringToUint8Ptr(src: &int8)
 end
 
 function m.parseBinarySTL(databuf, datalength, invert)
+	if m.verbose then
+		trss.trss_log(0, "Going to parse a binary stl of length " .. datalength)
+	end
 
 	local faces = m.readUint32LE( databuf, 80 )
+	if m.verbose then
+		trss.trss_log(0, "STL contains " .. faces .. " faces.")
+	end
 	local defaultR, defaultG, defaultB, alpha = 128, 128, 128, 255
 
 	-- process STL header
@@ -68,6 +81,13 @@ function m.parseBinarySTL(databuf, datalength, invert)
 		end
 	end
 
+	if m.verbose then
+		trss.trss_log(0, "stl color: " .. defaultR 
+							.. " " .. defaultG 
+							.. " " .. defaultB 
+							.. " " .. alpha)
+	end
+
 	-- file body
 	local dataOffset = 84
 	local faceLength = 12 * 4 + 2
@@ -83,6 +103,7 @@ function m.parseBinarySTL(databuf, datalength, invert)
 
 	for face = 0, faces-1 do
 		local start = dataOffset + face * faceLength
+
 		local normalX = normalMult * m.readFloat32(databuf, start)
 		local normalY = normalMult * m.readFloat32(databuf, start + 4)
 		local normalZ = normalMult * m.readFloat32(databuf, start + 8)

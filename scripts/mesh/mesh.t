@@ -51,16 +51,16 @@ end
 function Geometry:fromData(vertexInfo, modeldata)
 	local modelbuffers = buffers.allocateData(vertexInfo, #(modeldata.positions), #(modeldata.indices))
 	buffers.setIndices(modelbuffers, modeldata.indices)
-	buffers.setAttributes(modelbuffers, buffers.positionSetter, modeldata.positions)
+	buffers.setAttributesSafe(modelbuffers, "position", buffers.positionSetter, modeldata.positions)
 
 	if modeldata.normals then
-		buffers.setAttributes(modelbuffers, buffers.normalSetter, modeldata.normals)
+		buffers.setAttributesSafe(modelbuffers, "normal", buffers.normalSetter, modeldata.normals)
 	end
 	if modeldata.uvs then
-		buffers.setAttributes(modelbuffers, buffers.uvSetter, modeldata.uvs)
+		buffers.setAttributesSafe(modelbuffers, "uv", buffers.uvSetter, modeldata.uvs)
 	end
 	if modeldata.tangents then
-		buffers.setAttributes(modelbuffers, buffers.tangentSetter, modeldata.tangents)
+		buffers.setAttributesSafe(modelbuffers, "tangent", buffers.tangentSetter, modeldata.tangents)
 	end
 
 	buffers.createStaticBGFXBuffers(modelbuffers)

@@ -32,13 +32,13 @@ end
 function m.createPosColorVertexInfo()
 	local vspec = terralib.new(bgfx.bgfx_vertex_decl_t)
 	m.declarePosColorVertex(vspec)
-	return {vertType = m.PosColorVertex, vertDecl = vspec}
+	return {vertType = m.PosColorVertex, vertDecl = vspec, attributes = {position=true, color=true}}
 end
 
 function m.createPosNormalVertexInfo()
 	local vspec = terralib.new(bgfx.bgfx_vertex_decl_t)
 	m.declarePosNormalVertex(vspec)
-	return {vertType = m.PosNormalVertex, vertDecl = vspec}
+	return {vertType = m.PosNormalVertex, vertDecl = vspec, attributes = {position=true, normal=true}}
 end
 
 return m

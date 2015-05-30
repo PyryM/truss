@@ -69,6 +69,8 @@ function SimpleRenderer:init(width, height)
 	self.lightColors = terralib.new(m.LightColor[self.numLights])
 	self.modelColor = terralib.new(float[4])
 
+	self.autoUpdateMatrices = true
+
 	-- create matrices
 	self.projmat = Matrix4():makeProjection(60.0, width / height, 0.01, 100.0)
 	--self.projmat:flipProjHandedness() -- change handedness from LH to RH
@@ -153,7 +155,7 @@ function SimpleRenderer:render()
 
 	for i,v in ipairs(self.objects) do
 		if v.visible then
-			if v.updateMatrixWorld then v:updateMatrixWorld() end
+			if self.autoUpdateMatrices and v.updateMatrixWorld then v:updateMatrixWorld() end
 			if v.matrixWorld and v.geo then
 				self:renderGeo(v.geo, v.matrixWorld)
 			end
