@@ -5,6 +5,8 @@
 local m = {}
 
 m.verbose = false
+m.MAXFACES = 21845 -- each face needs 3 vertices, to fit into 16 bit index
+ 				   -- buffer we can have at most floor(2^16 / 3) faces
 
 function m.loadSTL(filename, invert)
 	local starttime = tic()
@@ -64,6 +66,12 @@ function m.parseBinarySTL(databuf, datalength, invert)
 	if m.verbose then
 		trss.trss_log(0, "STL contains " .. faces .. " faces.")
 	end
+
+	if faces > m.MAXFACES then
+		trss.trss_log(0, "Warning: STL contains >2^16 vertices. Truncating to first 2^16.")
+		faces = m.MAXFACES
+	end
+
 	local defaultR, defaultG, defaultB, alpha = 128, 128, 128, 255
 
 	-- process STL header
