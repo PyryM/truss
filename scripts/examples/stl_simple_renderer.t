@@ -30,6 +30,7 @@ mousex, mousey = 0, 0
 frametime = 0.0
 
 stlloader = truss_import("loaders/stlloader.t")
+objloader = truss_import("loaders/objloader.t")
 meshutils = truss_import("mesh/mesh.t")
 simple_renderer = truss_import("renderers/simple_renderer.t")
 
@@ -81,7 +82,12 @@ function initBGFX()
 	renderer = simple_renderer.SimpleRenderer(width, height)
 
 	-- Load the model
-	modeldata = stlloader.loadSTL("models/segway_wheel_left.STL", false) -- don't invert windings
+	objloader.verbose = true
+	stlloader.verbose = true
+
+	--modeldata = stlloader.loadSTL("models/segway_wheel_left.STL", false) -- don't invert windings
+	--modeldata = stlloader.loadSTL("models/arm_fixed.stl", false) -- don't invert windings
+	modeldata = objloader.loadOBJ("models/arm_fixed.obj", false)
 
 	wheelgeo = meshutils.Geometry():fromData(renderer.vertexInfo, modeldata)
 	wheelmat = {} -- nothing in materials at the moment
@@ -90,7 +96,7 @@ function initBGFX()
 	wheels = {}
 	for i = 1,10 do
 		local wheel = meshutils.Mesh(wheelgeo, wheelmat)
-		wheel.position.z = math.random()*2 - 3
+		wheel.position.z = math.random()*2 - 10
 		wheel.position.y = math.random()*2 - 1
 		wheel.position.x = math.random()*2 - 1
 		wheel.dx = math.random() -- we're just storing our own values

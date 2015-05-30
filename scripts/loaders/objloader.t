@@ -53,6 +53,10 @@ local function parseAttribute(linegps, attribs)
 end
 
 local function isFace(linegps)
+  if #linegps == 5 and linegps[1] == "f" then --QUAD!!!!
+    m.quadcount = m.quadcount + 1
+    return false
+  end
   return #linegps == 4 and linegps[1] == "f"
 end
 
@@ -127,6 +131,10 @@ function m.gatherVertices(vertexlist, posList, texList, normalList)
   return {positions = positions, uvs = uvs, normals = normals}
 end
 
+function m.log(str)
+  trss.trss_log(0, str)
+end
+
 function m.parseOBJ(objstring, invert)
 	local lines = stringutils.splitLines(objstring)
   local nlines = #lines
@@ -135,6 +143,7 @@ function m.parseOBJ(objstring, invert)
   local strip = stringutils.strip
 
   -- read in raw data
+  m.quadcount = 0
   for i = 1,nlines do
     local curline = strip(lines[i])
     local gps = strsplit("%s+", curline)
@@ -144,9 +153,19 @@ function m.parseOBJ(objstring, invert)
       elseif isFace(gps) then
         parseFace(gps, rawfaces)
       elseif m.verbose then -- wasn't attribute or face, so what is it?
-        log("objloader: couldn't parse line [" .. curline .. "]")
+        m.log("objloader: couldn't parse line [" .. curline .. "]")
       end
     end
+  end
+  if m.quadcount > 0 then
+    m.log("Warning: model contained " .. m.quadcount .. " quads, which were ignored!")
+  end
+
+  if m.verbose then
+    m.log("#raw faces: " .. #rawfaces)
+    m.log("#raw positions: " .. #(attributes.positions or {}))
+    m.log("#raw uvs: " .. #(attributes.uvs or {}))
+    m.log("#raw normals: " .. #(attributes.normals or {}))
   end
 
   -- unify vertices
@@ -162,6 +181,14 @@ function m.parseOBJ(objstring, invert)
   ret.vertices = ret.positions -- aliased for reasons
   if #(ret.normals) == 0 then ret.normals = nil end
   if #(ret.uvs) == 0 then ret.uvs = nil end
+
+  if m.verbose then
+    m.log("#triangles (faces): " .. #ret.indices)
+    m.log("#vertices: " .. #(ret.vertices or {}))
+    m.log("#normals: " .. #(ret.normals or {}))
+    m.log("#uvs: " .. #(ret.uvs or {}))
+  end
+
   return ret
 end
 
