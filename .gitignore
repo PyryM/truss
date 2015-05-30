@@ -4,6 +4,7 @@ include/bgfx/
 include/stb/
 include/SDL/
 include/terra/
+temp/
 *.exe
 *.pdb
 *.lib

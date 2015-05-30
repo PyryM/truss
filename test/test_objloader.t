@@ -7,6 +7,7 @@ local emulator = require("trussemulator")
 
 -- define truss import so that other things will work
 truss_import = emulator.makeImport(importpath)
+trss = emulator.makeTRSS()
 
 objloader = truss_import("loaders/objloader.t")
 stringutils = truss_import("utils/stringutils.t")
@@ -109,6 +110,97 @@ f 7//6 1//6 5//6
 f 5//6 1//6 3//6
 ]]
 
+-- modified version of the above with
+-- no normals to test a file with just
+-- positions and uvs
+local objfilestring3 = [[
+# cube.obj
+#
+ 
+o cube
+mtllib cube.mtl
+ 
+v -0.500000 -0.500000 0.500000
+v 0.500000 -0.500000 0.500000
+v -0.500000 0.500000 0.500000
+v 0.500000 0.500000 0.500000
+v -0.500000 0.500000 -0.500000
+ v 0.500000 0.500000 -0.500000 
+v -0.500000 -0.500000 -0.500000
+v 0.500000 -0.500000 -0.500000 
+
+vt 0.000000 0.000000
+vt 1.000000 0.000000 
+vt 0.000000 1.000000
+ vt 1.000000 1.000000
+ 
+ 
+g cube
+usemtl cube
+f 1/1 2/2 3/3
+f 3/3 2/2 4/4
+f 3/1 4/2 5/3
+f 5/3 4/2 6/4
+f 5/4 6/3 7/2
+f 7/2 6/3 8/1
+f 7/1 8/2 1/3
+f 1/3 8/2 2/4
+f 2/1 8/2 4/3
+f 4/3 8/2 6/4
+f 7/1 1/2 5/3
+f 5/3 1/2 3/4
+]]
+
+local objfile4 = [[
+# cube.obj
+#
+ 
+o cube
+mtllib cube.mtl
+ 
+v -0.500000 -0.500000 0.500000
+v 0.500000 -0.500000 0.500000
+v -0.500000 0.500000 0.500000
+v 0.500000 0.500000 0.500000
+v -0.500000 0.500000 -0.500000
+v 0.500000 0.500000 -0.500000
+v -0.500000 -0.500000 -0.500000
+ v 0.500000 -0.500000 -0.500000 
+ 
+vt 0.000000 0.000000
+vt 1.000000 0.000000 
+vt 0.000000 1.000000
+ vt 1.000000 1.000000
+ 
+vn 0.000000 0.000000 1.000000
+vn 0.000000 1.000000 0.000000
+vn 0.000000 0.000000 -1.000000
+vn 0.000000 -1.000000 0.000000
+vn 1.000000 0.000000 0.000000
+vn -1.000000 0.000000 0.000000
+ 
+g cube
+usemtl cube
+s 1
+f 1/1/1 2/2/1 3/3/1
+f 3/3/1 2/2/1 4/4/1
+s 2
+f 3/1/2 4/2/2 5/3/2
+f 5/3/2 4/2/2 6/4/2
+s 3
+f 5/4/3 6/3/3 7/2/3
+f 7/2/3 6/3/3 8/1/3
+s 4
+f 7/1/4 8/2/4 1/3/4
+f 1/3/4 8/2/4 2/4/4
+s 5
+f 2/1/5 8/2/5 4/3/5
+f 4/3/5 8/2/5 6/4/5
+s 6
+f 7/1/6 1/2/6 5/3/6
+f 5/3/6 1/2/6 3/4/6
+]]
+
 function tests0()
 	local s = "v  0.0 1.0 	2.0"
 	local gps = stringutils.split("%s+", s)
@@ -173,9 +265,37 @@ function test2()
 	assert(res.uvs == nil, "Got UVs but didn't expect any! #= " .. #(res.uvs or {}))
 end
 
+function test3()
+	objloader.verbose = true
+	local res = objloader.parseOBJ(objfilestring3, false)
+	assert(#(res.indices) == 12, "Wrong face count, expected 12 got " .. #(res.indices))
+	assert(#(res.positions) == 24, "Wrong position count, expected 24, got " .. #(res.positions))
+	assert(#(res.uvs) == 24, "Wrong uv count, expected 24, got " .. #(res.uvs))
+end
+
+function sidx(v) 
+	local ret = ""
+	ret = ret .. v[1] .. " " .. v[2] .. " " .. v[3]
+	return ret
+end
+
+function test4()
+	objloader.verbose = true
+	local res = objloader.parseOBJ(objfile4, false)
+	for i = 1,#res.indices do
+		--print(i)
+		print("idx["..i.."]: " .. sidx(res.indices[i]))
+	end
+	for i = 1,#res.positions do
+		print("pos["..i.."]: " .. sidx(res.positions[i]))
+	end
+end
+
 tests0()
 tests1()
 tests2()
 test0()
 test1()
 test2()
+--test3()
+test4()

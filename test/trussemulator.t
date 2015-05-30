@@ -30,6 +30,10 @@ function m.makeImport(importPath)
 	return ret
 end
 
+function m.trss_log(loglevel, msg)
+	print(loglevel .. "| " .. msg)
+end
+
 -- makes a fake trss library
 function m.makeTRSS()
 	return m
