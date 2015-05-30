@@ -16,6 +16,7 @@ function MeshManager:init(meshpath, renderer)
 	self.renderer = renderer
 	self.geos = {}
 	self.meshes = {}
+	self.verbose = false
 end
 
 function MeshManager:createMesh(meshfilename)
@@ -29,7 +30,7 @@ function MeshManager:createMesh(meshfilename)
 	end
 
 	local mat = {}
-	local ret = meshutils.Mesh(mat, self.geos[meshfilename])
+	local ret = meshutils.Mesh(self.geos[meshfilename], mat)
 	ret.source_filename = meshfilename
 	self.renderer:add(ret)
 
@@ -41,7 +42,7 @@ function MeshManager:getMesh(meshname, meshfilename)
 	if m and m.source_filename == meshfilename then
 		return m
 	else
-		trss.trss_log("MeshManager creating mesh " .. meshname)
+		trss.trss_log(0, "MeshManager creating mesh " .. meshname)
 		if m then m.visible = false end -- TODO: actually release old m
 		m = self:createMesh(meshfilename)
 		self.meshes[meshname] = m

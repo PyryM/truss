@@ -77,6 +77,9 @@ function SimpleRenderer:init(width, height)
 	self.viewmat = Matrix4():identity()
 	--self.viewmat:flipViewHandedness() -- blame directx
 
+	self.rootmat = Matrix4():identity()
+	self.tempmat = Matrix4()
+
 	-- set default lights
 	self:setLightDirections({
 			{1.0,  1.0,  1.0},
@@ -93,6 +96,14 @@ function SimpleRenderer:init(width, height)
 
 	-- set model color
 	self:setModelColor(1.0,1.0,1.0)
+end
+
+function SimpleRenderer:setCameraTransform(cammat)
+	self.viewmat:invert(cammat)
+end
+
+function SimpleRenderer:setRootTransform(rootmat)
+	self.rootmat:copy(rootmat)
 end
 
 function SimpleRenderer:setViewMatrices()
@@ -153,11 +164,15 @@ function SimpleRenderer:render()
 	self:setViewMatrices()
 	self:updateUniforms()
 
+	local rootmat = self.rootmat
+	local tempmat = self.tempmat
+
 	for i,v in ipairs(self.objects) do
 		if v.visible then
 			if self.autoUpdateMatrices and v.updateMatrixWorld then v:updateMatrixWorld() end
 			if v.matrixWorld and v.geo then
-				self:renderGeo(v.geo, v.matrixWorld)
+				tempmat:multiplyInto(rootmat, v.matrixWorld)
+				self:renderGeo(v.geo, tempmat)
 			end
 		end
 	end

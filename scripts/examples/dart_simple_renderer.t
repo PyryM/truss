@@ -1,7 +1,7 @@
--- stl_simple_renderer.t
+-- dart_simple_renderer.t
 --
 -- example of using renderers/simple_renderer.t
--- to render a bunch of stl models
+-- to render a dart json scenegraph
 
 bgfx = libs.bgfx
 bgfx_const = libs.bgfx_const
@@ -13,7 +13,7 @@ TRSS_ID = libs.TRSS_ID
 nanovg = libs.nanovg
 
 function init()
-	trss.trss_log(TRSS_ID, "stl_simple_renderer.t init")
+	trss.trss_log(TRSS_ID, "dart_simple_renderer.t init")
 	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	local rendererType = bgfx.bgfx_get_renderer_type()
@@ -29,10 +29,12 @@ mousex, mousey = 0, 0
 
 frametime = 0.0
 
-stlloader = truss_import("loaders/stlloader.t")
-meshutils = truss_import("mesh/mesh.t")
+meshmanager = truss_import("dart/meshmanager.t")
 simple_renderer = truss_import("renderers/simple_renderer.t")
-json = truss_import("lib/json.lua")
+matrixlib = truss_import("math/matrix.t")
+quatlib = truss_import("math/quat.t")
+local Matrix4 = matrixlib.Matrix4
+local Quaternion = quatlib.Quaternion
 
 function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
@@ -55,6 +57,27 @@ end
 
 function log(msg)
 	trss.trss_log(0, msg)
+end
+
+function updateCamera(theta, phi, rad)
+	local rr = rad * math.cos(phi)
+	local y = rad * math.sin(phi)
+	local x = rr * math.cos(theta)
+	local z = rr * math.sin(theta)
+	local scale = {x=1, y=1, z=1}
+
+	campos.x, campos.y, campos.z = x, y, z
+	camquat:fromEuler({x=phi,y=-theta+math.pi/2.0,z=0}, 'ZYX')
+	cammat:compose(camquat, scale, campos)
+	renderer:setCameraTransform(cammat)
+end
+
+function updateModelRotation(time)
+	camquat:fromEuler({x= -math.pi / 2.0,y=time*0.1,z=0}, 'ZYX')
+	campos.x, campos.y, campos.z = 0,-0.5,0
+	local scale = {x=1, y=1, z=1}
+	cammat:compose(camquat, scale, campos)
+	renderer:setRootTransform(cammat)
 end
 
 function initBGFX()
@@ -80,26 +103,19 @@ function initBGFX()
 
 	-- Init renderer
 	renderer = simple_renderer.SimpleRenderer(width, height)
+	renderer.autoUpdateMatrices = false
 
-	-- Load the model
-	modeldata = stlloader.loadSTL("models/segway_wheel_left.STL", false) -- don't invert windings
+	-- init mesh manager
+	manager = meshmanager.MeshManager("temp/meshes/", renderer)
 
-	wheelgeo = meshutils.Geometry():fromData(renderer.vertexInfo, modeldata)
-	wheelmat = {} -- nothing in materials at the moment
+	-- load in a json
+	local jsonstring = loadStringFromFile("temp/wam.json")
+	manager:update(jsonstring)
 
-	-- make some wheels
-	wheels = {}
-	for i = 1,10 do
-		local wheel = meshutils.Mesh(wheelgeo, wheelmat)
-		wheel.position.z = math.random()*2 - 3
-		wheel.position.y = math.random()*2 - 1
-		wheel.position.x = math.random()*2 - 1
-		wheel.dx = math.random() -- we're just storing our own values
-		wheel.dy = math.random() -- on the object, because why not
-		wheel.dz = math.random()
-		renderer:add(wheel)
-		wheels[i] = wheel
-	end
+	-- camera
+	cammat = Matrix4():identity()
+	camquat = Quaternion():identity()
+	campos = {x = 0, y = 0, z = 0}
 end
 
 frametime = 0.0
@@ -124,17 +140,11 @@ function update()
 	-- Use debug font to print information about this example.
 	bgfx.bgfx_dbg_text_clear(0, false)
 
-	bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/stl_simple_renderer.t")
+	bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/dart_simple_renderer.t")
 	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
 
-	-- make the wheels rotate
-	for i, wheel in ipairs(wheels) do
-		local rot = {x = wheel.dx * time,
-					 y = wheel.dy * time,
-					 z = wheel.dz * time}
-		wheel.quaternion:fromEuler(rot, 'ZYX')
-	end
-
+	updateCamera(math.pi / 2.0, 0.0, 1.5)
+	updateModelRotation(time)
 	renderer:render()
 
 	-- Advance to next frame. Rendering thread will be kicked to

@@ -16,6 +16,6 @@ int main(int, char**){
 	interpreter->attachAddon(new WSClientAddon);
 	trss_log(0, "Starting interpreter!");
 	//interpreter->startUnthreaded("examples/cube.t"); // will block until this interpreter terminates
-	interpreter->startUnthreaded("examples/stl_simple_renderer.t");
+	interpreter->startUnthreaded("examples/dart_simple_renderer.t");
 	return 0;
 }

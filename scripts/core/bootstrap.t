@@ -145,6 +145,7 @@ subenv.ffi = ffi
 subenv.truss_import = truss_import
 subenv.tic = tic
 subenv.toc = toc
+subenv.loadStringFromFile = loadStringFromFile
 
 function _coreInit(argstring)
 	-- Load in argstring
