@@ -19,7 +19,7 @@ function m.allocateData(vertInfo, nvertices, nfaces)
 	data.indices = terralib.new(m.vertex_index_type[nindices])
 	data.nindices = nindices
 	data.vertDataSize = sizeof(vertInfo.vertType[nvertices])
-	data.indexDataSize = sizeof(m.vertex_index_type[nvertices])
+	data.indexDataSize = sizeof(m.vertex_index_type[nindices])
 	return data
 end
 
@@ -78,6 +78,17 @@ function m.randomColorSetter(vdata, vindex, attribVal)
 	vdata[vindex].color[1] = math.random() * 255.0
 	vdata[vindex].color[2] = math.random() * 255.0
 	vdata[vindex].color[3] = math.random() * 255.0
+end
+
+-- setAttributesSafe
+--
+-- like set attributes but checks if the attribute exists
+function m.setAttributesSafe(data, attribname, setter, attriblist)
+	if data.vertInfo.attributes[attribname] == nil then
+		trss.trss_log(0, "Buffer does not have attribute " .. attribname)
+		return
+	end
+	m.setAttributes(data, setter, attriblist)
 end
 
 -- setAttributes
