@@ -88,8 +88,28 @@ function m.render_(nvg)
 	m.renderBorders_(nvg)
 end
 
+function m.getKeyString(keyname, modifiers)
+	trss.trss_log(0, "Modifiers: " .. modifiers)
+
+	local shiftdown = false
+	if bit.band(modifiers, 1) > 0 or bit.band(modifiers, 2) > 0 then
+		shiftdown = true
+	end
+
+	if #keyname == 1 then
+		if shiftdown then 
+			return keyname 
+		else 
+			return string.lower(keyname) 
+		end
+		--if modifiers
+	else
+		return keyname -- ??
+	end
+end
+
 function m.typeLetter_(keyname, modifiers)
-	m.editlines[1].str = m.editlines[1].str .. keyname
+	m.editlines[1].str = m.editlines[1].str .. m.getKeyString(keyname, modifiers)
 end
 
 function m.execute_()

@@ -28,13 +28,13 @@ function init()
 	trss.trss_log(0, "Renderer type: " .. rendererName)
 end
 
-function onKeyDown(keyname)
+function onKeyDown(keyname, modifiers)
 	log("Keydown: " .. keyname)
 	if keyname == "F5" then
 		log("Reloading module")
 		reloadModule()
 	elseif gui ~= nil and gui.onKeyDown ~= nil then
-		gui.onKeyDown(keyname)
+		gui.onKeyDown(keyname, modifiers)
 	end
 end
 
@@ -57,7 +57,7 @@ function updateEvents()
 			if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN then
 				if not downkeys[keyname] then
 					downkeys[keyname] = true
-					onKeyDown(keyname)
+					onKeyDown(keyname, evt.flags)
 				end
 			else -- keyup
 				downkeys[keyname] = false
@@ -110,7 +110,8 @@ end
 frametime = 0.0
 scripttime = 0.0
 
-guiSrc = "gui/widgetdrawing.t"
+--guiSrc = "gui/widgetdrawing.t"
+guiSrc = "gui/console.t"
 gui = truss_import(guiSrc)
 
 function reloadModule()

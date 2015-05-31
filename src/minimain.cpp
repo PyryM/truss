@@ -15,7 +15,8 @@ int main(int, char**){
 	interpreter->attachAddon(new NanoVGAddon);
 	interpreter->attachAddon(new WSClientAddon);
 	trss_log(0, "Starting interpreter!");
-	//interpreter->startUnthreaded("examples/cube.t"); // will block until this interpreter terminates
+	// startUnthreaded starts the interpreter in the current thread,
+	// which means the call will block until the interpreter is stopped
 	interpreter->startUnthreaded("examples/dart_simple_renderer.t");
 	return 0;
 }
