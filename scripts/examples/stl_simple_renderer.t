@@ -85,9 +85,9 @@ function initBGFX()
 	objloader.verbose = true
 	stlloader.verbose = true
 
-	--modeldata = stlloader.loadSTL("models/segway_wheel_left.STL", false) -- don't invert windings
+	modeldata = stlloader.loadSTL("temp/meshes/head_wam1.STL", false) -- don't invert windings
 	--modeldata = stlloader.loadSTL("models/arm_fixed.stl", false) -- don't invert windings
-	modeldata = objloader.loadOBJ("models/arm_fixed.obj", false)
+	--modeldata = objloader.loadOBJ("models/arm_fixed.obj", false)
 
 	wheelgeo = meshutils.Geometry():fromData(renderer.vertexInfo, modeldata)
 	wheelmat = {} -- nothing in materials at the moment
@@ -96,7 +96,7 @@ function initBGFX()
 	wheels = {}
 	for i = 1,10 do
 		local wheel = meshutils.Mesh(wheelgeo, wheelmat)
-		wheel.position.z = math.random()*2 - 10
+		wheel.position.z = math.random()*2 - 2
 		wheel.position.y = math.random()*2 - 1
 		wheel.position.x = math.random()*2 - 1
 		wheel.dx = math.random() -- we're just storing our own values
