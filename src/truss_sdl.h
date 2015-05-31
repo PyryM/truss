@@ -27,6 +27,7 @@ typedef struct SDLAddon SDLAddon;
 #define TRSS_SDL_EVENT_MOUSEMOVE 	5
 #define TRSS_SDL_EVENT_MOUSEWHEEL   6
 #define TRSS_SDL_EVENT_WINDOW       7
+#define TRSS_SDL_EVENT_TEXTINPUT    8
 
 #define TRSS_SDL_MAX_KEYCODE_LENGTH 15 /* should be enough for anybody */
 
@@ -43,6 +44,10 @@ TRSS_C_API void trss_sdl_create_window(SDLAddon* addon, int width, int height, c
 TRSS_C_API void trss_sdl_destroy_window(SDLAddon* addon);
 TRSS_C_API int trss_sdl_num_events(SDLAddon* addon);
 TRSS_C_API trss_sdl_event trss_sdl_get_event(SDLAddon* addon, int index);
+TRSS_C_API void trss_sdl_start_textinput(SDLAddon* addon);
+TRSS_C_API void trss_sdl_stop_textinput(SDLAddon* addon);
+TRSS_C_API void trss_sdl_set_clipboard(SDLAddon* addon, const char* data);
+TRSS_C_API const char* trss_sdl_get_clipboard(SDLAddon* addon);
 
 class SDLAddon : public trss::Addon {
 public:
@@ -57,6 +62,8 @@ public:
 	void registerBGFX();
 	void destroyWindow();
 
+	const char* getClipboardText();
+
 	int numEvents();
 	trss_sdl_event& getEvent(int index);
 
@@ -65,6 +72,8 @@ private:
 	void convertAndPushEvent_(SDL_Event& event);
 	std::string name_;
 	std::string header_;
+
+	std::string clipboard_;
 
 	SDL_Window* window_;
 	SDL_Event event_;

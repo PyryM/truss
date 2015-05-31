@@ -53,6 +53,7 @@ SDLAddon::SDLAddon(){
 		"#define TRSS_SDL_EVENT_MOUSEMOVE 	5\n"
 		"#define TRSS_SDL_EVENT_MOUSEWHEEL  6\n"
 		"#define TRSS_SDL_EVENT_WINDOW      7\n"
+		"#define TRSS_SDL_EVENT_TEXTINPUT   8\n"
 		"typedef struct {\n"
 		"    unsigned int event_type;\n"
 		"    char keycode[16];\n"
@@ -63,7 +64,11 @@ SDLAddon::SDLAddon(){
 		"void trss_sdl_create_window(Addon* addon, int width, int height, const char* name);\n"
 		"void trss_sdl_destroy_window(Addon* addon);\n"
 		"int  trss_sdl_num_events(Addon* addon);\n"
-		"trss_sdl_event trss_sdl_get_event(Addon* addon, int index);\n";
+		"trss_sdl_event trss_sdl_get_event(Addon* addon, int index);\n"
+		"void trss_sdl_start_textinput(Addon* addon);\n"
+		"void trss_sdl_stop_textinput(Addon* addon);\n"
+		"void trss_sdl_set_clipboard(Addon* addon, const char* data);\n"
+		"const char* trss_sdl_get_clipboard(Addon* addon);\n";
 	errorEvent_.event_type = TRSS_SDL_EVENT_OUTOFBOUNDS;
 }
 
@@ -107,6 +112,12 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 		newEvent.x = event.key.keysym.scancode;
 		newEvent.y = event.key.keysym.sym;
 		copyKeyName(newEvent, event);
+		break;
+	case SDL_TEXTINPUT:
+		newEvent.event_type = TRSS_SDL_EVENT_TEXTINPUT;
+		// TODO: make this work in linux
+		strncpy_s(newEvent.keycode, event.text.text, TRSS_SDL_MAX_KEYCODE_LENGTH);
+		newEvent.keycode[TRSS_SDL_MAX_KEYCODE_LENGTH] = '\0'; // to be safe
 		break;
 	case SDL_MOUSEMOTION:
 		newEvent.event_type = TRSS_SDL_EVENT_MOUSEMOVE;
@@ -172,6 +183,13 @@ void SDLAddon::destroyWindow(){
 	std::cout << "SDLAddon::destroyWindow not implemented yet.\n";
 }
 
+const char* SDLAddon::getClipboardText() {
+	char* temp = SDL_GetClipboardText();
+	clipboard_ = temp;
+	SDL_free(temp);
+	return clipboard_.c_str();
+}
+
 SDLAddon::~SDLAddon(){
 	shutdown();
 }
@@ -203,4 +221,20 @@ int  trss_sdl_num_events(SDLAddon* addon) {
 
 trss_sdl_event trss_sdl_get_event(SDLAddon* addon, int index) {
 	return addon->getEvent(index);
+}
+
+void trss_sdl_start_textinput(SDLAddon* addon) {
+	SDL_StartTextInput();
+}
+
+void trss_sdl_stop_textinput(SDLAddon* addon) {
+	SDL_StopTextInput();
+}
+
+void trss_sdl_set_clipboard(SDLAddon* addon, const char* data) {
+	SDL_SetClipboardText(data);
+}
+
+const char* trss_sdl_get_clipboard(SDLAddon* addon) {
+	return addon->getClipboardText();
 }

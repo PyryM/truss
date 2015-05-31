@@ -57,7 +57,9 @@ trss.trss_test()
 trss.trss_log(TRSS_INTERPRETER_ID, "Bootstrapping [" .. TRSS_INTERPRETER_ID .. "]")
 local TRSS_ID = TRSS_INTERPRETER_ID
 
+-- these should be builtin
 ffi = require("ffi")
+bit = require("bit")
 
 terra_ticStartTime = global(uint64, 0)
 
@@ -142,6 +144,7 @@ libs.TRSS_VERSION = vstr
 subenv = lsubenv
 subenv.libs = libs
 subenv.ffi = ffi
+subenv.bit = bit
 subenv.truss_import = truss_import
 subenv.tic = tic
 subenv.toc = toc
