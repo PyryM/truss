@@ -30,11 +30,12 @@ typedef struct SDLAddon SDLAddon;
 #define TRSS_SDL_EVENT_TEXTINPUT    8
 
 #define TRSS_SDL_MAX_KEYCODE_LENGTH 15 /* should be enough for anybody */
+#define TRSS_SDL_KEYCODE_BUFF_SIZE  16 /* extra byte for null terminator */
 
 /* Simplified SDL Event */
 typedef struct {
 	unsigned int event_type;
-	char keycode[TRSS_SDL_MAX_KEYCODE_LENGTH + 1]; // reserve 1 byte for \0 
+	char keycode[TRSS_SDL_KEYCODE_BUFF_SIZE];
 	double x;
 	double y;
 	int flags;

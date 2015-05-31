@@ -88,28 +88,8 @@ function m.render_(nvg)
 	m.renderBorders_(nvg)
 end
 
-function m.getKeyString(keyname, modifiers)
-	trss.trss_log(0, "Modifiers: " .. modifiers)
-
-	local shiftdown = false
-	if bit.band(modifiers, 1) > 0 or bit.band(modifiers, 2) > 0 then
-		shiftdown = true
-	end
-
-	if #keyname == 1 then
-		if shiftdown then 
-			return keyname 
-		else 
-			return string.lower(keyname) 
-		end
-		--if modifiers
-	else
-		return keyname -- ??
-	end
-end
-
-function m.typeLetter_(keyname, modifiers)
-	m.editlines[1].str = m.editlines[1].str .. m.getKeyString(keyname, modifiers)
+function m.textInput_(tstr)
+	m.editlines[1].str = m.editlines[1].str .. tstr
 end
 
 function m.execute_()
@@ -125,15 +105,15 @@ function m.draw(nvg, width, height)
 end
 
 function m.init(width, height)
-	-- todo
+	-- TODO 
+end
+
+function m.onTextInput(textstr)
+	m.textInput_(textstr)
 end
 
 function m.onKeyDown(keyname, modifiers)
-	if #keyname == 1 then
-		m.typeLetter_(keyname, modifiers)
-	elseif keyname == "Space" then
-		m.typeLetter_(" ", 0)
-	elseif keyname == "Backspace" then
+	if keyname == "Backspace" then
 		-- todo
 	elseif keyname == "Return" then
 		m.execute_()

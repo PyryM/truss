@@ -101,6 +101,24 @@ void copyKeyName(trss_sdl_event& newEvent, SDL_Event& event) {
 	newEvent.keycode[namelength] = '\0'; // zero terminate
 }
 
+// hand-written strncpy to get around strncpy being unsafe on
+// windows and strncpy_s not existing on linux
+//
+// as a bonus this will actually null terminate the string
+void hackCStrCpy(char* dest, char* src, size_t destsize) {
+	bool reachedSrcEnd = false;
+	// reserve one byte in dest for null terminator
+	for (size_t i = 0; i < destsize-1; ++i) {
+		if (reachedSrcEnd) {
+			dest[i] = '\0';
+		} else {
+			dest[i] = src[i];
+			reachedSrcEnd = (src[i] == '\0');
+		}
+	}
+	dest[destsize - 1] = '\0';
+}
+
 void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	trss_sdl_event newEvent;
 	switch(event.type) {
@@ -115,9 +133,7 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 		break;
 	case SDL_TEXTINPUT:
 		newEvent.event_type = TRSS_SDL_EVENT_TEXTINPUT;
-		// TODO: make this work in linux
-		strncpy_s(newEvent.keycode, event.text.text, TRSS_SDL_MAX_KEYCODE_LENGTH);
-		newEvent.keycode[TRSS_SDL_MAX_KEYCODE_LENGTH] = '\0'; // to be safe
+		hackCStrCpy(newEvent.keycode, event.text.text, TRSS_SDL_KEYCODE_BUFF_SIZE);
 		break;
 	case SDL_MOUSEMOTION:
 		newEvent.event_type = TRSS_SDL_EVENT_MOUSEMOVE;

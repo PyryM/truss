@@ -26,6 +26,9 @@ function init()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
 	trss.trss_log(0, "Renderer type: " .. rendererName)
+
+	-- tell sdl that we want to receive text input events
+	sdl.trss_sdl_start_textinput(sdlPointer)
 end
 
 function onKeyDown(keyname, modifiers)
@@ -40,6 +43,13 @@ end
 
 function onKeyUp(keyname)
 	log("Keyup: " .. keyname)
+end
+
+function onTextInput(tstr)
+	log("Text input: " .. tstr)
+	if gui ~= nil and gui.onTextInput ~= nil then
+		gui.onTextInput(tstr)
+	end
 end
 
 downkeys = {}
@@ -63,6 +73,8 @@ function updateEvents()
 				downkeys[keyname] = false
 				onKeyUp(keyname)
 			end
+		elseif evt.event_type == sdl.TRSS_SDL_EVENT_TEXTINPUT then
+			onTextInput(ffi.string(evt.keycode))
 		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
 			trss.trss_log(0, "Received window close, stopping interpreter...")
 			trss.trss_stop_interpreter(TRSS_ID)
