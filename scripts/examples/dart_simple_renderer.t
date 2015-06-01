@@ -102,13 +102,28 @@ function addLineCircle(dest, rad)
 	return npts
 end
 
+function addSegmentedLine(dest, v0, v1, nsteps)
+	local dx = (v1[1] - v0[1]) / (nsteps - 1)
+	local dy = (v1[2] - v0[2]) / (nsteps - 1)
+	local dz = (v1[3] - v0[3]) / (nsteps - 1)
+
+	local curline = {}
+	local x, y, z = v0[1], v0[2], v0[3]
+	for i = 0,(nsteps-1) do
+		table.insert(curline, {x, y, z})
+		x, y, z = x + dx, y + dy, z + dz
+	end
+	table.insert(dest, curline)
+	return #curline
+end
+
 function createLineGrid()
-	local x0 = -1
-	local dx = 0.1
+	local x0 = -5
+	local dx = 0.5
 	local nx = 20
 	local x1 = x0 + nx*dx
-	local y0 = -1
-	local dy = 0.1
+	local y0 = -5
+	local dy = 0.5
 	local ny = 20
 	local y1 = y0 + ny*dy
 
@@ -119,20 +134,22 @@ function createLineGrid()
 		local x = x0 + ix*dx
 		local v0 = {x, 0, y0}
 		local v1 = {x, 0, y1}
-		table.insert(lines, {v0, v1})
-		npts = npts + 2
+		npts = npts + addSegmentedLine(lines, v0, v1, 30)
+		--table.insert(lines, {v0, v1})
+		--npts = npts + 2
 	end
 
 	for iy = 0,ny do
 		local y = y0 + iy*dy
 		local v0 = {x0, 0, y}
 		local v1 = {x1, 0, y}
-		table.insert(lines, {v0, v1})
-		npts = npts + 2
+		npts = npts + addSegmentedLine(lines, v0, v1, 30)
+		--table.insert(lines, {v0, v1})
+		--npts = npts + 2
 	end
 
 	local r0 = 0.0
-	local dr = 0.1
+	local dr = 0.5
 	local nr = 10
 	for ir = 1,nr do
 		npts = npts + addLineCircle(lines, r0 + ir*dr)
