@@ -23,12 +23,15 @@ function OrbitCam:init()
     self.phiRate = 0.01
     self.thetaRate = 0.01
     self.radRate = 0.4
+    self.panRate = 0.01
 
     self.lastMouseX = 0 
     self.lastMouseY = 0
-    self.mousebutton = 1 -- 1 = left
-                         -- 2 = middle
-                         -- 4 = right
+    
+    -- mouse buttons: 1 = left, 2 = middle, 4 = right
+    self.rotateMouseButton = 1                               
+    self.panMouseButton = 2
+
     self.minrad = 0.1
     self.maxrad = 10.0
     self.orbitpoint = {x = 0, y = 0, z = 0}
@@ -65,6 +68,30 @@ function OrbitCam:moveRad(dv)
     self.radTarget = math.max(self.minrad, math.min(self.maxrad, self.radTarget))
 end
 
+local function multvec3(v, s)
+    v.x, v.y, v.z = v.x * s, v.y * s, v.z * s
+end
+
+local function addvec3(a, b)
+    a.x = a.x + b.x
+    a.y = a.y + b.y
+    a.z = a.z + b.z
+end
+
+function OrbitCam:panOrbitPoint(dx, dy)
+    self:updateMatrix_()
+    -- pan using basis vectors from rotation matrix
+    -- Note that Matrix4:getColumn is 1-indexed
+    local basisX = self.mat:getColumn(1)
+    local basisY = self.mat:getColumn(2)
+
+    -- orbitpoint += (bx*dx + by*dy)
+    multvec3(basisX, dx)
+    multvec3(basisY, dy)
+    addvec3(basisX, basisY)
+    addvec3(self.orbitpoint, basisX)
+end
+
 function OrbitCam:updateSDLZoom(evt)
     local dwheel = evt.y
     self:moveRad(-dwheel)
@@ -79,11 +106,16 @@ function OrbitCam:updateFromSDL(evt)
 
     local x, y = evt.x, evt.y
     local buttons = evt.flags
-    if bit.band(buttons, self.mousebutton) > 0 then
+    if bit.band(buttons, self.rotateMouseButton) > 0 then
         local dx = x - self.lastMouseX
         local dy = y - self.lastMouseY
         self:moveTheta(dx)
         self:movePhi(-dy)
+    elseif bit.band(buttons, self.panMouseButton) > 0 then
+        -- scale panrate to rad so that it's reasonable at all zooms
+        local dx = (x - self.lastMouseX) * self.panRate * self.rad
+        local dy = (y - self.lastMouseY) * self.panRate * self.rad
+        self:panOrbitPoint(-dx, dy)
     end
 
     self.lastMouseX, self.lastMouseY = x, y

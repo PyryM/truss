@@ -45,3 +45,17 @@ print(mult:prettystr())
 mult:identity()
 mult:flipViewHandedness()
 print(mult:prettystr())
+
+function printvec(v)
+	local comps = {"x", "y", "z", "w"}
+	local ret = ""
+	for i = 1,#comps do
+		ret = ret .. comps[i] .. "=" .. tostring(v[comps[i]]) .. ", "
+	end
+	return ret
+end
+
+print(m:prettystr())
+for i = 1,4 do
+	print(printvec(m:getColumn(i)))
+end

@@ -401,6 +401,17 @@ function Matrix4:multiplyInto(a,b)
 	return self
 end
 
+-- Note: this is 1-indexed, so the columns are 1,2,3,4
+function Matrix4:getColumn(idx)
+	if idx <= 0 or idx > 4 then
+		trss.trss_log(0, "Error: Matrix4:getColumn expects index in range [1,4], got " .. idx)
+		return nil
+	end
+	local s = (idx-1)*4
+	local d = self.data
+	return {x = d[s], y = d[s+1], z = d[s+2], w = d[s+3]}
+end
+
 function Matrix4:prettystr()
 	local ret = "["
 	local data = self.data
