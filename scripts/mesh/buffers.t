@@ -117,8 +117,24 @@ end
 -- creates static bgfx buffers from vertex and index data
 -- the created buffers are added to the data table as
 -- data.vbh and data.ibh
-function m.createStaticBGFXBuffers(data)
+--
+-- if recreate is set then any old buffers will be destroyed
+-- and remade from the new data. 
+-- Otherwise, if old buffers exist, the function
+-- will simply return without makaing any chanages.
+function m.createStaticBGFXBuffers(data, recreate)
 	local flags = 0
+
+	if (data.vbh or data.ibh) and (not recreate) then
+		return
+	end
+
+	if data.vbh then
+		bgfx.bgfx_destroy_vertex_buffer(data.vbh)
+	end
+	if data.ibh then
+		bgfx.bgfx_destroy_index_buffer(data.ibh)
+	end
 
 	-- Create static bgfx buffers
 	-- Warning! This only wraps the data, so make sure it doesn't go out

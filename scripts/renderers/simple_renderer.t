@@ -149,9 +149,13 @@ function SimpleRenderer:add(obj)
 	table.insert(self.objects, obj)
 end
 
-function SimpleRenderer:renderGeo(geo, mtx)
+function SimpleRenderer:renderGeo(geo, mtx, material)
 	bgfx.bgfx_set_transform(mtx.data, 1) -- only one matrix in array
-	bgfx.bgfx_set_program(self.pgm)
+	if material and material.apply then
+		material:apply()
+	else
+		bgfx.bgfx_set_program(self.pgm)
+	end
 	bgfx.bgfx_set_vertex_buffer(geo.databuffers.vbh, 0, bgfx.UINT32_MAX)
 	bgfx.bgfx_set_index_buffer(geo.databuffers.ibh, 0, bgfx.UINT32_MAX)
 
@@ -172,7 +176,7 @@ function SimpleRenderer:render()
 			if self.autoUpdateMatrices and v.updateMatrixWorld then v:updateMatrixWorld() end
 			if v.matrixWorld and v.geo then
 				tempmat:multiplyInto(rootmat, v.matrixWorld)
-				self:renderGeo(v.geo, tempmat)
+				self:renderGeo(v.geo, tempmat, v.material)
 			end
 		end
 	end

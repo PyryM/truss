@@ -16,6 +16,7 @@ local Mesh = class("Mesh")
 function Mesh:init(geo, mat)
 	self.geo = geo
 	self.mat = mat
+	self.material = mat
 
 	self.matrixWorld = Matrix4():identity()
 	self.quaternion = Quaternion():identity()

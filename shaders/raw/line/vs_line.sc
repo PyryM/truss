@@ -27,10 +27,10 @@ $output v_wpos
 
 #include "../common/common.sh"
 
-uniform float thickness;
+uniform vec4 u_thickness;
 
 void main() {
-  float aspect = u_viewRect.x / u_viewRect.y;
+  float aspect = u_viewRect.z / u_viewRect.w;
   vec2 aspectVec = vec2(aspect, 1.0);
   mat4 projViewModel = u_modelViewProj; //projection * view * model;
   vec4 previousProjected = mul(projViewModel, vec4(a_prevpos, 1.0));
@@ -42,7 +42,7 @@ void main() {
   vec2 previousScreen = previousProjected.xy / previousProjected.w * aspectVec;
   vec2 nextScreen = nextProjected.xy / nextProjected.w * aspectVec;
 
-  float len = thickness;
+  float len = u_thickness.x;
   float orientation = a_nextposdir.w;
 
   //starting point uses (next - current)
@@ -59,8 +59,8 @@ void main() {
   normal *= len/2.0;
   normal.x /= aspect;
 
-  v_wpos = currentProjected.xyz; // just shove something into it
+  v_wpos = vec3(u_viewRect.z, u_viewRect.w, 0.75); //currentProjected.xyz; // just shove something into it
 
-  vec4 offset = vec4(normal * orientation, 0.0, 1.0);
+  vec4 offset = vec4(normal * orientation, 0.0, 0.0);
   gl_Position = currentProjected + offset;
 }

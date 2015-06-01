@@ -35,6 +35,7 @@ matrixlib = truss_import("math/matrix.t")
 quatlib = truss_import("math/quat.t")
 local Matrix4 = matrixlib.Matrix4
 local Quaternion = quatlib.Quaternion
+Line = truss_import("mesh/line.t")
 
 function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
@@ -80,6 +81,65 @@ function updateModelRotation(time)
 	renderer:setRootTransform(cammat)
 end
 
+function addLineCircle(dest, rad)
+	-- create a circle
+	local circlepoints = {}
+	local npts = 60
+	local dtheta = math.pi * 2.0 / (npts - 1)
+	for i = 1,npts do
+		local x = rad * math.cos(i * dtheta)
+		local y = rad * math.sin(i * dtheta)
+		local z = 0.0
+		circlepoints[i] = {x, y, z}
+	end
+	table.insert(dest, circlepoints)
+	return npts
+end
+
+function createLineGrid()
+	local x0 = -1
+	local dx = 0.1
+	local nx = 20
+	local x1 = x0 + nx*dx
+	local y0 = -1
+	local dy = 0.1
+	local ny = 20
+	local y1 = y0 + ny*dy
+
+	local lines = {}
+	local npts = 0
+
+	for ix = 1,nx do
+		local x = x0 + ix*dx
+		local v0 = {x, y0, 0}
+		local v1 = {x, y1, 0}
+		table.insert(lines, {v0, v1})
+		npts = npts + 2
+	end
+
+	for iy = 1,ny do
+		local y = y0 + iy*dy
+		local v0 = {x0, y, 0}
+		local v1 = {x1, y, 0}
+		table.insert(lines, {v0, v1})
+		npts = npts + 2
+	end
+
+	local r0 = 0.0
+	local dr = 0.1
+	local nr = 10
+	for ir = 1,nr do
+		npts = npts + addLineCircle(lines, r0 + ir*dr)
+	end
+
+	theline = Line(npts, false) -- static line
+	theline:setPoints(lines)
+	theline:createDefaultMaterial({0.7,0.7,0.7,1}, 0.005)
+
+	renderer:add(theline)
+
+end
+
 function initBGFX()
 	-- Basic init
 
@@ -111,6 +171,9 @@ function initBGFX()
 	-- load in a json
 	local jsonstring = loadStringFromFile("temp/wam.json")
 	manager:update(jsonstring)
+
+	-- create a line grid
+	createLineGrid()
 
 	-- camera
 	cammat = Matrix4():identity()
