@@ -21,8 +21,8 @@ function init()
 	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
 end
 
-width = 800
-height = 600
+width = 1280
+height = 720
 frame = 0
 time = 0.0
 mousex, mousey = 0, 0
@@ -36,6 +36,7 @@ quatlib = truss_import("math/quat.t")
 local Matrix4 = matrixlib.Matrix4
 local Quaternion = quatlib.Quaternion
 Line = truss_import("mesh/line.t")
+local OrbitCam = truss_import("gui/orbitcam.t")
 
 function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
@@ -53,6 +54,7 @@ function updateEvents()
 			trss.trss_log(TRSS_ID, "Received window close, stopping interpreter...")
 			trss.trss_stop_interpreter(TRSS_ID)
 		end
+		orbitcam:updateFromSDL(evt)
 	end
 end
 
@@ -60,21 +62,25 @@ function log(msg)
 	trss.trss_log(0, msg)
 end
 
-function updateCamera(theta, phi, rad)
-	local rr = rad * math.cos(phi)
-	local y = rad * math.sin(phi)
-	local x = rr * math.cos(theta)
-	local z = rr * math.sin(theta)
-	local scale = {x=1, y=1, z=1}
+function updateCamera()
+	-- local rr = rad * math.cos(phi)
+	-- local y = rad * math.sin(phi)
+	-- local x = rr * math.cos(theta)
+	-- local z = rr * math.sin(theta)
+	-- local scale = {x=1, y=1, z=1}
 
-	campos.x, campos.y, campos.z = x, y, z
-	camquat:fromEuler({x=phi,y=-theta+math.pi/2.0,z=0}, 'ZYX')
-	cammat:compose(camquat, scale, campos)
-	renderer:setCameraTransform(cammat)
+	-- campos.x, campos.y, campos.z = x, y, z
+	-- camquat:fromEuler({x=phi,y=-theta+math.pi/2.0,z=0}, 'ZYX')
+	-- cammat:compose(camquat, scale, campos)
+	-- renderer:setCameraTransform(cammat)
+
+	orbitcam:update(1.0 / 60.0)
+	renderer:setCameraTransform(orbitcam.mat)
 end
 
 function updateModelRotation(time)
 	camquat:fromEuler({x= -math.pi / 2.0,y=time*0.1,z=0}, 'ZYX')
+	--camquat:identity()
 	campos.x, campos.y, campos.z = 0,-0.5,0
 	local scale = {x=1, y=1, z=1}
 	cammat:compose(camquat, scale, campos)
@@ -88,8 +94,8 @@ function addLineCircle(dest, rad)
 	local dtheta = math.pi * 2.0 / (npts - 1)
 	for i = 1,npts do
 		local x = rad * math.cos(i * dtheta)
-		local y = rad * math.sin(i * dtheta)
-		local z = 0.0
+		local z = rad * math.sin(i * dtheta)
+		local y = 0.0
 		circlepoints[i] = {x, y, z}
 	end
 	table.insert(dest, circlepoints)
@@ -109,18 +115,18 @@ function createLineGrid()
 	local lines = {}
 	local npts = 0
 
-	for ix = 1,nx do
+	for ix = 0,nx do
 		local x = x0 + ix*dx
-		local v0 = {x, y0, 0}
-		local v1 = {x, y1, 0}
+		local v0 = {x, 0, y0}
+		local v1 = {x, 0, y1}
 		table.insert(lines, {v0, v1})
 		npts = npts + 2
 	end
 
-	for iy = 1,ny do
+	for iy = 0,ny do
 		local y = y0 + iy*dy
-		local v0 = {x0, y, 0}
-		local v1 = {x1, y, 0}
+		local v0 = {x0, 0, y}
+		local v1 = {x1, 0, y}
 		table.insert(lines, {v0, v1})
 		npts = npts + 2
 	end
@@ -179,6 +185,7 @@ function initBGFX()
 	cammat = Matrix4():identity()
 	camquat = Quaternion():identity()
 	campos = {x = 0, y = 0, z = 0}
+	orbitcam = OrbitCam()
 end
 
 frametime = 0.0
@@ -206,8 +213,8 @@ function update()
 	bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/dart_simple_renderer.t")
 	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
 
-	updateCamera(math.pi / 2.0, 0.0, 1.5)
-	updateModelRotation(time)
+	updateCamera()
+	--updateModelRotation(time)
 	renderer:render()
 
 	-- Advance to next frame. Rendering thread will be kicked to
