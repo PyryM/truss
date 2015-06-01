@@ -206,6 +206,7 @@ function initBGFX()
 end
 
 frametime = 0.0
+scripttime = 0.0
 
 function update()
 	frame = frame + 1
@@ -228,11 +229,13 @@ function update()
 	bgfx.bgfx_dbg_text_clear(0, false)
 
 	bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/dart_simple_renderer.t")
-	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
+	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "total: " .. frametime*1000.0 .. " ms, script: " .. scripttime*1000.0 .. " ms")
 
 	updateCamera()
 	--updateModelRotation(time)
 	renderer:render()
+
+	scripttime = toc(startTime)
 
 	-- Advance to next frame. Rendering thread will be kicked to
 	-- process submitted rendering primitives.
