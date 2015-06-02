@@ -16,20 +16,20 @@ local function makeTestLines(n)
 	return ret
 end
 
-m.leftmargin = 5
-m.linetopmargin = -4
+m.leftmargin = 5.5
+m.linetopmargin = -3.5
 m.xpos = 100
 m.ypos = 100
 m.width = 600
-m.lineheight = 20
+m.linemargin = 2
 m.fontsize = 14
 m.numBuffersLines = 10
-m.numEditLines = 1
 m.bgcolor = nanovg.nvgRGBA(100,100,100,255)
 m.fgcolor = nanovg.nvgRGBA(200,255,255,255)
 m.bufferlines = makeTestLines(m.numBuffersLines)
 m.bufferpos = 0
-m.editlines = {{str = ">"}}
+m.editline = ""
+m.editchunklist =  {}
 
 m.bounds_struct = terralib.new(float[4])
 
@@ -39,21 +39,26 @@ function m.getStrXSize(nvg, xpos, ypos, str)
 end
 
 function m.getStrBounds(nvg, xpos, ypos, str)
-	nanovg.nvgTextBounds(nvg, xpos, ypos, str, nil, m.bounds_struct)
-	return m.bounds_struct[0], m.bounds_struct[1], m.bounds_struct[2], m.bounds_struct[3]
+	local w = #str * m.charWidth
+	local y0 = ypos + m.charTopOffset
+	local y1 = y0 + m.charHeight
+
+	return xpos, y0, xpos+w, y1
+	--nanovg.nvgTextBounds(nvg, xpos, ypos, str, nil, m.bounds_struct)
+	--return m.bounds_struct[0], m.bounds_struct[1], m.bounds_struct[2], m.bounds_struct[3]
 end
 
 -- chunk style functions
 function m.style_normal(chunk, nvg, xpos, ypos)
 	nanovg.nvgFillColor(nvg, m.fgcolor)
-	local newx = nanovg.nvgText(nvg, xpos, ypos, chunk.str, nil)
-	return newx
+	nanovg.nvgText(nvg, xpos, ypos, chunk.str, nil)
+	return xpos + (#(chunk.str) * m.charWidth)
 end
 
 function m.style_colored(chunk, nvg, xpos, ypos)
 	nanovg.nvgFillColor(nvg, chunk.fgcolor or m.fgcolor)
-	local newx = nanovg.nvgText(nvg, xpos, ypos, chunk.str, nil)
-	return newx
+	nanovg.nvgText(nvg, xpos, ypos, chunk.str, nil)
+	return xpos + (#(chunk.str) * m.charWidth)
 end
 
 function m.style_background(chunk, nvg, xpos, ypos)
@@ -73,7 +78,7 @@ local function randchoice(opts)
 end
 
 local function makeTestChunk(nbits)
-	local words = {" a word", " something ", " blargh ", " foo ", " oh my ",
+	local words = {"a word", "something ", "blargh ", "foo ", "oh my ",
 					" PUNCTIONATIon???? "}
 	local rgba = nanovg.nvgRGBA
 	local colors = {rgba(255,128,128,255),
@@ -108,6 +113,7 @@ end
 makeTestChunks(10)
 
 function m.renderChunkList_(nvg, chunklist, ypos)
+	if not chunklist then return end
 	local xpos = m.xpos + m.leftmargin
 	for i,chunk in ipairs(chunklist) do
 		xpos = chunk:style(nvg, xpos, ypos)
@@ -117,24 +123,26 @@ end
 function m.renderLine_(nvg, line, ypos)
 	if not line then return end
 
-	nanovg.nvgBeginPath(nvg)
-	nanovg.nvgRect(nvg, m.xpos, ypos, m.width, m.lineheight)
-	nanovg.nvgFillColor(nvg, line.bgcolor or m.bgcolor)
-	nanovg.nvgFill(nvg)
+	nanovg.nvgFillColor(nvg, m.fgcolor)
+	nanovg.nvgText(nvg, m.xpos + m.leftmargin, ypos, line, nil)
+end
 
-	nanovg.nvgFillColor(nvg, line.fgcolor or m.fgcolor)
-	nanovg.nvgText(nvg, m.xpos + m.leftmargin, ypos + m.linetopmargin + m.lineheight, line.str, nil)
+function m.renderBackground_(nvg)
+	nanovg.nvgBeginPath(nvg)
+	nanovg.nvgRect(nvg, m.xpos, m.ypos, m.width, m.height)
+	nanovg.nvgFillColor(nvg, m.bgcolor)
+	nanovg.nvgFill(nvg)
 end
 
 function m.renderBorders_(nvg)
 	local numBuffersLines = m.numBuffersLines
-	local numEditLines = m.numEditLines
-	local h0 = m.lineheight * numBuffersLines
-	local h1 = m.lineheight * numEditLines
+	local h0 = m.height - m.lineheight
+	local h1 = m.lineheight
 	local y0 = m.ypos
 	local y1 = y0 + h0
 	local y2 = y1 + h1
 
+	nanovg.nvgBeginPath(nvg)
 	nanovg.nvgStrokeWidth(nvg, 2.0)
 	nanovg.nvgStrokeColor(nvg, m.fgcolor)
 	nanovg.nvgFillColor(nvg, m.fgcolor)
@@ -148,28 +156,12 @@ function m.renderBorders_(nvg)
 	nanovg.nvgStroke(nvg)
 end
 
-function m.renderLines_(nvg)
-	local numBuf, numEdit = m.numBuffersLines, m.numEditLines
-	local bufbuf = m.bufferlines
-	local editbuf = m.editlines
-	local boffset = m.bufferpos
-
-	local ypos = m.ypos
-	for i = 1, numBuf do
-		m.renderLine_(nvg, bufbuf[i + boffset], ypos)
-		ypos = ypos + m.lineheight
-	end
-
-	for i = 1, numEdit do
-		m.renderLine_(nvg, editbuf[i], ypos)
-		ypos = ypos + m.lineheight
-	end
-end
-
 function m.renderChunkLists_(nvg)
-	local numBuf, numEdit = m.numBufferChunkLists, m.numEditLines
+	nanovg.nvgFontSize(nvg, m.fontsize)
+	nanovg.nvgFontFace(nvg, "sans")
+
+	local numBuf = m.numBufferChunkLists
 	local bufbuf = m.bufferchunklists
-	local editbuf = m.editlines
 	local boffset = m.bufferpos
 
 	local ypos = m.ypos + m.linetopmargin + m.lineheight
@@ -178,36 +170,64 @@ function m.renderChunkLists_(nvg)
 		ypos = ypos + m.lineheight
 	end
 
-	for i = 1, numEdit do
-		m.renderLine_(nvg, editbuf[i], ypos)
-		ypos = ypos + m.lineheight
-	end
+	m.renderLine_(nvg, m.editline, m.height + m.linetopmargin)
+	ypos = ypos + m.lineheight
+
 end
 
 function m.render_(nvg)
 	--m.renderLines_(nvg)
+	m.renderBackground_(nvg)
+	m.getCharacterSize_(nvg)
 	m.renderChunkLists_(nvg)
 	m.renderBorders_(nvg)
 end
 
+function m.chunkify_(str)
+	local ret = {}
+	-- for now, just put the chunk into a single string
+	ret[1] = {str = str, style = m.style_normal}
+	return ret
+end
+
 function m.textInput_(tstr)
-	m.editlines[1].str = m.editlines[1].str .. tstr
+	m.editline = m.editline .. tstr
 end
 
 function m.execute_()
-	for i = 1,m.numEditLines do
-		table.insert(m.bufferlines, {str = m.editlines[i].str})
-		m.editlines[i].str = ""
+	table.insert(m.bufferchunklists, m.chunkify_(m.editline))
+	if #m.bufferchunklists >= m.numBufferChunkLists then
 		m.bufferpos = m.bufferpos + 1
 	end
+	m.editline = ""
 end
 
 function m.draw(nvg, width, height)
 	m.render_(nvg)
 end
 
-function m.init(width, height)
-	-- TODO 
+function m.getCharacterSize_(nvg)
+	local xpos, ypos = 40, 40
+	nanovg.nvgFontSize(nvg, m.fontsize)
+	nanovg.nvgFontFace(nvg, "sans")
+	nanovg.nvgTextBounds(nvg, xpos, ypos, "TTT", nil, m.bounds_struct)
+	m.charWidth = (m.bounds_struct[2] - m.bounds_struct[0]) / 3
+	m.charHeight = m.bounds_struct[3] - m.bounds_struct[1]
+	m.charTopOffset = m.bounds_struct[1] - ypos
+	m.lineheight = m.charHeight + m.linemargin
+	--trss.trss_log(0, "Char height: " .. m.charHeight)
+	--trss.trss_log(0, "charTopOffset: " .. m.charTopOffset)
+end
+
+function m.init(width, height, nvg)
+	m.getCharacterSize_(nvg)
+	trss.trss_log(0, "Char size: " .. m.charWidth .. ", " .. m.charHeight)
+	m.width = 82 * m.charWidth
+	m.height = height - 2
+	m.xpos = width - m.width - 0.5
+	m.ypos = 0.5
+	m.numBufferChunkLists = math.floor(m.height / m.lineheight)
+	-- height??
 end
 
 function m.onTextInput(textstr)

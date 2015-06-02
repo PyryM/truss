@@ -12,8 +12,8 @@ TRSS_ID = libs.TRSS_ID
 TRSS_VERSION = libs.TRSS_VERSION
 nanovg = libs.nanovg
 
-width = 800
-height = 600
+width = 1280
+height = 720
 frame = 0
 time = 0.0
 mousex, mousey = 0, 0
@@ -117,6 +117,10 @@ function initNVG()
 	-- load font
 	--nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/roboto-regular.ttf")
 	nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/VeraMono.ttf")
+
+	if gui and gui.init then
+		gui.init(width, height, nvg)
+	end
 end
 
 frametime = 0.0
@@ -129,18 +133,18 @@ gui = truss_import(guiSrc)
 function reloadModule()
 	gui = truss_import(guiSrc, true) -- force reload
 	if gui and gui.init then
-		gui.init(width, height)
+		gui.init(width, height, nvg)
 	end
 end
 
 function drawNVG()
-		nanovg.nvgBeginFrame(nvg, width, height, 1.0)
+	nanovg.nvgBeginFrame(nvg, width, height, 1.0)
 
-		if gui then
-			gui.draw(nvg, width, height)
-		end
+	if gui then
+		gui.draw(nvg, width, height)
+	end
 
-		nanovg.nvgEndFrame(nvg)
+	nanovg.nvgEndFrame(nvg)
 end
 
 -- converts a floating point value in seconds to
