@@ -7,6 +7,13 @@ local CMath = terralib.includec("math.h")
 
 local class = truss_import("core/30log.lua")
 
+struct m.vec4_ {
+	x: float;
+	y: float;
+	z: float;
+	w: float;
+}
+
 terra m.rotateXY(mat: &float, ax: float, ay: float)
 	var sx = CMath.sinf(ax)
 	var cx = CMath.cosf(ax)
@@ -207,6 +214,15 @@ terra m.multiplyMatrices(dest: &float, a: &float, b: &float)
 	dest[ 15 ] = a41 * b14 + a42 * b24 + a43 * b34 + a44 * b44
 end
 
+-- multiplies a vec4 by the matrix and returns a new vec4 as 4 return values
+terra m.multiplyMatrixVector(a: &float, v0: float, v1: float, v2: float, v3: float)
+	var r0 = a[0]*v0 + a[4]*v1 + a[ 8]*v2 + a[12]*v3
+	var r1 = a[1]*v0 + a[5]*v1 + a[ 9]*v2 + a[13]*v3
+	var r2 = a[2]*v0 + a[6]*v1 + a[10]*v2 + a[14]*v3
+	var r3 = a[3]*v0 + a[7]*v1 + a[11]*v2 + a[15]*v3
+	return m.vec4_{r0, r1, r2, r3}
+end
+
 -- multiplies a 4x4 matrix by a scalar in place
 terra m.multiplyMatrixScalar(mat: &float, scale: float)
 	-- note terra is 0 indexed so this is like a c loop
@@ -286,7 +302,7 @@ terra m.matrixToQuaternion(src: &float)
 		z = 0.25 * s
 	end
 
-	return x,y,z,w
+	return m.vec4_{x,y,z,w}
 end
 
 terra m.matrixCopy(dest: &float, src: &float)
@@ -348,7 +364,7 @@ function Matrix4:toQuaternion()
 	-- import 'late' to avoid mutual recursion issues
 	local quat = truss_import("math/quat.t")
 	local qret = quat.Quaternion()
-	qret:set(m.matrixToQuaternion(self.data))
+	qret:copy(m.matrixToQuaternion(self.data))
 	return qret
 end
 
@@ -399,6 +415,17 @@ end
 function Matrix4:multiplyInto(a,b)
 	m.multiplyMatrices(self.data, a.data, b.data)
 	return self
+end
+
+-- matrix*vector multiplication, returns new vector
+-- is a vec3 is given then w <- 1
+function Matrix4:multiplyVector(v)
+	local v2 = m.multiplyMatrixVector(self.data, v.x or 0,
+		   			 						  v.y or 0,
+											  v.z or 0,
+											  v.w or 1)
+	print(tostring(v2))
+	return {x = v2.x, y = v2.y, z = v2.z, w = v2.w}
 end
 
 -- Note: this is 1-indexed, so the columns are 1,2,3,4

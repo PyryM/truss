@@ -59,3 +59,7 @@ print(m:prettystr())
 for i = 1,4 do
 	print(printvec(m:getColumn(i)))
 end
+
+local tv = v3(1.0,0.0,0.0)
+local tf = m:multiplyVector(tv)
+print(printvec(tf))
