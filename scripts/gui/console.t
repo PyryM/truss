@@ -24,12 +24,13 @@ m.width = 600
 m.linemargin = 2
 m.fontsize = 14
 m.numBuffersLines = 10
-m.bgcolor = nanovg.nvgRGBA(100,100,100,255)
+m.bgcolor = nanovg.nvgRGBA(40,40,40,200)
 m.fgcolor = nanovg.nvgRGBA(200,255,255,255)
-m.bufferlines = makeTestLines(m.numBuffersLines)
 m.bufferpos = 0
 m.editline = ""
 m.editchunklist =  {}
+m.bufferchunklists = {}
+m.numBufferChunkLists = 20
 
 m.bounds_struct = terralib.new(float[4])
 
@@ -80,7 +81,7 @@ end
 local function makeTestChunk(nbits)
 	local words = {"a word", "something ", "blargh ", "foo ", "oh my ",
 					" PUNCTIONATIon???? "}
-	local rgba = nanovg.nvgRGBA
+	
 	local colors = {rgba(255,128,128,255),
 					rgba(128,255,128,255),
 					rgba(128,128,255,255),
@@ -110,7 +111,55 @@ local function makeTestChunks(n)
 	m.numBufferChunkLists = #(m.bufferchunklists)
 end
 
-makeTestChunks(10)
+--makeTestChunks(10)
+
+function m.printChunkList_(chunklist)
+	table.insert(m.bufferchunklists, chunklist)
+	if #m.bufferchunklists >= m.numBufferChunkLists then
+		m.bufferpos = m.bufferpos + 1
+	end
+end
+
+function m.printStraightText_(rawtext)
+	local chunk = {str = rawtext, style = m.style_normal}
+	m.printChunkList_({chunk})
+end
+
+function m.printDivider_()
+	local d = ""
+	for i = 1,80 do 
+		d = d .. "="
+	end
+	m.printStraightText_(d)
+end
+
+function m.printLogo_()
+	local foo = [[asdf]]
+	local logolines = {
+		[[    _____________________ ____ ___  _________ _________]],
+		[[    \__    ___/\______   \    |   \/   _____//   _____/]],
+		[[      |    |    |       _/    |   /\_____  \ \_____  \ ]],
+		[[      |    |    |    |   \    |  / /        \/        \]],
+		[[      |____|    |____|_  /______/ /_______  /_______  /]],
+		[[                       \/                 \/        \/ ]]
+	}
+	local padding = "          "
+	local color0 = nanovg.nvgRGBA(128,128,255,255)
+	local color1 = nanovg.nvgRGBA(255,255,255,255)
+	
+	m.printDivider_()
+	m.printDivider_()
+	for i = 1,#logolines do
+		local alpha = (i - 1) / (#logolines - 1)
+		local color = nanovg.nvgLerpRGBA(color0, color1, alpha)
+		local chunk = {str = padding .. logolines[i],
+					   style = m.style_colored,
+					   fgcolor = color}
+		m.printChunkList_({chunk})
+	end
+	m.printDivider_()
+	m.printDivider_()
+end
 
 function m.renderChunkList_(nvg, chunklist, ypos)
 	if not chunklist then return end
@@ -210,8 +259,13 @@ function m.getCharacterSize_(nvg)
 	local xpos, ypos = 40, 40
 	nanovg.nvgFontSize(nvg, m.fontsize)
 	nanovg.nvgFontFace(nvg, "sans")
-	nanovg.nvgTextBounds(nvg, xpos, ypos, "TTT", nil, m.bounds_struct)
-	m.charWidth = (m.bounds_struct[2] - m.bounds_struct[0]) / 3
+	local teststring = ""
+	for i = 1,80 do
+		teststring = teststring .. "="
+	end
+
+	nanovg.nvgTextBounds(nvg, xpos, ypos, teststring, nil, m.bounds_struct)
+	m.charWidth = (m.bounds_struct[2] - m.bounds_struct[0]) / 80
 	m.charHeight = m.bounds_struct[3] - m.bounds_struct[1]
 	m.charTopOffset = m.bounds_struct[1] - ypos
 	m.lineheight = m.charHeight + m.linemargin
@@ -222,11 +276,12 @@ end
 function m.init(width, height, nvg)
 	m.getCharacterSize_(nvg)
 	trss.trss_log(0, "Char size: " .. m.charWidth .. ", " .. m.charHeight)
-	m.width = 82 * m.charWidth
+	m.width = 81 * m.charWidth
 	m.height = height - 2
 	m.xpos = width - m.width - 0.5
 	m.ypos = 0.5
 	m.numBufferChunkLists = math.floor(m.height / m.lineheight)
+	m.printLogo_()
 	-- height??
 end
 
