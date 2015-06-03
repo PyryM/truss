@@ -31,6 +31,7 @@ m.editline = ""
 m.editchunklist =  {}
 m.bufferchunklists = {}
 m.numBufferChunkLists = 20
+m.open = true
 
 m.bounds_struct = terralib.new(float[4])
 
@@ -244,15 +245,22 @@ function m.textInput_(tstr)
 end
 
 function m.execute_()
+	if not m.open then return end
+
 	table.insert(m.bufferchunklists, m.chunkify_(m.editline))
 	if #m.bufferchunklists >= m.numBufferChunkLists then
 		m.bufferpos = m.bufferpos + 1
+	end
+	if m.execCallback then
+		m.execCallback(m.editline)
 	end
 	m.editline = ""
 end
 
 function m.draw(nvg, width, height)
-	m.render_(nvg)
+	if m.open then
+		m.render_(nvg)
+	end
 end
 
 function m.getCharacterSize_(nvg)
@@ -286,12 +294,22 @@ function m.init(width, height, nvg)
 end
 
 function m.onTextInput(textstr)
-	m.textInput_(textstr)
+	if m.open then
+		m.textInput_(textstr)
+	end
+end
+
+function m.backspace_()
+	if #(m.editline) > 0 and m.open then
+		m.editline = string.sub(m.editline, 1, -2)
+	end
 end
 
 function m.onKeyDown(keyname, modifiers)
 	if keyname == "Backspace" then
-		-- todo
+		m.backspace_()
+	elseif keyname == "Escape" then
+		m.open = not m.open
 	elseif keyname == "Return" then
 		m.execute_()
 	end
