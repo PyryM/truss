@@ -219,8 +219,8 @@ function m.renderBorders_(nvg)
 	nanovg.nvgMoveTo(nvg, m.xpos, y1)
 	nanovg.nvgLineTo(nvg, m.xpos + m.width, y1)
 
-	nanovg.nvgMoveTo(nvg, m.xpos, y1 - 5)
-	nanovg.nvgLineTo(nvg, m.xpos + m.width, y1 - 5)
+	nanovg.nvgMoveTo(nvg, m.xpos, y1 - 2)
+	nanovg.nvgLineTo(nvg, m.xpos + m.width, y1 - 2)
 
 	nanovg.nvgStroke(nvg)
 
