@@ -70,7 +70,12 @@ function cerr(str)
 	if gui then gui.printColored(tostring(str), {255,0,0}) end
 end
 
-consoleenv = {print = cprint, err = cerr}
+function connect(url)
+	cprint("Connecting to [" .. url .. "]")
+	cprint("Connect not implemented yet!")
+end
+
+consoleenv = {print = cprint, err = cerr, connect = connect}
 
 function consoleExecute(str)
 	local lchunk, err = loadstring(str)

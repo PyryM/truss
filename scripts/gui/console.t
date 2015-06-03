@@ -27,6 +27,7 @@ m.numBuffersLines = 10
 m.bgcolor = nanovg.nvgRGBA(40,40,40,200)
 m.fgcolor = nanovg.nvgRGBA(200,255,255,255)
 m.inputcolor = nanovg.nvgRGBA(100,100,150,255)
+m.bordercolor = nanovg.nvgRGBA(200,255,255,128)
 m.bufferpos = 0
 m.editline = ""
 m.editchunklist =  {}
@@ -209,17 +210,31 @@ function m.renderBorders_(nvg)
 	local y2 = y1 + h1
 
 	nanovg.nvgBeginPath(nvg)
-	nanovg.nvgStrokeWidth(nvg, 2.0)
-	nanovg.nvgStrokeColor(nvg, m.fgcolor)
-	nanovg.nvgFillColor(nvg, m.fgcolor)
+	nanovg.nvgStrokeColor(nvg, m.bordercolor)
+	nanovg.nvgStrokeWidth(nvg, 1.0)
 
-	nanovg.nvgBeginPath(nvg)
-	nanovg.nvgRect(nvg, m.xpos, y0, m.width, h0)
+	nanovg.nvgMoveTo(nvg, m.xpos, y0)
+	nanovg.nvgLineTo(nvg, m.xpos, y2)
+
+	nanovg.nvgMoveTo(nvg, m.xpos, y1)
+	nanovg.nvgLineTo(nvg, m.xpos + m.width, y1)
+
+	nanovg.nvgMoveTo(nvg, m.xpos, y1 - 5)
+	nanovg.nvgLineTo(nvg, m.xpos + m.width, y1 - 5)
+
 	nanovg.nvgStroke(nvg)
 
-	nanovg.nvgBeginPath(nvg)
-	nanovg.nvgRect(nvg, m.xpos, y1, m.width, h1)
-	nanovg.nvgStroke(nvg)
+	-- nanovg.nvgStrokeWidth(nvg, 2.0)
+	-- nanovg.nvgStrokeColor(nvg, m.fgcolor)
+	-- nanovg.nvgFillColor(nvg, m.fgcolor)
+
+	-- nanovg.nvgBeginPath(nvg)
+	-- nanovg.nvgRect(nvg, m.xpos, y0, m.width, h0)
+	-- nanovg.nvgStroke(nvg)
+
+	-- nanovg.nvgBeginPath(nvg)
+	-- nanovg.nvgRect(nvg, m.xpos, y1, m.width, h1)
+	-- nanovg.nvgStroke(nvg)
 end
 
 function m.renderChunkLists_(nvg)
@@ -252,7 +267,7 @@ end
 function m.chunkify_(str)
 	local ret = {}
 	-- for now, just put the chunk into a single string
-	ret[1] = {str = str, style = m.style_background, bgcolor = m.inputcolor}
+	ret[1] = {str = ">" .. str, style = m.style_background, bgcolor = m.inputcolor}
 	return ret
 end
 
