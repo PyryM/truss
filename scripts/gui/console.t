@@ -26,12 +26,14 @@ m.fontsize = 14
 m.numBuffersLines = 10
 m.bgcolor = nanovg.nvgRGBA(40,40,40,200)
 m.fgcolor = nanovg.nvgRGBA(200,255,255,255)
+m.inputcolor = nanovg.nvgRGBA(100,100,150,255)
 m.bufferpos = 0
 m.editline = ""
 m.editchunklist =  {}
 m.bufferchunklists = {}
 m.numBufferChunkLists = 20
 m.open = true
+m.execCallback = nil
 
 m.bounds_struct = terralib.new(float[4])
 
@@ -132,6 +134,20 @@ function m.printDivider_()
 		d = d .. "="
 	end
 	m.printStraightText_(d)
+end
+
+function m.printColored(str, color)
+	local nvgColor = nanovg.nvgRGBA(color[1], color[2], color[3], 255)
+	local chunk = {str = str or "", style = m.style_colored,
+					fgcolor = nvgColor}
+	m.printChunkList_({chunk})
+end
+
+function m.printHighlighted(str, color)
+	local nvgColor = nanovg.nvgRGBA(color[1], color[2], color[3], 255)
+	local chunk = {str = str or "", style = m.style_colored,
+					bgcolor = nvgColor}
+	m.printChunkList_({chunk})
 end
 
 function m.printLogo_()
@@ -236,7 +252,7 @@ end
 function m.chunkify_(str)
 	local ret = {}
 	-- for now, just put the chunk into a single string
-	ret[1] = {str = str, style = m.style_normal}
+	ret[1] = {str = str, style = m.style_background, bgcolor = m.inputcolor}
 	return ret
 end
 

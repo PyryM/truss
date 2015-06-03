@@ -62,6 +62,33 @@ end
 
 downkeys = {}
 
+function cprint(str)
+	if gui then gui.printStraightText_(tostring(str)) end
+end
+
+function cerr(str)
+	if gui then gui.printColored(tostring(str), {255,0,0}) end
+end
+
+consoleenv = {print = cprint, err = cerr}
+
+function consoleExecute(str)
+	local lchunk, err = loadstring(str)
+	if err then
+		cerr(err)
+		return
+	end
+	setfenv(lchunk, consoleenv)
+	local succeeded, retval = pcall(lchunk)
+	if succeeded then
+		if retval then
+			cprint(retval)
+		end
+	else
+		cerr(retval)
+	end
+end
+
 function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
@@ -193,6 +220,7 @@ function initNVG()
 
 	if gui and gui.init then
 		gui.init(width, height, nvg)
+		gui.execCallback = consoleExecute
 	end
 end
 
