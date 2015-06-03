@@ -50,6 +50,8 @@ function Geometry:fromBuffers(databuffers)
 end
 
 function Geometry:fromData(vertexInfo, modeldata)
+	if modeldata == nil or vertexInfo == nil then return end
+
 	local modelbuffers = buffers.allocateData(vertexInfo, #(modeldata.positions), #(modeldata.indices))
 	buffers.setIndices(modelbuffers, modeldata.indices)
 	buffers.setAttributesSafe(modelbuffers, "position", buffers.positionSetter, modeldata.positions)

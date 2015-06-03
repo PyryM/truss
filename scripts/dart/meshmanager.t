@@ -5,6 +5,7 @@
 class = truss_import("core/30log.lua")
 json = truss_import("lib/json.lua")
 stlloader = truss_import("loaders/stlloader.t")
+objloader = truss_import("loaders/objloader.t")
 meshutils = truss_import("mesh/mesh.t")
 
 local m = {}
@@ -19,12 +20,29 @@ function MeshManager:init(meshpath, renderer)
 	self.verbose = false
 end
 
+-- returns the 3-char file extension including the dot
+-- ex: fileExtension("foobla.obj") ==> ".obj"
+local function fileExtension(str)
+	return string.sub(str, -4)
+end
+
+local function hasExtension(str, target)
+	return string.lower(fileExtension(str)) == string.lower(target)
+end
+
 function MeshManager:createMesh(meshfilename)
 	local fullfilename = self.meshpath .. meshfilename
 	trss.trss_log(0, "MeshManager loading [" .. fullfilename .. "]")
 
 	if self.geos[meshfilename] == nil then
-		local modeldata = stlloader.loadSTL(fullfilename, false) -- don't invert windings
+		local modeldata = nil
+		if hasExtension(meshfilename, ".stl") then
+			modeldata = stlloader.loadSTL(fullfilename, false) -- don't invert windings
+		elseif hasExtension(meshfilename, ".obj") then
+			modeldata = objloader.loadOBJ(fullfilename, false)
+		else
+			trss.trss_log(0, "Unsupported mesh file type: " .. meshfilename)
+		end
 		local geo = meshutils.Geometry():fromData(self.renderer.vertexInfo, modeldata)
 		self.geos[meshfilename] = geo
 	end

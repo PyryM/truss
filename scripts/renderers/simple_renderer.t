@@ -150,6 +150,14 @@ function SimpleRenderer:add(obj)
 end
 
 function SimpleRenderer:renderGeo(geo, mtx, material)
+	if not geo.databuffers then
+		if not geo.warned then
+			trss.trss_log(0, "Warning: geo [" .. geo.name .. "] contains no data.")
+			geo.warned = true
+		end
+		return 
+	end
+
 	bgfx.bgfx_set_transform(mtx.data, 1) -- only one matrix in array
 	if material and material.apply then
 		material:apply()
