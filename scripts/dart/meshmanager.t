@@ -20,14 +20,9 @@ function MeshManager:init(meshpath, renderer)
 	self.verbose = false
 end
 
--- returns the 3-char file extension including the dot
--- ex: fileExtension("foobla.obj") ==> ".obj"
-local function fileExtension(str)
-	return string.sub(str, -4)
-end
-
 local function hasExtension(str, target)
-	return string.lower(fileExtension(str)) == string.lower(target)
+	local ext = string.sub(str, -(#target))
+	return string.lower(ext) == string.lower(target)
 end
 
 function MeshManager:createMesh(meshfilename)
