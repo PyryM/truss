@@ -70,12 +70,22 @@ function cerr(str)
 	if gui then gui.printColored(tostring(str), {255,0,0}) end
 end
 
-function connect(url)
+websocket = truss_import("io/websocket.t")
+
+function connect(url, callback)
 	cprint("Connecting to [" .. url .. "]")
-	cprint("Connect not implemented yet!")
+	if theSocket == nil then
+		theSocket = websocket.WebSocketConnection()
+	end
+	theSocket:onMessage(callback)
+	theSocket:connect(url)
+	return theSocket
 end
 
-consoleenv = {print = cprint, err = cerr, connect = connect}
+consoleenv = {print = cprint, 
+			  err = cerr, 
+			  connect = connect,
+			  truss_import = truss_import}
 
 function consoleExecute(str)
 	local lchunk, err = loadstring(str)
@@ -288,8 +298,9 @@ function update()
 
 	local startTime = tic()
 
-	-- Deal with input events
+	-- Deal with input and io events
 	updateEvents()
+	if theSocket then theSocket:update() end
 
 	-- Set view 0,1 default viewport.
 	bgfx.bgfx_set_view_rect(0, 0, 0, width, height)

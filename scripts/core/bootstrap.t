@@ -118,10 +118,16 @@ local numAddons = trss.trss_get_addon_count(TRSS_ID)
 trss.trss_log(TRSS_ID, "Found " .. numAddons .. " addons.")
 
 local sdlheader = ffi.string(trss.trss_get_addon_header(TRSS_ID, 0))
-trss.trss_log(TRSS_ID, "SDL header: [" .. sdlheader .. "]")
+--trss.trss_log(TRSS_ID, "SDL header: [" .. sdlheader .. "]")
 
 sdlPointer = trss.trss_get_addon(TRSS_ID, 0)
 sdl = terralib.includecstring(sdlheader)
+
+local wsheader = ffi.string(trss.trss_get_addon_header(TRSS_ID, 2))
+trss.trss_log(TRSS_ID, "WS header: [" .. wsheader .. "]")
+
+wsAddonPointer = trss.trss_get_addon(TRSS_ID, 2)
+wsAddon = terralib.includecstring(wsheader)
 
 nanovg = terralib.includec("include/nanovg_terra.h")
 

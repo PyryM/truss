@@ -37,6 +37,7 @@ WSClientAddon::WSClientAddon() {
 	initWSA();
 	name_ = "wsclient";
 	header_ = "/*WSClientAddon Embedded Header*/\n"
+		"#include <stdbool.h>\n"
 		"typedef struct Addon Addon;\n"
 		"typedef void(*messageCallback)(const char*);\n"
 		"bool trss_wsclient_open(Addon* addon, const char* url);\n"
@@ -70,7 +71,7 @@ void WSClientAddon::update(double dt) {
 bool WSClientAddon::open(const std::string& url) {
 	if(ws_ != NULL) {
 		trss_log(TRSS_LOG_WARNING, "WSClientAddon::open: Websocket already open.");
-		return false;
+		return true;
 	}
 	ws_ = WebSocket::from_url(url);
 	if(ws_ == NULL) {
@@ -94,6 +95,7 @@ void WSClientAddon::send(const std::string& msg) {
 		trss_log(TRSS_LOG_ERROR, "WSClientAddon::send: socket not open");
 		return;
 	}
+	ws_->send(msg);
 }
 
 static messageCallback c_callback_ = NULL;
@@ -129,8 +131,8 @@ unsigned int WSClientAddon::receive() {
 		return (unsigned int)messages_.size();
     } else {
     	ws_ = NULL;
-    	trss_log(TRSS_LOG_ERROR, "WSClientAddon::receive: cannot receive from closed socket.");
-		return 0;
+    	trss_log(TRSS_LOG_WARNING, "WSClientAddon::receive: socket is closed.");
+		return -1;
     }
 }
 
