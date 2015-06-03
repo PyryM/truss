@@ -52,7 +52,7 @@ function SimpleRenderer:init(width, height)
 	self.width, self.height = width, height
 	self.objects = {}
 
-	self.vertexInfo = vertexdefs.createPosNormalVertexInfo()
+	self.vertexInfo = vertexdefs.createPosNormalUVVertexInfo()
 
 	-- load program and create uniforms for it
 	self.pgm = loadProgram("vs_untextured", "fs_untextured")
