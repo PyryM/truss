@@ -7,6 +7,7 @@ json = truss_import("lib/json.lua")
 stlloader = truss_import("loaders/stlloader.t")
 objloader = truss_import("loaders/objloader.t")
 meshutils = truss_import("mesh/mesh.t")
+stringutils = truss_import("utils/stringutils.t")
 
 local m = {}
 
@@ -25,15 +26,26 @@ local function hasExtension(str, target)
 	return string.lower(ext) == string.lower(target)
 end
 
+function MeshManager:translateFilename(rawfilename)
+	-- strip away leading directories, change .dae into .obj
+	local gps = stringutils.split("/", rawfilename)
+	local basefn = gps[#gps]
+	if string.lower(string.sub(basefn, -4)) == ".dae" then
+		basefn = string.sub(basefn, 1, -5) .. ".obj"
+	end
+
+	return self.meshpath .. basefn
+end
+
 function MeshManager:createMesh(meshfilename)
-	local fullfilename = self.meshpath .. meshfilename
+	local fullfilename = self:translateFilename(meshfilename)
 	trss.trss_log(0, "MeshManager loading [" .. fullfilename .. "]")
 
 	if self.geos[meshfilename] == nil then
 		local modeldata = nil
-		if hasExtension(meshfilename, ".stl") then
+		if hasExtension(fullfilename, ".stl") then
 			modeldata = stlloader.loadSTL(fullfilename, false) -- don't invert windings
-		elseif hasExtension(meshfilename, ".obj") then
+		elseif hasExtension(fullfilename, ".obj") then
 			modeldata = objloader.loadOBJ(fullfilename, false)
 		else
 			trss.trss_log(0, "Unsupported mesh file type: " .. meshfilename)

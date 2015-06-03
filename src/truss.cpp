@@ -342,17 +342,25 @@ trss_message* trss_create_message(unsigned int data_length){
 }
 
 void trss_acquire_message(trss_message* msg){
-	++(msg->refcount);
+	if (msg != NULL) {
+		++(msg->refcount);
+	}
 }
 
 void trss_release_message(trss_message* msg){
-	--(msg->refcount);
-	if(msg->refcount <= 0) {
-		Core::getCore()->deallocateMessage(msg);
+	if (msg != NULL) {
+		--(msg->refcount);
+		if (msg->refcount <= 0) {
+			Core::getCore()->deallocateMessage(msg);
+		}
 	}
 }
 
 trss_message* trss_copy_message(trss_message* src){
+	if (src == NULL) {
+		return NULL;
+	}
+
 	trss_message* newmsg = Core::getCore()->allocateMessage(src->data_length);
 	newmsg->message_type = src->message_type;
 	memcpy(newmsg->data, src->data, newmsg->data_length);

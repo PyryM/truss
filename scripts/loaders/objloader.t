@@ -9,6 +9,11 @@ m.verbose = false
 function m.loadOBJ(filename, invert)
 	local starttime = tic()
 	local srcMessage = trss.trss_load_file(filename, 0)
+  if srcMessage == nil then 
+    trss.trss_log(0, "Error: unable to open file " .. filename)
+    return nil 
+  end
+
 	local srcstr = ffi.string(srcMessage.data, srcMessage.data_length)
 	local ret = m.parseOBJ(srcstr, invert)
 	trss.trss_release_message(srcMessage)
