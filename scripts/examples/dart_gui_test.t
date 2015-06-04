@@ -113,6 +113,16 @@ function connect_dart(url)
 	return theSocket
 end
 
+function load_json_scene(filename)
+	cprint("Loading local json serialization file [" .. filename .. "]")
+	local jsonstring = loadStringFromFile(filename)
+	manager:update(jsonstring)
+end
+
+function load_herb()
+	load_json_scene("temp/herb.json")
+end
+
 consoleenv = {print = cprint, 
 			  err = cerr,
 			  pairs = pairs,
@@ -121,7 +131,9 @@ consoleenv = {print = cprint,
 			  connect = connect,
 			  connect_dart = connect_dart,
 			  set_update_decimation = set_update_decimation,
-			  truss_import = truss_import}
+			  truss_import = truss_import,
+			  load_json_scene = load_json_scene,
+			  load_herb = load_herb}
 
 function consoleExecute(str)
 	local lchunk, err = loadstring(str)
