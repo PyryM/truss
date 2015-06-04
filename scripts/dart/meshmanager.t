@@ -75,7 +75,7 @@ function MeshManager:getMesh(meshname, meshfilename)
 	end
 end
 
-function MeshManager:updateMesh(mesh, quat, position)
+function MeshManager:updateMesh(mesh, quat, position, scale)
 	if quat then
 		local mq = mesh.quaternion
 		mq.x, mq.y, mq.z, mq.w = quat[1], quat[2], quat[3], quat[4]
@@ -83,6 +83,10 @@ function MeshManager:updateMesh(mesh, quat, position)
 	if position then
 		local mp = mesh.position
 		mp.x, mp.y, mp.z = position[1], position[2], position[3]
+	end
+	if scale then
+		local s = mesh.scale
+		s.x, s.y, s.z = scale[1], scale[2], scale[3]
 	end
 	mesh:updateMatrixWorld()
 end
@@ -96,10 +100,11 @@ function MeshManager:update(rawstr)
 				local fn = body["mesh.1"].filename
 				local quat = body["rot"]
 				local pos = body["trans"]
+				local scale = body["scale"]
 				local m = self:getMesh(bodyname, fn)
 				-- quat and pos might not be defined on the body,
 				-- in which case they won't be changed
-				self:updateMesh(m, quat, pos)
+				self:updateMesh(m, quat, pos, scale)
 			end
 		end
 	end

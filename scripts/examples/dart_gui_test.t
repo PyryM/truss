@@ -154,8 +154,8 @@ function addLineCircle(dest, rad)
 	local dtheta = math.pi * 2.0 / (npts - 1)
 	for i = 1,npts do
 		local x = rad * math.cos(i * dtheta)
-		local z = rad * math.sin(i * dtheta)
-		local y = 0.0
+		local y = rad * math.sin(i * dtheta)
+		local z = 0.0
 		circlepoints[i] = {x, y, z}
 	end
 	table.insert(dest, circlepoints)
@@ -192,8 +192,8 @@ function createLineGrid()
 
 	for ix = 0,nx do
 		local x = x0 + ix*dx
-		local v0 = {x, 0, y0}
-		local v1 = {x, 0, y1}
+		local v0 = {x, y0, 0}
+		local v1 = {x, y1, 0}
 		npts = npts + addSegmentedLine(lines, v0, v1, 30)
 		--table.insert(lines, {v0, v1})
 		--npts = npts + 2
@@ -201,8 +201,8 @@ function createLineGrid()
 
 	for iy = 0,ny do
 		local y = y0 + iy*dy
-		local v0 = {x0, 0, y}
-		local v1 = {x1, 0, y}
+		local v0 = {x0, y, 0}
+		local v1 = {x1, y, 0}
 		npts = npts + addSegmentedLine(lines, v0, v1, 30)
 		--table.insert(lines, {v0, v1})
 		--npts = npts + 2
@@ -268,7 +268,7 @@ function initBGFX()
 	manager = meshmanager.MeshManager("temp/meshes/", renderer)
 
 	-- load in a json
-	local jsonstring = loadStringFromFile("temp/wam.json")
+	local jsonstring = loadStringFromFile("temp/herb.json")
 	manager:update(jsonstring)
 
 	-- create a line grid
@@ -279,6 +279,14 @@ function initBGFX()
 	camquat = Quaternion():identity()
 	campos = {x = 0, y = 0, z = 0}
 	orbitcam = OrbitCam()
+
+	-- Set renderer root (borrow camera temp quaternions)
+	camquat:fromEuler({x= -math.pi / 2.0,y=0,z=0}, 'ZYX')
+	--camquat:identity()
+	campos.x, campos.y, campos.z = 0,0,0
+	local scale = {x=1, y=1, z=1}
+	cammat:compose(camquat, scale, campos)
+	renderer:setRootTransform(cammat)
 end
 
 function drawNVG()

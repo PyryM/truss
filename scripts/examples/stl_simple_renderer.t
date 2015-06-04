@@ -85,7 +85,7 @@ function initBGFX()
 	objloader.verbose = true
 	stlloader.verbose = true
 
-	modeldata = stlloader.loadSTL("temp/meshes/head_wam1.STL", false) -- don't invert windings
+	modeldata = objloader.loadOBJ("temp/meshes/herb_base.obj", false) -- don't invert windings
 	--modeldata = stlloader.loadSTL("models/arm_fixed.stl", false) -- don't invert windings
 	--modeldata = objloader.loadOBJ("models/arm_fixed.obj", false)
 
@@ -99,6 +99,9 @@ function initBGFX()
 		wheel.position.z = math.random()*2 - 2
 		wheel.position.y = math.random()*2 - 1
 		wheel.position.x = math.random()*2 - 1
+		--wheel.scale.x = 100
+		--wheel.scale.y = 100
+		--wheel.scale.z = 100
 		wheel.dx = math.random() -- we're just storing our own values
 		wheel.dy = math.random() -- on the object, because why not
 		wheel.dz = math.random()
