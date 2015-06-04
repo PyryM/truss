@@ -1,5 +1,6 @@
 #include "truss.h"
 #include "truss_sdl.h"
+#include <algorithm>
 #include <iostream>
 
 bool sdlSetWindow(SDL_Window* window_)
@@ -96,7 +97,7 @@ void SDLAddon::shutdown(){
 
 void copyKeyName(trss_sdl_event& newEvent, SDL_Event& event) {
 	const char* keyname = SDL_GetKeyName(event.key.keysym.sym);
-	size_t namelength = min(TRSS_SDL_MAX_KEYCODE_LENGTH, strlen(keyname));
+	size_t namelength = std::min<size_t>(TRSS_SDL_MAX_KEYCODE_LENGTH, strlen(keyname));
 	memcpy(newEvent.keycode, keyname, namelength);
 	newEvent.keycode[namelength] = '\0'; // zero terminate
 }
