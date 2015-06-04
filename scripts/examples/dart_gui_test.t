@@ -82,9 +82,45 @@ function connect(url, callback)
 	return theSocket
 end
 
+sframe = 0
+decimate = 10
+function requestData()
+	sframe = sframe + 1 
+	if theSocket and theSocket:isOpen() and sframe % decimate == 0 then
+		theSocket:send("ping")
+	end
+end
+
+function updateMeshesFromJSONString(str)
+	manager:update(str)
+end
+
+function set_update_decimation(v)
+	if v > 0 then
+		decimate = v
+	else
+		cerr("Cannot set decimate to <= 0!")
+	end
+end
+
+function connect_dart(url)
+	cprint("Connecting to [" .. url .. "]")
+	if theSocket == nil then
+		theSocket = websocket.WebSocketConnection()
+	end
+	theSocket:onMessage(updateMeshesFromJSONString)
+	theSocket:connect(url)
+	return theSocket
+end
+
 consoleenv = {print = cprint, 
-			  err = cerr, 
+			  err = cerr,
+			  pairs = pairs,
+			  ipairs = ipairs,
+			  math = math,
 			  connect = connect,
+			  connect_dart = connect_dart,
+			  set_update_decimation = set_update_decimation,
 			  truss_import = truss_import}
 
 function consoleExecute(str)
@@ -268,8 +304,8 @@ function initBGFX()
 	manager = meshmanager.MeshManager("temp/meshes/", renderer)
 
 	-- load in a json
-	local jsonstring = loadStringFromFile("temp/herb.json")
-	manager:update(jsonstring)
+	--local jsonstring = loadStringFromFile("temp/herb.json")
+	--manager:update(jsonstring)
 
 	-- create a line grid
 	createLineGrid()
@@ -308,6 +344,7 @@ function update()
 
 	-- Deal with input and io events
 	updateEvents()
+	requestData()
 	if theSocket then theSocket:update() end
 
 	-- Set view 0,1 default viewport.

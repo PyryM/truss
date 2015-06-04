@@ -19,6 +19,10 @@ function WebSocketConnection:init()
 	self.open = false
 end
 
+function WebSocketConnection:isOpen()
+	return self.open
+end
+
 function WebSocketConnection:connect(url)
 	if self.open then self:disconnect() end
 
