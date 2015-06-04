@@ -9,12 +9,18 @@ terra m.loadFileToBGFX(filename: &int8)
 end
 
 function m.shaderpath()
-	-- TODO: have this actually switch based on renderer
-	if not m.pathWarning then
-		trss.trss_log(0, "Warning: shaderpath hardcoded to dx11 at the moment!")
-		m.pathWarning = true
+	local rendertype = bgfx.bgfx_get_renderer_type()
+	local renderpath = "shaders/"
+
+	if rendertype == bgfx.BGFX_RENDERER_TYPE_OPENGL then
+		renderpath = renderpath .. "glsl/"
+	elseif rendertype == bgfx.BGFX_RENDERER_TYPE_DIRECT3D11 then
+		renderpath = renderpath .. "dx11/"
+	else
+		trss.trss_log(0, "Unimplemented shaders for current renderer.")
 	end
-	return "shaders/dx11/"
+
+	return renderpath
 end
 
 function m.loadProgram(vshadername, fshadername)
