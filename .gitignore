@@ -6,6 +6,7 @@ include/SDL/
 include/terra/
 models/
 temp/
+dump/
 *.exe
 *.pdb
 *.lib
