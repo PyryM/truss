@@ -4,6 +4,7 @@ PROJECT(truss)
 
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/src")
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/extras/bgfx_nanovg")
+INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/extras/websocket_client")
  
 INCLUDE(FindPkgConfig)
 PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
@@ -25,6 +26,6 @@ link_directories(${OpenGL_LIBRARY_DIRS})
 add_definitions(${OpenGL_DEFINITIONS})
 message(STATUS "OPENGL_LIBRARIES={${OPENGL_LIBRARY}}")
 
-ADD_EXECUTABLE(truss src/minimain.cpp src/truss.cpp src/truss_sdl.cpp extras/bgfx_nanovg/nanovg_addon.cpp extras/bgfx_nanovg/nanovg.cpp extras/bgfx_nanovg/nanovg_bgfx.cpp)
+ADD_EXECUTABLE(truss src/minimain.cpp src/truss.cpp src/truss_sdl.cpp extras/bgfx_nanovg/nanovg_addon.cpp extras/bgfx_nanovg/nanovg.cpp extras/bgfx_nanovg/nanovg_bgfx.cpp extras/websocket_client/wsclient_addon.cpp)
 TARGET_LINK_LIBRARIES(truss bgfx-shared-libRelease ${SDL2_LIBRARIES} terra GL GLU X11 SDL2)
 
