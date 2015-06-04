@@ -18,6 +18,6 @@ int main(int, char**){
 	// startUnthreaded starts the interpreter in the current thread,
 	// which means the call will block until the interpreter is stopped
 	interpreter->startUnthreaded("examples/dart_gui_test.t");
-	//interpreter->startUnthreaded("examples/stl_simple_renderer.t");
+	//interpreter->startUnthreaded("examples/loadstl.t");
 	return 0;
 }

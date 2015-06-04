@@ -144,7 +144,7 @@ function m.createStaticBGFXBuffers(data, recreate)
 		  data.vertInfo.vertDecl, flags )
 
 	data.ibh = bgfx.bgfx_create_index_buffer(
-		  bgfx.bgfx_make_ref(data.indices, data.indexDataSize))
+		  bgfx.bgfx_make_ref(data.indices, data.indexDataSize), flags )
 end
 
 return m

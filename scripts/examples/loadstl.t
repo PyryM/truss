@@ -19,7 +19,11 @@ function init()
 	trss.trss_log(TRSS_ID, "loadstl.t init")
 	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
-	initNVG()
+	--initNVG()
+	local rendererType = bgfx.bgfx_get_renderer_type()
+	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
+	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
+
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
 	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
@@ -170,6 +174,7 @@ function initBGFX()
 
 	-- Create vertex defs
 	vertexInfo = vertexdefs.createPosNormalVertexInfo()
+	--vertexInfo = vertexdefs.createPosColorVertexInfo()
 
 	-- Load the model
 	modeldata = stlloader.loadSTL("models/segway_wheel_left.STL", true) -- invert windings
@@ -181,15 +186,20 @@ function initBGFX()
 	buffers.createStaticBGFXBuffers(modelbuffers)
 	-- model is now in modelbuffers.vbh and modelbuffers.ibh
 
+	log("vbh: " .. modelbuffers.vbh.idx)
+	log("ibh: " .. modelbuffers.ibh.idx)
+
 	-- create uniforms
 	numLights = 4;
-	u_lightDir = bgfx.bgfx_create_uniform("u_lightDir", bgfx.BGFX_UNIFORM_TYPE_UNIFORM3FV, numLights)
-	u_lightRgb = bgfx.bgfx_create_uniform("u_lightRgb", bgfx.BGFX_UNIFORM_TYPE_UNIFORM3FV, numLights)
-	u_baseColor = bgfx.bgfx_create_uniform("u_baseColor", bgfx.BGFX_UNIFORM_TYPE_UNIFORM3FV, 1)
+	u_lightDir = bgfx.bgfx_create_uniform("u_lightDir", bgfx.BGFX_UNIFORM_TYPE_VEC4, numLights)
+	u_lightRgb = bgfx.bgfx_create_uniform("u_lightRgb", bgfx.BGFX_UNIFORM_TYPE_VEC4, numLights)
+	u_baseColor = bgfx.bgfx_create_uniform("u_baseColor", bgfx.BGFX_UNIFORM_TYPE_VEC4, 1)
+	log("base color handle: " .. u_baseColor.idx)
 
 	-- load shader program
 	log("Loading program")
 	program = loadProgram("vs_untextured", "fs_untextured")
+	--program = loadProgram("vs_cubes", "fs_cubes")
 
 	-- create matrices
 	projmat = terralib.new(float[16])
@@ -279,7 +289,7 @@ function drawCube()
 
 	-- Render our cube
 	mtx.rotateXY(modelmat, math.cos(time*0.2) * math.pi, math.sin(time*0.2) * math.pi)
-	modelmat[14] = 0.5 -- put it in front of the camera (which faces z?)
+	modelmat[14] = -0.5 -- put it in front of the camera (which faces z?)
 						-- the stl is really small so put it really close
 
 	bgfx.bgfx_set_transform(modelmat, 1) -- only one matrix in array
@@ -324,7 +334,7 @@ function update()
 	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
 
 	drawCube()
-	drawNVG()
+	--drawNVG()
 
 	-- Advance to next frame. Rendering thread will be kicked to
 	-- process submitted rendering primitives.

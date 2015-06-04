@@ -43,18 +43,18 @@ terra ter_makeCube(cube : &CubeData)
 	cube.vertices[7] = [Vertex]{ 1.0f, -1.0f, -1.0f, 0xffffffff }
 
 	cube.indices = 	arrayof(uint16,
-						    0, 1, 2,
-							1, 3, 2,
-							4, 6, 5, 
-							5, 6, 7,
-							0, 2, 4, 
-							4, 2, 6,
-							1, 5, 3, 
-							5, 7, 3,
-							0, 4, 1, 
-							4, 5, 1,
-							2, 3, 6, 
-							6, 3, 7 )
+						    0, 2, 1,
+							1, 2, 3,
+							4, 5, 6, 
+							5, 7, 6,
+							0, 4, 2, 
+							4, 6, 2,
+							1, 3, 5, 
+							5, 3, 7,
+							0, 1, 4, 
+							4, 1, 5,
+							2, 6, 3, 
+							6, 7, 3 )
 end
 
 terra ter_declareVertexSpec(vertDecl : &bgfx.bgfx_vertex_decl_t)
@@ -179,7 +179,7 @@ function initBGFX()
 	-- Create static index buffer.
 	log("Creating index buffer")
 	ibh = bgfx.bgfx_create_index_buffer(
-		  bgfx.bgfx_make_ref(cubedata.indices, sizeof(uint16[36])))
+		  bgfx.bgfx_make_ref(cubedata.indices, sizeof(uint16[36])), 0)
 
 	-- load shader program
 	log("Loading program")
@@ -197,7 +197,7 @@ function drawCube()
 
 	-- Render our cube
 	mtx.rotateXY(modelmat, math.cos(time*0.2) * math.pi, math.sin(time*0.2) * math.pi)
-	modelmat[14] = 10.0 -- put it in front of the camera (which faces z?)
+	modelmat[14] = -10.0 -- put it in front of the camera (which faces z?)
 
 	bgfx.bgfx_set_transform(modelmat, 1) -- only one matrix in array
 	bgfx.bgfx_set_program(program)

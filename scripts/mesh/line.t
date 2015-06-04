@@ -165,9 +165,9 @@ function LineMaterial:init(color, thickness)
 	self.program = sutils.loadProgram("vs_line", "fs_line")
 	-- TODO: share uniforms??
 	self.color_u = bgfx.bgfx_create_uniform("u_color", 
-							bgfx.BGFX_UNIFORM_TYPE_UNIFORM4FV, 1)
+							bgfx.BGFX_UNIFORM_TYPE_VEC4, 1)
 	self.thickness_u = bgfx.bgfx_create_uniform("u_thickness",
-							bgfx.BGFX_UNIFORM_TYPE_UNIFORM4FV, 1)
+							bgfx.BGFX_UNIFORM_TYPE_VEC4, 1)
 	self.color4f = terralib.new(float[4])
 	self.thickness4f = terralib.new(float[4])
 	for i = 1,4 do 

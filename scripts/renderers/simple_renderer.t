@@ -57,9 +57,9 @@ function SimpleRenderer:init(width, height)
 	-- load program and create uniforms for it
 	self.pgm = loadProgram("vs_untextured", "fs_untextured")
 	self.numLights = 4
-	self.u_lightDir = bgfx.bgfx_create_uniform("u_lightDir", bgfx.BGFX_UNIFORM_TYPE_UNIFORM3FV, self.numLights)
-	self.u_lightRgb = bgfx.bgfx_create_uniform("u_lightRgb", bgfx.BGFX_UNIFORM_TYPE_UNIFORM3FV, self.numLights)
-	self.u_baseColor = bgfx.bgfx_create_uniform("u_baseColor", bgfx.BGFX_UNIFORM_TYPE_UNIFORM3FV, 1)
+	self.u_lightDir = bgfx.bgfx_create_uniform("u_lightDir", bgfx.BGFX_UNIFORM_TYPE_VEC4, self.numLights)
+	self.u_lightRgb = bgfx.bgfx_create_uniform("u_lightRgb", bgfx.BGFX_UNIFORM_TYPE_VEC4, self.numLights)
+	self.u_baseColor = bgfx.bgfx_create_uniform("u_baseColor", bgfx.BGFX_UNIFORM_TYPE_VEC4, 1)
 
 	self.lightDirs = nil
 	self.lightColors = nil

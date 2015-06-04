@@ -135,8 +135,8 @@ namespace
 		uint8_t viewid;
 
 		struct GLNVGtexture* textures;
-		float view[2];
-		float surface[2];
+		float view[4];
+		float surface[4]; // bgfx only supports vec4 uniforms
 		int ntextures;
 		int ctextures;
 		int textureId;
@@ -261,19 +261,19 @@ namespace
 						, true
 						);
 
-		gl->u_scissorMat      = bgfx_create_uniform("u_scissorMat",      BGFX_UNIFORM_TYPE_UNIFORM3X3FV, 	1);
-		gl->u_paintMat        = bgfx_create_uniform("u_paintMat",        BGFX_UNIFORM_TYPE_UNIFORM3X3FV, 	1);
-		gl->u_innerCol        = bgfx_create_uniform("u_innerCol",        BGFX_UNIFORM_TYPE_UNIFORM4FV, 		1);
-		gl->u_outerCol        = bgfx_create_uniform("u_outerCol",        BGFX_UNIFORM_TYPE_UNIFORM4FV, 		1);
-		gl->u_viewSize        = bgfx_create_uniform("u_viewSize",        BGFX_UNIFORM_TYPE_UNIFORM2FV, 		1);
-		gl->u_scissorExtScale = bgfx_create_uniform("u_scissorExtScale", BGFX_UNIFORM_TYPE_UNIFORM4FV, 		1);
-		gl->u_extentRadius    = bgfx_create_uniform("u_extentRadius",    BGFX_UNIFORM_TYPE_UNIFORM4FV, 		1);
-		gl->u_params          = bgfx_create_uniform("u_params",          BGFX_UNIFORM_TYPE_UNIFORM4FV, 		1);
-		gl->s_tex             = bgfx_create_uniform("s_tex",             BGFX_UNIFORM_TYPE_UNIFORM1I, 		1);
+		gl->u_scissorMat = bgfx_create_uniform("u_scissorMat", BGFX_UNIFORM_TYPE_MAT3, 1);
+		gl->u_paintMat = bgfx_create_uniform("u_paintMat", BGFX_UNIFORM_TYPE_MAT3, 1);
+		gl->u_innerCol = bgfx_create_uniform("u_innerCol", BGFX_UNIFORM_TYPE_VEC4, 1);
+		gl->u_outerCol = bgfx_create_uniform("u_outerCol", BGFX_UNIFORM_TYPE_VEC4, 1);
+		gl->u_viewSize = bgfx_create_uniform("u_viewSize", BGFX_UNIFORM_TYPE_VEC4, 1);
+		gl->u_scissorExtScale = bgfx_create_uniform("u_scissorExtScale", BGFX_UNIFORM_TYPE_VEC4, 1);
+		gl->u_extentRadius = bgfx_create_uniform("u_extentRadius", BGFX_UNIFORM_TYPE_VEC4, 1);
+		gl->u_params = bgfx_create_uniform("u_params", BGFX_UNIFORM_TYPE_VEC4, 1);
+		gl->s_tex = bgfx_create_uniform("s_tex", BGFX_UNIFORM_TYPE_INT1, 1);
 
 		if (bgfx_get_renderer_type() == BGFX_RENDERER_TYPE_DIRECT3D9)
 		{
-			gl->u_halfTexel   = bgfx_create_uniform("u_halfTexel",       BGFX_UNIFORM_TYPE_UNIFORM4FV, 1);
+			gl->u_halfTexel = bgfx_create_uniform("u_halfTexel", BGFX_UNIFORM_TYPE_VEC4, 1);
 		}
 		else
 		{
