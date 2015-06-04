@@ -1,3 +1,7 @@
+IMPORTANT:
+currently truss is known to work with bgfx commit
+3813b28e9bdbad309e3f77dafb78b10a5818888e
+
 Windows (vs2013):
 	Dependencies: bgfx, bx, terra, sdl
 		Get and build bgfx + bx (bx is header only and needed by bgfx):
