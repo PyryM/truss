@@ -22,6 +22,10 @@
 //
 #define NVG_ANTIALIAS 1
 
+// Needed to make gcc happy?
+#define __STDC_LIMIT_MACROS
+#define __STDC_CONSTANT_MACROS
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

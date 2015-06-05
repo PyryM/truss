@@ -26,6 +26,6 @@ link_directories(${OpenGL_LIBRARY_DIRS})
 add_definitions(${OpenGL_DEFINITIONS})
 message(STATUS "OPENGL_LIBRARIES={${OPENGL_LIBRARY}}")
 
-ADD_EXECUTABLE(truss src/minimain.cpp src/truss.cpp src/truss_sdl.cpp extras/bgfx_nanovg/nanovg_addon.cpp extras/bgfx_nanovg/nanovg.cpp extras/bgfx_nanovg/nanovg_bgfx.cpp extras/websocket_client/wsclient_addon.cpp)
+ADD_EXECUTABLE(truss src/minimain.cpp src/truss.cpp src/truss_sdl.cpp extras/bgfx_nanovg/nanovg_addon.cpp extras/bgfx_nanovg/nanovg.cpp extras/bgfx_nanovg/nanovg_bgfx_c99.cpp extras/websocket_client/wsclient_addon.cpp extras/websocket_client/easywsclient/easywsclient.cpp)
 TARGET_LINK_LIBRARIES(truss bgfx-shared-libRelease ${SDL2_LIBRARIES} terra GL GLU X11 SDL2)
 

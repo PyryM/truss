@@ -310,6 +310,7 @@
 #	pragma warning(error:4505) // ENABLE warning C4505: '' : unreferenced local function has been removed
 #endif // BX_CONFIG_ENABLE_MSVC_LEVEL4_WARNINGS && BX_COMPILER_MSVC
 
+#define __STDC_CONSTANT_MACROS
 #include <stdint.h>
 //typedef uint64_t LARGE_INTEGER;
 
