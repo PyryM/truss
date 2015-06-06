@@ -7,14 +7,14 @@ $input v_wpos, v_wnormal // in...
 
 #include "../common/common.sh"
 
-uniform vec3 u_lightDir[4];
-uniform vec3 u_lightRgb[4];
-uniform vec3 u_baseColor;
+uniform vec4 u_lightDir[4];
+uniform vec4 u_lightRgb[4];
+uniform vec4 u_baseColor;
 
 vec3 lambertian(int _idx, vec3 _normal)
 {
-	float val = max(0.0, dot(_normal, u_lightDir[_idx]));
-	return u_lightRgb[_idx] * val;
+	float val = max(0.0, dot(_normal, u_lightDir[_idx].xyz));
+	return u_lightRgb[_idx].rgb * val;
 }
 
 void main()
@@ -29,7 +29,7 @@ void main()
 	lightColor += lambertian(2, normal);
 	lightColor += lambertian(3, normal);
 
-	gl_FragColor.xyz = u_baseColor * lightColor;
+	gl_FragColor.xyz = u_baseColor.rgb * lightColor;
 	gl_FragColor.w = 1.0;
 	// convert to gamma so we can use 'physical'
 	// light intensities (i.e., not clamped [0,1])

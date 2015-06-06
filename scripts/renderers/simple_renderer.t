@@ -12,25 +12,9 @@ local vertexdefs = truss_import("mesh/vertexdefs.t")
 
 local m = {}
 
-local terra loadFileToBGFX(filename: &int8)
-	var msg: &trss.trss_message = trss.trss_load_file(filename, 0)
-	var ret: &bgfx.bgfx_memory = bgfx.bgfx_copy(msg.data, msg.data_length)
-	trss.trss_release_message(msg)
-	return ret
-end
-
 local function loadProgram(vshadername, fshadername)
-	trss.trss_log(0, "Warning: loadProgram in cube.t only works with dx11 at the moment!")
-
-	local vspath = "shaders/dx11/" .. vshadername .. ".bin"
-	local fspath = "shaders/dx11/" .. fshadername .. ".bin"
-
-	local vshader = bgfx.bgfx_create_shader(loadFileToBGFX(vspath))
-	local fshader = bgfx.bgfx_create_shader(loadFileToBGFX(fspath))
-	trss.trss_log(0, "vidx: " .. vshader.idx)
-	trss.trss_log(0, "fidx: " .. fshader.idx)
-
-	return bgfx.bgfx_create_program(vshader, fshader, true)
+	local sutils = truss_import("utils/shaderutils.t")
+	return sutils.loadProgram(vshadername, fshadername)
 end
 
 struct m.LightDir {
