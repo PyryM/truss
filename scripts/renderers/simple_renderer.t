@@ -97,7 +97,6 @@ end
 function SimpleRenderer:updateUniforms()
 	bgfx.bgfx_set_uniform(self.u_lightDir, self.lightDirs, self.numLights)
 	bgfx.bgfx_set_uniform(self.u_lightRgb, self.lightColors, self.numLights)
-	bgfx.bgfx_set_uniform(self.u_baseColor, self.modelColor, 1)
 end
 
 function normalizeDir(d)
@@ -126,6 +125,7 @@ function SimpleRenderer:setModelColor(r, g, b)
 	self.modelColor[0] = r
 	self.modelColor[1] = g
 	self.modelColor[2] = b
+	bgfx.bgfx_set_uniform(self.u_baseColor, self.modelColor, 1)
 end
 
 -- only supports adding 
@@ -146,6 +146,9 @@ function SimpleRenderer:renderGeo(geo, mtx, material)
 	if material and material.apply then
 		material:apply()
 	else
+		material = material or {}
+		local mc = material.color or {}
+		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
 		bgfx.bgfx_set_program(self.pgm)
 	end
 	bgfx.bgfx_set_vertex_buffer(geo.databuffers.vbh, 0, bgfx.UINT32_MAX)

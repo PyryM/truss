@@ -123,17 +123,51 @@ function load_herb()
 	load_json_scene("temp/herb.json")
 end
 
+function info(v)
+	local vt = type(v)
+	if vt == "number" or vt == "string" or vt == "boolean" or vt == "nil" then
+		cprint(tostring(v))
+	elseif vt == "table" then
+		local curstr = ""
+		for fieldname, field in pairs(v) do
+			curstr = curstr .. "[" .. fieldname .. "]: "
+			curstr = curstr .. tostring(field) .. ","
+			if #curstr > 60 then
+				cprint(curstr)
+				curstr = ""
+			end
+		end
+		if #curstr > 0 then cprint(curstr) end
+	else
+		cprint("type <" .. vt .. ">: " .. tostring(v))
+	end
+end
+
+function filter(t, p)
+	local ret = {}
+	for i,v in ipairs(t) do
+		if v:find(p) then
+			table.insert(ret, v)
+		end
+	end
+	return ret
+end
+
 consoleenv = {print = cprint, 
 			  err = cerr,
 			  pairs = pairs,
 			  ipairs = ipairs,
 			  math = math,
+			  string = string,
+			  table = table,
 			  connect = connect,
 			  connect_dart = connect_dart,
 			  set_update_decimation = set_update_decimation,
 			  truss_import = truss_import,
 			  load_json_scene = load_json_scene,
-			  load_herb = load_herb}
+			  load_herb = load_herb,
+			  info = info,
+			  filter = filter}
 
 function consoleExecute(str)
 	local lchunk, err = loadstring(str)
@@ -314,6 +348,7 @@ function initBGFX()
 
 	-- init mesh manager
 	manager = meshmanager.MeshManager("temp/meshes/", renderer)
+	consoleenv.dart = manager
 
 	-- load in a json
 	--local jsonstring = loadStringFromFile("temp/herb.json")

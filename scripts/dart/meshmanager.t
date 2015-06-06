@@ -19,6 +19,29 @@ function MeshManager:init(meshpath, renderer)
 	self.geos = {}
 	self.meshes = {}
 	self.verbose = false
+	self.highlightColor = {1.0, 0.0, 0.0}
+end
+
+function MeshManager:highlight(hset)
+	print("#hset: " .. #hset)
+	for meshname, mesh in pairs(self.meshes) do
+		mesh.material.color = {1,1,1} -- let it be whatever the default is
+	end
+	for meshidx, meshname in ipairs(hset) do
+		print("Looking for " .. meshname)
+		if self.meshes[meshname] ~= nil then
+			print("Highlighting " .. meshname)
+			self.meshes[meshname].material.color = self.highlightColor
+		end
+	end
+end
+
+function MeshManager:getMeshList()
+	local ret = {}
+	for meshname, mesh in pairs(self.meshes) do
+		table.insert(ret, meshname)
+	end
+	return ret
 end
 
 local function hasExtension(str, target)
