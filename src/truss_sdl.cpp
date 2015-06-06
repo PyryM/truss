@@ -85,6 +85,9 @@ void SDLAddon::init(trss::Interpreter* owner){
 	owner_ = owner;
 
 	// Init SDL
+	std::cout << "Going to create window; if you get an LLVM crash on linux" <<
+		" at this point, the mostly likely reason is that you are using" <<
+		" the mesa software renderer.\n";
 	if (SDL_Init(SDL_INIT_VIDEO) != 0){
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
 	}
