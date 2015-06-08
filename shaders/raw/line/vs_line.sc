@@ -1,4 +1,4 @@
-$input a_position, a_prevpos, a_nextposdir
+$input a_position, a_normal, a_color0
 $output v_wpos
 
 /* Adapted from https://github.com/mattdesl/webgl-lines
@@ -33,9 +33,9 @@ void main() {
   float aspect = u_viewRect.z / u_viewRect.w;
   vec2 aspectVec = vec2(aspect, 1.0);
   mat4 projViewModel = u_modelViewProj; //projection * view * model;
-  vec4 previousProjected = mul(projViewModel, vec4(a_prevpos, 1.0));
+  vec4 previousProjected = mul(projViewModel, vec4(a_normal, 1.0));
   vec4 currentProjected = mul(projViewModel, vec4(a_position, 1.0));
-  vec4 nextProjected = mul(projViewModel, vec4(a_nextposdir.xyz, 1.0));
+  vec4 nextProjected = mul(projViewModel, vec4(a_color0.xyz, 1.0));
 
   //get 2D screen space with W divide and aspect correction
   vec2 currentScreen = currentProjected.xy / currentProjected.w * aspectVec;
@@ -43,7 +43,7 @@ void main() {
   vec2 nextScreen = nextProjected.xy / nextProjected.w * aspectVec;
 
   float len = u_thickness.x;
-  float orientation = a_nextposdir.w;
+  float orientation = a_color0.w;
 
   //starting point uses (next - current)
   vec2 dir = vec2(0.0, 0.0);
