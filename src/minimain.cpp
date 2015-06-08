@@ -17,7 +17,7 @@ int main(int, char**){
 	trss_log(0, "Starting interpreter!");
 	// startUnthreaded starts the interpreter in the current thread,
 	// which means the call will block until the interpreter is stopped
-	interpreter->startUnthreaded("examples/dart_gui_test.t");
-	//interpreter->startUnthreaded("examples/loadstl.t");
+	//interpreter->startUnthreaded("examples/dart_gui_test.t");
+	interpreter->startUnthreaded("examples/stl_simple_renderer.t");
 	return 0;
 }

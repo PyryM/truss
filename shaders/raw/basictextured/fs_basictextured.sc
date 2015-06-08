@@ -7,7 +7,7 @@ $input v_wpos, v_wnormal, v_uv // in...
 
 #include "../common/common.sh"
 
-SAMPLER2D(u_texAlbedo, 0);
+SAMPLER2D(s_texAlbedo, 0);
 uniform vec3 u_lightDir[4];
 uniform vec3 u_lightRgb[4];
 uniform vec3 u_baseColor;
@@ -35,7 +35,7 @@ void main()
 	// back out (this is kind of a hack because most textures
 	// are produced by artists by hand and aren't really a
 	// principled encoding of any sort)
-	vec4 albedo = toLinear(texture2D(u_texAlbedo, v_uv) );
+	vec4 albedo = toLinear(texture2D(s_texAlbedo, v_uv) );
 
 	gl_FragColor.xyz = albedo.xyz * u_baseColor * lightColor;
 	gl_FragColor.w = 1.0;

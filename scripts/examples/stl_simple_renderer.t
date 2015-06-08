@@ -9,6 +9,8 @@ terralib = libs.terralib
 trss = libs.trss
 sdl = libs.sdl
 sdlPointer = libs.sdlPointer
+nvgAddonPointer = libs.nvgAddonPointer
+nvgUtils = libs.nvgUtils
 TRSS_ID = libs.TRSS_ID
 nanovg = libs.nanovg
 
@@ -32,6 +34,7 @@ frametime = 0.0
 stlloader = truss_import("loaders/stlloader.t")
 objloader = truss_import("loaders/objloader.t")
 meshutils = truss_import("mesh/mesh.t")
+textureutils = truss_import("utils/textureutils.t")
 simple_renderer = truss_import("renderers/simple_renderer.t")
 
 function updateEvents()
@@ -85,12 +88,16 @@ function initBGFX()
 	objloader.verbose = true
 	stlloader.verbose = true
 
-	modeldata = objloader.loadOBJ("temp/meshes/herb_base.obj", false) -- don't invert windings
+	modeldata = objloader.loadOBJ("temp/meshes/segway_wheel_right.obj", false) -- don't invert windings
 	--modeldata = stlloader.loadSTL("models/arm_fixed.stl", false) -- don't invert windings
 	--modeldata = objloader.loadOBJ("models/arm_fixed.obj", false)
 
+	modeltex = textureutils.loadTexture("temp/test.jpg")
+	trss.trss_log(0, "Texture handle idx: " .. modeltex.idx)
+
 	wheelgeo = meshutils.Geometry():fromData(renderer.vertexInfo, modeldata)
-	wheelmat = {} -- nothing in materials at the moment
+	wheelmat = {texture = modeltex} -- nothing in materials at the moment
+	--wheelmat = {}
 
 	-- make some wheels
 	wheels = {}

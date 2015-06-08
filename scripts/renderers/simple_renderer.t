@@ -38,12 +38,14 @@ function SimpleRenderer:init(width, height)
 
 	self.vertexInfo = vertexdefs.createPosNormalUVVertexInfo()
 
-	-- load program and create uniforms for it
-	self.pgm = loadProgram("vs_untextured", "fs_untextured")
+	-- load programs and create uniforms for it
+	self.pgm    = loadProgram("vs_untextured",    "fs_untextured")
+	self.texpgm = loadProgram("vs_basictextured", "fs_basictextured")
 	self.numLights = 4
 	self.u_lightDir = bgfx.bgfx_create_uniform("u_lightDir", bgfx.BGFX_UNIFORM_TYPE_VEC4, self.numLights)
 	self.u_lightRgb = bgfx.bgfx_create_uniform("u_lightRgb", bgfx.BGFX_UNIFORM_TYPE_VEC4, self.numLights)
 	self.u_baseColor = bgfx.bgfx_create_uniform("u_baseColor", bgfx.BGFX_UNIFORM_TYPE_VEC4, 1)
+	self.s_texAlbedo = bgfx.bgfx_create_uniform("s_texAlbedo", bgfx.BGFX_UNIFORM_TYPE_INT1, 1)
 
 	self.lightDirs = nil
 	self.lightColors = nil
@@ -145,6 +147,11 @@ function SimpleRenderer:renderGeo(geo, mtx, material)
 	bgfx.bgfx_set_transform(mtx.data, 1) -- only one matrix in array
 	if material and material.apply then
 		material:apply()
+	elseif material and material.texture then
+		bgfx.bgfx_set_program(self.texpgm)
+		local mc = material.color or {}
+		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
+		bgfx.bgfx_set_texture(0, self.s_texAlbedo, material.texture, bgfx.UINT32_MAX)
 	else
 		material = material or {}
 		local mc = material.color or {}

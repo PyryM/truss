@@ -129,6 +129,10 @@ trss.trss_log(TRSS_ID, "WS header: [" .. wsheader .. "]")
 wsAddonPointer = trss.trss_get_addon(TRSS_ID, 2)
 wsAddon = terralib.includecstring(wsheader)
 
+nvgAddonPointer = trss.trss_get_addon(TRSS_ID, 1)
+local nvgheader = ffi.string(trss.trss_get_addon_header(TRSS_ID, 1))
+nvgUtils = terralib.includecstring(nvgheader)
+
 nanovg = terralib.includec("include/nanovg_terra.h")
 
 bgfx = terralib.includec("include/bgfx_truss.c99.h")
@@ -145,6 +149,8 @@ libs.TRSS_ID = TRSS_ID
 libs.sdlPointer = sdlPointer
 libs.terralib = terralib
 libs.nanovg = nanovg
+libs.nvgAddonPointer = nvgAddonPointer
+libs.nvgUtils = nvgUtils
 libs.TRSS_VERSION = vstr
 
 subenv = lsubenv
