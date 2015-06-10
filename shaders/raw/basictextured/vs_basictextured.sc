@@ -21,4 +21,5 @@ void main()
 	v_wpos = wpos;
 	v_wnormal = wnormal;
 	v_uv = a_texcoord0;
+	v_uv.y = 1.0 - v_uv.y; // flip vertically
 }
