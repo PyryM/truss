@@ -37,6 +37,8 @@ meshutils = truss_import("mesh/mesh.t")
 textureutils = truss_import("utils/textureutils.t")
 simple_renderer = truss_import("renderers/simple_renderer.t")
 
+screenshotid = 0
+
 function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
@@ -46,7 +48,11 @@ function updateEvents()
 			mousey = evt.y
 		elseif evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRSS_SDL_EVENT_KEYUP then
 			local sname = "up"
-			if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN then sname = "down" end
+			if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN then
+				bgfx.bgfx_save_screen_shot("screenshot_" .. screenshotid .. ".png")
+				screenshotid = screenshotid + 1
+				sname = "down" 
+			end
 			trss.trss_log(0, "Key event: " .. sname .. " " .. ffi.string(evt.keycode))
 			trss.trss_log(0, "x: " .. evt.x .. ", y: " .. evt.y .. ", flags: " .. evt.flags)
 		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
@@ -67,7 +73,9 @@ function initBGFX()
 	local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
 	--local reset = bgfx_const.BGFX_RESET_MSAA_X8
 
-	bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, nil, nil)
+	local cbInterfacePtr = sdl.trss_sdl_get_bgfx_cb(sdlPointer)
+
+	bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
 	bgfx.bgfx_reset(width, height, reset)
 
 	-- Enable debug text.

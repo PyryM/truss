@@ -49,6 +49,7 @@ TRSS_C_API void trss_sdl_start_textinput(SDLAddon* addon);
 TRSS_C_API void trss_sdl_stop_textinput(SDLAddon* addon);
 TRSS_C_API void trss_sdl_set_clipboard(SDLAddon* addon, const char* data);
 TRSS_C_API const char* trss_sdl_get_clipboard(SDLAddon* addon);
+TRSS_C_API bgfx_callback_interface_t* trss_sdl_get_bgfx_cb(SDLAddon* addon);
 
 class SDLAddon : public trss::Addon {
 public:
@@ -82,5 +83,17 @@ private:
 	std::vector<trss_sdl_event> eventBuffer_;
 	trss_sdl_event errorEvent_;
 };
+
+extern "C" {
+	void BGFX_VTBL_CALL bgfx_cb_ctor();
+	void BGFX_VTBL_CALL bgfx_cb_fatal(BGFX_VTBL_THIS_ bgfx_fatal_t _code, const char* _str);
+	uint32_t BGFX_VTBL_CALL bgfx_cb_cache_read_size(BGFX_VTBL_THIS_ uint64_t _id);
+	bool BGFX_VTBL_CALL bgfx_cb_cache_read(BGFX_VTBL_THIS_ uint64_t _id, void* _data, uint32_t _size);
+	void BGFX_VTBL_CALL bgfx_cb_cache_write(BGFX_VTBL_THIS_ uint64_t _id, const void* _data, uint32_t _size);
+	void BGFX_VTBL_CALL bgfx_cb_screen_shot(BGFX_VTBL_THIS_ const char* _filePath, uint32_t _width, uint32_t _height, uint32_t _pitch, const void* _data, uint32_t _size, bool _yflip);
+	void BGFX_VTBL_CALL bgfx_cb_capture_begin(BGFX_VTBL_THIS_ uint32_t _width, uint32_t _height, uint32_t _pitch, bgfx_texture_format_t _format, bool _yflip);
+	void BGFX_VTBL_CALL bgfx_cb_capture_end(BGFX_VTBL_THIS_);
+	void BGFX_VTBL_CALL bgfx_cb_capture_frame(BGFX_VTBL_THIS_ const void* _data, uint32_t _size);
+}
 
 #endif

@@ -2,6 +2,15 @@
 #include "truss_sdl.h"
 #include <algorithm>
 #include <iostream>
+#include <sstream>
+
+// windows has apparently deprecated fopen so let's ignore that
+#ifdef _WIN32
+#pragma warning (disable : 4996)
+#endif
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb/stb_image_write.h"
 
 bool sdlSetWindow(SDL_Window* window_)
 {
@@ -46,6 +55,7 @@ SDLAddon::SDLAddon(){
 	name_ = "sdl";
 	header_ = "/*SDLAddon Embedded Header*/\n"
 		"typedef struct Addon Addon;\n"
+		"typedef struct bgfx_callback_interface bgfx_callback_interface_t;\n"
 		"#define TRSS_SDL_EVENT_OUTOFBOUNDS 0\n"
 		"#define TRSS_SDL_EVENT_KEYDOWN 1\n"
 		"#define TRSS_SDL_EVENT_KEYUP		2\n"
@@ -69,7 +79,8 @@ SDLAddon::SDLAddon(){
 		"void trss_sdl_start_textinput(Addon* addon);\n"
 		"void trss_sdl_stop_textinput(Addon* addon);\n"
 		"void trss_sdl_set_clipboard(Addon* addon, const char* data);\n"
-		"const char* trss_sdl_get_clipboard(Addon* addon);\n";
+		"const char* trss_sdl_get_clipboard(Addon* addon);\n"
+		"bgfx_callback_interface_t* trss_sdl_get_bgfx_cb(Addon* addon);";
 	errorEvent_.event_type = TRSS_SDL_EVENT_OUTOFBOUNDS;
 }
 
@@ -257,4 +268,73 @@ void trss_sdl_set_clipboard(SDLAddon* addon, const char* data) {
 
 const char* trss_sdl_get_clipboard(SDLAddon* addon) {
 	return addon->getClipboardText();
+}
+
+void BGFX_VTBL_CALL bgfx_cb_ctor() {
+	trss_log(TRSS_LOG_WARNING, "WHY IS THIS BEING CALLED???!");
+}
+
+void BGFX_VTBL_CALL bgfx_cb_fatal(BGFX_VTBL_THIS_ bgfx_fatal_t _code, const char* _str) {
+	std::stringstream ss;
+	ss << "Fatal BGFX Error, code [" << _code << "]: " << _str;
+	trss_log(TRSS_LOG_CRITICAL, ss.str().c_str());
+}
+
+uint32_t BGFX_VTBL_CALL bgfx_cb_cache_read_size(BGFX_VTBL_THIS_ uint64_t _id) {
+	trss_log(TRSS_LOG_WARNING, "bgfx_cb_cache_read_size not implemented.");
+	return 0;
+}
+
+bool BGFX_VTBL_CALL bgfx_cb_cache_read(BGFX_VTBL_THIS_ uint64_t _id, void* _data, uint32_t _size) {
+	trss_log(TRSS_LOG_WARNING, "bgfx_cb_cache_read not implemented.");
+	return false;
+}
+
+void BGFX_VTBL_CALL bgfx_cb_cache_write(BGFX_VTBL_THIS_ uint64_t _id, const void* _data, uint32_t _size) {
+	trss_log(TRSS_LOG_WARNING, "bgfx_cb_cache_write not implemented.");
+	// nothing to do
+}
+
+void BGFX_VTBL_CALL bgfx_cb_screen_shot(BGFX_VTBL_THIS_ const char* _filePath, uint32_t _width, uint32_t _height, uint32_t _pitch, const void* _data, uint32_t _size, bool _yflip) {
+	trss_log(TRSS_LOG_WARNING, "bgfx_cb_screen_shot implemented with direct writes to file!");
+	trss_log(TRSS_LOG_INFO, _filePath);
+	std::stringstream ss;
+	ss << "w: " << _width << ", h: " << _height << ", p: " << _pitch << ", s: " << _size << ", yf: " << _yflip;
+	trss_log(TRSS_LOG_INFO, ss.str().c_str());
+	char* temp = new char[_size];
+	bgfx_image_swizzle_bgra8(_width, _height, _pitch, _data, temp);
+	stbi_write_png(_filePath, _width, _height, 4, temp, _pitch);
+	delete[] temp;
+}
+
+void BGFX_VTBL_CALL bgfx_cb_capture_begin(BGFX_VTBL_THIS_ uint32_t _width, uint32_t _height, uint32_t _pitch, bgfx_texture_format_t _format, bool _yflip) {
+	trss_log(TRSS_LOG_WARNING, "bgfx_cb_capture_begin not implemented.");
+}
+
+void BGFX_VTBL_CALL bgfx_cb_capture_end(BGFX_VTBL_THIS_) {
+	trss_log(TRSS_LOG_WARNING, "bgfx_cb_capture_end not implemented.");
+}
+
+void BGFX_VTBL_CALL bgfx_cb_capture_frame(BGFX_VTBL_THIS_ const void* _data, uint32_t _size) {
+	// todo
+}
+
+static const bgfx_callback_vtbl sdl_vtbl = {
+	(void*)bgfx_cb_ctor,
+	bgfx_cb_fatal,
+	bgfx_cb_cache_read_size,
+	bgfx_cb_cache_read,
+	bgfx_cb_cache_write,
+	bgfx_cb_screen_shot,
+	bgfx_cb_capture_begin,
+	bgfx_cb_capture_end,
+	bgfx_cb_capture_frame
+};
+
+static bgfx_callback_interface_t sdl_cb_struct = {
+	&sdl_vtbl
+};
+
+bgfx_callback_interface_t* trss_sdl_get_bgfx_cb(SDLAddon* addon) {
+	return &sdl_cb_struct;
 }
