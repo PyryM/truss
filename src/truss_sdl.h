@@ -85,15 +85,14 @@ private:
 };
 
 extern "C" {
-	void BGFX_VTBL_CALL bgfx_cb_ctor();
-	void BGFX_VTBL_CALL bgfx_cb_fatal(BGFX_VTBL_THIS_ bgfx_fatal_t _code, const char* _str);
-	uint32_t BGFX_VTBL_CALL bgfx_cb_cache_read_size(BGFX_VTBL_THIS_ uint64_t _id);
-	bool BGFX_VTBL_CALL bgfx_cb_cache_read(BGFX_VTBL_THIS_ uint64_t _id, void* _data, uint32_t _size);
-	void BGFX_VTBL_CALL bgfx_cb_cache_write(BGFX_VTBL_THIS_ uint64_t _id, const void* _data, uint32_t _size);
-	void BGFX_VTBL_CALL bgfx_cb_screen_shot(BGFX_VTBL_THIS_ const char* _filePath, uint32_t _width, uint32_t _height, uint32_t _pitch, const void* _data, uint32_t _size, bool _yflip);
-	void BGFX_VTBL_CALL bgfx_cb_capture_begin(BGFX_VTBL_THIS_ uint32_t _width, uint32_t _height, uint32_t _pitch, bgfx_texture_format_t _format, bool _yflip);
-	void BGFX_VTBL_CALL bgfx_cb_capture_end(BGFX_VTBL_THIS_);
-	void BGFX_VTBL_CALL bgfx_cb_capture_frame(BGFX_VTBL_THIS_ const void* _data, uint32_t _size);
+	void bgfx_cb_fatal(bgfx_callback_interface_t* _this, bgfx_fatal_t _code, const char* _str);
+	uint32_t bgfx_cb_cache_read_size(bgfx_callback_interface_t* _this, uint64_t _id);
+	bool bgfx_cb_cache_read(bgfx_callback_interface_t* _this, uint64_t _id, void* _data, uint32_t _size);
+	void bgfx_cb_cache_write(bgfx_callback_interface_t* _this, uint64_t _id, const void* _data, uint32_t _size);
+	void bgfx_cb_screen_shot(bgfx_callback_interface_t* _this, const char* _filePath, uint32_t _width, uint32_t _height, uint32_t _pitch, const void* _data, uint32_t _size, bool _yflip);
+	void bgfx_cb_capture_begin(bgfx_callback_interface_t* _this, uint32_t _width, uint32_t _height, uint32_t _pitch, bgfx_texture_format_t _format, bool _yflip);
+	void bgfx_cb_capture_end(bgfx_callback_interface_t* _this);
+	void bgfx_cb_capture_frame(bgfx_callback_interface_t* _this, const void* _data, uint32_t _size);
 }
 
 #endif

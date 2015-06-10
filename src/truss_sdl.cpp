@@ -270,32 +270,28 @@ const char* trss_sdl_get_clipboard(SDLAddon* addon) {
 	return addon->getClipboardText();
 }
 
-void BGFX_VTBL_CALL bgfx_cb_ctor() {
-	trss_log(TRSS_LOG_WARNING, "WHY IS THIS BEING CALLED???!");
-}
-
-void BGFX_VTBL_CALL bgfx_cb_fatal(BGFX_VTBL_THIS_ bgfx_fatal_t _code, const char* _str) {
+void bgfx_cb_fatal(bgfx_callback_interface_t* _this, bgfx_fatal_t _code, const char* _str) {
 	std::stringstream ss;
 	ss << "Fatal BGFX Error, code [" << _code << "]: " << _str;
 	trss_log(TRSS_LOG_CRITICAL, ss.str().c_str());
 }
 
-uint32_t BGFX_VTBL_CALL bgfx_cb_cache_read_size(BGFX_VTBL_THIS_ uint64_t _id) {
+uint32_t bgfx_cb_cache_read_size(bgfx_callback_interface_t* _this, uint64_t _id) {
 	trss_log(TRSS_LOG_WARNING, "bgfx_cb_cache_read_size not implemented.");
 	return 0;
 }
 
-bool BGFX_VTBL_CALL bgfx_cb_cache_read(BGFX_VTBL_THIS_ uint64_t _id, void* _data, uint32_t _size) {
+bool bgfx_cb_cache_read(bgfx_callback_interface_t* _this, uint64_t _id, void* _data, uint32_t _size) {
 	trss_log(TRSS_LOG_WARNING, "bgfx_cb_cache_read not implemented.");
 	return false;
 }
 
-void BGFX_VTBL_CALL bgfx_cb_cache_write(BGFX_VTBL_THIS_ uint64_t _id, const void* _data, uint32_t _size) {
+void bgfx_cb_cache_write(bgfx_callback_interface_t* _this, uint64_t _id, const void* _data, uint32_t _size) {
 	trss_log(TRSS_LOG_WARNING, "bgfx_cb_cache_write not implemented.");
 	// nothing to do
 }
 
-void BGFX_VTBL_CALL bgfx_cb_screen_shot(BGFX_VTBL_THIS_ const char* _filePath, uint32_t _width, uint32_t _height, uint32_t _pitch, const void* _data, uint32_t _size, bool _yflip) {
+void bgfx_cb_screen_shot(bgfx_callback_interface_t* _this, const char* _filePath, uint32_t _width, uint32_t _height, uint32_t _pitch, const void* _data, uint32_t _size, bool _yflip) {
 	trss_log(TRSS_LOG_WARNING, "bgfx_cb_screen_shot implemented with direct writes to file!");
 	trss_log(TRSS_LOG_INFO, _filePath);
 	std::stringstream ss;
@@ -307,20 +303,19 @@ void BGFX_VTBL_CALL bgfx_cb_screen_shot(BGFX_VTBL_THIS_ const char* _filePath, u
 	delete[] temp;
 }
 
-void BGFX_VTBL_CALL bgfx_cb_capture_begin(BGFX_VTBL_THIS_ uint32_t _width, uint32_t _height, uint32_t _pitch, bgfx_texture_format_t _format, bool _yflip) {
+void bgfx_cb_capture_begin(bgfx_callback_interface_t* _this, uint32_t _width, uint32_t _height, uint32_t _pitch, bgfx_texture_format_t _format, bool _yflip) {
 	trss_log(TRSS_LOG_WARNING, "bgfx_cb_capture_begin not implemented.");
 }
 
-void BGFX_VTBL_CALL bgfx_cb_capture_end(BGFX_VTBL_THIS_) {
+void bgfx_cb_capture_end(bgfx_callback_interface_t* _this) {
 	trss_log(TRSS_LOG_WARNING, "bgfx_cb_capture_end not implemented.");
 }
 
-void BGFX_VTBL_CALL bgfx_cb_capture_frame(BGFX_VTBL_THIS_ const void* _data, uint32_t _size) {
+void bgfx_cb_capture_frame(bgfx_callback_interface_t* _this, const void* _data, uint32_t _size) {
 	// todo
 }
 
 static const bgfx_callback_vtbl sdl_vtbl = {
-	(void*)bgfx_cb_ctor,
 	bgfx_cb_fatal,
 	bgfx_cb_cache_read_size,
 	bgfx_cb_cache_read,
