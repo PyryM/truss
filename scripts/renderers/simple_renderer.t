@@ -66,6 +66,8 @@ function SimpleRenderer:init(width, height)
 	self.rootmat = Matrix4():identity()
 	self.tempmat = Matrix4()
 
+	self.viewid = 0
+
 	-- set default lights
 	self:setLightDirections({
 			{ 1.0,  1.0,  0.0},
@@ -101,7 +103,7 @@ function SimpleRenderer:setRootTransform(rootmat)
 end
 
 function SimpleRenderer:setViewMatrices()
-	bgfx.bgfx_set_view_transform(0, self.viewmat.data, self.projmat.data)
+	bgfx.bgfx_set_view_transform(self.viewid, self.viewmat.data, self.projmat.data)
 end
 
 function SimpleRenderer:updateUniforms()
@@ -170,7 +172,7 @@ function SimpleRenderer:renderGeo(geo, mtx, material)
 	bgfx.bgfx_set_index_buffer(geo.databuffers.ibh, 0, bgfx.UINT32_MAX)
 
 	bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)
-	bgfx.bgfx_submit(0, 0)
+	bgfx.bgfx_submit(self.viewid, 0)
 end
 
 function SimpleRenderer:render()
