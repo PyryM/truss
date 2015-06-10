@@ -83,7 +83,7 @@ function initBGFX()
 
 	bgfx.bgfx_set_view_clear(0, 
 	0x0001 + 0x0002, -- clear color + clear depth
-	0x303030ff,
+	0x000000ff,
 	1.0,
 	0)
 
@@ -91,6 +91,10 @@ function initBGFX()
 
 	-- Init renderer
 	renderer = simple_renderer.SimpleRenderer(width, height)
+
+	-- Load in depth program
+	renderer:setProgram("vs_depth", "fs_depth")
+	renderer:setTexProgram("vs_depth", "fs_depth")
 
 	-- Load the model
 	objloader.verbose = true

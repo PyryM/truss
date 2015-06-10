@@ -84,6 +84,14 @@ function SimpleRenderer:init(width, height)
 	self:setModelColor(1.0,1.0,1.0)
 end
 
+function SimpleRenderer:setProgram(vsname, fsname)
+	self.pgm = loadProgram(vsname, fsname)
+end
+
+function SimpleRenderer:setTexProgram(vsname, fsname)
+	self.texpgm = loadProgram(vsname, fsname)
+end
+
 function SimpleRenderer:setCameraTransform(cammat)
 	self.viewmat:invert(cammat)
 end
