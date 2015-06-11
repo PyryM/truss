@@ -3,6 +3,7 @@
 -- a websocket wrapper
 
 local class = truss_import("core/30log.lua")
+local json = truss_import("lib/json.lua")
 
 local websocket = {}
 local WebSocketConnection = class("WebSocketConnection")
@@ -17,6 +18,7 @@ function WebSocketConnection:init()
 	end
 	numsockets = numsockets + 1
 	self.open = false
+	self.decodeJSON = false
 end
 
 function WebSocketConnection:isOpen()
@@ -45,11 +47,22 @@ function WebSocketConnection:update()
 		self.open = false
 		return
 	end
+
+	if not self.callback then return end
 	
-	for i = 1,nmessages do
-		local rawstr = wsAddon.trss_wsclient_getmessage(wsAddonPointer, i - 1)
-		local msgstr = ffi.string(rawstr)
-		if self.callback then self.callback(msgstr) end
+	if self.decodeJSON then
+		for i = 1,nmessages do
+			local rawstr = wsAddon.trss_wsclient_getmessage(wsAddonPointer, i - 1)
+			local msgstr = ffi.string(rawstr)
+			local obj = json:decode(msgstr)
+			self.callback(obj)
+		end
+	else
+		for i = 1,nmessages do
+			local rawstr = wsAddon.trss_wsclient_getmessage(wsAddonPointer, i - 1)
+			local msgstr = ffi.string(rawstr)
+			self.callback(msgstr)
+		end
 	end
 end
 
@@ -66,6 +79,11 @@ function WebSocketConnection:send(msgstr)
 	wsAddon.trss_wsclient_send(wsAddonPointer, tostring(msgstr))
 end
 
+function WebSocketConnection:sendJSON(obj)
+	if not self.open then return end
+	local jdata = json:encode(obj)
+	wsAddon.trss_wsclient_send(wsAddonPointer, jdata)
+end
 
 websocket.WebSocketConnection = WebSocketConnection
 return websocket
