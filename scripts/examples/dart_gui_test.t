@@ -38,6 +38,9 @@ local Matrix4 = matrixlib.Matrix4
 local Quaternion = quatlib.Quaternion
 Line = truss_import("mesh/line.t")
 local OrbitCam = truss_import("gui/orbitcam.t")
+textureutils = truss_import("utils/textureutils.t")
+objloader = truss_import("loaders/objloader.t")
+meshutils = truss_import("mesh/mesh.t")
 
 guiSrc = "gui/console.t"
 gui = truss_import(guiSrc)
@@ -123,6 +126,23 @@ function load_herb()
 	load_json_scene("temp/herb.json")
 end
 
+function load_obj_mesh(meshname, texname)
+	local modeldata = objloader.loadOBJ(meshname, false)
+	local modeltex = nil
+	if texname ~= nil and texname ~= "" then
+		modeltex = textureutils.loadTexture("temp/kitchen.jpg")
+		trss.trss_log(0, "Texture handle idx: " .. modeltex.idx)
+	end
+
+	local newgeo = meshutils.Geometry():fromData(renderer.vertexInfo, modeldata)
+	local newmat = {texture = modeltex} -- nothing in materials at the moment
+	local newmesh = meshutils.Mesh(newgeo, newmat)
+
+	renderer:add(newmesh)
+
+	return newmesh
+end
+
 function info(v)
 	local vt = type(v)
 	if vt == "number" or vt == "string" or vt == "boolean" or vt == "nil" then
@@ -167,7 +187,8 @@ consoleenv = {print = cprint,
 			  load_json_scene = load_json_scene,
 			  load_herb = load_herb,
 			  info = info,
-			  filter = filter}
+			  filter = filter,
+			  load_obj_mesh = load_obj_mesh}
 
 function consoleExecute(str)
 	local lchunk, err = loadstring(str)
