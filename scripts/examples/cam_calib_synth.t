@@ -75,6 +75,14 @@ function initNVG()
 	nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/VeraMono.ttf")
 end
 
+function ltostr(l)
+	local ret = ""
+	for i,v in ipairs(l) do
+		ret = ret .. v .. ","
+	end
+	return ret
+end
+
 function renderNVG()
 	nanovg.nvgBeginFrame(nvg, width, totalheight, 1.0)
 
@@ -87,10 +95,10 @@ function renderNVG()
 
 	nanovg.nvgFontSize(nvg, 14)
 	nanovg.nvgFillColor(nvg, nanovg.nvgRGBA(255,255,255,255))
-	nanovg.nvgText(nvg, 0, totalheight, "Time: " .. time, nil)
 
-	local flist = {math.cos(time), math.sin(time), time}
-	colorcoder.encodeFloats(nvg, flist, 0, viewheight, 4, 4)
+	nanovg.nvgText(nvg, 0, totalheight, "T: " .. ltostr(targetinfo), nil)
+
+	colorcoder.encodeFloats(nvg, targetinfo, 0, viewheight, 4, 4)
 
 	nanovg.nvgEndFrame(nvg)
 end
@@ -149,35 +157,46 @@ function initBGFX()
 	objloader.verbose = true
 	stlloader.verbose = true
 
-	modeldata = objloader.loadOBJ("temp/meshes/herb_base.obj", false) -- don't invert windings
+	modeldata = objloader.loadOBJ("temp/fuze2.obj", false) -- don't invert windings
 	--modeldata = stlloader.loadSTL("models/arm_fixed.stl", false) -- don't invert windings
 	--modeldata = objloader.loadOBJ("models/arm_fixed.obj", false)
 
-	modeltex = textureutils.loadTexture("temp/herb_base.jpg")
+	modeltex = textureutils.loadTexture("temp/fuze.png")
 	trss.trss_log(0, "Texture handle idx: " .. modeltex.idx)
 
-	wheelgeo = meshutils.Geometry():fromData(leftrenderer.vertexInfo, modeldata)
-	wheelmat = {texture = modeltex} -- nothing in materials at the moment
-	--wheelmat = {}
+	targetgeo = meshutils.Geometry():fromData(leftrenderer.vertexInfo, modeldata)
+	targetmat = {texture = modeltex} -- nothing in materials at the moment
 
-	-- make some wheels
-	wheels = {}
-	for i = 1,10 do
-		local wheel = meshutils.Mesh(wheelgeo, wheelmat)
-		wheel.position.z = -math.random()*2
-		wheel.position.y = (math.random()*2 - 1) * 0.5
-		wheel.position.x = (math.random()*2 - 1) * 0.5
-		wheel.scale.x = 50
-		wheel.scale.y = 50
-		wheel.scale.z = 50
-		wheel.dx = math.random() -- we're just storing our own values
-		wheel.dy = math.random() -- on the object, because why not
-		wheel.dz = math.random()
-		-- simplerenderer just stores references, so we can safely do this
-		leftrenderer:add(wheel)
-		rightrenderer:add(wheel)
-		wheels[i] = wheel
-	end
+	thetarget = meshutils.Mesh(targetgeo, targetmat)
+
+	-- tx,ty,tz,rx,ry,rz,rw
+	targetinfo = {0,0,0,0,0,0,0}
+	
+	-- simplerenderer just stores references, so we can safely do this
+	leftrenderer:add(thetarget)
+	rightrenderer:add(thetarget)
+
+end
+
+function randomizeTarget()
+	thetarget.position.z = -0.3 - math.random()*0.1
+	thetarget.position.y = (math.random()*2 - 1)*0.16
+	thetarget.position.x = (math.random()*2 - 1)*0.16
+
+	local rot = {x = (math.random()-0.5) * math.pi * 1.0 - math.pi / 2.0,
+				 y = math.random() * math.pi * 4.0,
+				 z = (math.random()-0.5) * math.pi * 1.0}
+	thetarget.quaternion:fromEuler(rot, 'ZYX')
+
+	targetinfo = {
+		thetarget.position.x,
+		thetarget.position.y,
+		thetarget.position.z,
+		thetarget.quaternion.x,
+		thetarget.quaternion.y,
+		thetarget.quaternion.z,
+		thetarget.quaternion.w
+	}
 end
 
 frametime = 0.0
@@ -207,13 +226,7 @@ function update()
 	-- Deal with input events
 	updateEvents()
 
-	-- make the wheels rotate
-	for i, wheel in ipairs(wheels) do
-		local rot = {x = wheel.dx * time,
-					 y = wheel.dy * time,
-					 z = wheel.dz * time}
-		wheel.quaternion:fromEuler(rot, 'ZYX')
-	end
+	randomizeTarget()
 
 	render()
 
