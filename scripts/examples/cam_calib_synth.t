@@ -41,6 +41,16 @@ simple_renderer = truss_import("renderers/simple_renderer.t")
 colorcoder = truss_import("utils/colorcoder.t")
 
 screenshotid = 0
+screenshotpath = "datasets/poptartkitchen/"
+
+savingShots = false
+shotsLeft = 10000
+
+function takeScreenshot()
+	local fn = screenshotpath .. "img_" .. screenshotid .. ".png"
+	bgfx.bgfx_save_screen_shot(fn)
+	screenshotid = screenshotid + 1
+end
 
 function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
@@ -51,12 +61,16 @@ function updateEvents()
 			mousey = evt.y
 		elseif evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRSS_SDL_EVENT_KEYUP then
 			local sname = "up"
+			local keyname = ffi.string(evt.keycode)
 			if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN then
-				bgfx.bgfx_save_screen_shot("screenshot_" .. screenshotid .. ".png")
-				screenshotid = screenshotid + 1
+				if keyname == "F5" then
+					savingShots = true
+				elseif keyname == "F10" then
+					takeScreenshot()
+				end
 				sname = "down" 
 			end
-			trss.trss_log(0, "Key event: " .. sname .. " " .. ffi.string(evt.keycode))
+			trss.trss_log(0, "Key event: " .. sname .. " " .. keyname)
 			trss.trss_log(0, "x: " .. evt.x .. ", y: " .. evt.y .. ", flags: " .. evt.flags)
 		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
 			trss.trss_log(TRSS_ID, "Received window close, stopping interpreter...")
@@ -142,6 +156,7 @@ function initBGFX()
 
 	-- Init renderers
 	leftrenderer = simple_renderer.SimpleRenderer(width/2, viewheight)
+	leftrenderer.useColors = false -- we will be using colors as IDs
 	rightrenderer = simple_renderer.SimpleRenderer(width/2, viewheight)
 	leftrenderer.viewid = 0
 
@@ -157,17 +172,17 @@ function initBGFX()
 	objloader.verbose = true
 	stlloader.verbose = true
 
-	modeldata = objloader.loadOBJ("temp/fuze2.obj", false) -- don't invert windings
-	--modeldata = stlloader.loadSTL("models/arm_fixed.stl", false) -- don't invert windings
-	--modeldata = objloader.loadOBJ("models/arm_fixed.obj", false)
-
-	modeltex = textureutils.loadTexture("temp/fuze.png")
-	trss.trss_log(0, "Texture handle idx: " .. modeltex.idx)
-
-	targetgeo = meshutils.Geometry():fromData(leftrenderer.vertexInfo, modeldata)
-	targetmat = {texture = modeltex} -- nothing in materials at the moment
-
+	targetdata = objloader.loadOBJ("temp/pop_tarts_fixed.obj", false)
+	targettex = textureutils.loadTexture("temp/pop_tarts_lo.jpg")
+	targetgeo = meshutils.Geometry():fromData(leftrenderer.vertexInfo, targetdata)
+	targetmat = {texture = targettex, color = {1,1,1}}
 	thetarget = meshutils.Mesh(targetgeo, targetmat)
+
+	bgdata = objloader.loadOBJ("temp/kitchen.obj", false)
+	bgtex = textureutils.loadTexture("temp/kitchen.jpg")
+	bggeo = meshutils.Geometry():fromData(leftrenderer.vertexInfo, bgdata)
+	bgmat = {texture = bgtex, color = {0,0,0}}
+	thebackground = meshutils.Mesh(bggeo, bgmat)
 
 	-- tx,ty,tz,rx,ry,rz,rw
 	targetinfo = {0,0,0,0,0,0,0}
@@ -175,11 +190,16 @@ function initBGFX()
 	-- simplerenderer just stores references, so we can safely do this
 	leftrenderer:add(thetarget)
 	rightrenderer:add(thetarget)
+	leftrenderer:add(thebackground)
+	rightrenderer:add(thebackground)
+end
 
+function randRange(minv, maxv)
+	return math.random() * (maxv - minv) + minv
 end
 
 function randomizeTarget()
-	thetarget.position.z = -0.3 - math.random()*0.1
+	thetarget.position.z = randRange(-0.4, -0.6)
 	thetarget.position.y = (math.random()*2 - 1)*0.16
 	thetarget.position.x = (math.random()*2 - 1)*0.16
 
@@ -187,6 +207,8 @@ function randomizeTarget()
 				 y = math.random() * math.pi * 4.0,
 				 z = (math.random()-0.5) * math.pi * 1.0}
 	thetarget.quaternion:fromEuler(rot, 'ZYX')
+
+	--thetarget.scale.x, thetarget.scale.y, thetarget.scale.z = 0.01,0.01,0.01
 
 	targetinfo = {
 		thetarget.position.x,
@@ -197,6 +219,20 @@ function randomizeTarget()
 		thetarget.quaternion.z,
 		thetarget.quaternion.w
 	}
+end
+
+function randomizeBackground()
+	thebackground.position.z = randRange(-0.4, -0.75)
+	thebackground.position.y = randRange(-0.25,0.0)
+	thebackground.position.x = randRange(-1,1)
+
+	local rot = {x = randRange(-0.2,0.2),
+				 y = randRange(0.4,0.6),
+				 z = randRange(-0.2,0.2)}
+	thebackground.quaternion:fromEuler(rot, 'ZYX')
+
+	local ss = 0.05
+	thebackground.scale.x, thebackground.scale.y, thebackground.scale.z = ss,ss,ss
 end
 
 frametime = 0.0
@@ -227,8 +263,14 @@ function update()
 	updateEvents()
 
 	randomizeTarget()
+	randomizeBackground()
 
 	render()
+
+	if savingShots and shotsLeft > 0 then
+		takeScreenshot()
+		shotsLeft = shotsLeft - 1
+	end
 
 	-- Advance to next frame. Rendering thread will be kicked to
 	-- process submitted rendering primitives.

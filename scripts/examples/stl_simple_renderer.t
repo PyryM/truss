@@ -93,18 +93,18 @@ function initBGFX()
 	renderer = simple_renderer.SimpleRenderer(width, height)
 
 	-- Load in depth program
-	renderer:setProgram("vs_depth", "fs_depth")
-	renderer:setTexProgram("vs_depth", "fs_depth")
+	--renderer:setProgram("vs_depth", "fs_depth")
+	--renderer:setTexProgram("vs_depth", "fs_depth")
 
 	-- Load the model
 	objloader.verbose = true
 	stlloader.verbose = true
 
-	modeldata = objloader.loadOBJ("temp/meshes/segway_wheel_right.obj", false) -- don't invert windings
+	modeldata = objloader.loadOBJ("temp/kitchen.obj", false) -- don't invert windings
 	--modeldata = stlloader.loadSTL("models/arm_fixed.stl", false) -- don't invert windings
 	--modeldata = objloader.loadOBJ("models/arm_fixed.obj", false)
 
-	modeltex = textureutils.loadTexture("temp/test.jpg")
+	modeltex = textureutils.loadTexture("temp/kitchen.jpg")
 	trss.trss_log(0, "Texture handle idx: " .. modeltex.idx)
 
 	wheelgeo = meshutils.Geometry():fromData(renderer.vertexInfo, modeldata)
