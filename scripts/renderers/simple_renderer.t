@@ -56,6 +56,7 @@ function SimpleRenderer:init(width, height)
 	self.modelColor = terralib.new(float[4])
 
 	self.autoUpdateMatrices = true
+	self.useColors = true
 
 	-- create matrices
 	self.projmat = Matrix4():makeProjection(60.0, width / height, 0.01, 100.0)
@@ -159,12 +160,12 @@ function SimpleRenderer:renderGeo(geo, mtx, material)
 		material:apply()
 	elseif material and material.texture then
 		bgfx.bgfx_set_program(self.texpgm)
-		local mc = material.color or {}
+		local mc = (self.useColors and material.color) or {}
 		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
 		bgfx.bgfx_set_texture(0, self.s_texAlbedo, material.texture, bgfx.UINT32_MAX)
 	else
 		material = material or {}
-		local mc = material.color or {}
+		local mc = (self.useColors and material.color) or {}
 		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
 		bgfx.bgfx_set_program(self.pgm)
 	end
