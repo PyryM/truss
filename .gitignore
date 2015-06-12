@@ -7,6 +7,7 @@ include/terra/
 models/
 temp/
 dump/
+datasets/
 *.exe
 *.pdb
 *.lib
