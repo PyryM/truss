@@ -14,6 +14,11 @@
 #include <stdint.h>  // uint32_t
 #include <stdlib.h>  // size_t
 
+/* hacky hack: llvm/clang on linux really doesn't
+   want to have the limits defined for some reason */
+#define TESTO 1723
+#define UINT32_MAX 4294967295
+
 //#include "bgfxdefines.h"
 
 typedef enum bgfx_renderer_type
@@ -22,6 +27,7 @@ typedef enum bgfx_renderer_type
     BGFX_RENDERER_TYPE_DIRECT3D9,
     BGFX_RENDERER_TYPE_DIRECT3D11,
     BGFX_RENDERER_TYPE_DIRECT3D12,
+    BGFX_RENDERER_TYPE_METAL,
     BGFX_RENDERER_TYPE_OPENGLES,
     BGFX_RENDERER_TYPE_OPENGL,
     BGFX_RENDERER_TYPE_VULKAN,

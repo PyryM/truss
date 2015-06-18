@@ -10,6 +10,7 @@ end
 
 function m.shaderpath()
 	local rendertype = bgfx.bgfx_get_renderer_type()
+	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendertype))
 	local renderpath = "shaders/"
 
 	if rendertype == bgfx.BGFX_RENDERER_TYPE_OPENGL then
@@ -17,7 +18,8 @@ function m.shaderpath()
 	elseif rendertype == bgfx.BGFX_RENDERER_TYPE_DIRECT3D11 then
 		renderpath = renderpath .. "dx11/"
 	else
-		trss.trss_log(0, "Unimplemented shaders for current renderer.")
+		trss.trss_log(0, "Unimplemented shaders for current renderer [" ..
+			rendererName .. "]: " .. rendertype)
 	end
 
 	return renderpath
