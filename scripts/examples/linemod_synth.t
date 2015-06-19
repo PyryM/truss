@@ -6,9 +6,9 @@
 -- Note: press F5 to start saving images
 
 -- Options:
-modelname = "temp/pop_tarts_fixed.obj"
-modeltex = "temp/pop_tarts_lo.jpg"
-destdir = "datasets/poptart/" -- trailing slash is necessary
+modelname = args[3]
+modeltex = args[4]
+destdir = args[5] or "data"
 thetasteps = 40
 phisteps = 20
 objlocation = {0,0,-0.4} -- object location in opengl camera frame
@@ -71,7 +71,7 @@ for thetaidx = 1,thetasteps do
 end
 
 function takeScreenshot()
-	local fn = screenshotpath .. "img_" .. screenshotid .. ".png"
+	local fn = screenshotpath .. "/img_" .. screenshotid .. ".png"
 	bgfx.bgfx_save_screen_shot(fn)
 	screenshotid = screenshotid + 1
 end
@@ -283,9 +283,17 @@ function update()
 
 	render()
 
+	bgfx.bgfx_dbg_text_clear(0, false)
+
 	if savingShots and shotsLeft > 0 then
 		takeScreenshot()
 		shotsLeft = shotsLeft - 1
+	elseif shotsLeft <= 0 then
+		bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "Done.")
+	else
+		bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "Press F5 to generate images")
+		bgfx.bgfx_dbg_text_printf(0, 2, 0x4f, "Model: " .. modelname .. ", Tex: " .. modeltex)
+		bgfx.bgfx_dbg_text_printf(0, 3, 0x4f, "Destination: " .. destdir)
 	end
 
 	-- Advance to next frame. Rendering thread will be kicked to
