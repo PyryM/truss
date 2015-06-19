@@ -6,6 +6,12 @@
 #ifndef STDINT_H
 #define STDINT_H
 
+ /*  
+ *  Used by truss to check whether this header has been included from fakestd
+ *  or from the actual system includes
+ */
+#define TRUSS_CHECK 7777
+
 typedef signed char        int8_t;
 typedef short              int16_t;
 typedef int                int32_t;

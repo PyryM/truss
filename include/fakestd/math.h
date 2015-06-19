@@ -1,10 +1,16 @@
 /*
  * 'Fake' math.h to be included by terra on windows systems which don't
- * have visual studio installed
+ *  have visual studio installed
  */
 
 #ifndef MATH_H
 #define MATH_H
+
+/*  
+ *  Used by truss to check whether this header has been included from fakestd
+ *  or from the actual system includes
+ */
+#define TRUSS_CHECK 7777
 
 int abs(int);
 double acos(double);
