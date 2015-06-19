@@ -22,7 +22,7 @@ int main(int argc, char** argv){
 		interpreter->startUnthreaded(argv[1]);
 	}
 	else {
-		interpreter->startUnthreaded("examples/cam_calib_synth.t");
+		interpreter->startUnthreaded("examples/dart_gui_test.t");
 	}
 	return 0;
 }
