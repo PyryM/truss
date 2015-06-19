@@ -35,6 +35,9 @@ uint64_t trss_get_hp_freq();
 #define TRSS_CORE_PATH 2  /* Path for core files e.g. bootstrap.t */
 trss_message* trss_load_file(const char* filename, int path_type);
 int trss_save_file(const char* filename, int path_type, trss_message* data);
+trss_message* trss_get_store_value(const char* key);
+int trss_set_store_value(const char* key, trss_message* val);
+int trss_set_store_value_str(const char* key, const char* msg);
 typedef int trss_interpreter_id;
 int trss_spawn_interpreter(const char* name, trss_message* arg_message);
 void trss_stop_interpreter(trss_interpreter_id target_id);
@@ -71,6 +74,23 @@ terra toc(startTime: uint64)
 	var deltaF : float = curtime - startTime
 	return deltaF / [float](freq)
 end
+
+execArgs = {}
+local function readArgs()
+	local idx = 0
+	while true do
+		local argname = "arg" .. idx
+		local argval = trss.trss_get_store_value(argname)
+		if argval == nil then break end
+		local argstr = ffi.string(argval.data, argval.data_length)
+		trss.trss_log(0, argname .. ": " .. argstr)
+		table.insert(execArgs, argstr)
+		idx = idx + 1
+	end
+	trss.trss_log(0, "Loaded " .. idx .. " args.")
+end
+
+readArgs()
 
 function loadStringFromFile(filename)
 	local temp = trss.trss_load_file(filename, 0)
@@ -161,6 +181,7 @@ subenv.truss_import = truss_import
 subenv.tic = tic
 subenv.toc = toc
 subenv.loadStringFromFile = loadStringFromFile
+subenv.args = execArgs
 
 function _coreInit(argstring)
 	-- Load in argstring

@@ -251,6 +251,23 @@ int trss_save_file(const char* filename, int path_type, trss_message* data){
 	return 0; // TODO: actually check for errors
 }
 
+/* Datastore functions */
+trss_message* trss_get_store_value(const char* key) {
+	std::string tempkey(key);
+	return Core::getCore()->getStoreValue(tempkey);
+}
+
+int trss_set_store_value(const char* key, trss_message* val) {
+	std::string tempkey(key);
+	return Core::getCore()->setStoreValue(tempkey, val);
+}
+
+int trss_set_store_value_str(const char* key, const char* msg) {
+	std::string tempkey(key);
+	std::string tempmsg(msg);
+	return Core::getCore()->setStoreValue(tempkey, tempmsg);
+}
+
 /* Interpreter management functions */
 int trss_spawn_interpreter(const char* name){
 	Interpreter* spawned = Core::getCore()->spawnInterpreter(name);
@@ -508,6 +525,36 @@ void Core::saveFile(const char* filename, int path_type, trss_message* data) {
 	outfile.open(truepath.c_str(), std::ios::binary | std::ios::out);
 	outfile.write((char*)(data->data), data->data_length);
 	outfile.close();
+}
+
+trss_message* Core::getStoreValue(const std::string& key) {
+	if (store_.count(key) > 0) {
+		return store_[key];
+	} else {
+		return NULL;
+	}
+}
+
+int Core::setStoreValue(const std::string& key, trss_message* val) {
+	acquireMessage(val);
+	if (store_.count(key) > 0) {
+		trss_message* oldmsg = store_[key];
+		store_[key] = val;
+		releaseMessage(oldmsg);
+		return 1;
+	} else {
+		store_[key] = val;
+		return 0;
+	}
+}
+
+int Core::setStoreValue(const std::string& key, const std::string& val) {
+	trss_message* newmsg = allocateMessage(val.length());
+	const char* src = val.c_str();
+	memcpy(newmsg->data, src, newmsg->data_length);
+	int result = setStoreValue(key, newmsg);
+	releaseMessage(newmsg); // avoid double-acquiring this message
+	return result;
 }
 
 Core::~Core(){

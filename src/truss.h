@@ -6,6 +6,7 @@
 #include "trussapi.h"
 #include <string>
 #include <vector>
+#include <map>
 
 #include "SDL_thread.h"
 #include "SDL_mutex.h"
@@ -141,6 +142,10 @@ namespace trss {
 		trss_message* loadFile(const char* filename, int path_type);
 		void saveFile(const char* filename, int path_type, trss_message* data);
 
+		trss_message* getStoreValue(const std::string& key);
+		int setStoreValue(const std::string& key, trss_message* val);
+		int setStoreValue(const std::string& key, const std::string& val);
+
 		~Core();
 	private:
 		static Core* core__;
@@ -150,6 +155,7 @@ namespace trss {
 		Core();
 		SDL_mutex* coreLock_;
 		std::vector<Interpreter*> interpreters_;
+		std::map<std::string, trss_message*> store_;
 	};
 
 	// syntax sugar to avoid the verbose

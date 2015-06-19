@@ -5,10 +5,21 @@
 #include "nanovg_addon.h"
 #include "wsclient_addon.h"
 #include <iostream>
+#include <sstream>
+
+void storeArgs(int argc, char** argv) {
+	for (int i = 0; i < argc; ++i) {
+		std::stringstream ss;
+		ss << "arg" << i;
+		std::string val(argv[i]);
+		trss::core()->setStoreValue(ss.str(), val);
+	}
+}
 
 int main(int argc, char** argv){
 	trss_test();
 	trss_log(0, "Entered main!");
+	storeArgs(argc, argv);
 	trss::Interpreter* interpreter = trss::core()->spawnInterpreter("interpreter_0");
 	interpreter->setDebug(0); // want most verbose debugging output
 	interpreter->attachAddon(new SDLAddon);

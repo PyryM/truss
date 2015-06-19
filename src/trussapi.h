@@ -64,10 +64,14 @@ TRSS_C_API uint64_t trss_get_hp_freq();
 #define TRSS_SAVE_PATH 1  /* Path for saving stuff e.g. preferences */
 #define TRSS_CORE_PATH 2  /* Path for core files e.g. bootstrap.t */
 
-TRSS_C_API trss_message* trss_load_file(const char* filename, int path_type);
-
 /* Note that when saving the message_type field is not saved */
+TRSS_C_API trss_message* trss_load_file(const char* filename, int path_type);
 TRSS_C_API int trss_save_file(const char* filename, int path_type, trss_message* data);
+
+/* Datastore functions */
+TRSS_C_API trss_message* trss_get_store_value(const char* key);
+TRSS_C_API int trss_set_store_value(const char* key, trss_message* val);
+TRSS_C_API int trss_set_store_value_str(const char* key, const char* msg);
 
 /* Interpreter IDs are just ints for now */
 typedef int trss_interpreter_id;
