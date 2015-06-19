@@ -138,13 +138,69 @@ function m.createStaticBGFXBuffers(data, recreate)
 
 	-- Create static bgfx buffers
 	-- Warning! This only wraps the data, so make sure it doesn't go out
-	-- of scope EVER (TODO: sane memory management)
+	-- of scope for at least two frames (bgfx requirement)
 	data.vbh = bgfx.bgfx_create_vertex_buffer(
 		  bgfx.bgfx_make_ref(data.verts, data.vertDataSize),
 		  data.vertInfo.vertDecl, flags )
 
 	data.ibh = bgfx.bgfx_create_index_buffer(
 		  bgfx.bgfx_make_ref(data.indices, data.indexDataSize), flags )
+end
+
+-- createDynamicBGFXBuffers
+--
+-- creates dynamic bgfx buffers with the current vertex and index data
+-- as the initial contents; dynamic buffers can be updated, but at what
+-- cost???
+function m.createDynamicBGFXBuffers(data, recreate)
+	local flags = 0
+
+	-- data already has buffers, so do update instead
+	if (data.vbh or data.ibh) and (not recreate) then
+		return m.updateDynamicBGFXBuffers(data)
+	end
+
+	if data.vbh then
+		bgfx.bgfx_destroy_dynamic_vertex_buffer(data.vbh)
+	end
+	if data.ibh then
+		bgfx.bgfx_destroy_dynamic_index_buffer(data.ibh)
+	end
+
+	trss.trss_log(0, "Creating dynamic buffer...")
+
+	-- Create dynamic bgfx buffers
+	-- Warning! This only wraps the data, so make sure it doesn't go out
+	-- of scope for at least two frames (bgfx requirement)
+	data.vbh = bgfx.bgfx_create_dynamic_vertex_buffer_mem(
+		  bgfx.bgfx_make_ref(data.verts, data.vertDataSize),
+		  data.vertInfo.vertDecl, flags )
+
+	data.ibh = bgfx.bgfx_create_dynamic_index_buffer_mem(
+		  bgfx.bgfx_make_ref(data.indices, data.indexDataSize), flags )
+
+	data.dynamic = true
+end
+
+-- updateDynamicBGFXBuffers
+--
+-- updates the dynamic buffers from the current data
+function m.updateDynamicBGFXBuffers(data)
+	if not data.dynamic then
+		trss.trss_log(0, "Error: cannot update non-dynamic buffers!")
+		return
+	end
+
+	if (not data.vbh) or (not data.ibh) then
+		trss.trss_log(0, "Error: null buffers!")
+		return
+	end
+
+	bgfx.bgfx_update_dynamic_index_buffer(data.ibh, 
+		 bgfx.bgfx_make_ref(data.indices, data.indexDataSize))
+
+	bgfx.bgfx_update_dynamic_vertex_buffer(data.vbh, 
+		 bgfx.bgfx_make_ref(data.verts, data.vertDataSize))
 end
 
 return m

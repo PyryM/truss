@@ -110,12 +110,8 @@ function Line:createBuffers_()
 	local vinfo = getVertexInfo()
 	local nvertices = self.maxpoints * 2
 	local nfaces = self.maxpoints * 2
-	if self.dynamic then
-		self.buffers = bufferutils.allocateDynamicData(vinfo, nvertices, nfaces)
-	else
-		trss.trss_log(0, "Allocating line buffers...")
-		self.buffers = bufferutils.allocateData(vinfo, nvertices, nfaces)
-	end
+	trss.trss_log(0, "Allocating line buffers...")
+	self.buffers = bufferutils.allocateData(vinfo, nvertices, nfaces)
 end
 
 -- Update the line buffers: for a static line (dynamic == false)
@@ -143,11 +139,11 @@ function Line:setPoints(lines)
 		end
 		vertidx, idxidx = self:appendSegment_(lines[i], vertidx, idxidx)
 	end
-	trss.trss_log(0, "IBuf test: " .. self.buffers.indices[20])
 
 	if self.dynamic then
-		-- TODO
-		trss.trss_log(0, "Dynamic lines not implemented yet!")
+		-- createDynamicBGFXBuffers is smart enough to update the buffers if
+		-- you try to create the buffers multiple times
+		bufferutils.createDynamicBGFXBuffers(self.buffers)
 	else
 		trss.trss_log(0, "Creating static buffers...")
 		-- this will have no effect if the static

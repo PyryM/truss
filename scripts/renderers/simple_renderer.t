@@ -169,8 +169,18 @@ function SimpleRenderer:renderGeo(geo, mtx, material)
 		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
 		bgfx.bgfx_set_program(self.pgm)
 	end
-	bgfx.bgfx_set_vertex_buffer(geo.databuffers.vbh, 0, bgfx.UINT32_MAX)
-	bgfx.bgfx_set_index_buffer(geo.databuffers.ibh, 0, bgfx.UINT32_MAX)
+
+	if geo.databuffers.dynamic then
+		-- for some reason set_dynamic_vertex_buffer does not take a start
+		-- index argument, only the number of vertices
+		bgfx.bgfx_set_dynamic_vertex_buffer(geo.databuffers.vbh, 
+											bgfx.UINT32_MAX)
+		bgfx.bgfx_set_dynamic_index_buffer(geo.databuffers.ibh, 
+											0, bgfx.UINT32_MAX)
+	else
+		bgfx.bgfx_set_vertex_buffer(geo.databuffers.vbh, 0, bgfx.UINT32_MAX)
+		bgfx.bgfx_set_index_buffer(geo.databuffers.ibh, 0, bgfx.UINT32_MAX)
+	end
 
 	bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)
 	bgfx.bgfx_submit(self.viewid, 0)
