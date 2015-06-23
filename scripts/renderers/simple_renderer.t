@@ -9,13 +9,10 @@ local Matrix4 = matrix.Matrix4
 local buffers = truss_import("mesh/buffers.t")
 local mesh = truss_import("mesh/mesh.t")
 local vertexdefs = truss_import("mesh/vertexdefs.t")
+local loadProgram = truss_import("utils/shaderutils.t").loadProgram
+
 
 local m = {}
-
-local function loadProgram(vshadername, fshadername)
-	local sutils = truss_import("utils/shaderutils.t")
-	return sutils.loadProgram(vshadername, fshadername)
-end
 
 struct m.LightDir {
 	x: float;
@@ -146,6 +143,22 @@ function SimpleRenderer:add(obj)
 	table.insert(self.objects, obj)
 end
 
+function SimpleRenderer:applyMaterial(material)
+	if material.apply then
+		material:apply()
+	elseif material.texture then
+		bgfx.bgfx_set_program(self.texpgm)
+		local mc = (self.useColors and material.color) or {}
+		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
+		bgfx.bgfx_set_texture(0, self.s_texAlbedo, material.texture, bgfx.UINT32_MAX)
+	else
+		material = material or {}
+		local mc = (self.useColors and material.color) or {}
+		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
+		bgfx.bgfx_set_program(self.pgm)
+	end
+end
+
 function SimpleRenderer:renderGeo(geo, mtx, material)
 	if not geo.databuffers then
 		if not geo.warned then
@@ -156,18 +169,8 @@ function SimpleRenderer:renderGeo(geo, mtx, material)
 	end
 
 	bgfx.bgfx_set_transform(mtx.data, 1) -- only one matrix in array
-	if material and material.apply then
-		material:apply()
-	elseif material and material.texture then
-		bgfx.bgfx_set_program(self.texpgm)
-		local mc = (self.useColors and material.color) or {}
-		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
-		bgfx.bgfx_set_texture(0, self.s_texAlbedo, material.texture, bgfx.UINT32_MAX)
-	else
-		material = material or {}
-		local mc = (self.useColors and material.color) or {}
-		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
-		bgfx.bgfx_set_program(self.pgm)
+	if material then
+		self:applyMaterial(material)
 	end
 
 	if geo.databuffers.dynamic then
