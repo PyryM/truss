@@ -31,7 +31,7 @@ mousex, mousey = 0, 0
 frametime = 0.0
 
 meshmanager = truss_import("dart/meshmanager.t")
-simple_renderer = truss_import("renderers/simple_renderer.t")
+pbr_renderer = truss_import("renderers/pbr_renderer.t")
 matrixlib = truss_import("math/matrix.t")
 quatlib = truss_import("math/quat.t")
 local Matrix4 = matrixlib.Matrix4
@@ -364,7 +364,7 @@ function initBGFX()
 	trss.trss_log(0, "Initted bgfx I hope?")
 
 	-- Init renderer
-	renderer = simple_renderer.SimpleRenderer(width, height)
+	renderer = pbr_renderer.PBRRenderer(width, height)
 	renderer.autoUpdateMatrices = false
 
 	-- init mesh manager
