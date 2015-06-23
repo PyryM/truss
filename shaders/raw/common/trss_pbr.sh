@@ -35,17 +35,7 @@ float distributionGGX(vec3 n, vec3 h, float alpha)
     float alpha2 = alpha * alpha;
     float NoH2 = NoH * NoH;
     float den = NoH2 * alpha2 + (1 - NoH2);
-    return (chiGGX(NoH) * alpha2) / ( PI * den * den );
-}
-
-// this function doesn't work :(
-float geometryGGX(vec3 v, vec3 n, vec3 h, float alpha)
-{
-    float VoH2 = clamp(dot(v,h), 0.0, 1.0);
-    float chi = chiGGX( VoH2 / dot(v,n) );
-    VoH2 = VoH2 * VoH2;
-    float tan2 = ( 1 - VoH2 ) / VoH2;
-    return (chi * 2) / ( 1 + sqrt( 1 + alpha * alpha * tan2 ) );
+    return (chiGGX(NoH) * alpha2) / ( PI * den * den + 0.000001);
 }
 
 // this function works, and is from:
@@ -54,6 +44,7 @@ float geometryGGX2(vec3 v, vec3 n, vec3 h, float alpha)
 {
     float VoN = dot(v, n);
     float chi = chiGGX( VoN );
+    VoN = clamp(VoN, 0.0, 1.0);
     float alpha2 = alpha*alpha;
 
     return (chi * 2.0 * VoN) / (VoN + sqrt( alpha2 + (1.0-alpha2)*VoN*VoN ));

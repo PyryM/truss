@@ -84,6 +84,10 @@ function SimpleRenderer:init(width, height)
 	self:setModelColor(1.0,1.0,1.0)
 end
 
+function SimpleRenderer:setQuality(qualval)
+	-- Nothing to do
+end
+
 function SimpleRenderer:setProgram(vsname, fsname)
 	self.pgm = loadProgram(vsname, fsname)
 end

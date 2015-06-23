@@ -365,6 +365,7 @@ function initBGFX()
 
 	-- Init renderer
 	renderer = pbr_renderer.PBRRenderer(width, height)
+	renderer:setQuality(1.0) -- highest quality
 	renderer.autoUpdateMatrices = false
 
 	-- init mesh manager

@@ -20,6 +20,7 @@ function MeshManager:init(meshpath, renderer)
 	self.meshes = {}
 	self.verbose = false
 	self.highlightColor = {1.0, 0.0, 0.0}
+	self.defaultMat = {roughness = 0.7, fresnel = {0.1, 0.1, 0.1}, color = {0.7, 0.7, 0.7}}
 end
 
 function MeshManager:highlight(hset)
@@ -77,7 +78,7 @@ function MeshManager:createMesh(meshfilename)
 		self.geos[meshfilename] = geo
 	end
 
-	local mat = {}
+	local mat = self.defaultMat or {}
 	local ret = meshutils.Mesh(self.geos[meshfilename], mat)
 	ret.source_filename = meshfilename
 	self.renderer:add(ret)

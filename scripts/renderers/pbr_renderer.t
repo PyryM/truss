@@ -20,6 +20,16 @@ function PBRRenderer:init(width, height)
 	self.pbrParams = terralib.new(float[4])
 end
 
+function PBRRenderer:setQuality(qualval)
+	if qualval < 0.9 then
+		self.pgm    = loadProgram("vs_basicpbr",    "fs_basicpbr")
+		self.texpgm = loadProgram("vs_basicpbr",    "fs_basicpbr")
+	else
+		self.pgm    = loadProgram("vs_basicpbr",    "fs_basicpbr_x4")
+		self.texpgm = loadProgram("vs_basicpbr",    "fs_basicpbr_x4")
+	end
+end
+
 function PBRRenderer:setPBRParams(tintR, tintG, tintB, roughness)
 	self.pbrParams[0] = tintR
 	self.pbrParams[1] = tintG
@@ -35,15 +45,17 @@ function PBRRenderer:applyMaterial(material)
 		bgfx.bgfx_set_program(self.texpgm)
 		local mc = (self.useColors and material.color) or {}
 		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
-		local mp = material.pbr or {}
-		self:setPBRParams(mp.tintR or 0, mp.tintG or 0, mp.tintB or 0, mp.roughness or 0)
+		local roughness = material.roughness or 0.4
+		local tint = material.fresnel or {}
+		self:setPBRParams(tint[1] or 0.8, tint[2] or 0.8, tint[3] or 0.9, roughness)
 		bgfx.bgfx_set_texture(0, self.s_texAlbedo, material.texture, bgfx.UINT32_MAX)
 	else
 		material = material or {}
 		local mc = (self.useColors and material.color) or {}
 		self:setModelColor(mc[1] or 0.1, mc[2] or 0.1, mc[3] or 0.1)
-		local mp = material.pbr or {}
-		self:setPBRParams(mp.tintR or 0.8, mp.tintG or 0.8, mp.tintB or 0.9, mp.roughness or 0.7)
+		local roughness = material.roughness or 0.4
+		local tint = material.fresnel or {}
+		self:setPBRParams(tint[1] or 0.8, tint[2] or 0.8, tint[3] or 0.9, roughness)
 		bgfx.bgfx_set_program(self.pgm)
 	end
 end
