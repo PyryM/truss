@@ -20,7 +20,7 @@ function MeshManager:init(meshpath, renderer)
 	self.meshes = {}
 	self.verbose = false
 	self.highlightColor = {1.0, 0.0, 0.0}
-	self.defaultMat = {roughness = 0.7, fresnel = {0.1, 0.1, 0.1}, color = {0.7, 0.7, 0.7}}
+	self.defaultMat = {roughness = 0.8, fresnel = {0.3, 0.3, 0.3}, color = {0.7, 0.7, 0.7}}
 end
 
 function MeshManager:highlight(hset)
