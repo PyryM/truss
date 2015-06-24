@@ -1,5 +1,5 @@
 # truss
-Successor to plinth
+visualization/rendering framework
 
 ## Requirements
 Truss is designed for relatively modern computers. In particular,
