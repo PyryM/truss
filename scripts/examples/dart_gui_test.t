@@ -41,6 +41,7 @@ local OrbitCam = truss_import("gui/orbitcam.t")
 textureutils = truss_import("utils/textureutils.t")
 objloader = truss_import("loaders/objloader.t")
 meshutils = truss_import("mesh/mesh.t")
+TileShot = truss_import("utils/tileshot.t")
 
 guiSrc = "gui/console.t"
 gui = truss_import(guiSrc)
@@ -52,10 +53,21 @@ function onTextInput(tstr)
 	end
 end
 
+screenshotid = 0
+
 function onKeyDown(keyname, modifiers)
 	log("Keydown: " .. keyname)
 	if gui ~= nil and gui.onKeyDown ~= nil then
 		gui.onKeyDown(keyname, modifiers)
+	end
+	if keyname == "F10" then
+		bgfx.bgfx_save_screen_shot("screenshot_" .. screenshotid .. ".png")
+		screenshotid = screenshotid + 1
+	end
+	if keyname == "F11" and tileshot then
+		tileshot.fn = "bigshot" .. screenshotid .. "_"
+		tileshot:start()
+		screenshotid = screenshotid + 1
 	end
 end
 
@@ -349,7 +361,9 @@ function initBGFX()
 	local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
 	--local reset = bgfx_const.BGFX_RESET_MSAA_X8
 
-	bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, nil, nil)
+	local cbInterfacePtr = sdl.trss_sdl_get_bgfx_cb(sdlPointer)
+
+	bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
 	bgfx.bgfx_reset(width, height, reset)
 
 	-- Enable debug text.
@@ -392,6 +406,11 @@ function initBGFX()
 	local scale = {x=1, y=1, z=1}
 	cammat:compose(camquat, scale, campos)
 	renderer:setRootTransform(cammat)
+
+	local shotoptions = renderer:getProjectionParams()
+	shotoptions.gridrows = 4
+	shotoptions.gridcols = 4
+	tileshot = TileShot(shotoptions)
 end
 
 function drawNVG()
@@ -427,13 +446,20 @@ function update()
 	-- Use debug font to print information about this example.
 	bgfx.bgfx_dbg_text_clear(0, false)
 
-	bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/dart_simple_renderer.t")
-	bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "total: " .. frametime*1000.0 .. " ms, script: " .. scripttime*1000.0 .. " ms")
+	if tileshot and tileshot:shotsLeft() > 0 then
+		local nextmat, nextfn = tileshot:nextShot()
+		renderer:setProjection(nextmat)
+		bgfx.bgfx_save_screen_shot(nextfn .. ".png")
+	else
+		renderer:makeDefaultProjection()
+		bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/dart_simple_renderer.t")
+		bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "total: " .. frametime*1000.0 .. " ms, script: " .. scripttime*1000.0 .. " ms")
+		drawNVG()
+	end
 
 	updateCamera()
 	--updateModelRotation(time)
 	renderer:render()
-	drawNVG()
 
 	scripttime = toc(startTime)
 

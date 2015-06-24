@@ -84,6 +84,23 @@ function SimpleRenderer:init(width, height)
 	self:setModelColor(1.0,1.0,1.0)
 end
 
+function SimpleRenderer:makeDefaultProjection()
+	self.projmat:makeProjection(60.0, self.width / self.height, 0.01, 100.0)
+end
+
+function SimpleRenderer:getProjectionParams()
+	return {
+		fov = 60.0,
+		aspect = self.width / self.height,
+		near = 0.01,
+		far = 100.0
+	}
+end
+
+function SimpleRenderer:setProjection(projmat)
+	self.projmat:copy(projmat)
+end
+
 function SimpleRenderer:setQuality(qualval)
 	-- Nothing to do
 end

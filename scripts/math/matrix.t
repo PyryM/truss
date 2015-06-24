@@ -43,13 +43,26 @@ terra m.projXYWH(mat: &float, x: float, y: float, width: float, height: float, n
 	var aa = far / diff
 	var bb = -near*aa
 
-	mat[ 0] = width;
-	mat[ 5] = height;
-	mat[ 8] =  x;
-	mat[ 9] = -y;
-	mat[10] = -aa;
-	mat[11] = -1.0f;
-	mat[14] = bb;
+	mat[ 0] = width
+	mat[ 5] = height
+	mat[ 8] =  x
+	mat[ 9] = -y
+	mat[10] = -aa
+	mat[11] = -1.0f
+	mat[14] = bb
+end
+
+terra m.projFrustum(mat: &float,
+					left: float, right: float,
+					bottom: float, top: float,
+					near: float, far: float)
+	mat[ 0] = 2.0*near / (right - left)
+	mat[ 5] = 2.0*near / (top - bottom)
+	mat[ 8] = (right + left) / (right - left)
+	mat[ 9] = (top + bottom) / (top - bottom)
+	mat[10] = -(far + near) / (far - near)
+	mat[11] = -1.0
+	mat[14] = -2 * far * near / (far - near)
 end
 
 terra m.setIdentity(mat: &float)
@@ -110,9 +123,27 @@ function m.toRad(deg)
 end
 
 function m.makeProjMat(mat, fovy, aspect, near, far)
-	local vheight = 1.0 / math.tan(m.toRad(fovy)*0.5)
-	local vwidth  = vheight * 1.0/aspect;
-	m.projXYWH(mat, 0.0, 0.0, vwidth, vheight, near, far)
+	local vheight = 2.0 * near * math.tan(m.toRad(fovy)*0.5)
+	local vwidth  = vheight * aspect
+	m.projFrustum(mat, -vwidth/2.0, vwidth/2.0,
+		  			   -vheight/2.0, vheight/2.0,
+		  			    near, far)
+end
+
+function m.makeTiledProjection(mat, fovy, aspect, near, far, gwidth, gheight, gxidx, gyidx)
+	local vheight = 2.0 * near * math.tan(m.toRad(fovy)*0.5)
+	local vwidth  = vheight * aspect
+
+	local xdiv = vwidth / gwidth
+	local ydiv = vheight / gheight
+	local left = (-vwidth/2.0) + xdiv * gxidx
+	local right = left + xdiv
+	local bottom = (-vheight/2.0) + ydiv * gyidx
+	local top = bottom + ydiv
+
+	m.projFrustum(mat, left, right,
+		  			   bottom, top,
+		  			    near, far)
 end
 
 -- matrix functions ported from threejs
