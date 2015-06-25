@@ -1,4 +1,5 @@
 build/
+distbins/
 lib/
 include/bgfx/
 include/SDL/
