@@ -56,6 +56,7 @@ public:
 	SDLAddon();
 	const std::string& getName();
 	const std::string& getCHeader();
+	const std::string& getVersionString();
 	void init(trss::Interpreter* owner);
 	void shutdown();
 	void update(double dt);
@@ -73,6 +74,7 @@ public:
 private:
 	void convertAndPushEvent_(SDL_Event& event);
 	std::string name_;
+	std::string version_;
 	std::string header_;
 
 	std::string clipboard_;

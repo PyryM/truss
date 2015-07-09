@@ -89,6 +89,7 @@ TRSS_C_API int trss_get_addon_count(trss_interpreter_id target_id);
 TRSS_C_API trss::Addon* trss_get_addon(trss_interpreter_id target_id, int addon_idx);
 TRSS_C_API const char* trss_get_addon_name(trss_interpreter_id target_id, int addon_idx);
 TRSS_C_API const char* trss_get_addon_header(trss_interpreter_id target_id, int addon_idx);
+TRSS_C_API const char* trss_get_addon_version_string(trss_interpreter_id target_id, int addon_idx);
 
 /* Message transport */
 TRSS_C_API void trss_send_message(trss_interpreter_id dest, trss_message* message);

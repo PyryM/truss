@@ -4,6 +4,7 @@
 
 NanoVGAddon::NanoVGAddon() {
 	name_ = "nanovg";
+	version_ = "0.0.1";
 	// TODO: have bootstrap.t prepend the standard trss_message struct onto all addon headers?
 	header_ = "/*NanoVGAddon Embedded Header*/\n"
 		"typedef struct Addon Addon;\n"
@@ -22,6 +23,10 @@ const std::string& NanoVGAddon::getName() {
 
 const std::string& NanoVGAddon::getCHeader() {
 	return header_;
+}
+
+const std::string& NanoVGAddon::getVersionString() {
+	return version_;
 }
 
 void NanoVGAddon::init(trss::Interpreter* owner) {

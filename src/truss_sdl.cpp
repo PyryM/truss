@@ -53,6 +53,7 @@ SDLAddon::SDLAddon(){
 	window_ = NULL;
 	owner_ = NULL;
 	name_ = "sdl";
+	version_ = "0.0.1";
 	header_ = "/*SDLAddon Embedded Header*/\n"
 		"typedef struct Addon Addon;\n"
 		"typedef struct bgfx_callback_interface bgfx_callback_interface_t;\n"
@@ -90,6 +91,10 @@ const std::string& SDLAddon::getName(){
 
 const std::string& SDLAddon::getCHeader(){
 	return header_;
+}
+
+const std::string& SDLAddon::getVersionString(){
+	return version_;
 }
 
 void SDLAddon::init(trss::Interpreter* owner){

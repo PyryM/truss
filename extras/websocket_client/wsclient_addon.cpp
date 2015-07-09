@@ -36,6 +36,7 @@ void cleanupWSA() {
 WSClientAddon::WSClientAddon() {
 	initWSA();
 	name_ = "wsclient";
+	version_ = "0.0.1";
 	header_ = "/*WSClientAddon Embedded Header*/\n"
 		"#include <stdbool.h>\n"
 		"typedef struct Addon Addon;\n"
@@ -52,8 +53,12 @@ const std::string& WSClientAddon::getName() {
 	return name_;
 }
 
-const std::string&WSClientAddon:: getCHeader() {
+const std::string& WSClientAddon::getCHeader() {
 	return header_;
+}
+
+const std::string& WSClientAddon::getVersionString() {
+	return version_;
 }
 
 void WSClientAddon::init(trss::Interpreter* owner) {

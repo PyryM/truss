@@ -353,6 +353,16 @@ const char* trss_get_addon_header(trss_interpreter_id target_id, int addon_idx) 
 	}
 }
 
+const char* trss_get_addon_version_string(trss_interpreter_id target_id, int addon_idx){
+	Addon* addon = trss_get_addon(target_id, addon_idx);
+	if (addon) {
+		return addon->getVersionString().c_str();
+	}
+	else {
+		return "";
+	}
+}
+
 /* Message management functions */
 trss_message* trss_create_message(unsigned int data_length){
 	return Core::getCore()->allocateMessage(data_length);

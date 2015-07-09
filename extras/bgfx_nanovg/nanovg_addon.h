@@ -9,6 +9,7 @@ public:
 	NanoVGAddon();
 	const std::string& getName();
 	const std::string& getCHeader();
+	const std::string& getVersionString();
 	void init(trss::Interpreter* owner);
 	void shutdown();
 	void update(double dt);
@@ -19,6 +20,7 @@ public:
 	~NanoVGAddon(); // needed so it can be deleted cleanly
 private:
 	std::string name_;
+	std::string version_;
 	std::string header_;
 };
 
