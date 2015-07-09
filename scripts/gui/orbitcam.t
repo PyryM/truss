@@ -2,11 +2,12 @@
 --
 -- a yaw/pitch orbiting camera
 
-local class = truss_import("core/30log.lua")
-local Matrix4 = truss_import("math/matrix.t").Matrix4
-local Quaternion = truss_import("math/quat.t").Quaternion
+local class = require("class")
+local Matrix4 = require("math/matrix.t").Matrix4
+local Quaternion = require("math/quat.t").Quaternion
 
 local OrbitCam = class("OrbitCam")
+local sdl = addons.sdl
 
 function OrbitCam:init()
     self.phi = 0.0

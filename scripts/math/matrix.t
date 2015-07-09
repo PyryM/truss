@@ -5,7 +5,7 @@
 local m = {}
 local CMath = terralib.includec("math.h")
 
-local class = truss_import("core/30log.lua")
+local class = require("class")
 
 struct m.vec4_ {
 	x: float;
@@ -393,7 +393,7 @@ end
 
 function Matrix4:toQuaternion()
 	-- import 'late' to avoid mutual recursion issues
-	local quat = truss_import("math/quat.t")
+	local quat = require("math/quat.t")
 	local qret = quat.Quaternion()
 	qret:copy(m.matrixToQuaternion(self.data))
 	return qret
@@ -462,7 +462,7 @@ end
 -- Note: this is 1-indexed, so the columns are 1,2,3,4
 function Matrix4:getColumn(idx)
 	if idx <= 0 or idx > 4 then
-		trss.trss_log(0, "Error: Matrix4:getColumn expects index in range [1,4], got " .. idx)
+		log.error("Error: Matrix4:getColumn expects index in range [1,4], got " .. idx)
 		return nil
 	end
 	local s = (idx-1)*4

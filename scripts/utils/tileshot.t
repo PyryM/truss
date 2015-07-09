@@ -2,8 +2,8 @@
 --
 -- simplifies setting up tiled high-res screenshots
 
-local class = truss_import("core/30log.lua")
-local matrix = truss_import("math/matrix.t")
+local class = require("class")
+local matrix = require("math/matrix.t")
 local Matrix4 = matrix.Matrix4
 
 local TileShot = class("TileShot")

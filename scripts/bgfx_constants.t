@@ -1,4 +1,4 @@
-bgfx_const = {}
+local bgfx_const = {}
 bgfx_const.BGFX_STATE_RGB_WRITE = 0x0000000000000001ULL
 bgfx_const.BGFX_STATE_ALPHA_WRITE = 0x0000000000000002ULL
 bgfx_const.BGFX_STATE_DEPTH_WRITE = 0x0000000000000004ULL
@@ -250,3 +250,5 @@ bgfx_const.BGFX_STATE_DEFAULT = bgfx_const.BGFX_STATE_RGB_WRITE +
 								bgfx_const.BGFX_STATE_DEPTH_WRITE +
 								bgfx_const.BGFX_STATE_CULL_CW +
 								bgfx_const.BGFX_STATE_MSAA
+
+return bgfx_const

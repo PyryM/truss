@@ -10,7 +10,7 @@ function m.loadOBJ(filename, invert)
 	local starttime = tic()
 	local srcMessage = trss.trss_load_file(filename, 0)
   if srcMessage == nil then 
-    trss.trss_log(0, "Error: unable to open file " .. filename)
+    log.error("Error: unable to open file " .. filename)
     return nil 
   end
 
@@ -18,7 +18,7 @@ function m.loadOBJ(filename, invert)
 	local ret = m.parseOBJ(srcstr, invert)
 	trss.trss_release_message(srcMessage)
 	local dtime = toc(starttime)
-	trss.trss_log(0, "Loaded " .. filename .. " in " .. (dtime*1000.0) .. " ms")
+	log.info("Loaded " .. filename .. " in " .. (dtime*1000.0) .. " ms")
 	return ret
 end
 
@@ -28,8 +28,7 @@ local strfind = string.find
 local tinsert = table.insert
 local strsub = string.sub
 
-local stringutils = truss_import("utils/stringutils.t")
---local stringutils = require("scripts/utils/stringutils")
+local stringutils = require("utils/stringutils.t")
 local strsplit = stringutils.split
 
 local function isComment(linegps)
@@ -136,10 +135,6 @@ function m.gatherVertices(vertexlist, posList, texList, normalList)
   return {positions = positions, uvs = uvs, normals = normals}
 end
 
-function m.log(str)
-  trss.trss_log(0, str)
-end
-
 function m.parseOBJ(objstring, invert)
 	local lines = stringutils.splitLines(objstring)
   local nlines = #lines
@@ -158,19 +153,19 @@ function m.parseOBJ(objstring, invert)
       elseif isFace(gps) then
         parseFace(gps, rawfaces)
       elseif m.verbose then -- wasn't attribute or face, so what is it?
-        m.log("objloader: couldn't parse line [" .. curline .. "]")
+        log.error("objloader: couldn't parse line [" .. curline .. "]")
       end
     end
   end
   if m.quadcount > 0 then
-    m.log("Warning: model contained " .. m.quadcount .. " quads, which were ignored!")
+    log.warn("Warning: model contained " .. m.quadcount .. " quads, which were ignored!")
   end
 
   if m.verbose then
-    m.log("#raw faces: " .. #rawfaces)
-    m.log("#raw positions: " .. #(attributes.positions or {}))
-    m.log("#raw uvs: " .. #(attributes.uvs or {}))
-    m.log("#raw normals: " .. #(attributes.normals or {}))
+    log.debug("#raw faces: " .. #rawfaces)
+    log.debug("#raw positions: " .. #(attributes.positions or {}))
+    log.debug("#raw uvs: " .. #(attributes.uvs or {}))
+    log.debug("#raw normals: " .. #(attributes.normals or {}))
   end
 
   -- unify vertices
@@ -188,10 +183,10 @@ function m.parseOBJ(objstring, invert)
   if #(ret.uvs) == 0 then ret.uvs = nil end
 
   if m.verbose then
-    m.log("#triangles (faces): " .. #ret.indices)
-    m.log("#vertices: " .. #(ret.vertices or {}))
-    m.log("#normals: " .. #(ret.normals or {}))
-    m.log("#uvs: " .. #(ret.uvs or {}))
+    log.debug("#triangles (faces): " .. #ret.indices)
+    log.debug("#vertices: " .. #(ret.vertices or {}))
+    log.debug("#normals: " .. #(ret.normals or {}))
+    log.debug("#uvs: " .. #(ret.uvs or {}))
   end
 
   return ret

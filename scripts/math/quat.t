@@ -6,7 +6,7 @@
 
 local m = {}
 
-local class = truss_import("core/30log.lua")
+local class = require("class")
 
 local Quaternion = class("Quaternion")
 
@@ -138,7 +138,7 @@ end
 -- assumes the upper 3x3 of m is a pure rotation matrix (i.e, unscaled)
 function Quaternion:fromRotationMatrix(m)
 	-- Note: we import 'late' to avoid mutual import issues
-	local matrix = truss_import("math/matrix.t")
+	local matrix = require("math/matrix.t")
 
 	return self:set(matrix.matrixToQuaternion(m.data))
 end

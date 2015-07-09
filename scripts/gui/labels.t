@@ -2,7 +2,7 @@
 --
 -- implements on-screen labels
 
-local class = truss_import("core/30log.t")
+local class = require("class")
 local Labels = class("Labels")
 
 function Labels:init()

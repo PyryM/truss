@@ -2,9 +2,9 @@
 --
 -- a minimal pbr renderer
 
-local class = truss_import("core/30log.lua")
-local simple_renderer = truss_import("renderers/simple_renderer.t")
-local loadProgram = truss_import("utils/shaderutils.t").loadProgram
+local class = require("class")
+local simple_renderer = require("renderers/simple_renderer.t")
+local loadProgram = require("utils/shaderutils.t").loadProgram
 
 local m = {}
 

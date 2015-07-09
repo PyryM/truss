@@ -2,12 +2,12 @@
 --
 -- loads+moves meshes around according to json
 
-class = truss_import("core/30log.lua")
-json = truss_import("lib/json.lua")
-stlloader = truss_import("loaders/stlloader.t")
-objloader = truss_import("loaders/objloader.t")
-meshutils = truss_import("mesh/mesh.t")
-stringutils = truss_import("utils/stringutils.t")
+local class = require("class")
+local json = require("lib/json.lua")
+local stlloader = require("loaders/stlloader.t")
+local objloader = require("loaders/objloader.t")
+local meshutils = require("mesh/mesh.t")
+local stringutils = require("utils/stringutils.t")
 
 local m = {}
 
@@ -63,7 +63,7 @@ end
 
 function MeshManager:createMesh(meshfilename)
 	local fullfilename = self:translateFilename(meshfilename)
-	trss.trss_log(0, "MeshManager loading [" .. fullfilename .. "]")
+	log.info("MeshManager loading [" .. fullfilename .. "]")
 
 	if self.geos[meshfilename] == nil then
 		local modeldata = nil
@@ -72,7 +72,7 @@ function MeshManager:createMesh(meshfilename)
 		elseif hasExtension(fullfilename, ".obj") then
 			modeldata = objloader.loadOBJ(fullfilename, false)
 		else
-			trss.trss_log(0, "Unsupported mesh file type: " .. meshfilename)
+			log.error("Unsupported mesh file type: " .. meshfilename)
 		end
 		local geo = meshutils.Geometry():fromData(self.renderer.vertexInfo, modeldata)
 		self.geos[meshfilename] = geo
@@ -91,7 +91,7 @@ function MeshManager:getMesh(meshname, meshfilename)
 	if m and m.source_filename == meshfilename then
 		return m
 	else
-		trss.trss_log(0, "MeshManager creating mesh " .. meshname)
+		log.info("MeshManager creating mesh " .. meshname)
 		if m then m.visible = false end -- TODO: actually release old m
 		m = self:createMesh(meshfilename)
 		self.meshes[meshname] = m

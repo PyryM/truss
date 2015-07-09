@@ -2,8 +2,8 @@
 --
 -- implements the meteor ddp protocol
 
-websocket = truss_import("io/websocket.t")
-class = truss_import("core/30log.lua")
+websocket = require("io/websocket.t")
+class = require("class")
 
 DDP = class("DDP")
 DDPReturn = class("DDPReturn")
@@ -71,13 +71,13 @@ function DDP:sResult(msg)
 	if retobj then
 		retobj:result_(msg.result, msg.error)
 	else
-		trss.trss_log(0, "Got result id=[" .. tostring(msg.id) 
+		log.error("Got result id=[" .. tostring(msg.id) 
 			.. "] with no corresponding method call!")
 	end
 end
 
 function DDP:sUnsupported(msg)
-	trss.trss_log(0, "DDP implementation does not support " .. msg.msg)
+	log.error("DDP implementation does not support " .. msg.msg)
 end
 
 function DDP:sReady(msg)
@@ -148,7 +148,7 @@ end
 
 function DDP:sNosub(msg)
 	local tname = self.submap_[msg.id]
-	trss.trss_log(0, "Error subscribing to " .. tostring(tname) .. ":"
+	log.error("Error subscribing to " .. tostring(tname) .. ":"
 					.. tostring(msg.error))
 end
 
@@ -165,13 +165,13 @@ function DDP:sPong(msg)
 end
 
 function DDP:sConnected(msg)
-	trss.trss_log(0, "DDP Connection Established.")
+	log.info("DDP Connection Established.")
 	self.connected = true
 end
 
 function DDP:sFailed(msg)
-	trss.trss_log(0, "DDP Connection Rejected!")
-	trss.trss_log(0, "Server wants protocol version: " .. tostring(msg.version))
+	log.error("DDP Connection Rejected!")
+	log.error("Server wants protocol version: " .. tostring(msg.version))
 end
 
 function DDP:onMessage(msg)
@@ -179,7 +179,7 @@ function DDP:onMessage(msg)
 	if handler then
 		handler(self, msg)
 	else
-		trss.trss_log(0, "Unknown DDP message: " .. tostring(msg.msg))
+		log.error("Unknown DDP message: " .. tostring(msg.msg))
 	end
 end
 

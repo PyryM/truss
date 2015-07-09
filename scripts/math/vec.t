@@ -4,10 +4,10 @@
 
 local m = {}
 
-local class = truss_import("core/30log.lua")
+local class = require("class")
 
 local Vec4 = class("Vec4")
-local matrix = truss_import("math/matrix.t")
+local matrix = require("math/matrix.t")
 
 function Vec4:init()
 	self.data_ = terralib.new(matrix.vec4_)

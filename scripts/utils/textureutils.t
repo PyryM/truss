@@ -4,6 +4,8 @@
 
 local m = {}
 m.textures = {}
+local nvgUtils = raw_addons.nanovg.functions
+local nvgAddonPointer = raw_addons.nanovg.pointer
 
 local terra loadTexture_mem(filename: &int8)
 	var w: int32 = -1
@@ -15,7 +17,7 @@ local terra loadTexture_mem(filename: &int8)
 	if msg ~= nil then
 		bmem = bgfx.bgfx_copy(msg.data, msg.data_length)
 	else
-		trss.trss_log(0, "Error loading texture!")
+		log.error("Error loading texture!")
 	end
 	trss.trss_release_message(msg)
 	var ret = bgfx.bgfx_create_texture_2d(w, h, 0, bgfx.BGFX_TEXTURE_FORMAT_RGBA8, 0, bmem)

@@ -2,19 +2,22 @@
 --
 -- a websocket wrapper
 
-local class = truss_import("core/30log.lua")
-local json = truss_import("lib/json.lua")
+local class = require("class")
+local json = require("lib/json.lua")
 
 local websocket = {}
 local WebSocketConnection = class("WebSocketConnection")
 
 local numsockets = 0
 
+wsAddon = raw_addons.wsclient.functions
+wsAddonPointer = raw_addons.wsclient.pointer
+
 function WebSocketConnection:init()
 	if numsockets > 0 then
-		trss.trss_log(0, "Warning: only one WebSocketConnection at a time is currently supported,")
-		trss.trss_log(0, "but multiple WebSocketConnections have been created. They will all fight")
-		trss.trss_log(0, "over the one connection.")
+		log.warn("Warning: only one WebSocketConnection at a time is currently supported,")
+		log.warn("but multiple WebSocketConnections have been created. They will all fight")
+		log.warn("over the one connection.")
 	end
 	numsockets = numsockets + 1
 	self.open = false
@@ -43,7 +46,7 @@ function WebSocketConnection:update()
 	
 	local nmessages = wsAddon.trss_wsclient_receive(wsAddonPointer)
 	if nmessages < 0 then
-		trss.trss_log(0, "Websocket connection broken or closed remotely.")
+		log.error("Websocket connection broken or closed remotely.")
 		self.open = false
 		return
 	end
@@ -68,8 +71,8 @@ end
 
 function WebSocketConnection:onMessage(cbfunc)
 	if self.callback then
-		trss.trss_log(0, "Warning: WebSocketConnection already had callback,")
-		trss.trss_log(0, "existing callback will be replaced.")
+		log.warn("Warning: WebSocketConnection already had callback,")
+		log.warn("existing callback will be replaced.")
 	end
 	self.callback = cbfunc
 end

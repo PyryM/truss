@@ -15,7 +15,7 @@ function m.split(delimiter, text)
   local list = {}
   local pos = 1
   if strfind("", delimiter, 1) then -- this would result in endless loops
-    error("delimiter matches empty string!")
+    log.error("delimiter matches empty string!")
   end
   while 1 do
     local first, last = strfind(text, delimiter, pos)

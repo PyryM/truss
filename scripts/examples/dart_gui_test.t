@@ -3,23 +3,23 @@
 -- example of using renderers/simple_renderer.t
 -- to render a dart json scenegraph
 
-bgfx = libs.bgfx
-bgfx_const = libs.bgfx_const
-terralib = libs.terralib
-trss = libs.trss
-sdl = libs.sdl
-sdlPointer = libs.sdlPointer
-TRSS_ID = libs.TRSS_ID
-nanovg = libs.nanovg
+bgfx = core.bgfx
+bgfx_const = core.bgfx_const
+terralib = core.terralib
+trss = core.trss
+sdl = raw_addons.sdl.functions
+sdlPointer = raw_addons.sdl.pointer
+TRSS_ID = core.TRSS_ID
+nanovg = core.nanovg
 
 function init()
-	trss.trss_log(TRSS_ID, "dart_simple_renderer.t init")
+	log.info("dart_simple_renderer.t init")
 	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	initNVG()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
+	log.info("Renderer type: " .. rendererName)
 end
 
 width = 1280
@@ -30,24 +30,24 @@ mousex, mousey = 0, 0
 
 frametime = 0.0
 
-meshmanager = truss_import("dart/meshmanager.t")
-pbr_renderer = truss_import("renderers/pbr_renderer.t")
-matrixlib = truss_import("math/matrix.t")
-quatlib = truss_import("math/quat.t")
+meshmanager = require("dart/meshmanager.t")
+pbr_renderer = require("renderers/pbr_renderer.t")
+matrixlib = require("math/matrix.t")
+quatlib = require("math/quat.t")
 local Matrix4 = matrixlib.Matrix4
 local Quaternion = quatlib.Quaternion
-Line = truss_import("mesh/line.t")
-local OrbitCam = truss_import("gui/orbitcam.t")
-textureutils = truss_import("utils/textureutils.t")
-objloader = truss_import("loaders/objloader.t")
-meshutils = truss_import("mesh/mesh.t")
-TileShot = truss_import("utils/tileshot.t")
+Line = require("mesh/line.t")
+local OrbitCam = require("gui/orbitcam.t")
+textureutils = require("utils/textureutils.t")
+objloader = require("loaders/objloader.t")
+meshutils = require("mesh/mesh.t")
+TileShot = require("utils/tileshot.t")
 
 guiSrc = "gui/console.t"
-gui = truss_import(guiSrc)
+gui = require(guiSrc)
 
 function onTextInput(tstr)
-	log("Text input: " .. tstr)
+	log.info("Text input: " .. tstr)
 	if gui ~= nil and gui.onTextInput ~= nil then
 		gui.onTextInput(tstr)
 	end
@@ -56,7 +56,7 @@ end
 screenshotid = 0
 
 function onKeyDown(keyname, modifiers)
-	log("Keydown: " .. keyname)
+	log.info("Keydown: " .. keyname)
 	if gui ~= nil and gui.onKeyDown ~= nil then
 		gui.onKeyDown(keyname, modifiers)
 	end
@@ -85,7 +85,7 @@ function cerr(str)
 	if gui then gui.printColored(tostring(str), {255,0,0}) end
 end
 
-websocket = truss_import("io/websocket.t")
+websocket = require("io/websocket.t")
 
 function connect(url, callback)
 	cprint("Connecting to [" .. url .. "]")
@@ -237,15 +237,11 @@ function updateEvents()
 		elseif evt.event_type == sdl.TRSS_SDL_EVENT_TEXTINPUT then
 			onTextInput(ffi.string(evt.keycode))
 		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
-			trss.trss_log(0, "Received window close, stopping interpreter...")
+			log.info("Received window close, stopping interpreter...")
 			trss.trss_stop_interpreter(TRSS_ID)
 		end
 		orbitcam:updateFromSDL(evt)
 	end
-end
-
-function log(msg)
-	trss.trss_log(0, msg)
 end
 
 function updateCamera()
@@ -375,7 +371,7 @@ function initBGFX()
 	1.0,
 	0)
 
-	trss.trss_log(0, "Initted bgfx I hope?")
+	log.info("Initted bgfx I hope?")
 
 	-- Init renderer
 	renderer = pbr_renderer.PBRRenderer(width, height)

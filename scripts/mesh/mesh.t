@@ -2,10 +2,10 @@
 --
 -- functions for loading meshes etc.
 
-local class = truss_import("core/30log.lua")
-local quat = truss_import("math/quat.t")
-local matrix = truss_import("math/matrix.t")
-local buffers = truss_import("mesh/buffers.t")
+local class = require("class")
+local quat = require("math/quat.t")
+local matrix = require("math/matrix.t")
+local buffers = require("mesh/buffers.t")
 
 local Quaternion = quat.Quaternion
 local Matrix4 = matrix.Matrix4

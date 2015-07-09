@@ -2,10 +2,10 @@
 --
 -- a shader-based projected line
 
-local class = truss_import("core/30log.lua")
-local bufferutils = truss_import("mesh/buffers.t")
-local Matrix4 = truss_import("math/matrix.t").Matrix4
-local Quaternion = truss_import("math/quat.t").Quaternion
+local class = require("class")
+local bufferutils = require("mesh/buffers.t")
+local Matrix4 = require("math/matrix.t").Matrix4
+local Quaternion = require("math/quat.t").Quaternion
 
 local Line = class("Line")
 
@@ -110,7 +110,7 @@ function Line:createBuffers_()
 	local vinfo = getVertexInfo()
 	local nvertices = self.maxpoints * 2
 	local nfaces = self.maxpoints * 2
-	trss.trss_log(0, "Allocating line buffers...")
+	log.debug("Allocating line buffers...")
 	self.buffers = bufferutils.allocateData(vinfo, nvertices, nfaces)
 end
 
@@ -120,8 +120,8 @@ function Line:setPoints(lines)
 	-- try to determine whether somebody has passed in a single line
 	-- rather than a list of lines
 	if type(lines[1][1]) == "number" then
-		trss.trss_log(0, "Warning: Line:updateBuffers expects a list of lines!")
-		trss.trss_log(0, "Warning: Please pass a single line as {line}")
+		log.warn("Warning: Line:updateBuffers expects a list of lines!")
+		log.warn("Warning: Please pass a single line as {line}")
 		lines = {lines}
 	end
 
@@ -132,7 +132,7 @@ function Line:setPoints(lines)
 	for i = 1,nlines do
 		local newpoints = #(lines[i])
 		if npts + newpoints > self.maxpoints then
-			trss.trss_log(0, "Exceeded max points! ["
+			log.error("Exceeded max points! ["
 								.. (npts+newpoints) 
 								.. "/" .. self.maxpoints .. "]")
 			break
@@ -145,7 +145,7 @@ function Line:setPoints(lines)
 		-- you try to create the buffers multiple times
 		bufferutils.createDynamicBGFXBuffers(self.buffers)
 	else
-		trss.trss_log(0, "Creating static buffers...")
+		log.debug("Creating static buffers...")
 		-- this will have no effect if the static
 		-- buffers have already been created 
 		bufferutils.createStaticBGFXBuffers(self.buffers)

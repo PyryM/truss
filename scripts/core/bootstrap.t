@@ -47,6 +47,7 @@ int trss_get_addon_count(trss_interpreter_id target_id);
 Addon* trss_get_addon(trss_interpreter_id target_id, int addon_idx);
 const char* trss_get_addon_name(trss_interpreter_id target_id, int addon_idx);
 const char* trss_get_addon_header(trss_interpreter_id target_id, int addon_idx);
+const char* trss_get_addon_version_string(trss_interpreter_id target_id, int addon_idx);
 void trss_send_message(trss_interpreter_id dest, trss_message* message);
 int trss_fetch_messages(trss_interpreter_id interpreter);
 trss_message* trss_get_message(trss_interpreter_id interpreter, int message_index);
@@ -57,14 +58,19 @@ trss_message* trss_copy_message(trss_message* src);
 ]])
 
 trss.trss_test()
-trss.trss_log(TRSS_INTERPRETER_ID, "Bootstrapping [" .. TRSS_INTERPRETER_ID .. "]")
+trss.trss_log(0, "Bootstrapping [" .. TRSS_INTERPRETER_ID .. "]")
 local TRSS_ID = TRSS_INTERPRETER_ID
 
--- these should be builtin
+log = {}
+log.debug = function(msg) trss.trss_log(4, msg) end
+log.info = function(msg) trss.trss_log(3, msg) end
+log.warn = function(msg) trss.trss_log(2, msg) end
+log.error = function(msg) trss.trss_log(1, msg) end
+log.critical = function(msg) trss.trss_log(1, msg) end
+
+-- from luajit
 ffi = require("ffi")
 bit = require("bit")
-
-terra_ticStartTime = global(uint64, 0)
 
 tic = trss.trss_get_hp_time
 
@@ -83,11 +89,11 @@ local function readArgs()
 		local argval = trss.trss_get_store_value(argname)
 		if argval == nil then break end
 		local argstr = ffi.string(argval.data, argval.data_length)
-		trss.trss_log(0, argname .. ": " .. argstr)
+		log.debug(argname .. ": " .. argstr)
 		table.insert(execArgs, argstr)
 		idx = idx + 1
 	end
-	trss.trss_log(0, "Loaded " .. idx .. " args.")
+	log.debug("Loaded " .. idx .. " args.")
 end
 
 readArgs()
@@ -99,7 +105,7 @@ function loadStringFromFile(filename)
 		trss.trss_release_message(temp)
 		return ret
 	else
-		trss.trss_log(0, "Unable to load " .. filename)
+		log.error("Unable to load " .. filename)
 		return nil
 	end
 end
@@ -115,74 +121,103 @@ end
 
 function truss_import(filename, force)
 	if loadedLibs[filename] == nil or force then
+		log.info("Starting to load [" .. filename .. "]")
 		local oldmodule = loadedLibs[filename] -- only relevant if force==true
 		loadedLibs[filename] = {} -- prevent possible infinite recursion by a module trying to import itself
 		local t0 = tic()
-		local modulefunc, loaderror = terralib.loadstring(loadStringFromFile("scripts/" .. filename))
+		local funcsource = loadStringFromFile("scripts/" .. filename)
+		if funcsource == nil then
+			log.error("Error loading library [" .. filename .. "]: file does not exist.")
+			loadedLibs[filename] = nil
+			return nil
+		end
+		local modulefunc, loaderror = terralib.loadstring(funcsource)
 		if modulefunc then
 			import_nest_level = import_nest_level + 1
 			loadedLibs[filename] = modulefunc()
 			import_nest_level = import_nest_level - 1
 			local dt = toc(t0) * 1000.0
-			trss.trss_log(0, makeindent(import_nest_level) .. 
+			log.info(makeindent(import_nest_level) .. 
 							"Loaded library [" .. filename .. "]" ..
 							" in " .. dt .. " ms")
 		else
 			loadedLibs[filename] = oldmodule
-			trss.trss_log(0, "Error loading library [" .. filename .. "]: " .. loaderror)
+			log.error("Error loading library [" .. filename .. "]: " .. loaderror)
 		end
 	end
 	return loadedLibs[filename]
 end
 
+function truss_import_as(filename, libname, force)
+	log.info("Loading [" .. filename .. "] as [" .. libname .. "]")
+	local temp = truss_import(filename, force)
+	loadedLibs[libname] = temp
+	return temp
+end
+
+-- alias core/30log.lua to class so we can just require("class")
+truss_import_as("core/30log.lua", "class")
+
 local numAddons = trss.trss_get_addon_count(TRSS_ID)
-trss.trss_log(TRSS_ID, "Found " .. numAddons .. " addons.")
+log.info("Found " .. numAddons .. " addons.")
 
-local sdlheader = ffi.string(trss.trss_get_addon_header(TRSS_ID, 0))
---trss.trss_log(TRSS_ID, "SDL header: [" .. sdlheader .. "]")
+addons = {}
+raw_addons = {}
 
-sdlPointer = trss.trss_get_addon(TRSS_ID, 0)
-sdl = terralib.includecstring(sdlheader)
+for addonIdx = 1,numAddons do
+	local addonHeader = ffi.string(trss.trss_get_addon_header(TRSS_ID, addonIdx-1))
+	local addonPointer = trss.trss_get_addon(TRSS_ID, addonIdx-1)
+	local addonName = ffi.string(trss.trss_get_addon_name(TRSS_ID, addonIdx-1))
+	local addonVersion = ffi.string(trss.trss_get_addon_version_string(TRSS_ID, addonIdx-1))
+	log.info("Loading addon [" .. addonName .. "]")
+	local addonwrapper = truss_import("addons/" .. addonName .. ".t")
+	local addonTable = terralib.includecstring(addonHeader)
 
-local wsheader = ffi.string(trss.trss_get_addon_header(TRSS_ID, 2))
-trss.trss_log(TRSS_ID, "WS header: [" .. wsheader .. "]")
+	raw_addons[addonName] = {functions = addonTable, pointer = addonPointer, version = addonVersion}
 
-wsAddonPointer = trss.trss_get_addon(TRSS_ID, 2)
-wsAddon = terralib.includecstring(wsheader)
+	if addonwrapper and addonwrapper.wrap then
+		addonTable = addonwrapper.wrap(addonName, addonTable, addonPointer, addonVersion)
+	else
+		log.warn("Warning: no wrapper found for addon [" .. addonName .. "]")
+	end
 
-nvgAddonPointer = trss.trss_get_addon(TRSS_ID, 1)
-local nvgheader = ffi.string(trss.trss_get_addon_header(TRSS_ID, 1))
-nvgUtils = terralib.includecstring(nvgheader)
-
-nanovg = terralib.includec("include/nanovg_terra.h")
-
-bgfx = terralib.includec("include/bgfx_truss.c99.h")
-terralib.loadstring(loadStringFromFile("scripts/bgfx_constants.t"))()
+	addons[addonName] = addonTable
+end
 
 local vstr = ffi.string(trss.trss_get_version_string())
 
-libs = {}
-libs.bgfx = bgfx
-libs.bgfx_const = bgfx_const
-libs.sdl = sdl
-libs.trss = trss
-libs.TRSS_ID = TRSS_ID
-libs.sdlPointer = sdlPointer
-libs.terralib = terralib
-libs.nanovg = nanovg
-libs.nvgAddonPointer = nvgAddonPointer
-libs.nvgUtils = nvgUtils
-libs.TRSS_VERSION = vstr
+-- these are important enough to just be dumped into the global namespace
+bgfx = terralib.includec("include/bgfx_truss.c99.h")
+bgfx_const = terralib.loadstring(loadStringFromFile("scripts/bgfx_constants.t"))()
+nanovg = terralib.includec("include/nanovg_terra.h")
+
+core = {}
+core.trss = trss
+core.terralib = terralib
+core.bgfx = bgfx
+core.bgfx_const = bgfx_const
+core.nanovg = nanovg
+core.TRSS_ID = TRSS_ID
+core.TRSS_VERSION = vstr
 
 subenv = lsubenv
-subenv.libs = libs
+subenv.core = core
+subenv.addons = addons
+subenv.raw_addons = raw_addons
 subenv.ffi = ffi
 subenv.bit = bit
 subenv.truss_import = truss_import
+subenv.truss_import_as = truss_import_as
+subenv.require = truss_import
 subenv.tic = tic
 subenv.toc = toc
 subenv.loadStringFromFile = loadStringFromFile
 subenv.args = execArgs
+subenv.log = log
+
+-- replace terra/lua's require with truss's import mechanism
+lua_require = require
+require = truss_import
 
 function _coreInit(argstring)
 	-- Load in argstring

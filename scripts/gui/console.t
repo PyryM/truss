@@ -3,6 +3,7 @@
 -- in-engine lua console
 
 local m = {}
+local nanovg = core.nanovg
 
 local function makeTestLines(n)
 	local ret = {}
@@ -314,7 +315,7 @@ end
 
 function m.init(width, height, nvg)
 	m.getCharacterSize_(nvg)
-	trss.trss_log(0, "Char size: " .. m.charWidth .. ", " .. m.charHeight)
+	log.debug("Char size: " .. m.charWidth .. ", " .. m.charHeight)
 	m.width = 81 * m.charWidth
 	m.height = height - 2
 	m.xpos = width - m.width - 0.5

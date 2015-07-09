@@ -2,14 +2,14 @@
 --
 -- a minimal renderer (one material, no scenegraph)
 
-local class = truss_import("core/30log.lua")
-local quat = truss_import("math/quat.t")
-local matrix = truss_import("math/matrix.t")
+local class = require("class")
+local quat = require("math/quat.t")
+local matrix = require("math/matrix.t")
 local Matrix4 = matrix.Matrix4
-local buffers = truss_import("mesh/buffers.t")
-local mesh = truss_import("mesh/mesh.t")
-local vertexdefs = truss_import("mesh/vertexdefs.t")
-local loadProgram = truss_import("utils/shaderutils.t").loadProgram
+local buffers = require("mesh/buffers.t")
+local mesh = require("mesh/mesh.t")
+local vertexdefs = require("mesh/vertexdefs.t")
+local loadProgram = require("utils/shaderutils.t").loadProgram
 
 
 local m = {}
@@ -183,7 +183,7 @@ end
 function SimpleRenderer:renderGeo(geo, mtx, material)
 	if not geo.databuffers then
 		if not geo.warned then
-			trss.trss_log(0, "Warning: geo [" .. geo.name .. "] contains no data.")
+			log.warn("Warning: geo [" .. geo.name .. "] contains no data.")
 			geo.warned = true
 		end
 		return 

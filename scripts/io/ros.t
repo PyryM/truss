@@ -2,9 +2,9 @@
 --
 -- rosbridge communication
 
-local class = truss_import("core/30log.lua")
-local websocket = truss_import("io/websocket.t")
-local json = truss_import("lib/json.lua")
+local class = require("class")
+local websocket = require("io/websocket.t")
+local json = require("lib/json.lua")
 
 local Ros = class("Ros")
 local Topic = class("Topic")
@@ -51,7 +51,7 @@ function Ros:onMessage(msg)
     local truemessage = json:decode(msg)
     if truemessage.op == "png" then
         if not self.pngwarning then
-            trss.trss_log(0, "Warning: PNG ros messages not supported!")
+            log.warn("Warning: PNG ros messages not supported!")
             self.pngwarning = true
         end
     elseif truemessage.op == "publish" then
@@ -59,7 +59,7 @@ function Ros:onMessage(msg)
     elseif truemessage.op == "service_response" then
         self:dispatchServiceResponse_(truemessage.id, truemessage)
     else
-        trss.trss_log(0, "Unknown message op: " .. tostring(truemessage.op))
+        log.error("Unknown message op: " .. tostring(truemessage.op))
     end
 end
 

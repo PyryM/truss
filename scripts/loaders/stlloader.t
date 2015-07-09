@@ -12,14 +12,14 @@ function m.loadSTL(filename, invert)
 	local starttime = tic()
 	local srcMessage = trss.trss_load_file(filename, 0)
 	if srcMessage == nil then 
-		trss.trss_log(0, "Error: unable to open file " .. filename)
+		log.error("Error: unable to open file " .. filename)
 		return nil 
 	end
 	
 	local ret = m.parseBinarySTL(srcMessage.data, srcMessage.data_length, invert)
 	trss.trss_release_message(srcMessage)
 	local dtime = toc(starttime)
-	trss.trss_log(0, "Loaded " .. filename .. " in " .. (dtime*1000.0) .. " ms")
+	log.info("Loaded " .. filename .. " in " .. (dtime*1000.0) .. " ms")
 	return ret
 end
 
@@ -64,16 +64,16 @@ end
 
 function m.parseBinarySTL(databuf, datalength, invert)
 	if m.verbose then
-		trss.trss_log(0, "Going to parse a binary stl of length " .. datalength)
+		log.debug("Going to parse a binary stl of length " .. datalength)
 	end
 
 	local faces = m.readUint32LE( databuf, 80 )
 	if m.verbose then
-		trss.trss_log(0, "STL contains " .. faces .. " faces.")
+		log.debug("STL contains " .. faces .. " faces.")
 	end
 
 	if faces > m.MAXFACES then
-		trss.trss_log(0, "Warning: STL contains >2^16 vertices. Truncating to first 2^16.")
+		log.warn("Warning: STL contains >2^16 vertices. Truncating to first 2^16.")
 		faces = m.MAXFACES
 	end
 
@@ -88,7 +88,7 @@ function m.parseBinarySTL(databuf, datalength, invert)
 		   m.readUint8(databuf, index + 4) == 0x52 and      -- R
 		   m.readUint8(databuf, index + 5) == 0x3D then     -- =
 
-			if log then log("Warning: .stl has face colors but color parsing not implemented yet.") end
+			log.warn("Warning: .stl has face colors but color parsing not implemented yet.")
 
 			defaultR = m.readUint8(databuf, index + 6)
 			defaultG = m.readUint8(databuf, index + 7)
@@ -98,7 +98,7 @@ function m.parseBinarySTL(databuf, datalength, invert)
 	end
 
 	if m.verbose then
-		trss.trss_log(0, "stl color: " .. defaultR 
+		log.debug("stl color: " .. defaultR 
 							.. " " .. defaultG 
 							.. " " .. defaultB 
 							.. " " .. alpha)
