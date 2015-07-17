@@ -7,10 +7,10 @@ bgfx = libs.bgfx
 bgfx_const = libs.bgfx_const
 terralib = libs.terralib
 trss = libs.trss
-sdl = libs.sdl
-sdlPointer = libs.sdlPointer
-nvgAddonPointer = libs.nvgAddonPointer
-nvgUtils = libs.nvgUtils
+sdl = raw_addons.sdl.functions
+sdlPointer = raw_addons.sdl.pointer
+nvgUtils = raw_addons.nvgutils.functions
+nvgAddonPointer = raw_addons.nvgutils.pointer
 TRSS_ID = libs.TRSS_ID
 nanovg = libs.nanovg
 

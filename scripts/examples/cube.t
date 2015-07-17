@@ -2,13 +2,13 @@
 -- 
 -- draws a spinning cube (hopefully)
 
-bgfx = libs.bgfx
-bgfx_const = libs.bgfx_const
-terralib = libs.terralib
-trss = libs.trss
-sdl = libs.sdl
-sdlPointer = libs.sdlPointer
-TRSS_ID = libs.TRSS_ID
+bgfx = core.bgfx
+bgfx_const = core.bgfx_const
+terralib = core.terralib
+trss = core.trss
+sdl = raw_addons.sdl.functions
+sdlPointer = raw_addons.sdl.pointer
+TRSS_ID = core.TRSS_ID
 
 struct BGRAColor {
 	b: uint8;
@@ -78,12 +78,12 @@ function createCubeData()
 end
 
 function init()
-	trss.trss_log(TRSS_ID, "cube.t init")
+	log.info("cube.t init")
 	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
+	log.info("Renderer type: " .. rendererName)
 end
 
 width = 800
@@ -114,7 +114,7 @@ function loadProgram(vshadername, fshadername)
 end
 
 CMath = terralib.includec("math.h")
-mtx = truss_import("math/matrix.t")
+mtx = require("math/matrix.t")
 
 function setViewMatrices()
 	mtx.makeProjMat(projmat, 60.0, width / height, 0.01, 100.0)
