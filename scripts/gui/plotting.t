@@ -72,7 +72,7 @@ end
 -- e.g. v = c*base >= start 
 local function nextMultiple(start, base)
 	local i = math.ceil(start / base)
-	return i, base * i
+	return base * i, i
 end
 
 function m.drawHTicMarks(nvg, bounds, style)
@@ -191,8 +191,22 @@ function m.init(nvg, width, height)
 	-- nothing special to do
 end
 
+function m.drawGraph(nvg, bounds, style, pts, zeropoint)
+	m.drawVTicMarks(nvg, bounds, style)
+	m.drawHTicMarks(nvg, bounds, style)
+	m.drawGraphCore(nvg, bounds, style, pts, zeropoint)
+end
+
 m.t = 0.0
 m.dumped = false
+
+function m.makeTestBounds(x, y, w, h)
+	local bounds = {x = x, y = y, width = w, height = h,
+					h0 = 0, h1 = 20.0, hticspacing = 1.0, ticmultiple = 5,
+					v0 = 0, v1 = 20.0, vticspacing = 1.0,
+					ticlength = 14}
+	return bounds
+end
 
 function m.draw(nvg, width, height)
 	-- just test draw a graph
@@ -203,19 +217,15 @@ function m.draw(nvg, width, height)
 		table.insert(pts, math.cos(i*0.2 + m.t)*0.5 + 0.5)
 		table.insert(pts2, pts[i]*math.sin(i*0.25 + m.t*1.4)*0.5 + 0.5)
 	end
-	local bounds = {x = 100, y = 100, width = 300, height = 150,
-					h0 = m.t, h1 = m.t + 20.0, hticspacing = 1.0, ticmultiple = 5,
-					v0 = m.t, v1 = m.t + 10.0, vticspacing = 1.0,
-					ticlength = 14}
 	local style = {filled = false}
-	local style2 = {filled = true, 
-					strokeColor = nanovg.nvgRGBA(255,200,255,255),
-				    fillColor = nanovg.nvgRGBA(255,200,255,100)}
-	local zeropoint = 0.5
-	m.drawVTicMarks(nvg, bounds, style)
-	m.drawHTicMarks(nvg, bounds, style)
-	m.drawGraphCore(nvg, bounds, style, pts, zeropoint)
-	m.drawGraphCore(nvg, bounds, style2, pts2, zeropoint)
+	for i = 1,4 do
+		for j = 1,4 do
+			local x = (i-1)*300 + 30
+			local y = (j-1)*150 + 30
+			local bounds = m.makeTestBounds(x, y, 290, 140)
+			m.drawGraph(nvg, bounds, style, pts, 0.5)
+		end
+	end
 end
 
 return m
