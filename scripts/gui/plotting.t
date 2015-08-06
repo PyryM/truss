@@ -6,9 +6,9 @@ local nanovg = core.nanovg
 local m = {}
 
 -- some default colors
-m.defaultStrokeColor = nanovg.nvgRGBA(255,50,50,255) -- cyan-ish
-m.defaultFillColor   = nanovg.nvgRGBA(255,50,50,200) -- cyan-ish
-m.defaultLineWidth   = 1.0
+m.defaultStrokeColor = nanovg.nvgRGBA(255,10,10,255) -- cyan-ish
+m.defaultFillColor   = nanovg.nvgRGBA(255,10,10,60) -- cyan-ish
+m.defaultLineWidth   = 2
 m.fontsize           = 12
 
 -- creates the path of a graph from normalized (0-1) values
@@ -38,6 +38,8 @@ function m.createGraphPath(nvg, x0, y0, width, height, vals, fillZero)
 		nanovg.nvgLineTo(nvg, x0, fillY)
 	end
 end
+
+
 
 function m.drawGraphCore(nvg, bounds, style, vals, zeropoint)
 	nanovg.nvgSave(nvg)
@@ -205,8 +207,8 @@ m.dumped = false
 
 function m.makeTestBounds(x, y, w, h)
 	local bounds = {x = x, y = y, width = w, height = h,
-					h0 = 0, h1 = 20.0, hticspacing = 1.0, ticmultiple = 5,
-					v0 = 0, v1 = 20.0, vticspacing = 1.0,
+					h0 = 0, h1 = 21.0, hticspacing = 1.0, ticmultiple = 5,
+					v0 = 0, v1 = 21.0, vticspacing = 2.0,
 					ticlength = 14}
 	return bounds
 end
@@ -220,20 +222,53 @@ function m.testUpdatePts(pts)
 	end
 end
 
+function m.drawCross(nvg, x, y)
+	-- a major divider is two capped lines
+	nanovg.nvgSave(nvg)
+
+	nanovg.nvgStrokeWidth(nvg, m.defaultLineWidth)
+	nanovg.nvgStrokeColor(nvg, nanovg.nvgRGBA(255,255,255,100))
+
+	nanovg.nvgBeginPath(nvg)
+
+	nanovg.nvgMoveTo(nvg, x-5, y)
+	nanovg.nvgLineTo(nvg, x+5, y)
+	nanovg.nvgMoveTo(nvg, x, y-5)
+	nanovg.nvgLineTo(nvg, x, y+5)	
+
+	nanovg.nvgStroke(nvg)
+
+	nanovg.nvgRestore(nvg)
+end
+
 function m.draw(nvg, width, height)
+	nanovg.nvgFillColor(nvg, m.defaultStrokeColor)
+	nanovg.nvgFontSize(nvg, 18)
+	nanovg.nvgFontFace(nvg, "sans")
+
 	-- just test draw a graph
 	m.t = m.t + 1.0/60.0
 	local pts = m.pts
-	local style = {filled = false}
+	local style = {filled = true}
 	local idx = 1
 	for i = 1,4 do
 		for j = 1,4 do
+			local x = (i-1)*300 + 35
+			local y = (j-1)*150 + 45
+			local bounds = m.makeTestBounds(x, y, 280, 130)
+			m.testUpdatePts(pts[idx])
+			m.drawGraph(nvg, bounds, style, pts[idx], 0.0)
+			nanovg.nvgText(nvg, x+7, y-4, "Graph " .. idx, nil)
+			
+			idx = idx + 1
+		end
+	end
+
+	for i = 1,5 do
+		for j = 1,5 do
 			local x = (i-1)*300 + 30
 			local y = (j-1)*150 + 30
-			local bounds = m.makeTestBounds(x, y, 290, 140)
-			m.testUpdatePts(pts[idx])
-			m.drawGraph(nvg, bounds, style, pts[idx], 0.5)
-			idx = idx + 1
+			m.drawCross(nvg, x, y)
 		end
 	end
 end
