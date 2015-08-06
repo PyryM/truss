@@ -62,11 +62,11 @@ trss.trss_log(0, "Bootstrapping [" .. TRSS_INTERPRETER_ID .. "]")
 local TRSS_ID = TRSS_INTERPRETER_ID
 
 log = {}
-log.debug = function(msg) trss.trss_log(4, msg) end
-log.info = function(msg) trss.trss_log(3, msg) end
-log.warn = function(msg) trss.trss_log(2, msg) end
-log.error = function(msg) trss.trss_log(1, msg) end
-log.critical = function(msg) trss.trss_log(1, msg) end
+log.debug = function(msg) trss.trss_log(4, tostring(msg)) end
+log.info = function(msg) trss.trss_log(3, tostring(msg)) end
+log.warn = function(msg) trss.trss_log(2, tostring(msg)) end
+log.error = function(msg) trss.trss_log(1, tostring(msg)) end
+log.critical = function(msg) trss.trss_log(1, tostring(msg)) end
 
 -- from luajit
 ffi = require("ffi")
