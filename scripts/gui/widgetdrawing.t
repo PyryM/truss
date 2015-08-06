@@ -3,6 +3,7 @@
 -- common widget styling drawing operations
 
 local m = {}
+local nanovg = core.nanovg
 m.unitsize = 1 					-- how big a 'unit' is (px)
 m.linewidth = m.unitsize * 1.5  -- lines are 1.5 units thick
 m.blocksize = m.unitsize * 16   -- how big a 'block' is (units)

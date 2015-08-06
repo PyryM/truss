@@ -2,15 +2,14 @@
 --
 -- example of live-reloading for gui development
 
-bgfx = libs.bgfx
-bgfx_const = libs.bgfx_const
-terralib = libs.terralib
-trss = libs.trss
-sdl = libs.sdl
-sdlPointer = libs.sdlPointer
-TRSS_ID = libs.TRSS_ID
-TRSS_VERSION = libs.TRSS_VERSION
-nanovg = libs.nanovg
+bgfx = core.bgfx
+bgfx_const = core.bgfx_const
+terralib = core.terralib
+trss = core.trss
+sdl = raw_addons.sdl.functions
+sdlPointer = raw_addons.sdl.pointer
+TRSS_ID = core.TRSS_ID
+nanovg = core.nanovg
 
 width = 1280
 height = 720
@@ -19,50 +18,39 @@ time = 0.0
 mousex, mousey = 0, 0
 
 function init()
-	trss.trss_log(0, "guidev.t init")
-	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS (' .. TRSS_VERSION ..') TEST')
+	log.info("dart_simple_renderer.t init")
+	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	initNVG()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(0, "Renderer type: " .. rendererName)
-
-	-- tell sdl that we want to receive text input events
-	sdl.trss_sdl_start_textinput(sdlPointer)
+	log.info("Renderer type: " .. rendererName)
 end
 
 function onKeyDown(keyname, modifiers)
-	log("Keydown: " .. keyname)
+	log.info("Keydown: " .. keyname)
+
+	if keyname == "F10" then
+		bgfx.bgfx_save_screen_shot("screenshot_" .. screenshotid .. ".png")
+		screenshotid = screenshotid + 1
+	end
+
 	if keyname == "F5" then
-		log("Reloading module")
 		reloadModule()
-	elseif gui ~= nil and gui.onKeyDown ~= nil then
-		gui.onKeyDown(keyname, modifiers)
 	end
 end
 
 function onKeyUp(keyname)
-	log("Keyup: " .. keyname)
-end
-
-function onTextInput(tstr)
-	log("Text input: " .. tstr)
-	if gui ~= nil and gui.onTextInput ~= nil then
-		gui.onTextInput(tstr)
-	end
+	-- nothing to do
 end
 
 downkeys = {}
 
 function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
-
 	for i = 1,nevents do
 		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
-		if evt.event_type == sdl.TRSS_SDL_EVENT_MOUSEMOVE then
-			mousex = evt.x
-			mousey = evt.y
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRSS_SDL_EVENT_KEYUP then
+		if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRSS_SDL_EVENT_KEYUP then
 			local keyname = ffi.string(evt.keycode)
 			if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN then
 				if not downkeys[keyname] then
@@ -73,27 +61,21 @@ function updateEvents()
 				downkeys[keyname] = false
 				onKeyUp(keyname)
 			end
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_TEXTINPUT then
-			onTextInput(ffi.string(evt.keycode))
 		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
-			trss.trss_log(0, "Received window close, stopping interpreter...")
+			log.info("Received window close, stopping interpreter...")
 			trss.trss_stop_interpreter(TRSS_ID)
 		end
 	end
 end
 
-function log(msg)
-	trss.trss_log(0, msg)
-end
-
 function initBGFX()
-	-- Basic init
-
 	local debug = bgfx_const.BGFX_DEBUG_TEXT
 	local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
+	--local reset = bgfx_const.BGFX_RESET_MSAA_X8
 
-	bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, nil, nil)
-	--bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_OPENGL, 0, 0, nil, nil)
+	local cbInterfacePtr = sdl.trss_sdl_get_bgfx_cb(sdlPointer)
+
+	bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
 	bgfx.bgfx_reset(width, height, reset)
 
 	-- Enable debug text.
@@ -104,6 +86,8 @@ function initBGFX()
 	0x303030ff,
 	1.0,
 	0)
+
+	log.info("Initted bgfx I hope?")
 
 	trss.trss_log(0, "Initted bgfx I hope?")
 end
@@ -119,21 +103,20 @@ function initNVG()
 	nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/VeraMono.ttf")
 
 	if gui and gui.init then
-		gui.init(width, height, nvg)
+		gui.init(nvg, width, height)
 	end
 end
 
 frametime = 0.0
 scripttime = 0.0
 
---guiSrc = "gui/widgetdrawing.t"
-guiSrc = "gui/console.t"
-gui = truss_import(guiSrc)
+guiSrc = "gui/plotting.t"
+gui = require(guiSrc)
 
 function reloadModule()
-	gui = truss_import(guiSrc, true) -- force reload
+	gui = require(guiSrc, true) -- force reload
 	if gui and gui.init then
-		gui.init(width, height, nvg)
+		gui.init(nvg, width, height)
 	end
 end
 
