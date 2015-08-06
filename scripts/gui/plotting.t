@@ -6,8 +6,8 @@ local nanovg = core.nanovg
 local m = {}
 
 -- some default colors
-m.defaultStrokeColor = nanovg.nvgRGBA(200,255,255,255) -- cyan-ish
-m.defaultFillColor   = nanovg.nvgRGBA(200,255,255,200) -- cyan-ish
+m.defaultStrokeColor = nanovg.nvgRGBA(255,50,50,255) -- cyan-ish
+m.defaultFillColor   = nanovg.nvgRGBA(255,50,50,200) -- cyan-ish
 m.defaultLineWidth   = 1.0
 m.fontsize           = 12
 
@@ -188,7 +188,10 @@ function m.drawGraphAxes(nvg, bounds, style)
 end
 
 function m.init(nvg, width, height)
-	-- nothing special to do
+	m.pts = {}
+	for i = 1,16 do
+		m.pts[i] = {0.5, 0.5}
+	end
 end
 
 function m.drawGraph(nvg, bounds, style, pts, zeropoint)
@@ -208,22 +211,29 @@ function m.makeTestBounds(x, y, w, h)
 	return bounds
 end
 
+function m.testUpdatePts(pts)
+	local nval = pts[#pts] + (math.random()-0.5)*0.1
+	nval = math.min(1.0, math.max(0.0, nval))
+	table.insert(pts, nval)
+	if #pts > 60 then
+		table.remove(pts, 1)
+	end
+end
+
 function m.draw(nvg, width, height)
 	-- just test draw a graph
 	m.t = m.t + 1.0/60.0
-	local pts = {}
-	local pts2 = {}
-	for i = 1,60 do
-		table.insert(pts, math.cos(i*0.2 + m.t)*0.5 + 0.5)
-		table.insert(pts2, pts[i]*math.sin(i*0.25 + m.t*1.4)*0.5 + 0.5)
-	end
+	local pts = m.pts
 	local style = {filled = false}
+	local idx = 1
 	for i = 1,4 do
 		for j = 1,4 do
 			local x = (i-1)*300 + 30
 			local y = (j-1)*150 + 30
 			local bounds = m.makeTestBounds(x, y, 290, 140)
-			m.drawGraph(nvg, bounds, style, pts, 0.5)
+			m.testUpdatePts(pts[idx])
+			m.drawGraph(nvg, bounds, style, pts[idx], 0.5)
+			idx = idx + 1
 		end
 	end
 end
