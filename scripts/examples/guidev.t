@@ -17,8 +17,10 @@ frame = 0
 time = 0.0
 mousex, mousey = 0, 0
 
+screenshotid = 0
+
 function init()
-	log.info("dart_simple_renderer.t init")
+	log.info("guidev.t init")
 	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	initNVG()
@@ -88,8 +90,6 @@ function initBGFX()
 	0)
 
 	log.info("Initted bgfx I hope?")
-
-	trss.trss_log(0, "Initted bgfx I hope?")
 end
 
 function initNVG()
@@ -110,7 +110,7 @@ end
 frametime = 0.0
 scripttime = 0.0
 
-guiSrc = "gui/plotting.t"
+guiSrc = "gui/futureplot.t"
 gui = require(guiSrc)
 
 function reloadModule()
