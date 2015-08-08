@@ -164,6 +164,48 @@ function m.drawGraphCore(nvg, bounds, style, vals, zeropoint)
 	nanovg.nvgRestore(nvg)
 end
 
+function m.drawGeneric(nvg, bounds, style, vals, funcs)
+	nanovg.nvgSave(nvg)
+
+	nanovg.nvgStrokeWidth(nvg, (style.linewidth or m.defaultLineWidth)*2)
+	nanovg.nvgStrokeColor(nvg, style.strokeColor or m.defaultStrokeColor)
+	nanovg.nvgFillColor(nvg, style.fillColor or m.defaultFillColor)
+
+	local x0 = bounds.x + bounds.ticlength
+	local y0 = bounds.y
+	local width = bounds.width - bounds.ticlength
+	local height = bounds.height - bounds.ticlength
+	local h0 = bounds.h0
+	local h1 = bounds.h1
+	local v0 = bounds.v0
+	local v1 = bounds.v1
+
+	nanovg.nvgScissor(nvg, x0, y0, width, height)
+
+	local nvals = #vals
+	local stride = funcs.stride
+
+	if funcs.pre then
+		funcs.pre(vals, 1, x0, y0, width, height, h0, h1, v0, v1)
+	end
+
+	local idx = 1
+
+	for i = 2,nvals do
+		local x = (i-1)*dx + x0
+		local y = y1 - (vals[i]*height)
+		nanovg.nvgLineTo(nvg, x, y)
+
+		idx = idx + stride
+	end
+
+	if funcs.post then
+		funcs.post(vals, idx, x0, y0, width, height, h0, h1, v0, v1)
+	end
+
+	nanovg.nvgRestore(nvg)	
+end
+
 -- finds next multiple of base that is larger than start
 -- e.g. v = c*base >= start 
 local function nextMultiple(start, base)
