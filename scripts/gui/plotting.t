@@ -404,11 +404,12 @@ function Graph:init(options)
 					v0 = 0, v1 = 21.0, vticspacing = 0.2,
 					ticlength = 14}
 	self.pts_ = {}
-	self.maxPts_ = 210
+	self.maxPts_ = 300
 	self.isLineGraph = true
 	self.isXYGraph = false
 	self.scratch_ = {}
 	self.lastx_ = 0
+	self.title_ = options.title_ or "Graph"
 end
 
 function Graph:setBounds(bounds)
@@ -458,6 +459,17 @@ function Graph:draw(nvg)
 	else
 		m.drawCandleGraph(nvg, self.bounds_, self.style_, self.pts_, self.scratch_)
 	end
+
+	nanovg.nvgSave(nvg)
+
+	nanovg.nvgFillColor(nvg, m.defaultStrokeColor)
+	nanovg.nvgFontFace(nvg, "sans")
+	nanovg.nvgFontSize(nvg, 20)
+
+	nanovg.nvgText(nvg, self.bounds_.x + self.bounds_.ticlength*2, 
+					self.bounds_.y + 15, self.title_, nil)
+
+	nanovg.nvgRestore(nvg)
 end
 
 m.Graph = Graph

@@ -102,7 +102,7 @@ function m.init(nvg, w, h)
     m.p3 = plots.Graph({filled = true})
     m.p1.isLineGraph = false
     m.p2.isLineGraph = false
-    m.p3.isLineGraph = false
+    --m.p3.isLineGraph = false
     -- m.p4 = plots.Graph({})
     -- m.p4.isLineGraph = false
     -- m.p4.maxPts_ = 200
@@ -119,6 +119,7 @@ function m.init(nvg, w, h)
 
     m.t = 0.0
     m.f = 0
+    m.prevval = 0.0
 end
 
 function m.draw(nvg, w, h)
@@ -130,9 +131,14 @@ function m.draw(nvg, w, h)
 
     m.f = m.f + 1
     if m.f % 5 == 0 then
-        m.p1:pushValue({m.t + 10.0, 0.0, math.cos(m.t*5)})
-        m.p2:pushValue({m.t + 10.0, 0.0, math.cos(m.t*10)})
-        m.p3:pushValue({m.t + 10.0, 0.0, math.cos(m.t*15)})
+        m.p1:pushValue({m.t + 10.0, 0.0, math.sin(m.t) + math.cos(m.t*5)})
+        m.p2:pushValue({m.t + 10.0, math.sin(m.t*2), math.cos(m.t*3)})
+
+        local newval = m.prevval + (math.random()-0.5) * 0.5
+        newval = math.max(-2.0, math.min(2.0, newval))
+
+        m.p3:pushValue({m.t + 10.0, newval})
+        m.prevval = newval
 
         -- local v = (math.sin(m.t) * math.cos(m.t*15))*0.5 + 0.5
         -- local v2 = (math.sin(m.t*3) + math.cos(m.t*7))*0.25 + 0.5
