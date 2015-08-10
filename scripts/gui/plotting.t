@@ -12,198 +12,151 @@ m.defaultFillColor   = nanovg.nvgRGBA(235,235,255,60) -- cyan-ish
 m.defaultLineWidth   = 1
 m.fontsize           = 12
 
--- creates the path of a line graph from normalized (0-1) values
--- evenly spaced from x0 to x0+width
--- Note: doesn't begin a path or actually stroke/fill it, just
--- LineTo's the points along it
-function m.createGraphPath(nvg, x0, y0, width, height, vals, fillZero)
-	local nvals = #vals
-	local dx = width / (nvals - 1)
-	local y1 = y0 + height
-	local x1 = x0 + width
-	local p0 = y1 - (vals[1] * height)
-	local fillY = nil
-	if fillZero then
-		fillY = y1 - (fillZero * height)
-		nanovg.nvgMoveTo(nvg, x0, fillY)
-		nanovg.nvgLineTo(nvg, x0, p0)
+local function tableMap(src, map)
+	local dest = {}
+	for i,v in ipairs(src) do
+		dest[i] = map[v]
+	end
+	return dest
+end
+
+-- converts coordinates from graph space into screen spce
+function m.convertCoordinates(vals, bounds, format, dest)
+	-- convert all conversions into Ax+b linear transforms
+	local sx = bounds.width  / (bounds.h1 - bounds.h0)
+	local cx = bounds.x - (bounds.h0 * sx)
+	local sy = -bounds.height / (bounds.v1 - bounds.v0)
+	local cy = bounds.y + bounds.height - (bounds.v0 * sy)
+	local A_base = {1.0, sx, sy, sx, sy}
+	local b_base = {0.0, cx, cy, 0.0, 0.0}
+	local formats = {i = 1, x = 2, y = 3, dx = 4, dy = 5}
+	local nformat = tableMap(format, formats)
+	local A = tableMap(nformat, A_base)
+	local b = tableMap(nformat, b_base)
+
+	local stride = #format
+	local ntuples = #vals / stride
+
+	dest = dest or {}
+	local idx = 0
+	for j = 1, ntuples do
+		for k = 1,stride do
+			--log.info("src: " .. k .. " " .. idx+k .. " " .. vals[idx+k])
+			dest[idx+k] = A[k]*vals[idx+k] + b[k]
+			--log.info("dest: " .. dest[idx+k])
+		end
+		idx = idx + stride
+	end
+
+	return dest
+end
+
+-- creates the path of a line graph from preconverted coordinates
+-- {x,y} tuples
+function m.createGraphPath(nvg, bounds, vals, ntuples, extraopts)
+	local fillY = 0
+	if extraopts.fill then
+		fillY = bounds.y + bounds.height
+		nanovg.nvgMoveTo(nvg, vals[1], fillY)
+		nanovg.nvgLineTo(nvg, vals[1], vals[2])
 	else
-		nanovg.nvgMoveTo(nvg, x0, p0)
+		nanovg.nvgMoveTo(nvg, vals[1], vals[2])
 	end
-	for i = 2,nvals do
-		local x = (i-1)*dx + x0
-		local y = y1 - (vals[i]*height)
-		nanovg.nvgLineTo(nvg, x, y)
+	local lastx = 0
+	local idx = 3
+	for i = 2,ntuples do
+		lastx = vals[idx]
+		nanovg.nvgLineTo(nvg, vals[idx], vals[idx+1])
+		idx = idx + 2
 	end
-	if fillZero then
-		nanovg.nvgLineTo(nvg, x1, fillY)
-		nanovg.nvgLineTo(nvg, x0, fillY)
+	if extraopts.fill then
+		nanovg.nvgLineTo(nvg, lastx, fillY)
+		nanovg.nvgLineTo(nvg, vals[1], fillY)
 	end
 end
 
 -- creates paths for a candlestick-ish chart
--- input is a 2n list of low, high normalized (0-1) pairs
--- e.g. {low_0, high_0, low_1, high_1, ...}
-function m.createCandlestickPath(nvg, x0, y0, width, height, vals)
-	local nvals = #vals / 2
-	local dx = width / (nvals - 1)
-	local y1 = y0 + height
-	local x1 = x0 + width
+-- vals are preconverted {x, y0, y1} tuples
+function m.createCandlestickPath(nvg, bounds, vals, ntuples, extraopts)
 	local idx = 1
-	for i = 1,nvals do
-		local low = vals[idx]
-		local high = vals[idx+1]
-		idx = idx + 2
-		local x = (i-1)*dx + x0
-		local ylow = y1 - (low*height)
-		local yhigh = y1 - (high*height)
-		nanovg.nvgMoveTo(nvg, x, ylow)
-		nanovg.nvgLineTo(nvg, x, yhigh)
+	for i = 1,ntuples do
+		local x = vals[idx]
+		local low = vals[idx+1]
+		local high = vals[idx+2]
+		nanovg.nvgMoveTo(nvg, x, low)
+		nanovg.nvgLineTo(nvg, x, high)
+		--log.info("x: " .. x .. " " .. high .. " " .. low)
+		idx = idx + 3
 	end
 end
 
--- creates paths for a xy chart
--- input is a 2n list of low, high normalized (0-1) pairs
--- e.g. {x0, y0, x1, y1, ...}
-function m.createXYPath(nvg, x0, y0, width, height, vals)
-	local nvals = #vals / 2
-	local dx = width / (nvals - 1)
-	local y1 = y0 + height
-	local x1 = x0 + width
-	local curx = x0 + vals[1]*width
-	local cury = y1 - vals[2]*height
-	--nanovg.nvgMoveTo(nvg, curx, cury)
-
-	--nanovg.nvgFillColor(nvg, m.defaultFillColor)
-
+-- creates paths for a scatterplot
+-- vals is precomputed {x,y} tuples
+function m.createXYPath(nvg, bounds, vals, ntuples, extraopts)
 	local idx = 1
-	for i = 1,nvals do
-		curx = x0 + vals[idx]*width
-		cury = y1 - vals[idx+1]*height
-		idx = idx + 2
+	local rad = extraopts.rad or 12
+	for i = 1,ntuples do
 		nanovg.nvgBeginPath(nvg)
-		nanovg.nvgCircle(nvg, curx, cury, 12)
+		nanovg.nvgCircle(nvg, vals[idx], vals[idx+1], rad)
 		nanovg.nvgFill(nvg)
+		idx = idx + 2
 	end
 end
 
-function m.drawCandleCore(nvg, bounds, style, vals)
+function m.drawTypicalGraph(nvg, bounds, style, vals, scratch, format, drawfunc)
+	m.drawVTicMarks(nvg, bounds, style)
+	m.drawHTicMarks(nvg, bounds, style)
+
 	nanovg.nvgSave(nvg)
 
+	local x0 = bounds.x + bounds.ticlength
+	local y0 = bounds.y
+	local width = bounds.width - bounds.ticlength
+	local height = bounds.height - bounds.ticlength
+
+	local innerbounds = {x = x0, y = y0, width = width, height = height,
+						 h0 = bounds.h0, h1 = bounds.h1,
+						 v0 = bounds.v0, v1 = bounds.v1}
+
+	nanovg.nvgScissor(nvg, x0, y0, width, height)
+
+	local stride = #format
+	local ntuples = #vals / stride
+	m.convertCoordinates(vals, innerbounds, format, scratch)
+	drawfunc(nvg, innerbounds, style, scratch, ntuples)
+
+	nanovg.nvgRestore(nvg)
+end
+
+function m.drawCandleCore(nvg, bounds, style, vals, ntuples)
 	nanovg.nvgStrokeWidth(nvg, (style.linewidth or m.defaultLineWidth)*3)
 	nanovg.nvgStrokeColor(nvg, style.strokeColor or m.defaultStrokeColor)
-	nanovg.nvgFillColor(nvg, style.fillColor or m.defaultFillColor)
 
-	local x0 = bounds.x + bounds.ticlength
-	local y0 = bounds.y
-	local width = bounds.width - bounds.ticlength
-	local height = bounds.height - bounds.ticlength
-
-	nanovg.nvgScissor(nvg, x0, y0, width, height)
 	nanovg.nvgBeginPath(nvg)
-	m.createCandlestickPath(nvg, x0, y0, 
-						   width, height, 
-						   vals)
+	m.createCandlestickPath(nvg, bounds, vals, ntuples, style)
 	nanovg.nvgStroke(nvg)
-
-	nanovg.nvgRestore(nvg)
 end
 
-function m.drawXYCore(nvg, bounds, style, vals)
-	nanovg.nvgSave(nvg)
-
-	nanovg.nvgStrokeWidth(nvg, (style.linewidth or m.defaultLineWidth)*2)
-	nanovg.nvgStrokeColor(nvg, style.strokeColor or m.defaultStrokeColor)
+function m.drawXYCore(nvg, bounds, style, vals, ntuples)
 	nanovg.nvgFillColor(nvg, style.fillColor or m.defaultFillColor)
-	nanovg.nvgMiterLimit(nvg, 0.5)
-
-	local x0 = bounds.x + bounds.ticlength
-	local y0 = bounds.y
-	local width = bounds.width - bounds.ticlength
-	local height = bounds.height - bounds.ticlength
-
-	nanovg.nvgScissor(nvg, x0, y0, width, height)
-	--nanovg.nvgBeginPath(nvg)
-	m.createXYPath(nvg, x0, y0, 
-						   width, height, 
-						   vals)
-	--nanovg.nvgStroke(nvg)
-
-	nanovg.nvgRestore(nvg)
+	m.createXYPath(nvg, bounds, vals, ntuples, style)
 end
 
 
-function m.drawGraphCore(nvg, bounds, style, vals, zeropoint)
-	nanovg.nvgSave(nvg)
-
+function m.drawLineGraphCore(nvg, bounds, style, vals, ntuples)
 	nanovg.nvgStrokeWidth(nvg, (style.linewidth or m.defaultLineWidth)*2)
 	nanovg.nvgStrokeColor(nvg, style.strokeColor or m.defaultStrokeColor)
 	nanovg.nvgFillColor(nvg, style.fillColor or m.defaultFillColor)
 
-	local x0 = bounds.x + bounds.ticlength
-	local y0 = bounds.y
-	local width = bounds.width - bounds.ticlength
-	local height = bounds.height - bounds.ticlength
-
-	nanovg.nvgScissor(nvg, x0, y0, width, height)
-
-	if style.filled and zeropoint then
+	if style.filled then
 		nanovg.nvgBeginPath(nvg)
-		m.createGraphPath(nvg, x0, y0, 
-							   width, height, 
-							   vals, zeropoint)
+		m.createGraphPath(nvg, bounds, vals, ntuples, {fill = true})
 		nanovg.nvgFill(nvg)
 	end
 
 	nanovg.nvgBeginPath(nvg)
-	m.createGraphPath(nvg, x0, y0, 
-						   width, height, 
-						   vals, nil)
+	m.createGraphPath(nvg, bounds, vals, ntuples, {fill = false})
 	nanovg.nvgStroke(nvg)
-
-	nanovg.nvgRestore(nvg)
-end
-
-function m.drawGeneric(nvg, bounds, style, vals, funcs)
-	nanovg.nvgSave(nvg)
-
-	nanovg.nvgStrokeWidth(nvg, (style.linewidth or m.defaultLineWidth)*2)
-	nanovg.nvgStrokeColor(nvg, style.strokeColor or m.defaultStrokeColor)
-	nanovg.nvgFillColor(nvg, style.fillColor or m.defaultFillColor)
-
-	local x0 = bounds.x + bounds.ticlength
-	local y0 = bounds.y
-	local width = bounds.width - bounds.ticlength
-	local height = bounds.height - bounds.ticlength
-	local h0 = bounds.h0
-	local h1 = bounds.h1
-	local v0 = bounds.v0
-	local v1 = bounds.v1
-
-	nanovg.nvgScissor(nvg, x0, y0, width, height)
-
-	local nvals = #vals
-	local stride = funcs.stride
-
-	if funcs.pre then
-		funcs.pre(vals, 1, x0, y0, width, height, h0, h1, v0, v1)
-	end
-
-	local idx = 1
-
-	for i = 2,nvals do
-		local x = (i-1)*dx + x0
-		local y = y1 - (vals[i]*height)
-		nanovg.nvgLineTo(nvg, x, y)
-
-		idx = idx + stride
-	end
-
-	if funcs.post then
-		funcs.post(vals, idx, x0, y0, width, height, h0, h1, v0, v1)
-	end
-
-	nanovg.nvgRestore(nvg)	
 end
 
 -- finds next multiple of base that is larger than start
@@ -321,10 +274,6 @@ function m.drawVTicMarks(nvg, bounds, style)
 	nanovg.nvgRestore(nvg)
 end
 
-function m.drawGraphAxes(nvg, bounds, style)
-	-- todo
-end
-
 function m.init(nvg, width, height)
 	m.pts = {}
 	for i = 1,16 do
@@ -332,22 +281,19 @@ function m.init(nvg, width, height)
 	end
 end
 
-function m.drawLineGraph(nvg, bounds, style, pts, zeropoint)
-	m.drawVTicMarks(nvg, bounds, style)
-	m.drawHTicMarks(nvg, bounds, style)
-	m.drawGraphCore(nvg, bounds, style, pts, zeropoint)
+function m.drawLineGraph(nvg, bounds, style, pts, scratch)
+	m.drawTypicalGraph(nvg, bounds, style, pts, scratch, 
+						{"x", "y"}, m.drawLineGraphCore)
 end
 
-function m.drawCandleGraph(nvg, bounds, style, pts)
-	m.drawVTicMarks(nvg, bounds, style)
-	m.drawHTicMarks(nvg, bounds, style)
-	m.drawCandleCore(nvg, bounds, style, pts)
+function m.drawCandleGraph(nvg, bounds, style, pts, scratch)
+	m.drawTypicalGraph(nvg, bounds, style, pts, scratch, 
+						{"x", "y", "y"}, m.drawCandleCore)
 end
 
-function m.drawXYGraph(nvg, bounds, style, pts)
-	m.drawVTicMarks(nvg, bounds, style)
-	m.drawHTicMarks(nvg, bounds, style)
-	m.drawXYCore(nvg, bounds, style, pts)
+function m.drawXYGraph(nvg, bounds, style, pts, scratch)
+	m.drawTypicalGraph(nvg, bounds, style, pts, scratch, 
+						{"x", "y"}, m.drawXYCore)
 end
 
 m.t = 0.0
@@ -355,18 +301,23 @@ m.dumped = false
 
 function m.makeTestBounds(x, y, w, h)
 	local bounds = {x = x, y = y, width = w, height = h,
-					h0 = m.t + 0, h1 = m.t + 21.0, hticspacing = 1.0, ticmultiple = 5,
-					v0 = 0, v1 = 21.0, vticspacing = 2.0,
+					h0 = m.t + 0, h1 = m.t + 20.0, hticspacing = 1.0, ticmultiple = 5,
+					v0 = -10, v1 = 10.0, vticspacing = 2.0,
 					ticlength = 14}
 	return bounds
 end
 
 function m.testUpdatePts(pts, doubleAdd)
+
+
 	local nval = pts[#pts] + (math.random()-0.5)*0.1
 	nval = math.min(1.0, math.max(0.0, nval))
 
+	local xval = m.t + 20.0
+	table.insert(pts, xval)
+
 	if doubleAdd then
-		local nval2 = pts[#pts-1] + (math.random()-0.5)*0.1
+		local nval2 = pts[#pts-2] + (math.random()-0.5)*0.1
 		nval2 = math.min(1.0, math.max(0.0, nval2))
 		table.insert(pts, nval2)
 	end
@@ -450,12 +401,14 @@ function Graph:init(options)
 	self.style_ = {filled = options.filled}
 	self.bounds_ = {x = 0, y = 0, width = 100, height = 100,
 					h0 = 0, h1 = 21.0, hticspacing = 1.0, ticmultiple = 5,
-					v0 = 0, v1 = 21.0, vticspacing = 2.0,
+					v0 = 0, v1 = 21.0, vticspacing = 0.2,
 					ticlength = 14}
-	self.pts_ = {0,0}
-	self.maxPts_ = 60
+	self.pts_ = {}
+	self.maxPts_ = 210
 	self.isLineGraph = true
 	self.isXYGraph = false
+	self.scratch_ = {}
+	self.lastx_ = 0
 end
 
 function Graph:setBounds(bounds)
@@ -486,20 +439,24 @@ function Graph:setTics(hTicSpacing, vTicSpacing, majorMultiple)
 	return self
 end
 
-function Graph:pushValue(newval)
-	table.insert(self.pts_, newval)
+function Graph:pushValue(newvals)
+	self.lastx_ = newvals[1]
+	for i = 1,#newvals do
+		table.insert(self.pts_, newvals[i])
+	end
 	while #(self.pts_) > self.maxPts_ do
 		table.remove(self.pts_, 1)
 	end
 end
 
 function Graph:draw(nvg)
+	if #self.pts_ == 0 then return end
 	if self.isLineGraph then
-		m.drawLineGraph(nvg, self.bounds_, self.style_, self.pts_, 0.0)
+		m.drawLineGraph(nvg, self.bounds_, self.style_, self.pts_, self.scratch_)
 	elseif self.isXYGraph then
-		m.drawXYGraph(nvg, self.bounds_, self.style_, self.pts_)
+		m.drawXYGraph(nvg, self.bounds_, self.style_, self.pts_, self.scratch_)
 	else
-		m.drawCandleGraph(nvg, self.bounds_, self.style_, self.pts_)
+		m.drawCandleGraph(nvg, self.bounds_, self.style_, self.pts_, self.scratch_)
 	end
 end
 

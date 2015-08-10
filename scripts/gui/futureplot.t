@@ -100,44 +100,49 @@ function m.init(nvg, w, h)
     m.p1 = plots.Graph({filled = true})
     m.p2 = plots.Graph({filled = true})
     m.p3 = plots.Graph({filled = true})
-    m.p4 = plots.Graph({})
-    m.p4.isLineGraph = false
-    m.p4.maxPts_ = 200
-    m.p5 = plots.Graph({})
-    m.p5.isLineGraph = false
-    m.p5.isXYGraph = true
-    m.p5.maxPts_ = 200
+    m.p1.isLineGraph = false
+    m.p2.isLineGraph = false
+    m.p3.isLineGraph = false
+    -- m.p4 = plots.Graph({})
+    -- m.p4.isLineGraph = false
+    -- m.p4.maxPts_ = 200
+    -- m.p5 = plots.Graph({})
+    -- m.p5.isLineGraph = false
+    -- m.p5.isXYGraph = true
+    -- m.p5.maxPts_ = 200
 
-    m.fp:add(m.p4, "header",  1, 1, 1, 3)
+    --m.fp:add(m.p4, "header",  1, 1, 1, 3)
     m.fp:add(m.p1, "p1",      2, 1, 1, 2)
     m.fp:add(m.p2, "p2",      3, 1, 1, 2)
     m.fp:add(m.p3, "p3",      4, 1, 1, 2)
-    m.fp:add(m.p5, "console", 2, 3, 3, 2)
+    --m.fp:add(m.p5, "console", 2, 3, 3, 2)
 
     m.t = 0.0
     m.f = 0
 end
 
 function m.draw(nvg, w, h)
-    m.f = m.f + 1
-    if m.f % 4 ~= 0 then
-        return
-    end
     m.t = m.t + 1.0 / 60.0
 
-    m.p1:pushValue(math.cos(m.t*5)*0.5 + 0.5)
-    m.p2:pushValue(math.cos(m.t*10)*0.5 + 0.5)
-    m.p3:pushValue(math.cos(m.t*15)*0.5 + 0.5)
+    m.p1:setLimits(m.t+3, m.t+10.0, -2.0, 2.0)
+    m.p2:setLimits(m.t+2, m.t+10.0, -2.0, 2.0)
+    m.p3:setLimits(m.t+1, m.t+10.0, -2.0, 2.0)
 
-    local v = (math.sin(m.t) * math.cos(m.t*15))*0.5 + 0.5
-    local v2 = (math.sin(m.t*3) + math.cos(m.t*7))*0.25 + 0.5
+    m.f = m.f + 1
+    if m.f % 5 == 0 then
+        m.p1:pushValue({m.t + 10.0, 0.0, math.cos(m.t*5)})
+        m.p2:pushValue({m.t + 10.0, 0.0, math.cos(m.t*10)})
+        m.p3:pushValue({m.t + 10.0, 0.0, math.cos(m.t*15)})
 
-    m.p4:pushValue(v - math.random()*0.1)
-    m.p4:pushValue(v + math.random()*0.1)
+        -- local v = (math.sin(m.t) * math.cos(m.t*15))*0.5 + 0.5
+        -- local v2 = (math.sin(m.t*3) + math.cos(m.t*7))*0.25 + 0.5
 
-    m.p5:pushValue(v + (math.random() - 0.5)*0.1)
-    m.p5:pushValue(v2 + (math.random() - 0.5)*0.1)
+        -- m.p4:pushValue(v - math.random()*0.1)
+        -- m.p4:pushValue(v + math.random()*0.1)
 
+        -- m.p5:pushValue(v + (math.random() - 0.5)*0.1)
+        -- m.p5:pushValue(v2 + (math.random() - 0.5)*0.1)
+    end
     m.fp:draw(nvg)
 end
 
