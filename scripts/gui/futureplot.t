@@ -97,11 +97,9 @@ function m.init(nvg, w, h)
     m.fp = FuturePlot({gridrows = 4, 
                        gridcols = 4}, w, h)
 
-    m.p1 = plots.Graph({filled = true})
-    m.p2 = plots.Graph({filled = true})
-    m.p3 = plots.Graph({filled = true})
-    m.p1.isLineGraph = false
-    m.p2.isLineGraph = false
+    m.p1 = plots.CandleGraph({title = "Plot 1: Candle", filled = true})
+    m.p2 = plots.CandleGraph({title = "Plot 2: Candle", filled = true})
+    m.p3 = plots.LineGraph({title = "Plot 3: Line (filled)", filled = true})
     --m.p3.isLineGraph = false
     -- m.p4 = plots.Graph({})
     -- m.p4.isLineGraph = false

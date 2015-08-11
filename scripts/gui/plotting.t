@@ -104,9 +104,6 @@ function m.createXYPath(nvg, bounds, vals, ntuples, extraopts)
 end
 
 function m.drawTypicalGraph(nvg, bounds, style, vals, scratch, format, drawfunc)
-	m.drawVTicMarks(nvg, bounds, style)
-	m.drawHTicMarks(nvg, bounds, style)
-
 	nanovg.nvgSave(nvg)
 
 	local x0 = bounds.x + bounds.ticlength
@@ -202,11 +199,16 @@ function m.drawHTicMarks(nvg, bounds, style)
 	local curx = (curh - h0) * xmult + x0
 	local dx = ticspacing * xmult
 
+	local format = style.stringFormat or "%.2f"
+
 	while curx < x1 do
 		if ticidx % ticmultiple == 0 then
 			nanovg.nvgMoveTo(nvg, curx, y0-5)
 			nanovg.nvgLineTo(nvg, curx, yminor)
-			nanovg.nvgText(nvg, curx, y1, "" .. curh, nil)
+			nanovg.nvgText( nvg, 
+							curx, y1,
+							string.format(format, curh), 
+							nil)
 		else
 			nanovg.nvgMoveTo(nvg, curx, y0)
 			nanovg.nvgLineTo(nvg, curx, yminor)
@@ -230,7 +232,7 @@ function m.drawVTicMarks(nvg, bounds, style)
 	local fontsize = style.fontsize or m.fontsize
 	nanovg.nvgFontSize(nvg, fontsize)
 	nanovg.nvgFontFace(nvg, "sans")
-	nanovg.nvgTextAlign(nvg, nanovg.NVG_ALIGN_MIDDLE)
+	nanovg.nvgTextAlign(nvg, nanovg.NVG_ALIGN_RIGHT)
 
 	local v0 = bounds.v0
 	local v1 = bounds.v1
@@ -257,13 +259,18 @@ function m.drawVTicMarks(nvg, bounds, style)
 	local cury = y1 - (curv - v0) * ymult
 	local dy = ticspacing * ymult
 
+	local format = style.stringFormat or "%.1f"
+
 	while cury > y0 do
 		nanovg.nvgMoveTo(nvg, xcenter, cury)
 		if ticidx % ticmultiple == 0 then
 			nanovg.nvgLineTo(nvg, x1, cury)
-			nanovg.nvgText(nvg, bounds.x, cury, "" .. curv, nil)
-		else
-			nanovg.nvgLineTo(nvg, x0, cury)
+			nanovg.nvgText(nvg, 
+				           x1, cury-3,
+				           string.format(format, curv),
+				           nil)
+		--else
+		--	nanovg.nvgLineTo(nvg, x0, cury)
 		end
 		cury = cury - dy
 		curv = curv + ticspacing
@@ -405,11 +412,10 @@ function Graph:init(options)
 					ticlength = 14}
 	self.pts_ = {}
 	self.maxPts_ = 300
-	self.isLineGraph = true
-	self.isXYGraph = false
 	self.scratch_ = {}
 	self.lastx_ = 0
-	self.title_ = options.title_ or "Graph"
+	self.title_ = options.title or "Graph"
+	self.drawAxes = (options.drawAxes == nil) or options.drawAxes
 end
 
 function Graph:setBounds(bounds)
@@ -450,17 +456,25 @@ function Graph:pushValue(newvals)
 	end
 end
 
+function Graph:innerDraw(nvg)
+	m.drawLineGraph(nvg, self.bounds_, self.style_, self.pts_, self.scratch_)
+end
+
 function Graph:draw(nvg)
-	if #self.pts_ == 0 then return end
-	if self.isLineGraph then
-		m.drawLineGraph(nvg, self.bounds_, self.style_, self.pts_, self.scratch_)
-	elseif self.isXYGraph then
-		m.drawXYGraph(nvg, self.bounds_, self.style_, self.pts_, self.scratch_)
-	else
-		m.drawCandleGraph(nvg, self.bounds_, self.style_, self.pts_, self.scratch_)
+	if self.drawAxes then
+		m.drawVTicMarks(nvg, self.bounds_, self.style_)
+		m.drawHTicMarks(nvg, self.bounds_, self.style_)
 	end
 
+	if #self.pts_ == 0 then return end
+	self:innerDraw(nvg)
+
 	nanovg.nvgSave(nvg)
+
+	-- nanovg.nvgBeginPath(nvg)
+	-- nanovg.nvgFillColor(nvg, nanovg.nvgRGBA(0,0,0,128))
+	-- nanovg.nvgRect(nvg, self.bounds_.x, self.)
+	-- nanovg.nvgFill(nvg)
 
 	nanovg.nvgFillColor(nvg, m.defaultStrokeColor)
 	nanovg.nvgFontFace(nvg, "sans")
@@ -472,5 +486,18 @@ function Graph:draw(nvg)
 	nanovg.nvgRestore(nvg)
 end
 
+local CandleGraph = Graph:extend("CandleGraph")
+function CandleGraph:innerDraw(nvg)
+	m.drawCandleGraph(nvg, self.bounds_, self.style_, self.pts_, self.scratch_)
+end
+
+local ScatterPlot = Graph:extend("ScatterPlot")
+function ScatterPlot:innerDraw(nvg)
+	m.drawXYGraph(nvg, self.bounds_, self.style_, self.pts_, self.scratch_)
+end
+
 m.Graph = Graph
+m.LineGraph = Graph
+m.CandleGraph = CandleGraph
+m.ScatterPlot = ScatterPlot
 return m
