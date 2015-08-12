@@ -187,13 +187,7 @@ function m.drawHTicMarks(nvg, bounds, style)
 	local x1 = bounds.x + bounds.width
 
 	nanovg.nvgBeginPath(nvg)
-	-- draw start and end tics
-	-- nanovg.nvgMoveTo(nvg, x0, y0)
-	-- nanovg.nvgLineTo(nvg, x0, y1)
-	-- nanovg.nvgMoveTo(nvg, x1, y0)
-	-- nanovg.nvgLineTo(nvg, x1, y1)
 
-	-- draw other tics
 	local xmult = (bounds.width - ticheight) / (h1 - h0)
 	local curh, ticidx = nextMultiple(h0, ticspacing)
 	local curx = (curh - h0) * xmult + x0
@@ -245,15 +239,8 @@ function m.drawVTicMarks(nvg, bounds, style)
 	local y1 = bounds.y + bounds.height - ticheight
 	local y0 = bounds.y
 
-
 	nanovg.nvgBeginPath(nvg)
-	-- draw start and end tics
-	-- nanovg.nvgMoveTo(nvg, x0, y0)
-	-- nanovg.nvgLineTo(nvg, x1, y0)
-	-- nanovg.nvgMoveTo(nvg, x0, y1)
-	-- nanovg.nvgLineTo(nvg, x1, y1)
 
-	-- draw other tics
 	local ymult = (bounds.height - ticheight) / (v1 - v0)
 	local curv, ticidx = nextMultiple(v0, ticspacing)
 	local cury = y1 - (curv - v0) * ymult
@@ -269,8 +256,8 @@ function m.drawVTicMarks(nvg, bounds, style)
 				           x1, cury-3,
 				           string.format(format, curv),
 				           nil)
-		--else
-		--	nanovg.nvgLineTo(nvg, x0, cury)
+		else
+			nanovg.nvgLineTo(nvg, x0, cury)
 		end
 		cury = cury - dy
 		curv = curv + ticspacing
@@ -471,11 +458,6 @@ function Graph:draw(nvg)
 
 	nanovg.nvgSave(nvg)
 
-	-- nanovg.nvgBeginPath(nvg)
-	-- nanovg.nvgFillColor(nvg, nanovg.nvgRGBA(0,0,0,128))
-	-- nanovg.nvgRect(nvg, self.bounds_.x, self.)
-	-- nanovg.nvgFill(nvg)
-
 	nanovg.nvgFillColor(nvg, m.defaultStrokeColor)
 	nanovg.nvgFontFace(nvg, "sans")
 	nanovg.nvgFontSize(nvg, 20)
@@ -496,8 +478,55 @@ function ScatterPlot:innerDraw(nvg)
 	m.drawXYGraph(nvg, self.bounds_, self.style_, self.pts_, self.scratch_)
 end
 
+local TextBox = class("TextBox")
+
+function TextBox:init(options)
+	self.fontsize = options.fontsize or 36
+	self.text = options.text or options.title or "Textbox"
+	self.bounds_ = {x = 0, y = 0, width = 100, height = 100}
+	self.align = options.align or "left"
+	self.fontface = options.fontface or "sans"
+	self.margin = options.margin or 10
+end
+
+function TextBox:setText(newtext)
+	self.text = newtext
+end
+
+function TextBox:setBounds(bounds)
+	self.bounds_.x = bounds.x
+	self.bounds_.y = bounds.y
+	self.bounds_.width = bounds.width
+	self.bounds_.height = bounds.height
+	return self
+end
+
+function TextBox:draw(nvg)
+	nanovg.nvgSave(nvg)
+
+	nanovg.nvgFontFace(nvg, self.fontface)
+	nanovg.nvgFontSize(nvg, self.fontsize)
+
+	nanovg.nvgTextAlign(nvg, nanovg.NVG_ALIGN_MIDDLE)
+	local x, y = 0, self.bounds_.y + (self.bounds_.height / 2)
+	if self.align == "right" then
+		x = self.bounds_.x + self.bounds_.width - self.margin
+		nanovg.nvgTextAlign(nvg, nanovg.NVG_ALIGN_RIGHT)
+	elseif self.align == "center" then
+		x = self.bounds_.x + (self.bounds_.width / 2)
+		nanovg.nvgTextAlign(nvg, nanovg.NVG_ALIGN_CENTER)
+	else
+		x = self.bounds_.x + self.margin
+	end
+	
+	nanovg.nvgText(nvg, x, y, self.text, nil)
+
+	nanovg.nvgRestore(nvg)
+end
+
 m.Graph = Graph
 m.LineGraph = Graph
 m.CandleGraph = CandleGraph
 m.ScatterPlot = ScatterPlot
+m.TextBox = TextBox
 return m

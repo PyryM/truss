@@ -108,6 +108,8 @@ function m.init(nvg, w, h)
     -- m.p5.isLineGraph = false
     -- m.p5.isXYGraph = true
     -- m.p5.maxPts_ = 200
+    m.texty = plots.TextBox({title = "truss/ FUTUREPLOT", fontsize = 60, align = "center"})
+    m.fp:add(m.texty, "texty", 1, 1, 1, 3)
 
     --m.fp:add(m.p4, "header",  1, 1, 1, 3)
     m.fp:add(m.p1, "p1",      2, 1, 1, 2)
