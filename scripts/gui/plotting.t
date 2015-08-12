@@ -511,10 +511,10 @@ function TextBox:draw(nvg)
 	local x, y = 0, self.bounds_.y + (self.bounds_.height / 2)
 	if self.align == "right" then
 		x = self.bounds_.x + self.bounds_.width - self.margin
-		nanovg.nvgTextAlign(nvg, nanovg.NVG_ALIGN_RIGHT)
+		nanovg.nvgTextAlign(nvg, nanovg.NVG_ALIGN_MIDDLE + nanovg.NVG_ALIGN_RIGHT)
 	elseif self.align == "center" then
 		x = self.bounds_.x + (self.bounds_.width / 2)
-		nanovg.nvgTextAlign(nvg, nanovg.NVG_ALIGN_CENTER)
+		nanovg.nvgTextAlign(nvg, nanovg.NVG_ALIGN_MIDDLE + nanovg.NVG_ALIGN_CENTER)
 	else
 		x = self.bounds_.x + self.margin
 	end

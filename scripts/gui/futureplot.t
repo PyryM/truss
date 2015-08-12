@@ -95,7 +95,7 @@ function m.init(nvg, w, h)
     local plots = require("gui/plotting.t")
 
     m.fp = FuturePlot({gridrows = 4, 
-                       gridcols = 4}, w, h)
+                       gridcols = 6}, w, h)
 
     m.p1 = plots.CandleGraph({title = "Plot 1: Candle", filled = true})
     m.p2 = plots.CandleGraph({title = "Plot 2: Candle", filled = true})
@@ -108,8 +108,8 @@ function m.init(nvg, w, h)
     -- m.p5.isLineGraph = false
     -- m.p5.isXYGraph = true
     -- m.p5.maxPts_ = 200
-    m.texty = plots.TextBox({title = "truss/ FUTUREPLOT", fontsize = 60, align = "center"})
-    m.fp:add(m.texty, "texty", 1, 1, 1, 3)
+    m.texty = plots.TextBox({title = "truss/ FUTUREPLOT", fontsize = 80, align = "center"})
+    m.fp:add(m.texty, "texty", 1, 1, 1, 4)
 
     --m.fp:add(m.p4, "header",  1, 1, 1, 3)
     m.fp:add(m.p1, "p1",      2, 1, 1, 2)
