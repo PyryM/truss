@@ -111,6 +111,9 @@ function m.init(nvg, w, h)
     m.texty = plots.TextBox({title = "truss/ FUTUREPLOT", fontsize = 80, align = "center"})
     m.fp:add(m.texty, "texty", 1, 1, 1, 4)
 
+    m.loggy = m.TextLog({fontsize = 18})
+    m.fp:add(m.loggy, "loggy", 1, 5, 4, 2)
+
     --m.fp:add(m.p4, "header",  1, 1, 1, 3)
     m.fp:add(m.p1, "p1",      2, 1, 1, 2)
     m.fp:add(m.p2, "p2",      3, 1, 1, 2)
@@ -140,6 +143,15 @@ function m.draw(nvg, w, h)
         m.p3:pushValue({m.t + 10.0, newval})
         m.prevval = newval
 
+        if m.f % 30 == 0 then
+            local text = "Text line at frame #" .. m.f
+            m.loggy:addText(text)
+            if math.random() < 0.1 then
+                m.loggy:addColoredText("Oh no! This is a fake error.",
+                                       {255,0,0,255})
+            end
+        end
+
         -- local v = (math.sin(m.t) * math.cos(m.t*15))*0.5 + 0.5
         -- local v2 = (math.sin(m.t*3) + math.cos(m.t*7))*0.25 + 0.5
 
@@ -152,5 +164,58 @@ function m.draw(nvg, w, h)
     m.fp:draw(nvg)
 end
 
+-- text stuff
+local textdrawing = require("gui/textdrawing.t")
+
+local TextLog = class("TextLog")
+function TextLog:init(options)
+    self.text = {}
+    self.bounds_ = {x = 0, y = 0, width = 100, height = 100}
+    self.innerbounds_ = {x = 0, y = 0, width = 100, height = 100}
+    self.margin = options.margin or 10
+    self.style = {}
+    self.style.fontsize = options.fontsize or 12
+    self.style.fontface = options.fontface or "sans"
+    self.style.lineheight = options.lineheight or (self.style.fontsize + 4)
+    self.maxlines = 10
+    self.textcolor = options.textcolor or {255,255,255,255}
+end
+
+function TextLog:addChunkedLine(linechunks)
+    table.insert(self.text, linechunks)
+    while #(self.text) > self.maxlines do
+        table.remove(self.text, 1)
+    end
+end
+
+function TextLog:addText(text)
+    self:addChunkedLine(textdrawing.printColored(text, self.textcolor))
+end
+
+function TextLog:addColoredText(text, color)
+    self:addChunkedLine(textdrawing.printColored(text, color))
+end
+
+function TextLog:setBounds(bounds)
+    self.bounds_.x = bounds.x
+    self.bounds_.y = bounds.y
+    self.bounds_.width = bounds.width
+    self.bounds_.height = bounds.height
+    self.innerbounds_.x = bounds.x + self.margin
+    self.innerbounds_.y = bounds.y + self.margin
+    self.innerbounds_.width = bounds.width - (self.margin * 2)
+    self.innerbounds_.height = bounds.height - (self.margin * 2)
+
+    self.maxlines = math.floor(self.innerbounds_.height / self.style.lineheight)
+    log.debug("TextLog max lines: " .. self.maxlines)
+    return self
+end
+
+function TextLog:draw(nvg)
+    textdrawing.drawFormattedText(nvg, self.text, 
+                                  self.innerbounds_, self.style)
+end
+
 m.FuturePlot = FuturePlot
+m.TextLog = TextLog
 return m
