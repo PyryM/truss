@@ -119,6 +119,21 @@ local function makeindent(n)
 	return ret
 end
 
+-- terralib.loadstring doesn't take a name parameter (which is needed
+-- to get reasonable error messages), so we have to perform this workaround
+-- to use the lower-level terralib.load which does take a name
+local function loadNamed(str, strname)
+	-- create a function which returns str on the first call 
+	-- and nil on the second (to let terralib.load know it is done)
+	local s = str
+	local loaderfunc = function()
+		local s2 = s
+		s = nil
+		return s2
+	end
+	return terralib.load(loaderfunc, strname)
+end
+
 function truss_import(filename, force)
 	if loadedLibs[filename] == nil or force then
 		log.info("Starting to load [" .. filename .. "]")
@@ -131,7 +146,7 @@ function truss_import(filename, force)
 			loadedLibs[filename] = nil
 			return nil
 		end
-		local modulefunc, loaderror = terralib.loadstring(funcsource)
+		local modulefunc, loaderror = loadNamed(funcsource, filename)
 		if modulefunc then
 			import_nest_level = import_nest_level + 1
 			loadedLibs[filename] = modulefunc()
@@ -225,7 +240,7 @@ function _coreInit(argstring)
 	local fn = "scripts/" .. argstring
 	trss.trss_log(TRSS_ID, "Loading " .. fn)
 	local script = loadStringFromFile(fn)
-	local scriptfunc, loaderror = terralib.loadstring(script)
+	local scriptfunc, loaderror = loadNamed(script, argstring)
 	if scriptfunc == nil then
 		trss.trss_log(0, "Script error: " .. loaderror)
 	end
