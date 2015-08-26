@@ -158,10 +158,18 @@ function SimpleRenderer:setModelColor(r, g, b)
 	self.modelColor[2] = b
 	bgfx.bgfx_set_uniform(self.u_baseColor, self.modelColor, 1)
 end
-
--- only supports adding 
+ 
 function SimpleRenderer:add(obj)
 	table.insert(self.objects, obj)
+end
+
+function SimpleRenderer:remove(obj)
+	for i,v in ipairs(self.objects) do
+		if v == obj then
+			table.remove(self.objects, i)
+			break
+		end
+	end
 end
 
 function SimpleRenderer:applyMaterial(material)
