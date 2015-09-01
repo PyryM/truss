@@ -50,7 +50,7 @@ function AppScaffold:init(options)
 	if options.renderer == nil then
 		self.renderer = pbr_renderer.PBRRenderer(self.width, self.height)
 		self.renderer:setQuality(self.quality)
-		self.renderer.autoUpdateMatrices = false
+		self.renderer.autoUpdateMatrices = (options.updatematrices == nil) or options.updatematrices
 	else
 		self.renderer = options.renderer
 	end
