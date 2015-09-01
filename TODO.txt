@@ -1,18 +1,10 @@
 Lua:
-	Gui
-		-- Console
-		-- Mouse camera control
-
 	Scenegraph
-		-- Basic transform math
 		-- Actual scenegraph
-		-- How to handle materials etc.? (just have nodes implement 'draw' however they want, let actual scenegraph just deal with keeping transformations consistent)
-
-	Simplify mesh loading
-		-- Wrappers for static buffer construction
 
 	Materials / Lighting
-		--??
+		-- shadows
+		-- voxel cone tracing
 
 
 C++:
