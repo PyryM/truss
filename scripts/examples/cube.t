@@ -1,6 +1,7 @@
 -- cube.t
 -- 
--- draws a spinning cube (hopefully)
+-- a totally from-scratch example of how to draw a cube with
+-- just raw bgfx and (almost no) helper libraries
 
 bgfx = core.bgfx
 bgfx_const = core.bgfx_const
@@ -90,33 +91,22 @@ width = 800
 height = 600
 frame = 0
 time = 0.0
-mousex, mousey = 0, 0
 
-terra loadFileToBGFX(filename: &int8)
-	var msg: &trss.trss_message = trss.trss_load_file(filename, 0)
-	var ret: &bgfx.bgfx_memory = bgfx.bgfx_copy(msg.data, msg.data_length)
-	trss.trss_release_message(msg)
-	return ret
-end
+-- ok, I lied: we're going to use a tiny helper library to do the shader loading
+-- because different platforms use different shaders
 
 function loadProgram(vshadername, fshadername)
-	trss.trss_log(0, "Warning: loadProgram in cube.t only works with dx11 at the moment!")
-
-	local vspath = "shaders/dx11/" .. vshadername .. ".bin"
-	local fspath = "shaders/dx11/" .. fshadername .. ".bin"
-
-	local vshader = bgfx.bgfx_create_shader(loadFileToBGFX(vspath))
-	local fshader = bgfx.bgfx_create_shader(loadFileToBGFX(fspath))
-	log("vidx: " .. vshader.idx)
-	log("fidx: " .. fshader.idx)
-
-	return bgfx.bgfx_create_program(vshader, fshader, true)
+	local shaderutils = require('utils/shaderutils.t')
+	return shaderutils.loadProgram(vshadername, fshadername)
 end
 
-CMath = terralib.includec("math.h")
-mtx = require("math/matrix.t")
+-- ok, I lied a bit more: we're also going to use the matrix libary because
+-- there's no point in cluttering up this with code that creates projection
+-- matrices
 
 function setViewMatrices()
+	mtx = require("math/matrix.t")
+
 	mtx.makeProjMat(projmat, 60.0, width / height, 0.01, 100.0)
 	mtx.setIdentity(viewmat)
 
@@ -127,18 +117,11 @@ function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
 		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
-		if evt.event_type == sdl.TRSS_SDL_EVENT_MOUSEMOVE then
-			mousex = evt.x
-			mousey = evt.y
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
-			trss.trss_log(TRSS_ID, "Received window close, stopping interpreter...")
+		if evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
+			log.info("Received window close, stopping interpreter...")
 			trss.trss_stop_interpreter(TRSS_ID)
 		end
 	end
-end
-
-function log(msg)
-	trss.trss_log(TRSS_ID, msg)
 end
 
 function initBGFX()
@@ -159,30 +142,30 @@ function initBGFX()
 	1.0,
 	0)
 
-	trss.trss_log(0, "Initted bgfx I hope?")
+	log.info("Initted bgfx I hope?")
 
 	-- Init the cube
 
-	log("Loading vertex def.")
+	log.info("Loading vertex def.")
 	vertexdef = createVertexSpec()
-	log("Creating cube data.")
+	log.info("Creating cube data.")
 	cubedata = createCubeData()
 
 	local flags = 0
 
 	-- Create static vertex buffer.
-	log("Creating vertex buffer")
+	log.info("Creating vertex buffer")
 	vbh = bgfx.bgfx_create_vertex_buffer(
 		  bgfx.bgfx_make_ref(cubedata.vertices, sizeof(Vertex[8]) ),
 		  vertexdef, flags )
 
 	-- Create static index buffer.
-	log("Creating index buffer")
+	log.info("Creating index buffer")
 	ibh = bgfx.bgfx_create_index_buffer(
 		  bgfx.bgfx_make_ref(cubedata.indices, sizeof(uint16[36])), 0)
 
 	-- load shader program
-	log("Loading program")
+	log.info("Loading program")
 	program = loadProgram("vs_cubes", "fs_cubes")
 
 	-- create matrices
