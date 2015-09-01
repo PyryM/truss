@@ -87,7 +87,7 @@ function AppScaffold:initNVG()
 
 	-- load font
 	--nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/roboto-regular.ttf")
-	self.nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/VeraMono.ttf")
+	self.nvgfont = nanovg.nvgCreateFont(self.nvg, "sans", "font/VeraMono.ttf")
 end
 
 function AppScaffold:onKeyDown(keyname, modifiers)
@@ -130,8 +130,8 @@ function AppScaffold:updateEvents()
 end
 
 function AppScaffold:update(userupdate)
-	self.frame = frame + 1
-	self.time = time + 1.0 / 60.0
+	self.frame = self.frame + 1
+	self.time = self.time + 1.0 / 60.0
 
 	local startTime = tic()
 
