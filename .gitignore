@@ -1,3 +1,4 @@
+docs/
 build/
 distbins/
 lib/
@@ -17,3 +18,4 @@ datasets/
 *.lib
 *.exp
 *.dll
+*.zip
