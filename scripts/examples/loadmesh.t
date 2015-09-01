@@ -10,8 +10,8 @@ grid = require('gui/grid.t')
 
 function init()
     app = scaffold.AppScaffold({
-            width = 800,
-            height = 600
+            width = 1280,
+            height = 720
         })
 
     camera = orbitcam()
@@ -30,7 +30,9 @@ function init()
 
     themodel = meshutils.Mesh(modelgeo, modelmaterial)
     app.renderer:add(themodel)
-    app.renderer:add(grid.createLineGrid())
+    local thegrid = grid.createLineGrid()
+    thegrid.quaternion:fromEuler({x = math.pi / 2.0, y = 0.0, z = 0.0}, 'XYZ')
+    app.renderer:add(thegrid)
 end
 
 function ourUpdate()
