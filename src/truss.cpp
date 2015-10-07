@@ -419,6 +419,8 @@ void Core::initFS(char* argv0, bool mountBaseDir) {
 	if (mountBaseDir) {
 		PHYSFS_mount(PHYSFS_getBaseDir(), "/", 0);
 	}
+
+	physFSInitted_ = true;
 }
 
 void Core::addFSPath(const char* pathname, const char* mountname, int append) {
