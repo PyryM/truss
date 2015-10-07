@@ -8,7 +8,7 @@
 #include "trussapi.h"
 #include "truss.h"
 #include "terra.h"
-#include "physfs/physfs.h"
+#include "physfs.h"
 
 using namespace trss;
 
