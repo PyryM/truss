@@ -120,6 +120,12 @@ namespace trss {
 	public:
 		static Core* getCore();
 
+		// functions for dealing with physfs (you can also make direct physfs
+		// calls if you need to, after you've called initFS)
+		void initFS(char* argv0, bool mountBaseDir = true);
+		void addFSPath(const char* pathname, const char* mountname, int append);
+		void setWriteDir(const char* writepath);
+
 		void logMessage(int log_level, const char* msg);
 
 		Interpreter* getInterpreter(int idx);
@@ -140,8 +146,11 @@ namespace trss {
 		trss_message* allocateMessage(int dataLength);
 		void deallocateMessage(trss_message* msg);
 
+		bool checkFile(const char* filename);
 		trss_message* loadFile(const char* filename, int path_type);
+		trss_message* loadFileRaw(const char* filename, int path_type);
 		void saveFile(const char* filename, int path_type, trss_message* data);
+		void saveFileRaw(const char* filename, int path_type, trss_message* data);
 
 		trss_message* getStoreValue(const std::string& key);
 		int setStoreValue(const std::string& key, trss_message* val);
@@ -155,6 +164,7 @@ namespace trss {
 
 		Core();
 		SDL_mutex* coreLock_;
+		bool physFSInitted_;
 		std::vector<Interpreter*> interpreters_;
 		std::map<std::string, trss_message*> store_;
 	};

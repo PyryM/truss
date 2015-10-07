@@ -3,10 +3,12 @@
 // TODO: switch to a better logging framework
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include "bx_utils.h" // has to be included early or else luaconfig.h will clobber winver
 #include "trussapi.h"
 #include "truss.h"
 #include "terra.h"
+#include "physfs/physfs.h"
 
 using namespace trss;
 
@@ -241,6 +243,10 @@ uint64_t trss_get_hp_freq() {
 	return bx::getHPFrequency();
 }
 
+int trss_check_file(const char* filename) {
+	return Core::getCore()->checkFile(filename);
+}
+
 trss_message* trss_load_file(const char* filename, int path_type){
 	return Core::getCore()->loadFile(filename, path_type);
 }
@@ -403,6 +409,38 @@ Core* Core::getCore() {
 	return core__;
 }
 
+void Core::initFS(char* argv0, bool mountBaseDir) {
+	if (physFSInitted_) {
+		logMessage(TRSS_LOG_WARNING, "PhysFS already initted.");
+		return;
+	}
+
+	int retval = PHYSFS_init(argv0);
+	if (mountBaseDir) {
+		PHYSFS_mount(PHYSFS_getBaseDir(), "/", 0);
+	}
+}
+
+void Core::addFSPath(const char* pathname, const char* mountname, int append) {
+	std::stringstream ss;
+	ss << PHYSFS_getBaseDir() << PHYSFS_getDirSeparator() << pathname;
+	logMessage(TRSS_LOG_DEBUG, "Adding physFS path: ");
+	logMessage(TRSS_LOG_DEBUG, ss.str().c_str());
+
+	int retval = PHYSFS_mount(ss.str().c_str(), mountname, append);
+	// TODO: do something with the return value (e.g., if it's an error)
+}
+
+void Core::setWriteDir(const char* writepath) {
+	std::stringstream ss;
+	ss << PHYSFS_getBaseDir() << PHYSFS_getDirSeparator() << writepath;
+	logMessage(TRSS_LOG_DEBUG, "Setting physFS write path: ");
+	logMessage(TRSS_LOG_DEBUG, ss.str().c_str());
+
+	int retval = PHYSFS_setWriteDir(ss.str().c_str());
+	// TODO: do something with the return value (e.g., if it's an error)
+}
+
 void Core::logMessage(int log_level, const char* msg) {
 	SDL_LockMutex(coreLock_);
 	// just dump to standard out for the moment
@@ -508,7 +546,16 @@ std::string Core::resolvePath(const char* filename, int path_type) {
 	return ret;
 }
 
-trss_message* Core::loadFile(const char* filename, int path_type) {
+bool Core::checkFile(const char* filename) {
+	if (!physFSInitted_) {
+		logMessage(TRSS_LOG_WARNING, "PhysFS not initted: checkFile always returns false.");
+		return false;
+	}
+
+	return PHYSFS_exists(filename) > 0;
+}
+
+trss_message* Core::loadFileRaw(const char* filename, int path_type) {
 	std::string truepath = resolvePath(filename, path_type);
 
 	std::streampos size;
@@ -528,7 +575,39 @@ trss_message* Core::loadFile(const char* filename, int path_type) {
 	} 
 }
 
+trss_message* Core::loadFile(const char* filename, int path_type) {
+	if (!physFSInitted_) {
+		logMessage(TRSS_LOG_WARNING, "PhysFS not initted: falling back to raw loading.");
+		return loadFileRaw(filename, path_type);
+	}
+
+	if (PHYSFS_exists(filename) <= 0) {
+		logMessage(TRSS_LOG_ERROR, "Error opening file.");
+		logMessage(TRSS_LOG_ERROR, filename);
+		return NULL;
+	}
+
+	PHYSFS_file* myfile = PHYSFS_openRead(filename);
+	PHYSFS_sint64 file_size = PHYSFS_fileLength(myfile);
+	trss_message* ret = allocateMessage(file_size);
+	PHYSFS_read(myfile, ret->data, 1, file_size);
+	PHYSFS_close(myfile);
+
+	return ret;
+}
+
 void Core::saveFile(const char* filename, int path_type, trss_message* data) {
+	if (!physFSInitted_) {
+		logMessage(TRSS_LOG_WARNING, "PhysFS not initted: falling back to raw saving.");
+		saveFileRaw(filename, path_type, data);
+	}
+
+	PHYSFS_file* myfile = PHYSFS_openWrite(filename);
+	PHYSFS_write(myfile, data->data, 1, data->data_length);
+	PHYSFS_close(myfile);
+}
+
+void Core::saveFileRaw(const char* filename, int path_type, trss_message* data) {
 	std::string truepath = resolvePath(filename, path_type);
 
 	std::ofstream outfile;
@@ -568,9 +647,13 @@ int Core::setStoreValue(const std::string& key, const std::string& val) {
 }
 
 Core::~Core(){
-	// eeeehn
+	// destroy physfs
+	if (physFSInitted_) {
+		PHYSFS_deinit();
+	}
 }
 
 Core::Core(){
 	coreLock_ = SDL_CreateMutex();
+	physFSInitted_ = false;
 }

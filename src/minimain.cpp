@@ -20,6 +20,11 @@ int main(int argc, char** argv){
 	trss_test();
 	trss_log(0, "Entered main!");
 	storeArgs(argc, argv);
+		
+	// set up physFS filesystem
+	trss::core()->initFS(argv[0], true); // mount the base directory
+	trss::core()->setWriteDir("save");   // write into basedir/save/
+
 	trss::Interpreter* interpreter = trss::core()->spawnInterpreter("interpreter_0");
 	interpreter->setDebug(0); // want most verbose debugging output
 	interpreter->attachAddon(new SDLAddon);
