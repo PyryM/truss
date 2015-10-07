@@ -33,6 +33,7 @@ uint64_t trss_get_hp_freq();
 #define TRSS_ASSET_PATH 0 /* Path where assets are stored */
 #define TRSS_SAVE_PATH 1  /* Path for saving stuff e.g. preferences */
 #define TRSS_CORE_PATH 2  /* Path for core files e.g. bootstrap.t */
+int trss_check_file(const char* filename);
 trss_message* trss_load_file(const char* filename, int path_type);
 int trss_save_file(const char* filename, int path_type, trss_message* data);
 trss_message* trss_get_store_value(const char* key);
