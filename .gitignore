@@ -13,6 +13,7 @@ models/
 temp/
 dump/
 datasets/
+data/
 *.exe
 *.pdb
 *.lib
