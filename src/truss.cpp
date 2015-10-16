@@ -41,7 +41,7 @@ void Interpreter::attachAddon(Addon* addon) {
 	if(!running_ && thread_ == NULL) {
 		addons_.push_back(addon);
 	} else {
-		std::cout << "Cannot attach addon to running interpreter.\n";
+		core()->logMessage(TRSS_LOG_ERROR, "Cannot attach addon to running interpreter.");
 		delete addon;
 	}
 }
@@ -60,7 +60,7 @@ Addon* Interpreter::getAddon(int idx) {
 
 void Interpreter::setDebug(int debugLevel) {
 	if (running_) {
-		std::cout << "Warning: Changing debug level on a running interpreter has no effect!\n";
+		core()->logMessage(TRSS_LOG_WARNING, "Warning: Changing debug level on a running interpreter has no effect!");
 	}
 
 	if (debugLevel > 0) {
@@ -80,7 +80,7 @@ int run_interpreter_thread(void* interpreter) {
 
 void Interpreter::start(const char* arg) {
 	if(thread_ != NULL || running_) {
-		std::cout << "Can't start interpreter twice: already running\n"; 
+		core()->logMessage(TRSS_LOG_ERROR, "Can't start interpreter twice: already running"); 
 		return;
 	}
 
@@ -93,7 +93,7 @@ void Interpreter::start(const char* arg) {
 
 void Interpreter::startUnthreaded(const char* arg) {
 	if(thread_ != NULL || running_) {
-		std::cout << "Can't start interpreter twice: already running\n"; 
+		core()->logMessage(TRSS_LOG_ERROR, "Can't start interpreter twice: already running");
 		return;
 	}
 
@@ -107,7 +107,7 @@ void Interpreter::stop() {
 }
 
 void Interpreter::execute() {
-	std::cout << "Interpreter::execute not implemented!\n";
+	core()->logMessage(TRSS_LOG_ERROR, "Interpreter::execute not implemented!");
 	// TODO: make this do something
 }
 
@@ -127,7 +127,7 @@ void Interpreter::threadEntry() {
 	// load and execute the bootstrap script
 	trss_message* bootstrap = core()->loadFile("scripts/core/bootstrap.t");
 	if (!bootstrap) {
-		std::cout << "Error loading bootstrap script.\n";
+		core()->logMessage(TRSS_LOG_ERROR, "Error loading bootstrap script.");
 		running_ = false;
 		return;
 	}
@@ -138,7 +138,7 @@ void Interpreter::threadEntry() {
 	trss_release_message(bootstrap);
 	int res = lua_pcall(terraState_, 0, 0, 0);
 	if(res != 0) {
-		std::cout << "Error bootstrapping interpreter: " 
+		core()->logStream(TRSS_LOG_ERROR) << "Error bootstrapping interpreter: " 
 				  << lua_tostring(terraState_, -1) << std::endl;
 		running_ = false;
 		return;
@@ -151,7 +151,7 @@ void Interpreter::threadEntry() {
 
 	// Call init
 	if (!safeLuaCall("_coreInit", arg_.c_str())) {
-		std::cout << "Error in coreInit, stopping interpreter [" << id_ << "]\n";
+		core()->logStream(TRSS_LOG_ERROR) << "Error in coreInit, stopping interpreter [" << id_ << "]\n";
 		running_ = false;
 	}
 
@@ -169,7 +169,7 @@ void Interpreter::threadEntry() {
 	}
 
 	// Shutdown
-	std::cout << "Shutting down.\n";
+	core()->logMessage(TRSS_LOG_INFO, "Shutting down.");
 	// TODO: actually shutdown stuff here
 }
 
@@ -214,7 +214,7 @@ bool Interpreter::safeLuaCall(const char* funcname, const char* argstr) {
 	}
 	int res = lua_pcall(terraState_, nargs, 0, 0);
 	if(res != 0) {
-		std::cout << lua_tostring(terraState_, -1) << std::endl;
+		core()->logMessage(TRSS_LOG_ERROR, lua_tostring(terraState_, -1));
 	}
 	return res == 0; // return true is no errors
 }
@@ -225,6 +225,7 @@ const char* trss_get_version_string() {
 
 void trss_test() {
 	std::cout << ">>>>>>>>>>>>>> TRSS_TEST CALLED <<<<<<<<<<<<<\n";
+	core()->logMessage(TRSS_LOG_CRITICAL, ">>>>>>>>>>>>>> TRSS_TEST CALLED <<<<<<<<<<<<<");
 }
 
 void trss_log(int log_level, const char* str){
@@ -443,6 +444,12 @@ void Core::setWriteDir(const char* writepath) {
 	// TODO: do something with the return value (e.g., if it's an error)
 }
 
+// NOT THREAD SAFE!!!
+std::ostream& Core::logStream(int log_level) {
+	logfile_ << "[" << log_level << "] ";
+	return logfile_;
+}
+
 void Core::logMessage(int log_level, const char* msg) {
 	SDL_LockMutex(coreLock_);
 	// dump to logfile
@@ -563,7 +570,7 @@ trss_message* Core::loadFileRaw(const char* filename) {
 
 		return ret;
 	} else {
-		std::cout << "Unable to open file " << filename << "\n";
+		logStream(TRSS_LOG_ERROR) << "Unable to open file " << filename << "\n";
 		return NULL;	
 	} 
 }

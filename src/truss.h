@@ -127,6 +127,7 @@ namespace trss {
 		void addFSPath(const char* pathname, const char* mountname, int append);
 		void setWriteDir(const char* writepath);
 
+		std::ostream& logStream(int log_level);
 		void logMessage(int log_level, const char* msg);
 
 		Interpreter* getInterpreter(int idx);
