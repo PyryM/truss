@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <fstream>
 
 #include "SDL_thread.h"
 #include "SDL_mutex.h"
@@ -165,6 +166,7 @@ namespace trss {
 		bool physFSInitted_;
 		std::vector<Interpreter*> interpreters_;
 		std::map<std::string, trss_message*> store_;
+		std::ofstream logfile_;
 	};
 
 	// syntax sugar to avoid the verbose

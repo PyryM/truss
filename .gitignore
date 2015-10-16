@@ -20,3 +20,4 @@ data/
 *.exp
 *.dll
 *.zip
+trusslog.txt

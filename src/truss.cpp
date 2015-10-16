@@ -445,8 +445,8 @@ void Core::setWriteDir(const char* writepath) {
 
 void Core::logMessage(int log_level, const char* msg) {
 	SDL_LockMutex(coreLock_);
-	// just dump to standard out for the moment
-	std::cout << log_level << "|" << msg << std::endl;
+	// dump to logfile
+	logfile_ << "[" << log_level << "] " << msg << std::endl;
 	SDL_UnlockMutex(coreLock_);
 }
 
@@ -644,9 +644,13 @@ Core::~Core(){
 	if (physFSInitted_) {
 		PHYSFS_deinit();
 	}
+	logfile_.close();
 }
 
 Core::Core(){
 	coreLock_ = SDL_CreateMutex();
 	physFSInitted_ = false;
+
+	// open log file
+	logfile_.open("trusslog.txt", std::ios::out);
 }
