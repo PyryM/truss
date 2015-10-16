@@ -143,7 +143,7 @@ namespace trss {
 		void acquireMessage(trss_message* msg);
 		void releaseMessage(trss_message* msg);
 		trss_message* copyMessage(trss_message* src);
-		trss_message* allocateMessage(int dataLength);
+		trss_message* allocateMessage(size_t dataLength);
 		void deallocateMessage(trss_message* msg);
 
 		bool checkFile(const char* filename);

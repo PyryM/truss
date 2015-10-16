@@ -34,7 +34,7 @@ typedef struct Addon Addon;
 /* Message struct */
 typedef struct {
 	unsigned int message_type;
-	unsigned int data_length;
+	size_t data_length;
 	unsigned char* data;
 	unsigned int refcount;
 } trss_message;
@@ -94,7 +94,7 @@ TRSS_C_API int trss_fetch_messages(trss_interpreter_id interpreter);
 TRSS_C_API trss_message* trss_get_message(trss_interpreter_id interpreter, int message_index);
 
 /* Message management functions */
-TRSS_C_API trss_message* trss_create_message(unsigned int data_length);
+TRSS_C_API trss_message* trss_create_message(size_t data_length);
 TRSS_C_API void trss_acquire_message(trss_message* msg);
 TRSS_C_API void trss_release_message(trss_message* msg);
 TRSS_C_API trss_message* trss_copy_message(trss_message* src);

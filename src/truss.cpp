@@ -370,7 +370,7 @@ const char* trss_get_addon_version_string(trss_interpreter_id target_id, int add
 }
 
 /* Message management functions */
-trss_message* trss_create_message(unsigned int data_length){
+trss_message* trss_create_message(size_t data_length){
 	return Core::getCore()->allocateMessage(data_length);
 }
 
@@ -529,7 +529,7 @@ trss_message* Core::copyMessage(trss_message* src){
 	return newmsg;
 }
 
-trss_message* Core::allocateMessage(int dataLength){
+trss_message* Core::allocateMessage(size_t dataLength){
 	trss_message* ret = new trss_message;
 	ret->data = new unsigned char[dataLength];
 	ret->data_length = dataLength;

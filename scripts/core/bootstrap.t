@@ -14,7 +14,7 @@ trss = terralib.includecstring([[
 #define TRSS_MESSAGE_BLOB 2
 typedef struct {
 	unsigned int message_type;
-	unsigned int data_length;
+	size_t data_length;
 	unsigned char* data;
 	unsigned int refcount;
 } trss_message;
@@ -49,7 +49,7 @@ const char* trss_get_addon_version_string(trss_interpreter_id target_id, int add
 void trss_send_message(trss_interpreter_id dest, trss_message* message);
 int trss_fetch_messages(trss_interpreter_id interpreter);
 trss_message* trss_get_message(trss_interpreter_id interpreter, int message_index);
-trss_message* trss_create_message(unsigned int data_length);
+trss_message* trss_create_message(size_t data_length);
 void trss_acquire_message(trss_message* msg);
 void trss_release_message(trss_message* msg);
 trss_message* trss_copy_message(trss_message* src);
