@@ -10,7 +10,7 @@ m.MAXFACES = 21845 -- each face needs 3 vertices, to fit into 16 bit index
 
 function m.loadSTL(filename, invert)
 	local starttime = tic()
-	local srcMessage = trss.trss_load_file(filename, 0)
+	local srcMessage = trss.trss_load_file(filename)
 	if srcMessage == nil then 
 		log.error("Error: unable to open file " .. filename)
 		return nil 

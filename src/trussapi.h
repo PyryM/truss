@@ -59,15 +59,11 @@ TRSS_C_API void trss_shutdown();
 TRSS_C_API uint64_t trss_get_hp_time();
 TRSS_C_API uint64_t trss_get_hp_freq();
 
-/* File IO */
-#define TRSS_ASSET_PATH 0 /* Path where assets are stored */
-#define TRSS_SAVE_PATH 1  /* Path for saving stuff e.g. preferences */
-#define TRSS_CORE_PATH 2  /* Path for core files e.g. bootstrap.t */
-
+/* FileIO */
 /* Note that when saving the message_type field is not saved */
 TRSS_C_API int trss_check_file(const char* filename); /* returns 1 if file exists, 0 otherwise */
-TRSS_C_API trss_message* trss_load_file(const char* filename, int path_type);
-TRSS_C_API int trss_save_file(const char* filename, int path_type, trss_message* data);
+TRSS_C_API trss_message* trss_load_file(const char* filename);
+TRSS_C_API int trss_save_file(const char* filename, trss_message* data);
 
 /* Datastore functions */
 TRSS_C_API trss_message* trss_get_store_value(const char* key);

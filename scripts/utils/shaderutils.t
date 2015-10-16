@@ -2,7 +2,7 @@ local m = {}
 m.programs = {}
 
 terra m.loadFileToBGFX(filename: &int8)
-	var msg: &trss.trss_message = trss.trss_load_file(filename, 0)
+	var msg: &trss.trss_message = trss.trss_load_file(filename)
 	var ret: &bgfx.bgfx_memory = bgfx.bgfx_copy(msg.data, msg.data_length)
 	trss.trss_release_message(msg)
 	return ret

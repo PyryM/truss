@@ -30,12 +30,9 @@ void trss_log(int log_level, const char* str);
 void trss_shutdown();
 uint64_t trss_get_hp_time();
 uint64_t trss_get_hp_freq();
-#define TRSS_ASSET_PATH 0 /* Path where assets are stored */
-#define TRSS_SAVE_PATH 1  /* Path for saving stuff e.g. preferences */
-#define TRSS_CORE_PATH 2  /* Path for core files e.g. bootstrap.t */
 int trss_check_file(const char* filename);
-trss_message* trss_load_file(const char* filename, int path_type);
-int trss_save_file(const char* filename, int path_type, trss_message* data);
+trss_message* trss_load_file(const char* filename);
+int trss_save_file(const char* filename, trss_message* data);
 trss_message* trss_get_store_value(const char* key);
 int trss_set_store_value(const char* key, trss_message* val);
 int trss_set_store_value_str(const char* key, const char* msg);
@@ -100,7 +97,7 @@ end
 readArgs()
 
 function loadStringFromFile(filename)
-	local temp = trss.trss_load_file(filename, 0)
+	local temp = trss.trss_load_file(filename)
 	if temp ~= nil then
 		local ret = ffi.string(temp.data, temp.data_length)
 		trss.trss_release_message(temp)

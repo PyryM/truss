@@ -147,10 +147,10 @@ namespace trss {
 		void deallocateMessage(trss_message* msg);
 
 		bool checkFile(const char* filename);
-		trss_message* loadFile(const char* filename, int path_type);
-		trss_message* loadFileRaw(const char* filename, int path_type);
-		void saveFile(const char* filename, int path_type, trss_message* data);
-		void saveFileRaw(const char* filename, int path_type, trss_message* data);
+		trss_message* loadFile(const char* filename);
+		trss_message* loadFileRaw(const char* filename);
+		void saveFile(const char* filename, trss_message* data);
+		void saveFileRaw(const char* filename, trss_message* data);
 
 		trss_message* getStoreValue(const std::string& key);
 		int setStoreValue(const std::string& key, trss_message* val);
@@ -159,8 +159,6 @@ namespace trss {
 		~Core();
 	private:
 		static Core* core__;
-
-		std::string resolvePath(const char* filename, int path_type);
 
 		Core();
 		SDL_mutex* coreLock_;

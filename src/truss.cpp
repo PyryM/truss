@@ -125,7 +125,7 @@ void Interpreter::threadEntry() {
 	lua_setglobal(terraState_, "TRSS_INTERPRETER_ID");
 
 	// load and execute the bootstrap script
-	trss_message* bootstrap = trss_load_file("scripts/core/bootstrap.t", TRSS_CORE_PATH);
+	trss_message* bootstrap = core()->loadFile("scripts/core/bootstrap.t");
 	if (!bootstrap) {
 		std::cout << "Error loading bootstrap script.\n";
 		running_ = false;
@@ -247,13 +247,13 @@ int trss_check_file(const char* filename) {
 	return Core::getCore()->checkFile(filename);
 }
 
-trss_message* trss_load_file(const char* filename, int path_type){
-	return Core::getCore()->loadFile(filename, path_type);
+trss_message* trss_load_file(const char* filename){
+	return Core::getCore()->loadFile(filename);
 }
 
 /* Note that when saving the message_type field is not saved */
-int trss_save_file(const char* filename, int path_type, trss_message* data){
-	Core::getCore()->saveFile(filename, path_type, data);
+int trss_save_file(const char* filename, trss_message* data){
+	Core::getCore()->saveFile(filename, data);
 	return 0; // TODO: actually check for errors
 }
 
@@ -542,12 +542,6 @@ void Core::deallocateMessage(trss_message* msg){
 	delete msg;
 }
 
-std::string Core::resolvePath(const char* filename, int path_type) {
-	// just return the filename for now
-	std::string ret(filename);
-	return ret;
-}
-
 bool Core::checkFile(const char* filename) {
 	if (!physFSInitted_) {
 		logMessage(TRSS_LOG_WARNING, "PhysFS not initted: checkFile always returns false.");
@@ -557,13 +551,10 @@ bool Core::checkFile(const char* filename) {
 	return PHYSFS_exists(filename) > 0;
 }
 
-trss_message* Core::loadFileRaw(const char* filename, int path_type) {
-	std::string truepath = resolvePath(filename, path_type);
-
+trss_message* Core::loadFileRaw(const char* filename) {
 	std::streampos size;
-	std::ifstream file(truepath.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
-	if (file.is_open())
-	{
+	std::ifstream file(filename, std::ios::in|std::ios::binary|std::ios::ate);
+	if (file.is_open())	{
 		size = file.tellg();
 		trss_message* ret = allocateMessage((int)size);
 		file.seekg (0, std::ios::beg);
@@ -577,10 +568,11 @@ trss_message* Core::loadFileRaw(const char* filename, int path_type) {
 	} 
 }
 
-trss_message* Core::loadFile(const char* filename, int path_type) {
+trss_message* Core::loadFile(const char* filename) {
 	if (!physFSInitted_) {
-		logMessage(TRSS_LOG_WARNING, "PhysFS not initted: falling back to raw loading.");
-		return loadFileRaw(filename, path_type);
+		logMessage(TRSS_LOG_ERROR, "Cannot load file: PhysFS not initted.");
+		logMessage(TRSS_LOG_ERROR, filename);
+		return NULL;
 	}
 
 	if (PHYSFS_exists(filename) <= 0) {
@@ -598,10 +590,11 @@ trss_message* Core::loadFile(const char* filename, int path_type) {
 	return ret;
 }
 
-void Core::saveFile(const char* filename, int path_type, trss_message* data) {
+void Core::saveFile(const char* filename, trss_message* data) {
 	if (!physFSInitted_) {
-		logMessage(TRSS_LOG_WARNING, "PhysFS not initted: falling back to raw saving.");
-		saveFileRaw(filename, path_type, data);
+		logMessage(TRSS_LOG_ERROR, "Cannot save file; PhysFS not initted.");
+		logMessage(TRSS_LOG_ERROR, filename);
+		return;
 	}
 
 	PHYSFS_file* myfile = PHYSFS_openWrite(filename);
@@ -609,11 +602,9 @@ void Core::saveFile(const char* filename, int path_type, trss_message* data) {
 	PHYSFS_close(myfile);
 }
 
-void Core::saveFileRaw(const char* filename, int path_type, trss_message* data) {
-	std::string truepath = resolvePath(filename, path_type);
-
+void Core::saveFileRaw(const char* filename, trss_message* data) {
 	std::ofstream outfile;
-	outfile.open(truepath.c_str(), std::ios::binary | std::ios::out);
+	outfile.open(filename, std::ios::binary | std::ios::out);
 	outfile.write((char*)(data->data), data->data_length);
 	outfile.close();
 }
