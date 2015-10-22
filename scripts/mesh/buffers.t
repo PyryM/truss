@@ -196,10 +196,10 @@ function m.updateDynamicBGFXBuffers(data)
 		return
 	end
 
-	bgfx.bgfx_update_dynamic_index_buffer(data.ibh, 
+	bgfx.bgfx_update_dynamic_index_buffer(data.ibh, 0,
 		 bgfx.bgfx_make_ref(data.indices, data.indexDataSize))
 
-	bgfx.bgfx_update_dynamic_vertex_buffer(data.vbh, 
+	bgfx.bgfx_update_dynamic_vertex_buffer(data.vbh, 0,
 		 bgfx.bgfx_make_ref(data.verts, data.vertDataSize))
 end
 

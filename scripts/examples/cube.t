@@ -183,12 +183,11 @@ function drawCube()
 	modelmat[14] = -10.0 -- put it in front of the camera (which faces z?)
 
 	bgfx.bgfx_set_transform(modelmat, 1) -- only one matrix in array
-	bgfx.bgfx_set_program(program)
 	bgfx.bgfx_set_vertex_buffer(vbh, 0, bgfx.UINT32_MAX)
 	bgfx.bgfx_set_index_buffer(ibh, 0, bgfx.UINT32_MAX)
 
 	bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)
-	bgfx.bgfx_submit(0, 0)
+	bgfx.bgfx_submit(0, program, 0)
 end
 
 terra calcDeltaTime(startTime: uint64)

@@ -40,9 +40,12 @@ end
 
 function PBRRenderer:applyMaterial(material)
 	if material.apply then
+		if material.program then
+			self.activeProgram = material.program
+		end
 		material:apply()
 	elseif material.texture then
-		bgfx.bgfx_set_program(self.texpgm)
+		self.activeProgram = self.texpgm
 		local mc = (self.useColors and material.color) or {}
 		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
 		local roughness = material.roughness or 0.4
@@ -56,7 +59,7 @@ function PBRRenderer:applyMaterial(material)
 		local roughness = material.roughness or 0.4
 		local tint = material.fresnel or {}
 		self:setPBRParams(tint[1] or 0.8, tint[2] or 0.8, tint[3] or 0.9, roughness)
-		bgfx.bgfx_set_program(self.pgm)
+		self.activeProgram = self.pgm
 	end
 end
 
