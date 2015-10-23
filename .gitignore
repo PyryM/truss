@@ -21,4 +21,5 @@ data/
 *.dll
 *.zip
 *.cap
+*.bin
 trusslog.txt
