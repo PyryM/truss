@@ -281,6 +281,11 @@ void bgfx_cb_fatal(bgfx_callback_interface_t* _this, bgfx_fatal_t _code, const c
 	trss_log(TRSS_LOG_CRITICAL, ss.str().c_str());
 }
 
+void bgfx_cb_trace_vargs(bgfx_callback_interface_t* _this, const char* _filePath, uint16_t _line, const char* _format, va_list _argList) {
+	// oh boy what is this supposed to do?
+	trss_log(TRSS_LOG_CRITICAL, "I have no clue what the trace_vargs callback is supposed to do??");
+}
+
 uint32_t bgfx_cb_cache_read_size(bgfx_callback_interface_t* _this, uint64_t _id) {
 	trss_log(TRSS_LOG_WARNING, "bgfx_cb_cache_read_size not implemented.");
 	return 0;
@@ -322,6 +327,7 @@ void bgfx_cb_capture_frame(bgfx_callback_interface_t* _this, const void* _data, 
 
 static const bgfx_callback_vtbl sdl_vtbl = {
 	bgfx_cb_fatal,
+	bgfx_cb_trace_vargs,
 	bgfx_cb_cache_read_size,
 	bgfx_cb_cache_read,
 	bgfx_cb_cache_write,

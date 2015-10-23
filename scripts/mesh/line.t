@@ -173,10 +173,8 @@ function LineMaterial:init(color, thickness)
 end
 
 function LineMaterial:apply()
-	bgfx.bgfx_set_program(self.program)
 	bgfx.bgfx_set_uniform(self.color_u, self.color4f, 1)
 	bgfx.bgfx_set_uniform(self.thickness_u, self.thickness4f, 1)
-	--trss.trss_log(0, "Applying material...")
 end
 
 function Line:createDefaultMaterial(color, thickness)

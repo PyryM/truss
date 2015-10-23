@@ -174,9 +174,12 @@ end
 
 function SimpleRenderer:applyMaterial(material)
 	if material.apply then
+		if material.program then
+			self.activeProgram = material.program
+		end
 		material:apply()
 	elseif material.texture then
-		bgfx.bgfx_set_program(self.texpgm)
+		self.activeProgram = self.texpgm
 		local mc = (self.useColors and material.color) or {}
 		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
 		bgfx.bgfx_set_texture(0, self.s_texAlbedo, material.texture, bgfx.UINT32_MAX)
@@ -184,7 +187,7 @@ function SimpleRenderer:applyMaterial(material)
 		material = material or {}
 		local mc = (self.useColors and material.color) or {}
 		self:setModelColor(mc[1] or 1, mc[2] or 1, mc[3] or 1)
-		bgfx.bgfx_set_program(self.pgm)
+		self.activeProgram = self.pgm
 	end
 end
 
@@ -215,7 +218,7 @@ function SimpleRenderer:renderGeo(geo, mtx, material)
 	end
 
 	bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)
-	bgfx.bgfx_submit(self.viewid, 0)
+	bgfx.bgfx_submit(self.viewid, self.activeProgram, 0)
 end
 
 function SimpleRenderer:render()

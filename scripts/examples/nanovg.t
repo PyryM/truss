@@ -2,15 +2,14 @@
 --
 -- example of using nanovg
 
-bgfx = libs.bgfx
-bgfx_const = libs.bgfx_const
-terralib = libs.terralib
-trss = libs.trss
-sdl = libs.sdl
-sdlPointer = libs.sdlPointer
-TRSS_ID = libs.TRSS_ID
-TRSS_VERSION = libs.TRSS_VERSION
-nanovg = libs.nanovg
+bgfx = core.bgfx
+bgfx_const = core.bgfx_const
+terralib = core.terralib
+trss = core.trss
+sdl = raw_addons.sdl.functions
+sdlPointer = raw_addons.sdl.pointer
+TRSS_ID = core.TRSS_ID
+nanovg = core.nanovg
 
 width = 800
 height = 600
@@ -20,7 +19,7 @@ mousex, mousey = 0, 0
 
 function init()
 	trss.trss_log(TRSS_ID, "nanovg.t init")
-	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS (' .. TRSS_VERSION ..') TEST')
+	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS (' .. core.TRSS_VERSION ..') TEST')
 	initBGFX()
 	initNVG()
 	local rendererType = bgfx.bgfx_get_renderer_type()

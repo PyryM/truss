@@ -5,11 +5,10 @@
  * vim: set tabstop=4 expandtab:
  */
 
-/* Macroless version of header to load via terra */
-
 #ifndef BGFX_C99_H_HEADER_GUARD
 #define BGFX_C99_H_HEADER_GUARD
 
+//#include <stdarg.h>  // va_list
 #include <stdbool.h> // bool
 #include <stdint.h>  // uint32_t
 #include <stdlib.h>  // size_t
@@ -72,6 +71,7 @@ typedef enum bgfx_attrib
 typedef enum bgfx_attrib_type
 {
     BGFX_ATTRIB_TYPE_UINT8,
+    BGFX_ATTRIB_TYPE_UINT10,
     BGFX_ATTRIB_TYPE_INT16,
     BGFX_ATTRIB_TYPE_HALF,
     BGFX_ATTRIB_TYPE_FLOAT,
@@ -103,21 +103,44 @@ typedef enum bgfx_texture_format
     BGFX_TEXTURE_FORMAT_UNKNOWN,
 
     BGFX_TEXTURE_FORMAT_R1,
+    BGFX_TEXTURE_FORMAT_A8,
     BGFX_TEXTURE_FORMAT_R8,
+    BGFX_TEXTURE_FORMAT_R8I,
+    BGFX_TEXTURE_FORMAT_R8U,
+    BGFX_TEXTURE_FORMAT_R8S,
     BGFX_TEXTURE_FORMAT_R16,
+    BGFX_TEXTURE_FORMAT_R16I,
+    BGFX_TEXTURE_FORMAT_R16U,
     BGFX_TEXTURE_FORMAT_R16F,
-    BGFX_TEXTURE_FORMAT_R32,
+    BGFX_TEXTURE_FORMAT_R16S,
+    BGFX_TEXTURE_FORMAT_R32I,
+    BGFX_TEXTURE_FORMAT_R32U,
     BGFX_TEXTURE_FORMAT_R32F,
     BGFX_TEXTURE_FORMAT_RG8,
+    BGFX_TEXTURE_FORMAT_RG8I,
+    BGFX_TEXTURE_FORMAT_RG8U,
+    BGFX_TEXTURE_FORMAT_RG8S,
     BGFX_TEXTURE_FORMAT_RG16,
+    BGFX_TEXTURE_FORMAT_RG16I,
+    BGFX_TEXTURE_FORMAT_RG16U,
     BGFX_TEXTURE_FORMAT_RG16F,
-    BGFX_TEXTURE_FORMAT_RG32,
+    BGFX_TEXTURE_FORMAT_RG16S,
+    BGFX_TEXTURE_FORMAT_RG32I,
+    BGFX_TEXTURE_FORMAT_RG32U,
     BGFX_TEXTURE_FORMAT_RG32F,
+    BGFX_TEXTURE_FORMAT_RGB9E5F,
     BGFX_TEXTURE_FORMAT_BGRA8,
     BGFX_TEXTURE_FORMAT_RGBA8,
+    BGFX_TEXTURE_FORMAT_RGBA8I,
+    BGFX_TEXTURE_FORMAT_RGBA8U,
+    BGFX_TEXTURE_FORMAT_RGBA8S,
     BGFX_TEXTURE_FORMAT_RGBA16,
+    BGFX_TEXTURE_FORMAT_RGBA16I,
+    BGFX_TEXTURE_FORMAT_RGBA16U,
     BGFX_TEXTURE_FORMAT_RGBA16F,
-    BGFX_TEXTURE_FORMAT_RGBA32,
+    BGFX_TEXTURE_FORMAT_RGBA16S,
+    BGFX_TEXTURE_FORMAT_RGBA32I,
+    BGFX_TEXTURE_FORMAT_RGBA32U,
     BGFX_TEXTURE_FORMAT_RGBA32F,
     BGFX_TEXTURE_FORMAT_R5G6B5,
     BGFX_TEXTURE_FORMAT_RGBA4,
@@ -167,47 +190,47 @@ typedef enum bgfx_backbuffer_ratio
 } bgfx_backbuffer_ratio_t;
 
 typedef struct bgfx_indirect_buffer_handle {
-	uint16_t idx;
+    uint16_t idx;
 } bgfx_indirect_buffer_handle_t;
 
 typedef struct bgfx_dynamic_index_buffer_handle {
-	uint16_t idx;
+    uint16_t idx;
 } bgfx_dynamic_index_buffer_handle_t;
 
 typedef struct bgfx_dynamic_vertex_buffer_handle {
-	uint16_t idx;
+    uint16_t idx;
 } bgfx_dynamic_vertex_buffer_handle_t;
 
 typedef struct bgfx_frame_buffer_handle {
-	uint16_t idx;
+    uint16_t idx;
 } bgfx_frame_buffer_handle_t;
 
 typedef struct bgfx_index_buffer_handle {
-	uint16_t idx;
+    uint16_t idx;
 } bgfx_index_buffer_handle_t;
 
 typedef struct bgfx_program_handle {
-	uint16_t idx;
+    uint16_t idx;
 } bgfx_program_handle_t;
 
 typedef struct bgfx_shader_handle {
-	uint16_t idx;
+    uint16_t idx;
 } bgfx_shader_handle_t;
 
 typedef struct bgfx_texture_handle {
-	uint16_t idx;
+    uint16_t idx;
 } bgfx_texture_handle_t;
 
 typedef struct bgfx_uniform_handle {
-	uint16_t idx;
+    uint16_t idx;
 } bgfx_uniform_handle_t;
 
 typedef struct bgfx_vertex_buffer_handle {
-	uint16_t idx;
+    uint16_t idx;
 } bgfx_vertex_buffer_handle_t;
 
 typedef struct bgfx_vertex_decl_handle {
-	uint16_t idx;
+    uint16_t idx;
 } bgfx_vertex_decl_handle_t;
 
 /**/
@@ -253,12 +276,23 @@ typedef struct bgfx_hmd
 } bgfx_hmd_t;
 
 /**/
+typedef struct bgfx_stats
+{
+    uint64_t cpuTime;
+    uint64_t cpuTimerFreq;
+
+    uint64_t gpuTime;
+    uint64_t gpuTimerFreq;
+
+} bgfx_stats_t;
+
+/**/
 typedef struct bgfx_vertex_decl
 {
     uint32_t hash;
     uint16_t stride;
     uint16_t offset[BGFX_ATTRIB_COUNT];
-    uint8_t  attributes[BGFX_ATTRIB_COUNT];
+    uint16_t attributes[BGFX_ATTRIB_COUNT];
 
 } bgfx_vertex_decl_t;
 
@@ -362,9 +396,6 @@ typedef enum bgfx_fatal
 #endif // BGFX_SHARED_LIB_USE
 
 #if defined(_MSC_VER)
-#   define BGFX_VTBL_CALL __stdcall
-#   define BGFX_VTBL_THIS  // passed via ecx
-#   define BGFX_VTBL_THIS_ // passed via ecx
 #   if BGFX_SHARED_LIB_BUILD
 #       define BGFX_SHARED_LIB_API __declspec(dllexport)
 #   elif BGFX_SHARED_LIB_USE
@@ -373,9 +404,6 @@ typedef enum bgfx_fatal
 #       define BGFX_SHARED_LIB_API
 #   endif // BGFX_SHARED_LIB_*
 #else
-#   define BGFX_VTBL_CALL
-#   define BGFX_VTBL_THIS  BGFX_VTBL_INTEFRACE _this
-#   define BGFX_VTBL_THIS_ BGFX_VTBL_INTEFRACE _this,
 #   define BGFX_SHARED_LIB_API
 #endif // defined(_MSC_VER)
 
@@ -386,51 +414,10 @@ typedef enum bgfx_fatal
 #endif // defined(__cplusplus)
 
 /**/
-typedef struct bgfx_callback_interface
-{
-    const struct bgfx_callback_vtbl* vtbl;
-
-} bgfx_callback_interface_t;
+typedef struct bgfx_callback_interface bgfx_callback_interface_t;
 
 /**/
-typedef struct bgfx_callback_vtbl
-{
-#   define BGFX_VTBL_INTEFRACE bgfx_callback_interface_t
-
-    void* ctor;
-    void (BGFX_VTBL_CALL *fatal)(BGFX_VTBL_THIS_ bgfx_fatal_t _code, const char* _str);
-    uint32_t (BGFX_VTBL_CALL *cache_read_size)(BGFX_VTBL_THIS_ uint64_t _id);
-    bool (BGFX_VTBL_CALL *cache_read)(BGFX_VTBL_THIS_ uint64_t _id, void* _data, uint32_t _size);
-    void (BGFX_VTBL_CALL *cache_write)(BGFX_VTBL_THIS_ uint64_t _id, const void* _data, uint32_t _size);
-    void (BGFX_VTBL_CALL *screen_shot)(BGFX_VTBL_THIS_ const char* _filePath, uint32_t _width, uint32_t _height, uint32_t _pitch, const void* _data, uint32_t _size, bool _yflip);
-    void (BGFX_VTBL_CALL *capture_begin)(BGFX_VTBL_THIS_ uint32_t _width, uint32_t _height, uint32_t _pitch, bgfx_texture_format_t _format, bool _yflip);
-    void (BGFX_VTBL_CALL *capture_end)(BGFX_VTBL_THIS);
-    void (BGFX_VTBL_CALL *capture_frame)(BGFX_VTBL_THIS_ const void* _data, uint32_t _size);
-
-#   undef BGFX_VTBL_INTEFRACE
-
-} bgfx_callback_vtbl_t;
-
-/**/
-typedef struct bgfx_reallocator_interface
-{
-    const struct bgfx_reallocator_vtbl* vtbl;
-
-} bgfx_reallocator_interface_t;
-
-/**/
-typedef struct bgfx_reallocator_vtbl
-{
-#   define BGFX_VTBL_INTEFRACE bgfx_reallocator_interface_t
-
-    void* ctor;
-    void* (BGFX_VTBL_CALL *alloc)(BGFX_VTBL_THIS_ size_t _size, size_t _align, const char* _file, uint32_t _line);
-    void  (BGFX_VTBL_CALL *free)(BGFX_VTBL_THIS_ void* _ptr, size_t _align, const char* _file, uint32_t _line);
-    void* (BGFX_VTBL_CALL *realloc)(BGFX_VTBL_THIS_ void* _ptr, size_t _size, size_t _align, const char* _file, uint32_t _line);
-
-#   undef BGFX_VTBL_INTEFRACE
-
-} bgfx_reallocator_vtbl_t;
+typedef struct bgfx_reallocator_interface bgfx_reallocator_interface_t;
 
 /**/
 BGFX_C_API void bgfx_vertex_decl_begin(bgfx_vertex_decl_t* _decl, bgfx_renderer_type_t _renderer);
@@ -469,7 +456,7 @@ BGFX_C_API uint8_t bgfx_get_supported_renderers(bgfx_renderer_type_t _enum[BGFX_
 BGFX_C_API const char* bgfx_get_renderer_name(bgfx_renderer_type_t _type);
 
 /**/
-BGFX_C_API void bgfx_init(bgfx_renderer_type_t _type, uint16_t _vendorId, uint16_t _deviceId, bgfx_callback_interface_t* _callback, bgfx_reallocator_interface_t* _allocator);
+BGFX_C_API bool bgfx_init(bgfx_renderer_type_t _type, uint16_t _vendorId, uint16_t _deviceId, bgfx_callback_interface_t* _callback, bgfx_reallocator_interface_t* _allocator);
 
 /**/
 BGFX_C_API void bgfx_shutdown();
@@ -488,6 +475,9 @@ BGFX_C_API const bgfx_caps_t* bgfx_get_caps();
 
 /**/
 BGFX_C_API const bgfx_hmd_t* bgfx_get_hmd();
+
+/**/
+BGFX_C_API const bgfx_stats_t* bgfx_get_stats();
 
 /**/
 BGFX_C_API const bgfx_memory_t* bgfx_alloc(uint32_t _size);
@@ -532,7 +522,7 @@ BGFX_C_API bgfx_dynamic_index_buffer_handle_t bgfx_create_dynamic_index_buffer(u
 BGFX_C_API bgfx_dynamic_index_buffer_handle_t bgfx_create_dynamic_index_buffer_mem(const bgfx_memory_t* _mem, uint16_t _flags);
 
 /**/
-BGFX_C_API void bgfx_update_dynamic_index_buffer(bgfx_dynamic_index_buffer_handle_t _handle, const bgfx_memory_t* _mem);
+BGFX_C_API void bgfx_update_dynamic_index_buffer(bgfx_dynamic_index_buffer_handle_t _handle, uint32_t _startIndex, const bgfx_memory_t* _mem);
 
 /**/
 BGFX_C_API void bgfx_destroy_dynamic_index_buffer(bgfx_dynamic_index_buffer_handle_t _handle);
@@ -544,7 +534,7 @@ BGFX_C_API bgfx_dynamic_vertex_buffer_handle_t bgfx_create_dynamic_vertex_buffer
 BGFX_C_API bgfx_dynamic_vertex_buffer_handle_t bgfx_create_dynamic_vertex_buffer_mem(const bgfx_memory_t* _mem, const bgfx_vertex_decl_t* _decl, uint16_t _flags);
 
 /**/
-BGFX_C_API void bgfx_update_dynamic_vertex_buffer(bgfx_dynamic_vertex_buffer_handle_t _handle, const bgfx_memory_t* _mem);
+BGFX_C_API void bgfx_update_dynamic_vertex_buffer(bgfx_dynamic_vertex_buffer_handle_t _handle, uint32_t _startVertex, const bgfx_memory_t* _mem);
 
 /**/
 BGFX_C_API void bgfx_destroy_dynamic_vertex_buffer(bgfx_dynamic_vertex_buffer_handle_t _handle);
@@ -649,7 +639,7 @@ BGFX_C_API bgfx_uniform_handle_t bgfx_create_uniform(const char* _name, bgfx_uni
 BGFX_C_API void bgfx_destroy_uniform(bgfx_uniform_handle_t _handle);
 
 /**/
-BGFX_C_API void bgfx_set_clear_color(uint8_t _index, const float _rgba[4]);
+BGFX_C_API void bgfx_set_palette_color(uint8_t _index, const float _rgba[4]);
 
 /**/
 BGFX_C_API void bgfx_set_view_name(uint8_t _id, const char* _name);
@@ -677,6 +667,9 @@ BGFX_C_API void bgfx_set_view_transform(uint8_t _id, const void* _view, const vo
 
 /**/
 BGFX_C_API void bgfx_set_view_transform_stereo(uint8_t _id, const void* _view, const void* _projL, uint8_t _flags, const void* _projR);
+
+/**/
+BGFX_C_API void bgfx_set_view_remap(uint8_t _id, uint8_t _num, const void* _remap);
 
 /**/
 BGFX_C_API void bgfx_set_marker(const char* _marker);
@@ -733,19 +726,19 @@ BGFX_C_API void bgfx_set_instance_data_from_vertex_buffer(bgfx_vertex_buffer_han
 BGFX_C_API void bgfx_set_instance_data_from_dynamic_vertex_buffer(bgfx_dynamic_vertex_buffer_handle_t _handle, uint32_t _startVertex, uint32_t _num);
 
 /**/
-BGFX_C_API void bgfx_set_program(bgfx_program_handle_t _handle);
-
-/**/
 BGFX_C_API void bgfx_set_texture(uint8_t _stage, bgfx_uniform_handle_t _sampler, bgfx_texture_handle_t _handle, uint32_t _flags);
 
 /**/
 BGFX_C_API void bgfx_set_texture_from_frame_buffer(uint8_t _stage, bgfx_uniform_handle_t _sampler, bgfx_frame_buffer_handle_t _handle, uint8_t _attachment, uint32_t _flags);
 
 /**/
-BGFX_C_API uint32_t bgfx_submit(uint8_t _id, int32_t _depth);
+BGFX_C_API uint32_t bgfx_touch(uint8_t _id);
 
 /**/
-BGFX_C_API uint32_t bgfx_submit_indirect(uint8_t _id, bgfx_indirect_buffer_handle_t _indirectHandle, uint16_t _start, uint16_t _num, int32_t _depth);
+BGFX_C_API uint32_t bgfx_submit(uint8_t _id, bgfx_program_handle_t _handle, int32_t _depth);
+
+/**/
+BGFX_C_API uint32_t bgfx_submit_indirect(uint8_t _id, bgfx_program_handle_t _handle, bgfx_indirect_buffer_handle_t _indirectHandle, uint16_t _start, uint16_t _num, int32_t _depth);
 
 /**/
 BGFX_C_API void bgfx_set_image(uint8_t _stage, bgfx_uniform_handle_t _sampler, bgfx_texture_handle_t _handle, uint8_t _mip, bgfx_access_t _access, bgfx_texture_format_t _format);
@@ -776,6 +769,9 @@ BGFX_C_API uint32_t bgfx_dispatch_indirect(uint8_t _id, bgfx_program_handle_t _h
 
 /**/
 BGFX_C_API void bgfx_discard();
+
+/**/
+BGFX_C_API void bgfx_blit(uint8_t _id, bgfx_texture_handle_t _dst, uint8_t _dstMip, uint16_t _dstX, uint16_t _dstY, uint16_t _dstZ, bgfx_texture_handle_t _src, uint8_t _srcMip, uint16_t _srcX, uint16_t _srcY, uint16_t _srcZ, uint16_t _width, uint16_t _height, uint16_t _depth);
 
 /**/
 BGFX_C_API void bgfx_save_screen_shot(const char* _filePath);

@@ -10,8 +10,8 @@
 // tell bgfx that it's using a shared library
 #define BGFX_SHARED_LIB_USE 1
 
-#include <bgfx.c99.h>
-#include <bgfxplatform.c99.h>
+#include <c99/bgfx.h>
+#include <c99/bgfxplatform.h>
 
 #ifdef __cplusplus
 class SDLAddon;

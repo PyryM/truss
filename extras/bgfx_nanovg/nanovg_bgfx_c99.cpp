@@ -32,7 +32,7 @@
 #include <math.h>
 #include "nanovg.h"
 
-#include <bgfx.c99.h>
+#include <c99/bgfx.h>
 // TODO: move this define somewhere more useful
 #define BGFX_INVALID_HANDLE_IDX UINT16_MAX
 
@@ -563,7 +563,6 @@ namespace
 		{
 			if (2 < paths[i].fillCount)
 			{
-				bgfx_set_program(gl->prog);
 				bgfx_set_state(0, 0);
 				bgfx_set_stencil(0
 					| BGFX_STENCIL_TEST_ALWAYS
@@ -581,7 +580,7 @@ namespace
 				bgfx_set_transient_vertex_buffer(&gl->tvb, 0, UINT32_MAX);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 				fan(paths[i].fillOffset, paths[i].fillCount);
-				bgfx_submit(gl->viewid, 0);
+				bgfx_submit(gl->viewid, gl->prog, 0);
 			}
 		}
 
@@ -593,7 +592,6 @@ namespace
 			// Draw fringes
 			for (i = 0; i < npaths; i++)
 			{
-				bgfx_set_program(gl->prog);
 				bgfx_set_state(gl->state
 					| BGFX_STATE_PT_TRISTRIP
 					, 0);
@@ -606,12 +604,11 @@ namespace
 					, 0);
 				bgfx_set_transient_vertex_buffer(&gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
-				bgfx_submit(gl->viewid, 0);
+				bgfx_submit(gl->viewid, gl->prog, 0);
 			}
 		}
 
 		// Draw fill
-		bgfx_set_program(gl->prog);
 		bgfx_set_state(gl->state, 0);
 		bgfx_set_transient_vertex_buffer(&gl->tvb, call->vertexOffset, call->vertexCount);
 		bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
@@ -622,7 +619,7 @@ namespace
 				| BGFX_STENCIL_OP_FAIL_Z_ZERO
 				| BGFX_STENCIL_OP_PASS_Z_ZERO
 				, 0);
-		bgfx_submit(gl->viewid, 0);
+		bgfx_submit(gl->viewid, gl->prog, 0);
 	}
 
 	static void glnvg__convexFill(struct GLNVGcontext* gl, struct GLNVGcall* call)
@@ -635,12 +632,11 @@ namespace
 		for (i = 0; i < npaths; i++)
 		{
 			if (paths[i].fillCount == 0) continue;
-			bgfx_set_program(gl->prog);
 			bgfx_set_state(gl->state, 0);
 			bgfx_set_transient_vertex_buffer(&gl->tvb, 0, UINT32_MAX);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 			fan(paths[i].fillOffset, paths[i].fillCount);
-			bgfx_submit(gl->viewid, 0);
+			bgfx_submit(gl->viewid, gl->prog, 0);
 		}
 
 		if (gl->edgeAntiAlias)
@@ -648,13 +644,12 @@ namespace
 			// Draw fringes
 			for (i = 0; i < npaths; i++)
 			{
-				bgfx_set_program(gl->prog);
 				bgfx_set_state(gl->state
 					| BGFX_STATE_PT_TRISTRIP
 					, 0);
 				bgfx_set_transient_vertex_buffer(&gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
-				bgfx_submit(gl->viewid, 0);
+				bgfx_submit(gl->viewid, gl->prog, 0);
 			}
 		}
 	}
@@ -669,14 +664,13 @@ namespace
 		// Draw Strokes
 		for (i = 0; i < npaths; i++)
 		{
-			bgfx_set_program(gl->prog);
 			bgfx_set_state(gl->state
 				| BGFX_STATE_PT_TRISTRIP
 				, 0);
 			bgfx_set_transient_vertex_buffer(&gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
-			bgfx_submit(gl->viewid, 0);
+			bgfx_submit(gl->viewid, gl->prog, 0);
 		}
 	}
 
@@ -686,11 +680,10 @@ namespace
 		{
 			nvgRenderSetUniforms(gl, call->uniformOffset, call->image);
 
-			bgfx_set_program(gl->prog);
 			bgfx_set_state(gl->state, 0);
 			bgfx_set_transient_vertex_buffer(&gl->tvb, call->vertexOffset, call->vertexCount);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
-			bgfx_submit(gl->viewid, 0);
+			bgfx_submit(gl->viewid, gl->prog, 0);
 		}
 	}
 

@@ -201,7 +201,7 @@ local vstr = ffi.string(trss.trss_get_version_string())
 
 -- these are important enough to just be dumped into the global namespace
 bgfx = terralib.includec("include/bgfx_truss.c99.h")
-bgfx_const = terralib.loadstring(loadStringFromFile("scripts/bgfx_constants.t"))()
+bgfx_const = truss_import("bgfx_constants.t")
 nanovg = terralib.includec("include/nanovg_terra.h")
 
 core = {}

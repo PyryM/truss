@@ -1,6 +1,6 @@
 IMPORTANT:
-currently truss is known to work with bgfx commit
-3813b28e9bdbad309e3f77dafb78b10a5818888e
+truss is currently using bgfx commit
+f7130318c0cf62f42ae4b8a76633c9e09409f32b
 
 Windows (vs2013):
 	Dependencies: bgfx, bx, terra, sdl
