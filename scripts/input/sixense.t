@@ -22,12 +22,16 @@ function m.init()
 	else
 		log.info("Sixense SDK connected")
 	end
+	-- update with SIXENSE_MAX_CONTROLLERS just to populate the
+	-- m.controllers structure for all the possible controllers
+	-- (unused controllers will just be filled with zeroes)
+	m.updateControllers_(sixense_.SIXENSE_MAX_CONTROLLERS)
 	return true
 end
 
 function m.update()
 	sixense_.sixenseGetAllNewestData(m.data)
-	m.updateControllers_()
+	m.updateControllers_(m.numControllers())
 end
 
 local function interpretController(src, dest)
@@ -52,13 +56,13 @@ local function interpretController(src, dest)
 	dest.buttonBumper = band(bstate, sixense_.SIXENSE_BUTTON_BUMPER)
 
 	-- info
-	dest.docked = src.is_docked > 0
-	dest.hand   = src.which_hand
+	dest.docked  = src.is_docked > 0
+	dest.hand    = src.which_hand
+	dest.enabled = src.enabled
 end
 
-function m.updateControllers_()
-	local maxControllers = m.numControllers()
-	for i = 1, maxControllers do
+function m.updateControllers_(nControllers)
+	for i = 1, nControllers do
 		m.controllers[i] = m.controllers[i] or {}
 		interpretController(m.data[i-1], m.controllers[i])
 	end
