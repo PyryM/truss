@@ -3,7 +3,7 @@
 -- a wrapper for the sixense (razer hydra) sdk
 
 -- ffi bitops to get button states
-local bit = require("bit")
+local bit = bit
 
 -- link the dynamic library (should only happen once ideally)
 terralib.linklibrary("sixense")
@@ -25,7 +25,9 @@ function m.init()
 	-- update with SIXENSE_MAX_CONTROLLERS just to populate the
 	-- m.controllers structure for all the possible controllers
 	-- (unused controllers will just be filled with zeroes)
-	m.updateControllers_(sixense_.SIXENSE_MAX_CONTROLLERS)
+	local maxcontrollers = sixense_.SIXENSE_MAX_CONTROLLERS
+	log.info("Max controllers: " .. maxcontrollers)
+	m.updateControllers_(maxcontrollers)
 	return true
 end
 
@@ -64,7 +66,7 @@ end
 function m.updateControllers_(nControllers)
 	for i = 1, nControllers do
 		m.controllers[i] = m.controllers[i] or {}
-		interpretController(m.data[i-1], m.controllers[i])
+		interpretController(m.data.controllers[i-1], m.controllers[i])
 	end
 end
 
