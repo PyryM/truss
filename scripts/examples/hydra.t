@@ -8,10 +8,32 @@ objloader = require('loaders/objloader.t')
 meshutils = require('mesh/mesh.t')
 grid = require('gui/grid.t')
 sixense = require('input/sixense.t')
+class = require('class')
+bgfx = core.bgfx
+bgfx_const = core.bgfx_const
 
 -- define some globals
 camera = nil
 controllers = {}
+
+-- need a special material for the 'ghost' effect
+local GhostMaterial = class("GhostMaterial")
+
+function GhostMaterial:init(color)
+    local sutils = require("utils/shaderutils.t")
+    self.program = sutils.loadProgram("vs_ghost", "fs_ghost")
+    -- TODO: share uniforms??
+    self.color_u = bgfx.bgfx_create_uniform("u_baseColor", 
+                            bgfx.BGFX_UNIFORM_TYPE_VEC4, 1)
+    self.color4f = terralib.new(float[4])
+    for i = 1,4 do 
+        self.color4f[i-1] = color[i] or 1.0 
+    end
+end
+
+function GhostMaterial:apply()
+    bgfx.bgfx_set_uniform(self.color_u, self.color4f, 1)
+end
 
 function init()
     app = scaffold.AppScaffold({
@@ -31,8 +53,11 @@ function init()
                            fresnel = {0.6, 0.6, 0.6}, 
                            color = {0.05, 0.05, 0.05}}
 
+    local ghostmaterials = {GhostMaterial({1.0, 0.0, 0.0}),
+                            GhostMaterial({0.0, 1.0, 0.0})}
+
     for i = 1,2 do
-        local curmodel = meshutils.Mesh(modelgeo, modelmaterial)
+        local curmodel = meshutils.Mesh(modelgeo, ghostmaterials[i])
         app.renderer:add(curmodel)
         controllers[i] = curmodel
     end
