@@ -157,7 +157,7 @@ end
 local LineMaterial = class("LineMaterial")
 
 function LineMaterial:init(color, thickness)
-	local sutils = truss_import("utils/shaderutils.t")
+	local sutils = require("utils/shaderutils.t")
 	self.program = sutils.loadProgram("vs_line", "fs_line")
 	-- TODO: share uniforms??
 	self.color_u = bgfx.bgfx_create_uniform("u_color", 
