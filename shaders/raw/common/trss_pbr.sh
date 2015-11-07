@@ -43,11 +43,10 @@ float distributionGGX(vec3 n, vec3 h, float alpha)
 float geometryGGX2(vec3 v, vec3 n, vec3 h, float alpha)
 {
     float VoN = dot(v, n);
-    float chi = chiGGX( VoN );
-    VoN = clamp(VoN, 0.0, 1.0);
+    VoN = clamp(VoN, 0.025, 1.0);
     float alpha2 = alpha*alpha;
 
-    return (chi * 2.0 * VoN) / (VoN + sqrt( alpha2 + (1.0-alpha2)*VoN*VoN ));
+    return (2.0 * VoN) / (VoN + sqrt( alpha2 + (1.0-alpha2)*VoN*VoN ));
 }
 
 vec3 specularGGX(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 fresnelTint, float roughness, vec3 lightColor, vec3 diffuseColor)
@@ -66,7 +65,7 @@ vec3 specularGGX(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 fresnelTint, flo
 
     // Calculate the Cook-Torrance denominator
     //float denominator = 4 * dot(normal, viewDir) * dot(normal, lightDir);
-    float denominator = max(PI * dot(viewDir, normal), 0.000001);
+    float denominator = max(PI * dot(viewDir, normal), 0.05);
 
     vec3 ks = fresnel;
     vec3 kd = vec3(1.0, 1.0, 1.0) - ks;
@@ -74,7 +73,7 @@ vec3 specularGGX(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 fresnelTint, flo
     // Accumulate the radiance
     vec3 specRadiance = lightColor * geometry * fresnel * distribution / denominator;
     return specRadiance + diffuseColor * kd;
-    //return vec3(geometry, geometry, geometry);
+    //return vec3(distribution, distribution, distribution);
 }
 
 float cookTorranceSpecular(vec3 viewDirection, vec3 lightDirection, vec3 surfaceNormal, float fresnel, float roughness)
