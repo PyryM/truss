@@ -7,6 +7,7 @@ local class = require("class")
 
 -- define some classes
 local SoloudWav = class("SoloudWav")
+local SoloudSpeech = class("SoloudSpeech")
 
 -- link the dynamic library (should only happen once ideally)
 terralib.linklibrary("soloud")
@@ -32,6 +33,15 @@ local terra castWavToSoundSource(wav: &soloud_.Wav)
     return result
 end
 
+local terra castSpeechToSoundSource(speech: &soloud_.Speech)
+    var result: &soloud_.AudioSource = [&soloud_.AudioSource](speech)
+    return result
+end
+
+function m.createSpeech()
+    return SoloudSpeech()
+end
+
 function m.loadWav(filename, alias)
     alias = alias or filename
     local data = trss.trss_load_file(filename)
@@ -53,7 +63,8 @@ function m.loadWav(filename, alias)
         log.info("Loaded " .. filename .. " --> " .. alias)
         return m.getWavByName(alias)
     else
-        log.error("Error interpreting sound file " .. filename)
+        local estring = ffi.string(soloud_.Soloud_getErrorString(m.instance_, result))
+        log.error("Error interpreting sound file " .. filename .. ": " .. estring)
         return nil
     end
 end
@@ -96,5 +107,18 @@ function SoloudWav:setLooping(looping)
     soloud_.Wav_setLooping(rawsound, loopint)
 end
 
+function SoloudSpeech:init()
+    self.pointer_ = soloud_.Speech_create()
+end
+
+function SoloudSpeech:say(text, volume, pan)
+    soloud_.Speech_setText(self.pointer_, text)
+    local aSound = castSpeechToSoundSource(self.pointer_)
+    soloud_.Soloud_playEx(m.instance_, 
+                          aSound,
+                          volume or -1.0,
+                          pan or 0.0,
+                          0, 0)
+end
 
 return m

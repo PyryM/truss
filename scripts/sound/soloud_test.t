@@ -26,11 +26,15 @@ function init()
     app.renderer:add(thegrid)
 
     soloud.init()
-    bgmusic = soloud.loadWav("sounds/tetsno.ogg")
+    --bgmusic = soloud.loadWav("sounds/tetsno.ogg")
+    bgmusic = soloud.loadWav("sounds/thingy.wav")
     bgmusic:setLooping(true)
     bgmusic:play()
 
-    hitsound = soloud.loadWav("sounds/hit.ogg")
+    hitsound = soloud.loadWav("sounds/spacebutton_2.wav")
+
+    speech = soloud.createSpeech()
+    speech:say("what words is it good at saying", 5.0)
 end
 
 function onEvent(evt)
@@ -41,7 +45,7 @@ function ourUpdate()
     camera:update(1.0 / 60.0)
     app.renderer:setCameraTransform(camera.mat)
     local volume = math.random() * 4 + 1.0
-    if math.random() < 0.10 then hitsound:play(volume) end
+    if math.random() < 0.10 and hitsound then hitsound:play(volume) end
 end
 
 function update()
