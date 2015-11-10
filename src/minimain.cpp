@@ -23,7 +23,6 @@ int main(int argc, char** argv){
 		
 	// set up physFS filesystem
 	trss::core()->initFS(argv[0], true); // mount the base directory
-	trss::core()->addFSPath("data/test.zip", "scripts/test/", 0);
 	trss::core()->setWriteDir("save");   // write into basedir/save/
 
 	trss::Interpreter* interpreter = trss::core()->spawnInterpreter("interpreter_0");

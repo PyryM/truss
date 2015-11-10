@@ -33,6 +33,8 @@ uint64_t trss_get_hp_freq();
 int trss_check_file(const char* filename);
 trss_message* trss_load_file(const char* filename);
 int trss_save_file(const char* filename, trss_message* data);
+int trss_add_fs_path(const char* path, const char* mountpath, int append);
+int trss_set_fs_savedir(const char* path);
 trss_message* trss_get_store_value(const char* key);
 int trss_set_store_value(const char* key, trss_message* val);
 int trss_set_store_value_str(const char* key, const char* msg);

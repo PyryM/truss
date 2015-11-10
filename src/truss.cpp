@@ -258,6 +258,16 @@ int trss_save_file(const char* filename, trss_message* data){
 	return 0; // TODO: actually check for errors
 }
 
+int trss_add_fs_path(const char* path, const char* mountpath, int append) {
+	core()->addFSPath(path, mountpath, append);
+	return 0;
+}
+
+int trss_set_fs_savedir(const char* path) {
+	core()->setWriteDir(path);
+	return 0;
+}
+
 /* Datastore functions */
 trss_message* trss_get_store_value(const char* key) {
 	std::string tempkey(key);

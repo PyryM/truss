@@ -64,6 +64,8 @@ TRSS_C_API uint64_t trss_get_hp_freq();
 TRSS_C_API int trss_check_file(const char* filename); /* returns 1 if file exists, 0 otherwise */
 TRSS_C_API trss_message* trss_load_file(const char* filename);
 TRSS_C_API int trss_save_file(const char* filename, trss_message* data);
+TRSS_C_API int trss_add_fs_path(const char* path, const char* mountpath, int append);
+TRSS_C_API int trss_set_fs_savedir(const char* path);
 
 /* Datastore functions */
 TRSS_C_API trss_message* trss_get_store_value(const char* key);
