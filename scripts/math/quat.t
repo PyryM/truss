@@ -27,6 +27,7 @@ function Quaternion:copy(qright)
 	self.y = qright.y
 	self.z = qright.z
 	self.w = qright.w
+	return self
 end
 
 function Quaternion:fromArray(arr)
@@ -148,6 +149,20 @@ function Quaternion:fromRotationMatrix(m)
 	local matrix = require("math/matrix.t")
 
 	return self:set(matrix.matrixToQuaternion(m.data))
+end
+
+function Quaternion:multiplyInto( a, b )
+	--from http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/code/index.htm
+
+	local qax, qay, qaz, qaw = a.x, a.y, a.z, a.w
+	local qbx, qby, qbz, qbw = b.x, b.y, b.z, b.w
+
+	self.x = qax * qbw + qaw * qbx + qay * qbz - qaz * qby
+	self.y = qay * qbw + qaw * qby + qaz * qbx - qax * qbz
+	self.z = qaz * qbw + qaw * qbz + qax * qby - qay * qbx
+	self.w = qaw * qbw - qax * qbx - qay * qby - qaz * qbz
+
+	return self
 end
 
 function Quaternion:prettystr()
