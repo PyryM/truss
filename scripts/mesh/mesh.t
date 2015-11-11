@@ -18,7 +18,7 @@ function Mesh:init(geo, mat)
 	self.mat = mat
 	self.material = mat
 
-	self.matrixWorld = Matrix4():identity()
+	self.matrix = Matrix4():identity()
 	self.quaternion = Quaternion():identity()
 	self.position = {x = 0.0, y = 0.0, z = 0.0}
 	self.scale = {x = 1.0, y = 1.0, z = 1.0}
@@ -27,7 +27,7 @@ function Mesh:init(geo, mat)
 end
 
 function Mesh:updateMatrixWorld()
-	self.matrixWorld:compose(self.quaternion, self.scale, self.position)
+	self.matrix:compose(self.quaternion, self.scale, self.position)
 end
 
 local buffer_library_ = {} -- needed for memory management reasons?

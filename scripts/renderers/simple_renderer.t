@@ -232,8 +232,9 @@ function SimpleRenderer:render()
 	for i,v in ipairs(self.objects) do
 		if v.visible then
 			if self.autoUpdateMatrices and v.updateMatrixWorld then v:updateMatrixWorld() end
-			if v.matrixWorld and v.geo then
-				tempmat:multiplyInto(rootmat, v.matrixWorld)
+			local mat = v.matrixWorld or v.matrix
+			if mat and v.geo then
+				tempmat:multiplyInto(rootmat, mat)
 				self:renderGeo(v.geo, tempmat, v.material)
 			end
 		end
