@@ -22,6 +22,13 @@ function Quaternion:set(x, y, z, w)
 	return self
 end
 
+function Quaternion:copy(qright)
+	self.x = qright.x
+	self.y = qright.y
+	self.z = qright.z
+	self.w = qright.w
+end
+
 function Quaternion:fromArray(arr)
 	self.x, self.y, self.z, self.w = unpack(arr)
 	return self
