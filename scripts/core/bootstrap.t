@@ -234,7 +234,24 @@ subenv.log = log
 lua_require = require
 require = truss_import
 
+function _addPaths()
+	local nargs = #execArgs
+	for i = 3,nargs do
+		if execArgs[i] == "--addpath" and i+2 <= nargs then
+			local physicalPath = execArgs[i+1]
+			local mountPath = execArgs[i+2]
+			log.info("Adding path " .. physicalPath ..
+					 " => " .. mountPath)
+			trss.trss_add_fs_path(physicalPath, 
+								  mountPath,
+								  0)
+		end
+	end
+end
+
 function _coreInit(argstring)
+	-- Set paths from command line arguments
+	_addPaths()
 	-- Load in argstring
 	local t0 = tic()
 	local fn = "scripts/" .. argstring
