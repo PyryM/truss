@@ -238,7 +238,7 @@ function _coreInit(argstring)
 	-- Load in argstring
 	local t0 = tic()
 	local fn = "scripts/" .. argstring
-	trss.trss_log(TRSS_ID, "Loading " .. fn)
+	log.info("Loading " .. fn)
 	local script = loadStringFromFile(fn)
 	local scriptfunc, loaderror = loadNamed(script, argstring)
 	if scriptfunc == nil then
@@ -248,7 +248,7 @@ function _coreInit(argstring)
 	scriptfunc()
 	subenv.init()	
 	local delta = toc(t0)
-	trss.trss_log(0, "Time to init: " .. delta)
+	log.info("Time to init: " .. delta)
 end
 
 function _coreUpdate()
