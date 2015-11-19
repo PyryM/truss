@@ -70,6 +70,32 @@ function Geometry:fromData(vertexInfo, modeldata)
 	return self:fromBuffers(modelbuffers)
 end
 
+function Geometry:bindBuffers()
+	local databuffers = self.databuffers
+
+	if not databuffers then
+		if not self.warned then
+			log.warn("Warning: geometry [" .. self.name .. "] contains no data.")
+			self.warned = true
+		end
+		return false
+	end
+
+	if databuffers.dynamic then
+		-- for some reason set_dynamic_vertex_buffer does not take a start
+		-- index argument, only the number of vertices
+		bgfx.bgfx_set_dynamic_vertex_buffer(databuffers.vbh, 
+											bgfx.UINT32_MAX)
+		bgfx.bgfx_set_dynamic_index_buffer(databuffers.ibh, 
+											0, bgfx.UINT32_MAX)
+	else
+		bgfx.bgfx_set_vertex_buffer(databuffers.vbh, 0, bgfx.UINT32_MAX)
+		bgfx.bgfx_set_index_buffer(databuffers.ibh, 0, bgfx.UINT32_MAX)
+	end
+
+	return true
+end
+
 function Geometry:release()
 	-- todo
 end

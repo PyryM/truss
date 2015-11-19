@@ -192,29 +192,13 @@ function SimpleRenderer:applyMaterial(material)
 end
 
 function SimpleRenderer:renderGeo(geo, mtx, material)
-	if not geo.databuffers then
-		if not geo.warned then
-			log.warn("Warning: geo [" .. geo.name .. "] contains no data.")
-			geo.warned = true
-		end
-		return 
+	if not geo:bindBuffers() then
+		return
 	end
 
 	bgfx.bgfx_set_transform(mtx.data, 1) -- only one matrix in array
 	if material then
 		self:applyMaterial(material)
-	end
-
-	if geo.databuffers.dynamic then
-		-- for some reason set_dynamic_vertex_buffer does not take a start
-		-- index argument, only the number of vertices
-		bgfx.bgfx_set_dynamic_vertex_buffer(geo.databuffers.vbh, 
-											bgfx.UINT32_MAX)
-		bgfx.bgfx_set_dynamic_index_buffer(geo.databuffers.ibh, 
-											0, bgfx.UINT32_MAX)
-	else
-		bgfx.bgfx_set_vertex_buffer(geo.databuffers.vbh, 0, bgfx.UINT32_MAX)
-		bgfx.bgfx_set_index_buffer(geo.databuffers.ibh, 0, bgfx.UINT32_MAX)
 	end
 
 	bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)

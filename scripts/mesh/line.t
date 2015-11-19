@@ -6,6 +6,7 @@ local class = require("class")
 local bufferutils = require("mesh/buffers.t")
 local Matrix4 = require("math/matrix.t").Matrix4
 local Quaternion = require("math/quat.t").Quaternion
+local Geometry = require("mesh/mesh.t").Geometry
 
 local Line = class("Line")
 
@@ -151,7 +152,7 @@ function Line:setPoints(lines)
 		bufferutils.createStaticBGFXBuffers(self.buffers)
 	end
 
-	self.geo = {databuffers = self.buffers}
+	self.geo = Geometry():fromBuffers(self.buffers)
 end
 
 local LineMaterial = class("LineMaterial")
