@@ -134,13 +134,15 @@ local function loadNamed(str, strname)
 	return terralib.load(loaderfunc, strname)
 end
 
+local _requirePrefixPath = ""
 function truss_import(filename, force)
+	--filename = _requirePrefixPath .. filename
 	if loadedLibs[filename] == nil or force then
 		log.info("Starting to load [" .. filename .. "]")
 		local oldmodule = loadedLibs[filename] -- only relevant if force==true
 		loadedLibs[filename] = {} -- prevent possible infinite recursion by a module trying to import itself
 		local t0 = tic()
-		local funcsource = loadStringFromFile("scripts/" .. filename)
+		local funcsource = loadStringFromFile("scripts/" .. _requirePrefixPath .. filename)
 		if funcsource == nil then
 			log.error("Error loading library [" .. filename .. "]: file does not exist.")
 			loadedLibs[filename] = nil
@@ -169,6 +171,24 @@ function truss_import_as(filename, libname, force)
 	loadedLibs[libname] = temp
 	return temp
 end
+
+-- just directly inserts a library
+function truss_insert_library(libname, libtable)
+	loadedLibs[libname] = libtable
+end
+
+-- used to import libraries that import files using relative paths
+function truss_import_relative(path, filename)
+	local oldprefix = _requirePrefixPath
+	_requirePrefixPath = path
+	local ret = truss_import(filename)
+	_requirePrefixPath = oldprefix
+	return ret
+end
+
+-- alias ffi and bit in case somebody tries to require them
+truss_insert_library("ffi", ffi)
+truss_insert_library("bit", bit)
 
 -- alias core/30log.lua to class so we can just require("class")
 truss_import_as("core/30log.lua", "class")
