@@ -12,6 +12,7 @@ local matrix = require("math/matrix.t")
 function Vec:init(x, y, z, w)
     --self.elem = {x = 0, y = 0, z = 0, w = 0}
 	self.elem = terralib.new(matrix.vec4_)
+    self.e = self.elem -- alias for convenience
     self:set(x, y, z, w)
 end
 
@@ -20,7 +21,7 @@ function Vec:set(x, y, z, w)
     e.x = x or 0.0
     e.y = y or 0.0
     e.z = z or 0.0
-    e.w = w or 0.0
+    e.w = w or 1.0
     return self
 end
 
@@ -53,6 +54,12 @@ function Vec:toDict()
     return {x = e.x, y = e.y, z = e.z, w = e.w}
 end
 
+-- basically unpack(q:toArray())
+function Vec:components()
+    local e = self.elem
+    return e.x, e.y, e.z, e.w
+end
+
 function Vec:length()
     local e = self.elem
     local x,y,z,w = e.x, e.y, e.z, e.w
@@ -78,13 +85,6 @@ function Vec:normalize()
     return self
 end
 
-local terra multiply_vec_scalar(v: &matrix.vec4_, s: float)
-    v.x = v.x * s
-    v.y = v.y * s
-    v.z = v.z * s
-    v.w = v.w * s
-end
-
 function Vec:multiplyScalar(s)
     -- Multiplying in lua is actually slightly faster than calling a
     -- terra function, probably due to function call overhead
@@ -95,6 +95,36 @@ function Vec:multiplyScalar(s)
     e.w = e.w * s
     --multiply_vec_scalar(self.elem, s)
     return self
+end
+
+function Vec:addVecs(a, b)
+    local ae = a.elem
+    local be = b.elem
+    local e = self.elem
+    e.x = ae.x + be.x
+    e.y = ae.y + be.y
+    e.z = ae.z + be.z
+    e.w = ae.w + be.w
+    return self
+end
+
+function Vec:subVecs(a, b)
+    local ae = a.elem
+    local be = b.elem
+    local e = self.elem
+    e.x = ae.x - be.x
+    e.y = ae.y - be.y
+    e.z = ae.z - be.z
+    e.w = ae.w - be.w
+    return self
+end
+
+function Vec:add(rhs)
+    return self:addVecs(self, rhs)
+end
+
+function Vec:sub(rhs)
+    return self:subVecs(self, rhs)
 end
 
 m.Vec = Vec
