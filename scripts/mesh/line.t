@@ -6,6 +6,7 @@ local class = require("class")
 local bufferutils = require("mesh/buffers.t")
 local Matrix4 = require("math/matrix.t").Matrix4
 local Quaternion = require("math/quat.t").Quaternion
+local Vector = require("math/vec.t").Vector
 local Geometry = require("mesh/mesh.t").Geometry
 
 local Line = class("Line")
@@ -47,8 +48,8 @@ function Line:init(maxpoints, dynamic)
 
 	self.matrixWorld = Matrix4():identity()
 	self.quaternion = Quaternion():identity()
-	self.position = {x = 0.0, y = 0.0, z = 0.0}
-	self.scale = {x = 1.0, y = 1.0, z = 1.0}
+	self.position = Vector(0.0, 0.0, 0.0)
+	self.scale = Vector(1.0, 1.0, 1.0)
 
 	self.visible = true
 end

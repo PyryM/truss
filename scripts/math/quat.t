@@ -10,7 +10,7 @@ local class = require("class")
 local matrix = require("math/matrix.t")
 local vec = require("math/vec.t")
 
-local Quaternion = vec.Vec:extend("Quaternion")
+local Quaternion = vec.Vector:extend("Quaternion")
 
 function Quaternion:fromEuler(euler, order)
     local c1 = math.cos( euler.x / 2 );

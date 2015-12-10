@@ -6,17 +6,17 @@ local m = {}
 
 local class = require("class")
 
-local Vec = class("Vec")
+local Vector = class("Vector")
 local matrix = require("math/matrix.t")
 
-function Vec:init(x, y, z, w)
+function Vector:init(x, y, z, w)
     --self.elem = {x = 0, y = 0, z = 0, w = 0}
 	self.elem = terralib.new(matrix.vec4_)
     self.e = self.elem -- alias for convenience
     self:set(x, y, z, w)
 end
 
-function Vec:set(x, y, z, w)
+function Vector:set(x, y, z, w)
     local e = self.elem
     e.x = x or 0.0
     e.y = y or 0.0
@@ -29,44 +29,44 @@ local terra copyvec(src: &matrix.vec4_, dest: &matrix.vec4_)
     @dest = @src
 end
 
-function Vec:copy(rhs)
+function Vector:copy(rhs)
     copyvec(rhs.elem, self.elem)
     return self
 end
 
-function Vec:fromArray(arr)
+function Vector:fromArray(arr)
     self:set(arr[1], arr[2], arr[3], arr[4])
     return self
 end
 
-function Vec:toArray(arr)
+function Vector:toArray(arr)
     local e = self.elem
     return {e.x, e.y, e.z, e.w}
 end
 
-function Vec:fromDict(d)
+function Vector:fromDict(d)
     self:set(d.x, d.y, d.z, d.w)
     return self
 end
 
-function Vec:toDict()
+function Vector:toDict()
     local e = self.elem
     return {x = e.x, y = e.y, z = e.z, w = e.w}
 end
 
 -- basically unpack(q:toArray())
-function Vec:components()
+function Vector:components()
     local e = self.elem
     return e.x, e.y, e.z, e.w
 end
 
-function Vec:length()
+function Vector:length()
     local e = self.elem
     local x,y,z,w = e.x, e.y, e.z, e.w
     return math.sqrt( x*x + y*y + z*z + w*w )
 end
 
-function Vec:normalize()
+function Vector:normalize()
     local length = self:length()
     local e = self.elem
     if length == 0.0 then
@@ -85,7 +85,7 @@ function Vec:normalize()
     return self
 end
 
-function Vec:multiplyScalar(s)
+function Vector:multiplyScalar(s)
     -- Multiplying in lua is actually slightly faster than calling a
     -- terra function, probably due to function call overhead
     local e = self.elem
@@ -97,7 +97,7 @@ function Vec:multiplyScalar(s)
     return self
 end
 
-function Vec:addVecs(a, b)
+function Vector:addVecs(a, b)
     local ae = a.elem
     local be = b.elem
     local e = self.elem
@@ -108,7 +108,7 @@ function Vec:addVecs(a, b)
     return self
 end
 
-function Vec:subVecs(a, b)
+function Vector:subVecs(a, b)
     local ae = a.elem
     local be = b.elem
     local e = self.elem
@@ -119,13 +119,13 @@ function Vec:subVecs(a, b)
     return self
 end
 
-function Vec:add(rhs)
+function Vector:add(rhs)
     return self:addVecs(self, rhs)
 end
 
-function Vec:sub(rhs)
+function Vector:sub(rhs)
     return self:subVecs(self, rhs)
 end
 
-m.Vec = Vec
+m.Vector = Vector
 return m

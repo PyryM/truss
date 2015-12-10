@@ -151,7 +151,12 @@ end
 -- https://github.com/mrdoob/three.js/blob/master/src/math/Matrix4.js
 
 -- makes the matrix be a pure rotation from a quaternion
-terra m.setMatrixFromQuat(mat: &float, x: float, y: float, z: float, w: float)
+terra m.setMatrixFromQuat(mat: &float, quat: &vec4_)
+    var x = quat.x
+    var y = quat.y
+    var z = quat.z
+    var w = quat.w
+
     var x2 = x + x 
     var y2 = y + y
     var z2 = z + z
@@ -190,25 +195,25 @@ terra m.setMatrixFromQuat(mat: &float, x: float, y: float, z: float, w: float)
 end
 
 -- applies scaling to a transform (4x4 matrix) in place
-terra m.scaleMatrix(mat: &float, sx: float, sy: float, sz: float)
-    mat[ 0 ]  = mat[0] * sx
-    mat[ 4 ]  = mat[4] * sy
-    mat[ 8 ]  = mat[8] * sz
-    mat[ 1 ]  = mat[1] * sx
-    mat[ 5 ]  = mat[5] * sy
-    mat[ 9 ]  = mat[9] * sz
-    mat[ 2 ]  = mat[2] * sx
-    mat[ 6 ]  = mat[6] * sy
-    mat[ 10 ] = mat[10] * sz
-    mat[ 3 ]  = mat[3] * sx
-    mat[ 7 ]  = mat[7] * sy
-    mat[ 11 ] = mat[11] * sz
+terra m.scaleMatrix(mat: &float, s: &vec4_)
+    mat[ 0 ]  = mat[0] * s.x
+    mat[ 4 ]  = mat[4] * s.y
+    mat[ 8 ]  = mat[8] * s.z
+    mat[ 1 ]  = mat[1] * s.x
+    mat[ 5 ]  = mat[5] * s.y
+    mat[ 9 ]  = mat[9] * s.z
+    mat[ 2 ]  = mat[2] * s.x
+    mat[ 6 ]  = mat[6] * s.y
+    mat[ 10 ] = mat[10] * s.z
+    mat[ 3 ]  = mat[3] * s.x
+    mat[ 7 ]  = mat[7] * s.y
+    mat[ 11 ] = mat[11] * s.z
 end
 
-terra m.setMatrixPosition(mat: &float, x: float, y: float, z: float)
-    mat[ 12 ] = x
-    mat[ 13 ] = y
-    mat[ 14 ] = z
+terra m.setMatrixPosition(mat: &float, p: &vec4_)
+    mat[ 12 ] = p.x
+    mat[ 13 ] = p.y
+    mat[ 14 ] = p.z
 end
 
 -- multiplies 4x4 matrices so that dest = a * b
@@ -421,12 +426,9 @@ end
 -- and composes them together into one 4x4 transformation
 function Matrix4:compose(rotationQuat, scaleVec, posVec)
     local destmat = self.data
-    m.setMatrixFromQuat(destmat, rotationQuat.x, 
-                                 rotationQuat.y, 
-                                 rotationQuat.z, 
-                                 rotationQuat.w)
-    m.scaleMatrix(destmat, scaleVec.x, scaleVec.y, scaleVec.z)
-    m.setMatrixPosition(destmat, posVec.x, posVec.y, posVec.z)
+    m.setMatrixFromQuat(destmat, rotationQuat.elem)
+    m.scaleMatrix(destmat, scaleVec.elem)
+    m.setMatrixPosition(destmat, posVec.elem)
     return self
 end
 
@@ -460,14 +462,19 @@ function Matrix4:multiplyVector(v)
 end
 
 -- Note: this is 1-indexed, so the columns are 1,2,3,4
-function Matrix4:getColumn(idx)
+function Matrix4:getColumn(idx, dest)
     if idx <= 0 or idx > 4 then
         log.error("Error: Matrix4:getColumn expects index in range [1,4], got " .. idx)
         return nil
     end
     local s = (idx-1)*4
     local d = self.data
-    return {x = d[s], y = d[s+1], z = d[s+2], w = d[s+3]}
+    if not dest then
+        local Vector = require("math/vec.t").Vector
+        dest = Vector()
+    end
+    dest:set(d[s], d[s+1], d[s+2], d[s+3])
+    return dest
 end
 
 function Matrix4:prettystr()

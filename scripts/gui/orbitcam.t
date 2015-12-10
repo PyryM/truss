@@ -5,6 +5,7 @@
 local class = require("class")
 local Matrix4 = require("math/matrix.t").Matrix4
 local Quaternion = require("math/quat.t").Quaternion
+local Vector = require("math/vec.t").Vector
 
 local OrbitCam = class("OrbitCam")
 local sdl = addons.sdl
@@ -35,12 +36,13 @@ function OrbitCam:init()
 
     self.minrad = 0.1
     self.maxrad = 10.0
-    self.orbitpoint = {x = 0, y = 0, z = 0}
+    self.orbitpoint = Vector(0, 0, 0)
 
     self.mat = Matrix4():identity()
     self.viewmat = Matrix4():identity()
     self.quat = Quaternion():identity()
-    self.pos = {x = 0, y = 0, z = 0}
+    self.pos = Vector(0, 0, 0)
+    self.scale = Vector(1, 1, 1)
     self.dirty = false
 end
 
@@ -69,16 +71,6 @@ function OrbitCam:moveRad(dv)
     self.radTarget = math.max(self.minrad, math.min(self.maxrad, self.radTarget))
 end
 
-local function multvec3(v, s)
-    v.x, v.y, v.z = v.x * s, v.y * s, v.z * s
-end
-
-local function addvec3(a, b)
-    a.x = a.x + b.x
-    a.y = a.y + b.y
-    a.z = a.z + b.z
-end
-
 function OrbitCam:panOrbitPoint(dx, dy)
     self:updateMatrix_()
     -- pan using basis vectors from rotation matrix
@@ -87,10 +79,10 @@ function OrbitCam:panOrbitPoint(dx, dy)
     local basisY = self.mat:getColumn(2)
 
     -- orbitpoint += (bx*dx + by*dy)
-    multvec3(basisX, dx)
-    multvec3(basisY, dy)
-    addvec3(basisX, basisY)
-    addvec3(self.orbitpoint, basisX)
+    basisX:multiplyScalar(dx)
+    basisY:multiplyScalar(dy)
+    self.orbitpoint:add(basisX)
+    self.orbitpoint:add(basisY)
 end
 
 function OrbitCam:updateSDLZoom(evt)
@@ -137,13 +129,13 @@ function OrbitCam:updateMatrix_()
     local y = -self.rad * math.sin(self.phi)
     local x = rr * math.cos(self.theta)
     local z = rr * math.sin(self.theta)
-    local scale = {x=1, y=1, z=1}
+    local scale = self.scale
 
     local pos = self.pos
     local quat = self.quat
-    local op = self.orbitpoint
 
-    pos.x, pos.y, pos.z = x + op.x, y + op.y, z + op.z
+    pos:set(x, y, z)
+    pos:add(self.orbitpoint)
     quat:fromEuler({x=self.phi,
                     y=-self.theta+math.pi/2.0,
                     z=0}, 'ZYX')

@@ -3,12 +3,14 @@
 -- functions for loading meshes etc.
 
 local class = require("class")
+local vec = require("math/vec.t")
 local quat = require("math/quat.t")
 local matrix = require("math/matrix.t")
 local buffers = require("mesh/buffers.t")
 
 local Quaternion = quat.Quaternion
 local Matrix4 = matrix.Matrix4
+local Vector = vec.Vector
 
 local m = {}
 
@@ -20,8 +22,8 @@ function Mesh:init(geo, mat)
 
 	self.matrix = Matrix4():identity()
 	self.quaternion = Quaternion():identity()
-	self.position = {x = 0.0, y = 0.0, z = 0.0}
-	self.scale = {x = 1.0, y = 1.0, z = 1.0}
+	self.position = Vector(0.0, 0.0, 0.0)
+	self.scale = Vector(1.0, 1.0, 1.0)
 
 	self.visible = true
 end
