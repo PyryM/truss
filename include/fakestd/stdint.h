@@ -27,6 +27,8 @@ typedef unsigned long long uintptr_t;
 typedef long long          intmax_t;
 typedef unsigned long long uintmax_t;
 
+typedef uint64_t size_t;
+
 #define INT8_MIN           (-127-1)
 #define INT16_MIN          (-32767-1)
 #define INT32_MIN          (-2147483647-1)

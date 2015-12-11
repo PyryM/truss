@@ -6,6 +6,10 @@ for k,v in pairs(_G) do
 	lsubenv[k] = v
 end
 
+-- Have terra's include path include the 'fake' std so systems without
+-- dev tools can still run it
+terralib.includepath = terralib.includepath .. ";include/fakestd"
+
 -- Link in truss api
 trss = terralib.includecstring([[
 #include <stdint.h>
