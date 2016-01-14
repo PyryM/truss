@@ -128,4 +128,5 @@ function Vector:sub(rhs)
 end
 
 m.Vector = Vector
+m.Vec4   = Vector -- shorter alias
 return m

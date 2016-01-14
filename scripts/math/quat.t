@@ -127,4 +127,5 @@ end
 
 -- 'export' classes
 m.Quaternion = Quaternion
+m.Quat       = Quaternion -- shorter alias
 return m

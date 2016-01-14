@@ -512,5 +512,6 @@ end
 
 -- 'export' the class
 m.Matrix4 = Matrix4
+m.Mat4    = Matrix4 -- shorter alias
 
 return m
