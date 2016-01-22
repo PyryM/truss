@@ -1,5 +1,5 @@
 #include "nanovg_addon.h"
-#include <stb/stb_image.c>
+#include <stb_image.h>
 #include <iostream>
 
 NanoVGAddon::NanoVGAddon() {

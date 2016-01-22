@@ -250,7 +250,7 @@ static void fons__tmpfree(void* ptr, void* up);
 #endif // 0
 
 #define STBTT_DEF extern
-#include <stb/stb_truetype.h>
+#include <stb_truetype.h>
 
 struct FONSttFontImpl {
 	stbtt_fontinfo font;
