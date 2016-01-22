@@ -1,12 +1,14 @@
 -- premake5.lua
 
+DEPS_DIR = "../trussdeps"
+
 -- paths
-BGFX_DIR   = "../bgfx"
-BX_DIR     = "../bx"
-TERRA_DIR  = "../terra"
-SDL_DIR    = "../sdl"
-PHYSFS_DIR = "../physfs"
-STB_DIR    = "../stb"
+BGFX_DIR   = path.join(DEPS_DIR, "bgfx")
+BX_DIR     = path.join(DEPS_DIR, "bx")
+TERRA_DIR  = path.join(DEPS_DIR, "terra")
+SDL_DIR    = path.join(DEPS_DIR, "sdl")
+PHYSFS_DIR = path.join(DEPS_DIR, "physfs")
+STB_DIR    = path.join(DEPS_DIR, "stb")
 
 solution "truss"
    configurations{ "Debug", "Release" }
@@ -31,11 +33,25 @@ project "truss"
          }
 
    -- link in bgfx, bx, terra, and SDL2
-   includedirs{BGFX_DIR .. "/include", TERRA_DIR .. "/include/terra", SDL_DIR .. "/include"}
-   includedirs{BGFX_DIR .. "/3rdparty", BX_DIR .. "/include"} -- extra bgfx stuff
-   includedirs{PHYSFS_DIR, STB_DIR}                           -- other includes
-   libdirs{BGFX_DIR .. "/lib", TERRA_DIR .. "/lib", SDL_DIR .. "/lib/x64", PHYSFS_DIR .. "/lib"}
-   links{"terra", "lua51",
+   includedirs{
+               path.join(BGFX_DIR, "include"),
+               path.join(TERRA_DIR, "include/terra"),
+               path.join(SDL_DIR, "include"),
+               --path.join(BGFX_DIR, "3rdparty"), 
+               path.join(BX_DIR, "include"),
+               PHYSFS_DIR,
+               STB_DIR
+            }
+
+   libdirs{ 
+            path.join(BGFX_DIR, "lib"),
+            path.join(TERRA_DIR, "lib"),
+            path.join(SDL_DIR, "lib/x64"),
+            path.join(PHYSFS_DIR, "lib")
+           }
+
+   links{
+         "terra", "lua51",
          "SDL2", "SDL2main",
          "bgfx-shared-libRelease",
          "physfs"
