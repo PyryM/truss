@@ -405,7 +405,7 @@ typedef enum bgfx_fatal
 } bgfx_fatal_t;
 
 /**/
-typedef struct bgfx_callback_interface gfx_callback_interface_t;
+typedef struct bgfx_callback_interface bgfx_callback_interface_t;
 
 /**/
 typedef struct bgfx_callback_vtbl bgfx_callback_vtbl_t;
