@@ -12,15 +12,15 @@ solution "truss"
    configurations{ "Debug", "Release" }
    platforms{"x64"} -- it's 2015, 64bit is only option
    --architecture "x64" -- needed in premake5 but not genie?
-   location "neobuild"
+   location "build"
 
    startproject "truss"
 
 project "truss"
    kind "ConsoleApp"
    language "C++"
-   targetdir "bin"
-   location "neobuild" 
+   targetdir "."
+   location "build" 
 
    local nvg = "src/addons/bgfx_nanovg/"
    local ws  = "src/addons/websocket_client/"
