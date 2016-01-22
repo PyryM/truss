@@ -1,7 +1,7 @@
 #ifndef NANOVG_ADDON_HEADER_GUARD
 #define NANOVG_ADDON_HEADER_GUARD
 
-#include "truss.h"
+#include "../../truss.h"
 #include "nanovg.h"
 
 class NanoVGAddon : public trss::Addon {

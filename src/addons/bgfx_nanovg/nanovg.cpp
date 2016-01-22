@@ -41,13 +41,13 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 
 // Need to have stb truetype actually implemented somehwhere
 #define STB_TRUETYPE_IMPLEMENTATION
-#include <stb/stb_truetype.h>
+#include <stb_truetype.h>
 
 BX_PRAGMA_DIAGNOSTIC_PUSH();
 BX_PRAGMA_DIAGNOSTIC_IGNORED_CLANG_GCC("-Wmissing-field-initializers");
 BX_PRAGMA_DIAGNOSTIC_IGNORED_CLANG_GCC("-Wshadow");
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.c>
+#include <stb_image.h>
 BX_PRAGMA_DIAGNOSTIC_POP();
 
 #ifdef _MSC_VER

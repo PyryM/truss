@@ -2,13 +2,7 @@ docs/
 build/
 distbins/
 lib/
-include/bgfx/
-include/SDL/
-include/stb/stb_image.c
-include/stb/stb_rect_pack.h
-include/stb/stb_textedit.h
-include/stb/stb_truetype.h
-include/terra/
+neobuild/
 models/
 sounds/
 temp/
@@ -17,10 +11,12 @@ datasets/
 data/
 *.exe
 *.pdb
+*.idb
 *.lib
 *.exp
 *.dll
 *.zip
 *.cap
 *.bin
+*.ilk
 trusslog.txt

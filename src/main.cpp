@@ -2,8 +2,8 @@
 
 #include "truss.h"
 #include "truss_sdl.h"
-#include "nanovg_addon.h"
-#include "wsclient_addon.h"
+#include "addons/bgfx_nanovg/nanovg_addon.h"
+#include "addons/websocket_client/wsclient_addon.h"
 #include <iostream>
 #include <sstream>
 

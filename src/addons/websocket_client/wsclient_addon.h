@@ -1,7 +1,7 @@
 #ifndef WSCLIENT_ADDON_HEADER_GUARD
 #define WSCLIENT_ADDON_HEADER_GUARD
 
-#include "truss.h"
+#include "../../truss.h"
 #include <vector>
 #include <string>
 

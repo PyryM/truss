@@ -1,7 +1,7 @@
 #include "wsclient_addon.h"
 #include <iostream>
 
-#include "easywsclient/easywsclient.hpp"
+#include "easywsclient.hpp"
 
 #ifdef _WIN32
 #pragma comment( lib, "ws2_32" )
