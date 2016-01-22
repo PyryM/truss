@@ -32,7 +32,7 @@
 #include <math.h>
 #include "nanovg.h"
 
-#include <c99/bgfx.h>
+#include <bgfx/c99/bgfx.h>
 // TODO: move this define somewhere more useful
 #define BGFX_INVALID_HANDLE_IDX UINT16_MAX
 
