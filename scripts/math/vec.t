@@ -119,6 +119,25 @@ function Vector:subVecs(a, b)
     return self
 end
 
+function Vector:crossVecs(a, b)
+    local ae = a.elem
+    local be = b.elem
+    local se = self.elem
+    local u1,u2,u3 = ae.x, ae.y, ae.z
+    local v1,v2,v3 = be.x, be.y, be.z
+    se.x = u2*v3 - u3*v2
+    se.y = u3*v1 - u1*v3
+    se.z = u1*v2 - u2*v1
+    se.w = 1.0
+    return self
+end
+
+function Vector:dot(a, b)
+    local ae = a.elem
+    local be = (b and b.elem) or self.elem
+    return ae.x * be.x + ae.y * be.y + ae.z * be.z + ae.w * be.w
+end
+
 function Vector:add(rhs)
     return self:addVecs(self, rhs)
 end
