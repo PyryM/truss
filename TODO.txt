@@ -1,22 +1,16 @@
-Lua:
-	Scenegraph
-		-- Actual scenegraph
+Buffers:
+	- wrap buffers into a Geometry class
 
-	Materials / Lighting
-		-- shadows
-		-- voxel cone tracing
+Rendering:
+	- Renderer ==> RenderPass
+	- Views/iterators of SceneGraphs / collections
 
+Organization:
+	- Move everything into bgfx/ directory?
+	-  or maybe graphics/?
 
-C++:
-	Key value database of some kind?
-	-- Store trss_messages indexed by string keys
-	-- Save / load entire database to file
-	-- Thread safe
+Examples:
+	- 00 - minimal (just starts up and immediately exits)
+	- 01 - clear color (just clears the screen to a garish color)
+	- 02 - cube (it's a cube)
 
-	PhysFS?
-	-- Extra dependency but might be nice
-	-- Maybe compile time flag to enable
-
-	Better logging
-	-- Save to file
-	-- Streams for C++ side
