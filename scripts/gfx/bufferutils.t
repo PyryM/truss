@@ -4,45 +4,62 @@
 
 local m = {}
 
-m.vertex_index_type = uint16
-
--- allocateData
--- 
--- allocates vertex and index buffer storage, but doesn't
--- create the buffers (you need to load in the actual data first!)
-function m.allocateData(vertInfo, nvertices, nfaces)
-	local data = {}
-	local nindices = nfaces * 3 -- assume triangles
-	data.vertInfo = vertInfo
-	data.verts = terralib.new(vertInfo.vertType[nvertices])
-	data.nvertices = nvertices
-	data.indices = terralib.new(m.vertex_index_type[nindices])
-	data.nindices = nindices
-	data.vertDataSize = sizeof(vertInfo.vertType[nvertices])
-	data.indexDataSize = sizeof(m.vertex_index_type[nindices])
-	return data
+local function check_index_size_(geo, nindices)
+	if geo.nIndices ~= nindices then
+		error("Wrong number of indices, expected " 
+				.. (geo.nIndices or "nil")
+				.. " got " .. (nindices or "nil"))
+		return false
+	end
+	return true
 end
 
 -- setIndices
 --
+-- sets face indices, checking whether the input is a list of lists
+-- or a flat list
+function m.setIndices(geo, indexdata)
+	if #indexdata == 0 then return end
+	if type(indexdata[1]) == "table" then
+		m.setIndicesLoL(geo, indexdata)
+	else
+		m.setIndicesFlat(geo, indexdata)
+	end
+end
+
+-- setIndicesLoL
+--
 -- sets face indices from a list of lists
 -- e.g. {{0,1,2}, {1,2,3}, {3,4,5}, {5,2,1}}
-function m.setIndices(data, facelist)
+function m.setIndicesLoL(geo, facelist)
 	local nfaces = #facelist
 	local nindices = nfaces * 3 -- assume triangles
-	if data.nindices ~= nindices then
-		error("Wrong number of indices, expected " 
-				.. (data.nindices or "nil")
-				.. " got " .. (nindices or "nil"))
-		return
-	end
+	if not check_index_size_(geo, nindices) return end
 
-	local dest = data.indices
+	local dest = geo.indices
 	local destIndex = 0
 	for f = 1,nfaces do
 		dest[destIndex]   = facelist[f][1] or 0
 		dest[destIndex+1] = facelist[f][2] or 0
 		dest[destIndex+2] = facelist[f][3] or 0
+		destIndex = destIndex + 3
+	end
+end
+
+-- setIndicesFlat
+--
+-- set face indices from a flat list (spacing to indicate triangles)
+-- e.g., {0,1,2,  1,2,3,  3,4,5,  5,2,1}
+function m.setIndicesFlat(geo, indexlist)
+	local nindices = #indexlist
+	if not check_index_size_(geo, nindices) return end
+
+	local dest = geo.indices
+	local destIndex = 0
+	for idx = 1,nindices do
+		dest[destIndex]   = indexlist[idx] or 0
+		dest[destIndex+1] = indexlist[idx] or 0
+		dest[destIndex+2] = indexlist[idx] or 0
 		destIndex = destIndex + 3
 	end
 end
@@ -69,7 +86,7 @@ end
 -- convenience setters
 m.positionSetter = m.makeSetter("position", 3)
 m.normalSetter = m.makeSetter("normal", 3)
-m.uvSetter = m.makeSetter("uv", 2)
+m.uvSetter = m.makeSetter("tex0", 2)
 m.colorSetter = m.makeSetter("color", 4)
 
 -- setter for when you just need random colors, ignores attribVal
@@ -110,97 +127,6 @@ function m.setAttributes(data, setter, attriblist)
 		-- dest (data.verts) is a C-style array so zero indexed
 		setter(dest, v-1, attriblist[v])
 	end
-end
-
--- createStaticBGFXBuffers
---
--- creates static bgfx buffers from vertex and index data
--- the created buffers are added to the data table as
--- data.vbh and data.ibh
---
--- if recreate is set then any old buffers will be destroyed
--- and remade from the new data. 
--- Otherwise, if old buffers exist, the function
--- will simply return without makaing any chanages.
-function m.createStaticBGFXBuffers(data, recreate)
-	local flags = 0
-
-	if (data.vbh or data.ibh) and (not recreate) then
-		return
-	end
-
-	if data.vbh then
-		bgfx.bgfx_destroy_vertex_buffer(data.vbh)
-	end
-	if data.ibh then
-		bgfx.bgfx_destroy_index_buffer(data.ibh)
-	end
-
-	-- Create static bgfx buffers
-	-- Warning! This only wraps the data, so make sure it doesn't go out
-	-- of scope for at least two frames (bgfx requirement)
-	data.vbh = bgfx.bgfx_create_vertex_buffer(
-		  bgfx.bgfx_make_ref(data.verts, data.vertDataSize),
-		  data.vertInfo.vertDecl, flags )
-
-	data.ibh = bgfx.bgfx_create_index_buffer(
-		  bgfx.bgfx_make_ref(data.indices, data.indexDataSize), flags )
-end
-
--- createDynamicBGFXBuffers
---
--- creates dynamic bgfx buffers with the current vertex and index data
--- as the initial contents; dynamic buffers can be updated, but at what
--- cost???
-function m.createDynamicBGFXBuffers(data, recreate)
-	local flags = 0
-
-	-- data already has buffers, so do update instead
-	if (data.vbh or data.ibh) and (not recreate) then
-		return m.updateDynamicBGFXBuffers(data)
-	end
-
-	if data.vbh then
-		bgfx.bgfx_destroy_dynamic_vertex_buffer(data.vbh)
-	end
-	if data.ibh then
-		bgfx.bgfx_destroy_dynamic_index_buffer(data.ibh)
-	end
-
-	trss.trss_log(0, "Creating dynamic buffer...")
-
-	-- Create dynamic bgfx buffers
-	-- Warning! This only wraps the data, so make sure it doesn't go out
-	-- of scope for at least two frames (bgfx requirement)
-	data.vbh = bgfx.bgfx_create_dynamic_vertex_buffer_mem(
-		  bgfx.bgfx_make_ref(data.verts, data.vertDataSize),
-		  data.vertInfo.vertDecl, flags )
-
-	data.ibh = bgfx.bgfx_create_dynamic_index_buffer_mem(
-		  bgfx.bgfx_make_ref(data.indices, data.indexDataSize), flags )
-
-	data.dynamic = true
-end
-
--- updateDynamicBGFXBuffers
---
--- updates the dynamic buffers from the current data
-function m.updateDynamicBGFXBuffers(data)
-	if not data.dynamic then
-		trss.trss_log(0, "Error: cannot update non-dynamic buffers!")
-		return
-	end
-
-	if (not data.vbh) or (not data.ibh) then
-		trss.trss_log(0, "Error: null buffers!")
-		return
-	end
-
-	bgfx.bgfx_update_dynamic_index_buffer(data.ibh, 0,
-		 bgfx.bgfx_make_ref(data.indices, data.indexDataSize))
-
-	bgfx.bgfx_update_dynamic_vertex_buffer(data.vbh, 0,
-		 bgfx.bgfx_make_ref(data.verts, data.vertDataSize))
 end
 
 return m

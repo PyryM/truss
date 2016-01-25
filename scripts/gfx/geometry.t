@@ -7,7 +7,7 @@ local class = require("class")
 local vec = require("math/vec.t")
 local quat = require("math/quat.t")
 local matrix = require("math/matrix.t")
-local buffers = require("mesh/buffers.t")
+--local buffers = require("gfx/buffers.t")
 
 local Quaternion = quat.Quaternion
 local Matrix4 = matrix.Matrix4
@@ -45,10 +45,12 @@ end
 
 function StaticGeometry:allocate(vertInfo, nVertices, nIndices)
     allocate_buffer_data_(self, vertInfo, nVertices, nIndices)
+    return self
 end
 
 function DynamicGeometry:allocate(vertInfo, nVertices, nIndices)
     allocate_buffer_data_(self, vertInfo, nVertices, nIndices)
+    return self
 end
 
 function StaticGeometry:build(recreate)
@@ -103,11 +105,6 @@ function StaticGeometry:bind()
 
     return true
 end
-
-function Geometry:release()
-    -- todo
-end
-
 
 function DynamicGeometry:build(recreate)
     local flags = 0
@@ -193,6 +190,6 @@ end
 
 m.StaticGeometry    = StaticGeometry -- 'export' Geometry
 m.DynamicGeometry   = DynamicGeometry
-m.TransientGeometry = TransientGeometry 
+--m.TransientGeometry = TransientGeometry 
 
 return m
