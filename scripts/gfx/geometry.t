@@ -20,50 +20,101 @@ local INDEX_TYPE = uint16
 local buffer_library_ = {} -- needed for memory management reasons?
 local last_geo_idx_ = 0
 
-local Geometry = class("Geometry")
-function Geometry:init(name)
+local StaticGeometry = class("StaticGeometry")
+function StaticGeometry:init(name)
     if name then
         self.name = name
     else
-        self.name = "__anonymous_geometry_" .. last_geo_idx_
+        self.name = "__anon_staticgeometry_" .. last_geo_idx_
         last_geo_idx_ = last_geo_idx_ + 1
     end
-    self.built = false
+    self.allocated = false
+    self.built     = false
 end
 
-function Geometry:allocate(vertInfo, nVertices, nIndices, isDynamic)
-    self.vertInfo = vertInfo
-    self.verts = terralib.new(vertInfo.vertType[nVertices])
-    self.nVertices = nVertices
-    self.indices = terralib.new(INDEX_TYPE[nIndices])
-    self.nIndices = nIndices
-    self.vertDataSize = sizeof(vertInfo.vertType[nVertices])
-    self.indexDataSize = sizeof(INDEX_TYPE[nIndices])
-    self.isDynamic = isDynamic
-    self.allocated = true
+local function allocate_buffer_data_(geo, vertInfo, nVertices, nIndices)
+    geo.vertInfo = vertInfo
+    geo.verts = terralib.new(vertInfo.vertType[nVertices])
+    geo.nVertices = nVertices
+    geo.indices = terralib.new(INDEX_TYPE[nIndices])
+    geo.nIndices = nIndices
+    geo.vertDataSize = sizeof(vertInfo.vertType[nVertices])
+    geo.indexDataSize = sizeof(INDEX_TYPE[nIndices])
+    geo.allocated = true
 end
 
-function Geometry:allocateTransient(vertInfo, nVertices, nIndices)
+function StaticGeometry:allocate(vertInfo, nVertices, nIndices)
+    allocate_buffer_data_(self, vertInfo, nVertices, nIndices)
 end
 
-function Geometry:setAttribute(attribName, attribList)
+function DynamicGeometry:allocate(vertInfo, nVertices, nIndices)
+    allocate_buffer_data_(self, vertInfo, nVertices, nIndices)
 end
 
-function Geometry:setIndices(indexList)
-    buffers.setIndices(self.buffers, indexList)
-end
+function StaticGeometry:build(recreate)
+    if not self.allocated then
+        log.error("Cannot build geometry with no allocated data!")
+        return
+    end
 
-function Geometry:update_dynamic_(recreate)
     local flags = 0
 
-    -- data already has buffers, so do simple update
-    if (self.vbh and self.ibh) and (not recreate) then
-        bgfx.bgfx_update_dynamic_index_buffer(self.ibh, 0,
-             bgfx.bgfx_make_ref(self.indices, self.indexDataSize))
+    if (self.vbh or self.ibh) and (not recreate) then
+        log.warn("Tried to rebuild StaticGeometry [" .. 
+                    self.name .. "] without explicit recreate!")
+        return
+    end
 
-        bgfx.bgfx_update_dynamic_vertex_buffer(self.vbh, 0,
-             bgfx.bgfx_make_ref(self.verts, self.vertDataSize))
+    if self.vbh then
+        bgfx.bgfx_destroy_vertex_buffer(self.vbh)
+    end
+    if self.ibh then
+        bgfx.bgfx_destroy_index_buffer(self.ibh)
+    end
 
+    -- Create static bgfx buffers
+    -- Warning! This only wraps the data, so make sure it doesn't go out
+    -- of scope for at least two frames (bgfx requirement)
+    self.vbh = bgfx.bgfx_create_vertex_buffer(
+          bgfx.bgfx_make_ref(self.verts, self.vertDataSize),
+          self.vertInfo.vertDecl, flags )
+
+    self.ibh = bgfx.bgfx_create_index_buffer(
+          bgfx.bgfx_make_ref(self.indices, self.indexDataSize), flags )
+
+    self.built = (self.vbh ~= nil) and (self.ibh ~= nil)
+end
+
+local function check_built_(geo)
+    if geo.built then return true end
+    
+    if not geo.warned then
+        log.warn("Warning: geometry [" .. geo.name .. "] has not been built.")
+        geo.warned = true
+    end
+    return false
+end
+
+function StaticGeometry:bind()
+    if not check_built_(self) then return end
+
+    bgfx.bgfx_set_vertex_buffer(databuffers.vbh, 0, bgfx.UINT32_MAX)
+    bgfx.bgfx_set_index_buffer(databuffers.ibh, 0, bgfx.UINT32_MAX)
+
+    return true
+end
+
+function Geometry:release()
+    -- todo
+end
+
+
+function DynamicGeometry:build(recreate)
+    local flags = 0
+
+    if self.built and not recreate then
+        log.warn("Tried to rebuilt already built DynamicGeometry " ..
+                  self.name)
         return
     end
 
@@ -85,52 +136,42 @@ function Geometry:update_dynamic_(recreate)
 
     self.ibh = bgfx.bgfx_create_dynamic_index_buffer_mem(
           bgfx.bgfx_make_ref(self.indices, self.indexDataSize), flags )
+
+    self.built = (self.vbh ~= nil) and (self.ibh ~= nil)
 end
 
-function Geometry:update_static_(recreate)
-    local flags = 0
-
-    if (self.vbh or self.ibh) and (not recreate) then
-        log.warn("Tried to update static geometry [" .. 
-                    self.name .. "] without explicit recreate!")
-        return
-    end
-
-    if self.vbh then
-        bgfx.bgfx_destroy_vertex_buffer(self.vbh)
-    end
-    if self.ibh then
-        bgfx.bgfx_destroy_index_buffer(self.ibh)
-    end
-
-    -- Create static bgfx buffers
-    -- Warning! This only wraps the data, so make sure it doesn't go out
-    -- of scope for at least two frames (bgfx requirement)
-    data.vbh = bgfx.bgfx_create_vertex_buffer(
-          bgfx.bgfx_make_ref(self.verts, self.vertDataSize),
-          self.vertInfo.vertDecl, flags )
-
-    data.ibh = bgfx.bgfx_create_index_buffer(
-          bgfx.bgfx_make_ref(self.indices, self.indexDataSize), flags )
-end
-
-function Geometry:update(recreate)
-    if not self.allocated then
-        log.error("Cannot update geometry with no allocated data!")
-        return
-    end
-    
-    if self.isDynamic then
-        self:update_dynamic_(recreate)
+function DynamicGeometry:update()
+    if not self.built then 
+        self:build()
     else
-        self:update_static_(recreate)
+        self:updateVertices()
+        self:updateIndices()
     end
 end
 
-function Geometry:fromBuffers(databuffers)
-    self.databuffers = databuffers
-    buffer_library_[self.name] = databuffers
-    return self
+function DynamicGeometry:updateVertices()
+    if not self.vbh then return end
+
+    bgfx.bgfx_update_dynamic_vertex_buffer(self.vbh, 0,
+        bgfx.bgfx_make_ref(self.verts, self.vertDataSize))
+end
+
+function DynamicGeometry:updateIndices()
+    if not self.ibh then return end
+
+    bgfx.bgfx_update_dynamic_index_buffer(self.ibh, 0,
+         bgfx.bgfx_make_ref(self.indices, self.indexDataSize))
+end
+
+function DynamicGeometry:bind()
+    if not check_built_(self) then return end
+
+    -- for some reason set_dynamic_vertex_buffer does not take a start
+    -- index argument, only the number of vertices
+    bgfx.bgfx_set_dynamic_vertex_buffer(databuffers.vbh, 
+                                        bgfx.UINT32_MAX)
+    bgfx.bgfx_set_dynamic_index_buffer(databuffers.ibh, 
+                                        0, bgfx.UINT32_MAX)
 end
 
 function Geometry:fromData(vertexInfo, modeldata)
@@ -150,36 +191,8 @@ function Geometry:fromData(vertexInfo, modeldata)
     return self
 end
 
-function Geometry:bind()
-    local databuffers = self.buffers
+m.StaticGeometry    = StaticGeometry -- 'export' Geometry
+m.DynamicGeometry   = DynamicGeometry
+m.TransientGeometry = TransientGeometry 
 
-    if not databuffers then
-        if not self.warned then
-            log.warn("Warning: geometry [" .. self.name .. "] contains no data.")
-            self.warned = true
-        end
-        return false
-    end
-
-    if databuffers.dynamic then
-        -- for some reason set_dynamic_vertex_buffer does not take a start
-        -- index argument, only the number of vertices
-        bgfx.bgfx_set_dynamic_vertex_buffer(databuffers.vbh, 
-                                            bgfx.UINT32_MAX)
-        bgfx.bgfx_set_dynamic_index_buffer(databuffers.ibh, 
-                                            0, bgfx.UINT32_MAX)
-    else
-        bgfx.bgfx_set_vertex_buffer(databuffers.vbh, 0, bgfx.UINT32_MAX)
-        bgfx.bgfx_set_index_buffer(databuffers.ibh, 0, bgfx.UINT32_MAX)
-    end
-
-    return true
-end
-
-function Geometry:release()
-    -- todo
-end
-
-m.Mesh = Mesh -- 'export' Mesh
-m.Geometry = Geometry -- 'export' Geometry
 return m
