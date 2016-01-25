@@ -1,6 +1,6 @@
--- buffers.t
+-- bufferutils.t
 --
--- functions for creating and manipulating vertex/index buffers
+-- utility functions for managing bgfx buffers
 
 local m = {}
 
