@@ -422,12 +422,20 @@ function Matrix4:setTranslation(posVec)
     return self
 end
 
--- takes a rotation (quaternion), scaling (vec3), and translation (vec3)
+-- takes a translation (vec3), rotation (quaternion), and scale (vec3) and 
 -- and composes them together into one 4x4 transformation
-function Matrix4:compose(rotationQuat, scaleVec, posVec)
+function Matrix4:compose(posVec, rotationQuat, scaleVec)
     local destmat = self.data
     m.setMatrixFromQuat(destmat, rotationQuat.elem)
     m.scaleMatrix(destmat, scaleVec.elem)
+    m.setMatrixPosition(destmat, posVec.elem)
+    return self
+end
+
+-- like compose, but without a scale component
+function Matrix4:composeRigid(posVec, rotationQuat)
+    local destmat = self.data
+    m.setMatrixFromQuat(destmat, rotationQuat.elem)
     m.setMatrixPosition(destmat, posVec.elem)
     return self
 end

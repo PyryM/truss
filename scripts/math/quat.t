@@ -61,9 +61,9 @@ function Quaternion:fromAxisAngle(axis, angle)
     local s = math.sin( halfAngle )
     local e = self.elem
 
-    e.x = axis.x * s
-    e.y = axis.y * s
-    e.z = axis.z * s
+    e.x = axis.elem.x * s
+    e.y = axis.elem.y * s
+    e.z = axis.elem.z * s
     e.w = math.cos( halfAngle )
 
     return self

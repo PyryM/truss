@@ -152,7 +152,7 @@ function drawCube()
 
     --modelmat:setTranslation(posvec)
     rotquat:fromEuler({x = time, y = time, z = 0.0})
-    modelmat:compose(rotquat, scalevec, posvec)
+    modelmat:composeRigid(posvec, rotquat)
     bgfx.bgfx_set_transform(modelmat.data, 1) -- only one matrix in array
 
     -- Render our cube
