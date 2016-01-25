@@ -7,7 +7,7 @@ local class = require("class")
 local vec = require("math/vec.t")
 local quat = require("math/quat.t")
 local matrix = require("math/matrix.t")
---local buffers = require("gfx/buffers.t")
+local bufferutils = require("gfx/bufferutils.t")
 
 local Quaternion = quat.Quaternion
 local Matrix4 = matrix.Matrix4
@@ -32,6 +32,19 @@ function StaticGeometry:init(name)
     self.built     = false
 end
 
+local DynamicGeometry = class("DynamicGeometry")
+function DynamicGeometry:init(name)
+    if name then
+        self.name = name
+    else
+        self.name = "__anon_dyngeometry_" .. last_geo_idx_
+        last_geo_idx_ = last_geo_idx_ + 1
+    end
+    self.allocated = false
+    self.built     = false
+end
+
+
 local function allocate_buffer_data_(geo, vertInfo, nVertices, nIndices)
     geo.vertInfo = vertInfo
     geo.verts = terralib.new(vertInfo.vertType[nVertices])
@@ -51,6 +64,22 @@ end
 function DynamicGeometry:allocate(vertInfo, nVertices, nIndices)
     allocate_buffer_data_(self, vertInfo, nVertices, nIndices)
     return self
+end
+
+function StaticGeometry:setIndices(indices)
+    bufferutils.setIndices(self, indices)
+end
+
+function StaticGeometry:setAttribute(attribName, attribList)
+    bufferutils.setNamedAttribute(self, attribName, attribList)
+end
+
+function DynamicGeometry:setIndices(indices)
+    bufferutils.setIndices(self, indices)
+end
+
+function DynamicGeometry:setAttribute(attribName, attribList)
+    bufferutils.setNamedAttribute(self, attribName, attribList)
 end
 
 function StaticGeometry:build(recreate)
@@ -85,6 +114,8 @@ function StaticGeometry:build(recreate)
           bgfx.bgfx_make_ref(self.indices, self.indexDataSize), flags )
 
     self.built = (self.vbh ~= nil) and (self.ibh ~= nil)
+    log.info("Built? " .. tostring(self.built))
+    log.info("Built static geometry!")
 end
 
 local function check_built_(geo)
@@ -100,8 +131,8 @@ end
 function StaticGeometry:bind()
     if not check_built_(self) then return end
 
-    bgfx.bgfx_set_vertex_buffer(databuffers.vbh, 0, bgfx.UINT32_MAX)
-    bgfx.bgfx_set_index_buffer(databuffers.ibh, 0, bgfx.UINT32_MAX)
+    bgfx.bgfx_set_vertex_buffer(self.vbh, 0, bgfx.UINT32_MAX)
+    bgfx.bgfx_set_index_buffer(self.ibh, 0, bgfx.UINT32_MAX)
 
     return true
 end
@@ -165,28 +196,28 @@ function DynamicGeometry:bind()
 
     -- for some reason set_dynamic_vertex_buffer does not take a start
     -- index argument, only the number of vertices
-    bgfx.bgfx_set_dynamic_vertex_buffer(databuffers.vbh, 
+    bgfx.bgfx_set_dynamic_vertex_buffer(self.vbh, 
                                         bgfx.UINT32_MAX)
-    bgfx.bgfx_set_dynamic_index_buffer(databuffers.ibh, 
+    bgfx.bgfx_set_dynamic_index_buffer(self.ibh, 
                                         0, bgfx.UINT32_MAX)
 end
 
-function Geometry:fromData(vertexInfo, modeldata)
-    if modeldata == nil or vertexInfo == nil then return end
+-- function Geometry:fromData(vertexInfo, modeldata)
+--     if modeldata == nil or vertexInfo == nil then return end
 
-    -- allocate static buffers
-    self:allocate(vertexInfo, #(modeldata.positions), #(modeldata.indices), false)
-    self:setIndices(modeldata.indices)
+--     -- allocate static buffers
+--     self:allocate(vertexInfo, #(modeldata.positions), #(modeldata.indices), false)
+--     self:setIndices(modeldata.indices)
 
-    self:setAttribute("position", modeldata.position)
-    self:setAttribute("normal", modeldata.normal)
-    self:setAttribute("tangent", modeldata.tangent)
-    self:setAttribute("tex0", modeldata.tex0)
-    self:setAttribute("color", modeldata.color)
+--     self:setAttribute("position", modeldata.position)
+--     self:setAttribute("normal", modeldata.normal)
+--     self:setAttribute("tangent", modeldata.tangent)
+--     self:setAttribute("tex0", modeldata.tex0)
+--     self:setAttribute("color", modeldata.color)
 
-    self:update()
-    return self
-end
+--     self:update()
+--     return self
+-- end
 
 m.StaticGeometry    = StaticGeometry -- 'export' Geometry
 m.DynamicGeometry   = DynamicGeometry

@@ -417,8 +417,8 @@ function Matrix4:scale(sx, sy, sz)
     return self
 end
 
-function Matrix4:setTranslation(tx, ty, tz)
-    m.setMatrixPosition(self.data, tx, ty, tz)
+function Matrix4:setTranslation(posVec)
+    m.setMatrixPosition(self.data, posVec.elem)
     return self
 end
 
