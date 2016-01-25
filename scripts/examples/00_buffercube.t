@@ -11,31 +11,33 @@ sdl = raw_addons.sdl.functions
 sdlPointer = raw_addons.sdl.pointer
 TRSS_ID = core.TRSS_ID
 
-local Vector = require("math/vector.t").Vector
+local Vector = require("math/vec.t").Vector
+local Matrix4 = require("math/matrix.t").Matrix4
+local Quaternion = require("math/quat.t").Quaternion
 local StaticGeometry = require("gfx/geometry.t").StaticGeometry
 local vertexInfo = require("gfx/vertexdefs.t").createPosColorVertexInfo()
 
 function makeCubeGeometry()
     local positions = {
-                        Vector(-1.0,  1.0,  1.0),
-                        Vector( 1.0,  1.0,  1.0),
-                        Vector(-1.0, -1.0,  1.0),
-                        Vector( 1.0, -1.0,  1.0),
-                        Vector(-1.0,  1.0, -1.0),
-                        Vector( 1.0,  1.0, -1.0),
-                        Vector(-1.0, -1.0, -1.0),
-                        Vector( 1.0, -1.0, -1.0)
+                        {-1.0,  1.0,  1.0},
+                        { 1.0,  1.0,  1.0},
+                        {-1.0, -1.0,  1.0},
+                        { 1.0, -1.0,  1.0},
+                        {-1.0,  1.0, -1.0},
+                        { 1.0,  1.0, -1.0},
+                        {-1.0, -1.0, -1.0},
+                        { 1.0, -1.0, -1.0}
                        }
 
     local colors = {
-                        Vector( 0.0, 0.0, 0.0, 1.0),
-                        Vector( 1.0, 0.0, 0.0, 1.0),
-                        Vector( 0.0, 1.0, 0.0, 1.0),
-                        Vector( 1.0, 1.0, 0.0, 1.0),
-                        Vector( 0.0, 0.0, 1.0, 1.0),
-                        Vector( 1.0, 0.0, 1.0, 1.0),
-                        Vector( 0.0, 1.0, 1.0, 1.0),
-                        Vector( 1.0, 1.0, 1.0, 1.0)    
+                        { 0.0, 0.0, 0.0, 255},
+                        { 255, 0.0, 0.0, 255},
+                        { 0.0, 255, 0.0, 255},
+                        { 255, 255, 0.0, 255},
+                        { 0.0, 0.0, 255, 255},
+                        { 255, 0.0, 255, 255},
+                        { 0.0, 255, 255, 255},
+                        { 255, 255, 255, 255}    
                     }
 
     local indices = {
@@ -54,8 +56,9 @@ function makeCubeGeometry()
                     }
 
     local cubegeo = StaticGeometry("cube"):allocate(vertexInfo, #positions, #indices)
+    cubegeo:setIndices(indices)
     cubegeo:setAttribute("position", positions)
-    cubegeo:setAttribute("color0", colors)
+    cubegeo:setAttribute("color", colors)
     cubegeo:build()
     return cubegeo
 end
@@ -63,6 +66,7 @@ end
 function init()
     log.info("cube.t init")
     sdl.trss_sdl_create_window(sdlPointer, width, height, '00 buffercube')
+    log.info("created window")
     initBGFX()
     local rendererType = bgfx.bgfx_get_renderer_type()
     local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
@@ -82,17 +86,8 @@ function loadProgram(vshadername, fshadername)
     return shaderutils.loadProgram(vshadername, fshadername)
 end
 
--- ok, I lied a bit more: we're also going to use the matrix libary because
--- there's no point in cluttering up this with code that creates projection
--- matrices
-
 function setViewMatrices()
-    mtx = require("math/matrix.t")
-
-    mtx.makeProjMat(projmat, 60.0, width / height, 0.01, 100.0)
-    mtx.setIdentity(viewmat)
-
-    bgfx.bgfx_set_view_transform(0, viewmat, projmat)
+    bgfx.bgfx_set_view_transform(0, viewmat.data, projmat.data)
 end
 
 function updateEvents()
@@ -112,8 +107,11 @@ function initBGFX()
     local debug = bgfx_const.BGFX_DEBUG_TEXT
     local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
 
+    log.info("going to init bgfx")
     bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, nil, nil)
+    --bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_DIRECT3D9, 0, 0, nil, nil)
     bgfx.bgfx_reset(width, height, reset)
+    log.info("initted bgfx")
 
     -- Enable debug text.
     bgfx.bgfx_set_debug(debug)
@@ -135,9 +133,12 @@ function initBGFX()
     program = loadProgram("vs_cubes", "fs_cubes")
 
     -- create matrices
-    projmat = Matrix()
-    viewmat = Matrix()
-    modelmat = Matrix()
+    projmat = Matrix4():makeProjection(70, 800/600, 0.1, 100.0)
+    viewmat = Matrix4():identity()
+    modelmat = Matrix4():identity()
+    posvec = Vector(0.0, 0.0, -10.0)
+    scalevec = Vector(1.0, 1.0, 1.0)
+    rotquat = Quaternion():identity()
 end
 
 function drawCube()
@@ -145,7 +146,18 @@ function drawCube()
     setViewMatrices()
 
     -- Render our cube
+    --local mtx = require("math/matrix.t")
+    --mtx.rotateXY(testomat, math.cos(time*0.2) * math.pi, math.sin(time*0.2) * math.pi)
+    --testomat[14] = -10.0 -- put it in front of the camera (which faces z?)
+
+    --modelmat:setTranslation(posvec)
+    rotquat:fromEuler({x = time, y = time, z = 0.0})
+    modelmat:compose(rotquat, scalevec, posvec)
     bgfx.bgfx_set_transform(modelmat.data, 1) -- only one matrix in array
+
+    -- Render our cube
+    --modelmat:setTranslation(posvec)
+    --bgfx.bgfx_set_transform(modelmat.data, 1) -- only one matrix in array
     cubegeo:bind()
 
     bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)
