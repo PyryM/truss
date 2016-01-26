@@ -9,6 +9,7 @@ temp/
 dump/
 datasets/
 data/
+.vs/
 *.exe
 *.pdb
 *.idb
