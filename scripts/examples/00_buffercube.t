@@ -1,7 +1,6 @@
--- cube.t
+-- 00_buffercube.t
 -- 
--- a totally from-scratch example of how to draw a cube with
--- just raw bgfx and (almost no) helper libraries
+-- manually create a cube mesh and use it to draw multiple cubes spinning
 
 bgfx = core.bgfx
 bgfx_const = core.bgfx_const
@@ -78,10 +77,6 @@ height = 600
 frame = 0
 time = 0.0
 
-function setViewMatrices()
-    bgfx.bgfx_set_view_transform(0, viewmat.data, projmat.data)
-end
-
 function updateEvents()
     for evt in sdl:events() do
         if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
@@ -131,25 +126,17 @@ function initBGFX()
     rotquat = Quaternion():identity()
 end
 
-function drawCube()
-    -- Set viewprojection matrix
-    setViewMatrices()
-
-    -- Render our cube
-    --local mtx = require("math/matrix.t")
-    --mtx.rotateXY(testomat, math.cos(time*0.2) * math.pi, math.sin(time*0.2) * math.pi)
-    --testomat[14] = -10.0 -- put it in front of the camera (which faces z?)
-
-    --modelmat:setTranslation(posvec)
-    rotquat:fromEuler({x = time, y = time, z = 0.0})
+function drawCube(xpos, ypos, phase)
+    -- Compute the cube's transformation
+    rotquat:fromEuler({x = time + phase, y = time + phase, z = 0.0})
+    posvec:set(xpos, ypos, -10.0)
     modelmat:composeRigid(posvec, rotquat)
     bgfx.bgfx_set_transform(modelmat.data, 1) -- only one matrix in array
 
-    -- Render our cube
-    --modelmat:setTranslation(posvec)
-    --bgfx.bgfx_set_transform(modelmat.data, 1) -- only one matrix in array
+    -- Bind the cube buffers
     cubegeo:bind()
 
+    -- Setting default state is not strictly necessary, but good practice
     bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)
     bgfx.bgfx_submit(0, program, 0)
 end
@@ -178,7 +165,14 @@ function update()
     bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/cube.t")
     bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
 
-    drawCube()
+    -- Set viewprojection matrix
+    bgfx.bgfx_set_view_transform(0, viewmat.data, projmat.data)
+
+    -- draw four cubes
+    drawCube( 3,  3, 0.0)
+    drawCube(-3,  3, 1.0)
+    drawCube(-3, -3, 2.0)
+    drawCube( 3, -3, 3.0)
 
     -- Advance to next frame. Rendering thread will be kicked to
     -- process submitted rendering primitives.
