@@ -7,8 +7,7 @@ bgfx = core.bgfx
 bgfx_const = core.bgfx_const
 terralib = core.terralib
 trss = core.trss
-sdl = raw_addons.sdl.functions
-sdlPointer = raw_addons.sdl.pointer
+sdl = addons.sdl
 TRSS_ID = core.TRSS_ID
 
 local Vector = require("math/vec.t").Vector
@@ -16,6 +15,7 @@ local Matrix4 = require("math/matrix.t").Matrix4
 local Quaternion = require("math/quat.t").Quaternion
 local StaticGeometry = require("gfx/geometry.t").StaticGeometry
 local vertexInfo = require("gfx/vertexdefs.t").createPosColorVertexInfo()
+local shaderutils = require('utils/shaderutils.t')
 
 function makeCubeGeometry()
     local positions = {
@@ -65,7 +65,7 @@ end
 
 function init()
     log.info("cube.t init")
-    sdl.trss_sdl_create_window(sdlPointer, width, height, '00 buffercube')
+    sdl:createWindow(width, height, '00 buffercube')
     log.info("created window")
     initBGFX()
     local rendererType = bgfx.bgfx_get_renderer_type()
@@ -78,23 +78,13 @@ height = 600
 frame = 0
 time = 0.0
 
--- ok, I lied: we're going to use a tiny helper library to do the shader loading
--- because different platforms use different shaders
-
-function loadProgram(vshadername, fshadername)
-    local shaderutils = require('utils/shaderutils.t')
-    return shaderutils.loadProgram(vshadername, fshadername)
-end
-
 function setViewMatrices()
     bgfx.bgfx_set_view_transform(0, viewmat.data, projmat.data)
 end
 
 function updateEvents()
-    local nevents = sdl.trss_sdl_num_events(sdlPointer)
-    for i = 1,nevents do
-        local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
-        if evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
+    for evt in sdl:events() do
+        if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
             log.info("Received window close, stopping interpreter...")
             trss.trss_stop_interpreter(TRSS_ID)
         end
@@ -130,7 +120,7 @@ function initBGFX()
 
     -- load shader program
     log.info("Loading program")
-    program = loadProgram("vs_cubes", "fs_cubes")
+    program = shaderutils.loadProgram("vs_cubes", "fs_cubes")
 
     -- create matrices
     projmat = Matrix4():makeProjection(70, 800/600, 0.1, 100.0)
@@ -164,20 +154,13 @@ function drawCube()
     bgfx.bgfx_submit(0, program, 0)
 end
 
-terra calcDeltaTime(startTime: uint64)
-    var curtime = trss.trss_get_hp_time()
-    var freq = trss.trss_get_hp_freq()
-    var deltaF : float = curtime - startTime
-    return deltaF / [float](freq)
-end
-
 frametime = 0.0
 
 function update()
     frame = frame + 1
     time = time + 1.0 / 60.0
 
-    local startTime = trss.trss_get_hp_time()
+    local startTime = tic()
 
     -- Deal with input events
     updateEvents()
@@ -201,5 +184,5 @@ function update()
     -- process submitted rendering primitives.
     bgfx.bgfx_frame()
 
-    frametime = calcDeltaTime(startTime)
+    frametime = toc(startTime)
 end
