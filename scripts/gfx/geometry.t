@@ -114,8 +114,6 @@ function StaticGeometry:build(recreate)
           bgfx.bgfx_make_ref(self.indices, self.indexDataSize), flags )
 
     self.built = (self.vbh ~= nil) and (self.ibh ~= nil)
-    log.info("Built? " .. tostring(self.built))
-    log.info("Built static geometry!")
 end
 
 local function check_built_(geo)

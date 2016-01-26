@@ -7,7 +7,6 @@ bgfx_const = core.bgfx_const
 terralib = core.terralib
 trss = core.trss
 sdl = addons.sdl
-TRSS_ID = core.TRSS_ID
 
 local Vector = require("math/vec.t").Vector
 local Matrix4 = require("math/matrix.t").Matrix4
@@ -16,43 +15,41 @@ local StaticGeometry = require("gfx/geometry.t").StaticGeometry
 local vertexInfo = require("gfx/vertexdefs.t").createPosColorVertexInfo()
 local shaderutils = require('utils/shaderutils.t')
 
+width = 800
+height = 600
+time = 0.0
+
 function makeCubeGeometry()
-    local positions = {
-                        {-1.0,  1.0,  1.0},
+    local positions = { {-1.0,  1.0,  1.0},
                         { 1.0,  1.0,  1.0},
                         {-1.0, -1.0,  1.0},
                         { 1.0, -1.0,  1.0},
                         {-1.0,  1.0, -1.0},
                         { 1.0,  1.0, -1.0},
                         {-1.0, -1.0, -1.0},
-                        { 1.0, -1.0, -1.0}
-                       }
+                        { 1.0, -1.0, -1.0} }
 
-    local colors = {
-                        { 0.0, 0.0, 0.0, 255},
-                        { 255, 0.0, 0.0, 255},
-                        { 0.0, 255, 0.0, 255},
-                        { 255, 255, 0.0, 255},
-                        { 0.0, 0.0, 255, 255},
-                        { 255, 0.0, 255, 255},
-                        { 0.0, 255, 255, 255},
-                        { 255, 255, 255, 255}    
-                    }
+    local colors = { { 0.0, 0.0, 0.0, 255},
+                     { 255, 0.0, 0.0, 255},
+                     { 0.0, 255, 0.0, 255},
+                     { 255, 255, 0.0, 255},
+                     { 0.0, 0.0, 255, 255},
+                     { 255, 0.0, 255, 255},
+                     { 0.0, 255, 255, 255},
+                     { 255, 255, 255, 255} }
 
-    local indices = {
-                        0, 2, 1,
-                        1, 2, 3,
-                        4, 5, 6, 
-                        5, 7, 6,
-                        0, 4, 2, 
-                        4, 6, 2,
-                        1, 3, 5, 
-                        5, 3, 7,
-                        0, 1, 4, 
-                        4, 1, 5,
-                        2, 6, 3, 
-                        6, 7, 3 
-                    }
+    local indices = { 0, 2, 1,
+                      1, 2, 3,
+                      4, 5, 6, 
+                      5, 7, 6,
+                      0, 4, 2, 
+                      4, 6, 2,
+                      1, 3, 5, 
+                      5, 3, 7,
+                      0, 1, 4, 
+                      4, 1, 5,
+                      2, 6, 3, 
+                      6, 7, 3 }
 
     local cubegeo = StaticGeometry("cube"):allocate(vertexInfo, #positions, #indices)
     cubegeo:setIndices(indices)
@@ -67,50 +64,40 @@ function init()
     sdl:createWindow(width, height, '00 buffercube')
     log.info("created window")
     initBGFX()
-    local rendererType = bgfx.bgfx_get_renderer_type()
-    local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-    log.info("Renderer type: " .. rendererName)
 end
-
-width = 800
-height = 600
-frame = 0
-time = 0.0
 
 function updateEvents()
     for evt in sdl:events() do
         if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
             log.info("Received window close, stopping interpreter...")
-            trss.trss_stop_interpreter(TRSS_ID)
+            trss.trss_stop_interpreter(core.TRSS_ID)
         end
     end
 end
 
 function initBGFX()
-    -- Basic init
+    -- basic init
+    local resetFlags = bgfx_const.BGFX_RESET_VSYNC + 
+                       bgfx_const.BGFX_RESET_MSAA_X8
 
-    local debug = bgfx_const.BGFX_DEBUG_TEXT
-    local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
-
-    log.info("going to init bgfx")
     bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, nil, nil)
-    --bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_DIRECT3D9, 0, 0, nil, nil)
-    bgfx.bgfx_reset(width, height, reset)
-    log.info("initted bgfx")
+    bgfx.bgfx_reset(width, height, resetFlags)
 
     -- Enable debug text.
-    bgfx.bgfx_set_debug(debug)
+    bgfx.bgfx_set_debug(bgfx_const.BGFX_DEBUG_TEXT)
 
-    bgfx.bgfx_set_view_clear(0, 
-    0x0001 + 0x0002, -- clear color + clear depth
-    0x303030ff,
-    1.0,
+    log.info("Basic BGFX init complete!")
+    local rendererType = bgfx.bgfx_get_renderer_type()
+    local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
+    log.info("Renderer type: " .. rendererName)
+
+    bgfx.bgfx_set_view_clear(0, -- viewid 0
+    bgfx_const.BGFX_CLEAR_COLOR + bgfx_const.BGFX_CLEAR_DEPTH,
+    0x303030ff, -- clearcolor (gray)
+    1.0, -- cleardepth (in normalized space: 1.0 = max depth)
     0)
 
-    log.info("Initted bgfx I hope?")
-
-    -- Init the cube
-
+    -- init the cube
     cubegeo = makeCubeGeometry()
 
     -- load shader program
@@ -144,7 +131,6 @@ end
 frametime = 0.0
 
 function update()
-    frame = frame + 1
     time = time + 1.0 / 60.0
 
     local startTime = tic()
@@ -154,10 +140,6 @@ function update()
 
     -- Set view 0 default viewport.
     bgfx.bgfx_set_view_rect(0, 0, 0, width, height)
-
-    -- This dummy draw call is here to make sure that view 0 is cleared
-    -- if no other draw calls are submitted to view 0.
-    --bgfx.bgfx_submit(0, 0)
 
     -- Use debug font to print information about this example.
     bgfx.bgfx_dbg_text_clear(0, false)
