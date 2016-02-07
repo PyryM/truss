@@ -56,11 +56,16 @@ local function addChild(parent, child)
 end
 
 function SceneGraph:add(parent, child)
+    if child.sg and child.sg ~= self then
+        log.error("Cannot add child: belongs to different scenegraph!")
+        return false
+    end
+    child.sg = self
     return addChild(parent, child)
 end
 
 local function recursiveUpdateMatrix(object, parentMatrix)
-    if object.inactive then return end
+    if not object.active then return end
 
     if object.matrixWorld == nil then
         object.matrixWorld = Matrix4()
