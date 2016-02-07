@@ -12,6 +12,6 @@ function Mesh:init(geo, mat)
 	self.visible = true
 end
 
-function Mesh:updateMatrixWorld()
+function Mesh:updateMatrix()
 	self.matrix:compose(self.quaternion, self.scale, self.position)
 end

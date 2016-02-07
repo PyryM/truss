@@ -455,6 +455,13 @@ function Matrix4:multiply(b)
     return self
 end
 
+-- matrix multiplication on left:
+-- self = b * self
+function Matrix4:leftMultiply(b)
+    m.multiplyMatrices(self.data, b.data, self.data)
+    return self
+end
+
 -- matrix multiplication:
 -- self = a * b
 function Matrix4:multiplyInto(a,b)
