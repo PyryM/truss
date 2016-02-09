@@ -64,6 +64,21 @@ function SceneGraph:add(parent, child)
     return addChild(parent, child)
 end
 
+local function recursiveApply(object, f)
+    f(object)
+
+    if object.children then
+        for k,v in pairs(object.children) do
+            recursiveApply(v, f)
+        end
+    end
+end
+
+-- calls function f on object and all its children recursively
+function SceneGraph:map(object, f)
+    recursiveApply(object, f)
+end
+
 local function recursiveUpdateMatrix(object, parentMatrix)
     if not object.active then return end
 
