@@ -354,6 +354,7 @@ local Matrix4 = class("Matrix4")
 
 function Matrix4:init()
     self.data = terralib.new(float[16])
+    self.elem = self.data
 end
 
 function Matrix4:identity()
