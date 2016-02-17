@@ -5,14 +5,6 @@
 local class = require("class")
 local m = {}
 
-function m.iterate(target)
-    if target.iteritems then
-        return target:iteritems()
-    else
-        return ipairs(target)
-    end
-end
-
 local RenderPass = class("RenderPass")
 function RenderPass:init()
     -- nothing to do

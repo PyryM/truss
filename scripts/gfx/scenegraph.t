@@ -12,9 +12,11 @@ local SceneGraph = class("SceneGraph")
 function SceneGraph:init()
     self.children = {}
     self.parent = nil
+    self.sg = self
     self.matrix = Matrix4():identity()
     self.matrixWorld = Matrix4():identity()
     self.eyemat = Matrix4():identity()
+    self.objects = nil -- this will be automatically refreshed after changes
 end
 
 m.MAX_TREE_DEPTH = 200
@@ -41,27 +43,42 @@ local function wouldCauseCycle(parent, prospectiveChild)
     return false
 end
 
-local function addChild(parent, child)
+function SceneGraph:addChild(parent, child)
     if wouldCauseCycle(parent, child) then return false end
+
+    if not parent.children then parent.children = {} end
 
     -- remove child from its previous parent
     if child.parent then
-        child.parent.children[child.id_] = nil
+        child.sg.objects = nil -- whatever sg it was in is dirty
+        child.parent.children[child.id] = nil
     end
 
-    parent.children[child.id_] = child
+    parent.children[child.id] = child
     child.parent = parent
+
+    self.objects = nil -- object list needs to be refreshed
 
     return true
 end
 
-function SceneGraph:add(parent, child)
-    if child.sg and child.sg ~= self then
-        log.error("Cannot add child: belongs to different scenegraph!")
-        return false
+function SceneGraph:removeChild(parent, child)
+    if parent.children then 
+        parent.children[child.id] = nil
+        parent.sg.objects = nil 
     end
-    child.sg = self
-    return addChild(parent, child)
+    child.parent = nil
+    child.sg = nil
+end
+
+function SceneGraph:add(child)
+    return self:addChild(self, child)
+end
+
+function SceneGraph:remove(child)
+    if child.parent then
+        self:removeChild(child.parent, child)
+    end
 end
 
 local function recursiveApply(object, f)
@@ -77,6 +94,20 @@ end
 -- calls function f on object and all its children recursively
 function SceneGraph:map(object, f)
     recursiveApply(object, f)
+end
+
+function SceneGraph:updateObjectList()
+    local objlist = {}
+    local f = function(obj)
+        objlist[obj.id] = obj
+    end
+    self:map(self, f)
+    self.objects = objlist
+end
+
+function SceneGraph:iteritems()
+    if not self.objects then self:updateObjectList() end
+    return pairs(self.objects)
 end
 
 local function recursiveUpdateMatrix(object, parentMatrix)
@@ -96,7 +127,7 @@ local function recursiveUpdateMatrix(object, parentMatrix)
     end
 end
 
-function SceneGraph:updateAllMatrices()
+function SceneGraph:updateMatrices()
     recursiveUpdateMatrix(self, self.eyemat)
 end
 
