@@ -23,26 +23,31 @@ struct m.TTypeXYZW {
     w: float;   
 }
 
-m.types = {}
-m.types.XYZW = {
+m.XYZW = {
     bgfxType  = bgfx.BGFX_UNIFORM_TYPE_VEC4,
     terraType = m.TTypeXYZW,
     uType     = m.RAW_UNIFORM
 }
 
-m.types.RGBA = {
+m.RGBA = {
     bgfxType  = bgfx.BGFX_UNIFORM_TYPE_VEC4,
     terraType = m.TTypeRGBA,
     uType     = m.RAW_UNIFORM
 }
 
-m.types.VECTOR = {
+m.VECTOR = {
     bgfxType  = bgfx.BGFX_UNIFORM_TYPE_VEC4,
     terraType = nil,
     uType     = m.CLASS_UNIFORM
 }
 
-m.types.TEXTURE = {
+m.MAT4 = {
+    bgfxType  = bgfx.BGFX_UNIFORM_TYPE_MAT4,
+    terraType = nil,
+    uType     = m.CLASS_UNIFORM
+}
+
+m.TEXTURE = {
     bgfx.BGFX_UNIFORM_TYPE_INT1,
     uType     = TEX_UNIFORM
 }
@@ -54,7 +59,7 @@ function Uniforms:init()
     self.nextTexSampler_ = 0
 end
 
-function Uniforms:addUniform(uniformName, uniformType, uniformNum)
+function Uniforms:add(uniformName, uniformType, uniformNum)
     if self.uniforms[uniformName] then
         log.error("Cannot add: uniform [" .. uniformName .. "] exists!")
         return
@@ -85,6 +90,17 @@ function Uniforms:addUniform(uniformName, uniformType, uniformNum)
     end
     self.uniforms[uniformName] = uData
     return uData
+end
+
+-- Warning! This does no type validation
+function Uniforms:setFromTable(t)
+    local unis = self.uniforms
+    for k,v in pairs(t) do
+        if unis[k] then
+            unis[k].val = v
+        end
+    end
+    return self
 end
 
 function Uniforms:bind()
