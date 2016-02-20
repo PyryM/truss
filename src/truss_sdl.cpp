@@ -83,7 +83,8 @@ SDLAddon::SDLAddon(){
 		"void trss_sdl_stop_textinput(Addon* addon);\n"
 		"void trss_sdl_set_clipboard(Addon* addon, const char* data);\n"
 		"const char* trss_sdl_get_clipboard(Addon* addon);\n"
-		"bgfx_callback_interface_t* trss_sdl_get_bgfx_cb(Addon* addon);";
+		"bgfx_callback_interface_t* trss_sdl_get_bgfx_cb(Addon* addon);\n"
+		"void trss_sdl_set_relative_mouse_mode(Addon* addon, int mode);";
 	errorEvent_.event_type = TRSS_SDL_EVENT_OUTOFBOUNDS;
 }
 
@@ -277,6 +278,14 @@ void trss_sdl_set_clipboard(SDLAddon* addon, const char* data) {
 
 const char* trss_sdl_get_clipboard(SDLAddon* addon) {
 	return addon->getClipboardText();
+}
+
+void trss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode) {
+	if (mode > 0) {
+		SDL_SetRelativeMouseMode(SDL_TRUE);
+	} else {
+		SDL_SetRelativeMouseMode(SDL_FALSE);
+	}
 }
 
 void bgfx_cb_fatal(bgfx_callback_interface_t* _this, bgfx_fatal_t _code, const char* _str) {

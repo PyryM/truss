@@ -48,6 +48,10 @@ function m:setClipboard(data)
     return m.rawfunctions.trss_sdl_set_clipboard(raw_pointer, data)
 end
 
+function m:setRelativeMouseMode(mode)
+    m.rawfunctions.trss_sdl_set_relative_mouse_mode(raw_pointer, mode)
+end
+
 function m:getClipboard()
     local cstr = m.rawfunctions.trss_sdl_get_clipboard(raw_pointer)
     if not cstr then return nil end

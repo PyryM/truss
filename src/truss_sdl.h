@@ -52,6 +52,7 @@ TRSS_C_API void trss_sdl_stop_textinput(SDLAddon* addon);
 TRSS_C_API void trss_sdl_set_clipboard(SDLAddon* addon, const char* data);
 TRSS_C_API const char* trss_sdl_get_clipboard(SDLAddon* addon);
 TRSS_C_API bgfx_callback_interface_t* trss_sdl_get_bgfx_cb(SDLAddon* addon);
+TRSS_C_API void trss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode);
 
 class SDLAddon : public trss::Addon {
 public:
