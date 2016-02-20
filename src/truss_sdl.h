@@ -38,6 +38,8 @@ typedef struct {
 	char keycode[TRSS_SDL_KEYCODE_BUFF_SIZE];
 	double x;
 	double y;
+	double dx;
+	double dy;
 	int flags;
 } trss_sdl_event;
 

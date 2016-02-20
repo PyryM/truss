@@ -71,6 +71,8 @@ SDLAddon::SDLAddon(){
 		"    char keycode[16];\n"
 		"    double x;\n"
 		"    double y;\n"
+		"    double dx;\n"
+		"    double dy;\n"
 		"    int flags;\n"
 		"} trss_sdl_event;\n"
 		"void trss_sdl_create_window(Addon* addon, int width, int height, const char* name);\n"
@@ -159,6 +161,8 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 		newEvent.event_type = TRSS_SDL_EVENT_MOUSEMOVE;
 		newEvent.x = event.motion.x;
 		newEvent.y = event.motion.y;
+		newEvent.dx = event.motion.xrel;
+		newEvent.dy = event.motion.yrel;
 		newEvent.flags = event.motion.state;
 		break;
 	case SDL_MOUSEBUTTONDOWN:
