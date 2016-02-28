@@ -120,4 +120,7 @@ function Uniforms:bind()
     end
 end
 
+-- Export the class
+m.Uniforms = Uniforms
+
 return m
