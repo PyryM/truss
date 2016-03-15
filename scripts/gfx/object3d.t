@@ -29,11 +29,15 @@ function Object3D:init(geo, mat)
 end
 
 function Object3D:updateMatrix()
-    self.matrix:compose(self.quaternion, self.scale, self.position)
+    self.matrix:compose(self.position, self.quaternion, self.scale)
 end
 
 function Object3D:add(child)
-    if self.sg then self.sg:addChild(self, child) end
+    if self.sg then 
+        self.sg:addChild(self, child) 
+    else
+        log.error("Cannot add child to object; not part of scenegraph!")
+    end
 end
 
 function Object3D:remove(child)

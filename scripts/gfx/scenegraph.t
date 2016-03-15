@@ -17,6 +17,8 @@ function SceneGraph:init()
     self.matrixWorld = Matrix4():identity()
     self.eyemat = Matrix4():identity()
     self.objects = nil -- this will be automatically refreshed after changes
+    self.active = true
+    self.id = -1
 end
 
 m.MAX_TREE_DEPTH = 200
@@ -33,10 +35,12 @@ local function wouldCauseCycle(parent, prospectiveChild)
     while curnode ~= nil do
         curnode = curnode.parent
         if curnode == parent or curnode == prospectiveChild then
+            log.error("Adding child would have caused cycle!")
             return true
         end
         depth = depth + 1
         if depth > MAXD then
+            log.error("Adding child would exceed max tree depth!")
             return true
         end
     end
@@ -56,6 +60,7 @@ function SceneGraph:addChild(parent, child)
 
     parent.children[child.id] = child
     child.parent = parent
+    child.sg = self
 
     self.objects = nil -- object list needs to be refreshed
 
@@ -91,9 +96,9 @@ local function recursiveApply(object, f)
     end
 end
 
--- calls function f on object and all its children recursively
-function SceneGraph:map(object, f)
-    recursiveApply(object, f)
+-- calls function f on target and all its children recursively
+function SceneGraph:map(f, target)
+    recursiveApply(target or self, f)
 end
 
 function SceneGraph:updateObjectList()
@@ -101,7 +106,7 @@ function SceneGraph:updateObjectList()
     local f = function(obj)
         objlist[obj.id] = obj
     end
-    self:map(self, f)
+    self:map(f)
     self.objects = objlist
 end
 
@@ -114,10 +119,15 @@ local function recursiveUpdateMatrix(object, parentMatrix)
     if not object.active then return end
 
     if object.matrixWorld == nil then
-        object.matrixWorld = Matrix4()
+        object.matrixWorld = Matrix4():identity()
     end
     -- object.matrixWorld = parentMatrix * object.matrixLocal
     object.matrixWorld:multiplyInto(parentMatrix, object.matrix)
+
+    -- log.info("-----------------------------------")
+    -- log.info("pmat: " .. parentMatrix:prettystr())
+    -- log.info("omat: " .. object.matrix:prettystr())
+    -- log.info("wmat: " .. object.matrixWorld:prettystr())
 
     if object.children then
         local newmat = object.matrixWorld
