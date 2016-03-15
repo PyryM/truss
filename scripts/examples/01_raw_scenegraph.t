@@ -14,7 +14,6 @@ local Matrix4 = require("math/matrix.t").Matrix4
 local Quaternion = require("math/quat.t").Quaternion
 local debugcube = require("geometry/debugcube.t")
 local shaderutils = require('utils/shaderutils.t')
-local SceneGraph = require('gfx/scenegraph.t').SceneGraph
 local Object3D = require('gfx/object3d.t').Object3D
 
 width = 800
@@ -39,7 +38,7 @@ function createCubeThing()
     rootobj.name = "rootobj"
     rootobj.position:set(0.0, -5.0, -10.0)
     rootobj:updateMatrix()
-    sg:add(rootobj)
+    sg = rootobj
     local prevcube = rootobj
 
     for i = 1,ncubes do
@@ -123,7 +122,6 @@ function init()
     modelmat = Matrix4():identity()
 
     -- create and populate scenegraph
-    sg = SceneGraph()
     createCubeThing()
 
 
