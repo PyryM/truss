@@ -2,11 +2,18 @@ import re
 import sys
 
 def translate_lines(lines):
+    patt_define     = re.compile(r"^#define\s*(\w*).*$")
+    patt_func_macro = re.compile(r"^#define\s*(\w*)\(.*$")
+
     tokens = []
     for line in lines:
         sline = line.strip()
-        if len(sline) > 0:
-            tokens.append('"{}"'.format(sline))
+        m = patt_define.match(sline)
+        macro_match = patt_func_macro.match(sline)
+        if macro_match:
+            print("ignoring {}".format(m.groups()[0]))
+        elif m and not "HEADER_GUARD" in m.groups()[0]:
+            tokens.append('"{}"'.format(m.groups()[0]))
 
     return "local defnames = {" + ",\n".join(tokens) + "}"
 
