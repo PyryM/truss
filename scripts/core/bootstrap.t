@@ -145,8 +145,16 @@ function truss_import(filename, force)
 		log.info("Starting to load [" .. filename .. "]")
 		local oldmodule = loadedLibs[filename] -- only relevant if force==true
 		loadedLibs[filename] = {} -- prevent possible infinite recursion by a module trying to import itself
+
+		-- check if the file is actually a directory, in which case we should try to load __init__.t
+		local fullpath = "scripts/" .. _requirePrefixPath .. filename
+		if trss.trss_check_file(fullpath) == 2 then
+			fullpath = fullpath .. "/init.t"
+			log.info("Required directory; trying to load [" .. fullpath .. "]")
+		end
+
 		local t0 = tic()
-		local funcsource = loadStringFromFile("scripts/" .. _requirePrefixPath .. filename)
+		local funcsource = loadStringFromFile(fullpath)
 		if funcsource == nil then
 			log.error("Error loading library [" .. filename .. "]: file does not exist.")
 			loadedLibs[filename] = nil
