@@ -598,8 +598,14 @@ trss_message* Core::loadFile(const char* filename) {
 		return NULL;
 	}
 
-	if (PHYSFS_exists(filename) <= 0) {
-		logMessage(TRSS_LOG_ERROR, "Error opening file.");
+	if (PHYSFS_exists(filename) == 0) {
+		logMessage(TRSS_LOG_ERROR, "Error opening file: does not exist.");
+		logMessage(TRSS_LOG_ERROR, filename);
+		return NULL;
+	}
+
+	if (PHYSFS_isDirectory(filename) != 0) {
+		logMessage(TRSS_LOG_ERROR, "Attempted to read directory as a file.");
 		logMessage(TRSS_LOG_ERROR, filename);
 		return NULL;
 	}
