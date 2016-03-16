@@ -580,7 +580,7 @@ namespace
 				bgfx_set_transient_vertex_buffer(&gl->tvb, 0, UINT32_MAX);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 				fan(paths[i].fillOffset, paths[i].fillCount);
-				bgfx_submit(gl->viewid, gl->prog, 0);
+				bgfx_submit(gl->viewid, gl->prog, 0, false);
 			}
 		}
 
@@ -604,7 +604,7 @@ namespace
 					, 0);
 				bgfx_set_transient_vertex_buffer(&gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
-				bgfx_submit(gl->viewid, gl->prog, 0);
+				bgfx_submit(gl->viewid, gl->prog, 0, false);
 			}
 		}
 
@@ -619,7 +619,7 @@ namespace
 				| BGFX_STENCIL_OP_FAIL_Z_ZERO
 				| BGFX_STENCIL_OP_PASS_Z_ZERO
 				, 0);
-		bgfx_submit(gl->viewid, gl->prog, 0);
+		bgfx_submit(gl->viewid, gl->prog, 0, false);
 	}
 
 	static void glnvg__convexFill(struct GLNVGcontext* gl, struct GLNVGcall* call)
@@ -636,7 +636,7 @@ namespace
 			bgfx_set_transient_vertex_buffer(&gl->tvb, 0, UINT32_MAX);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 			fan(paths[i].fillOffset, paths[i].fillCount);
-			bgfx_submit(gl->viewid, gl->prog, 0);
+			bgfx_submit(gl->viewid, gl->prog, 0, false);
 		}
 
 		if (gl->edgeAntiAlias)
@@ -649,7 +649,7 @@ namespace
 					, 0);
 				bgfx_set_transient_vertex_buffer(&gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
-				bgfx_submit(gl->viewid, gl->prog, 0);
+				bgfx_submit(gl->viewid, gl->prog, 0, false);
 			}
 		}
 	}
@@ -670,7 +670,7 @@ namespace
 			bgfx_set_transient_vertex_buffer(&gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
-			bgfx_submit(gl->viewid, gl->prog, 0);
+			bgfx_submit(gl->viewid, gl->prog, 0, false);
 		}
 	}
 
@@ -683,7 +683,7 @@ namespace
 			bgfx_set_state(gl->state, 0);
 			bgfx_set_transient_vertex_buffer(&gl->tvb, call->vertexOffset, call->vertexCount);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
-			bgfx_submit(gl->viewid, gl->prog, 0);
+			bgfx_submit(gl->viewid, gl->prog, 0, false);
 		}
 	}
 
