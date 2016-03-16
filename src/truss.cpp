@@ -559,13 +559,19 @@ void Core::deallocateMessage(trss_message* msg){
 	delete msg;
 }
 
-bool Core::checkFile(const char* filename) {
+int Core::checkFile(const char* filename) {
 	if (!physFSInitted_) {
-		logMessage(TRSS_LOG_WARNING, "PhysFS not initted: checkFile always returns false.");
+		logMessage(TRSS_LOG_WARNING, "PhysFS not initted: checkFile always returns 0.");
 		return false;
 	}
 
-	return PHYSFS_exists(filename) > 0;
+	if (PHYSFS_exists(filename) == 0) {
+		return 0;
+	} else if (PHYSFS_isDirectory(filename) == 0) {
+		return 1;
+	} else {
+		return 2;
+	}
 }
 
 trss_message* Core::loadFileRaw(const char* filename) {

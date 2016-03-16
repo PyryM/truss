@@ -148,7 +148,7 @@ namespace trss {
 		trss_message* allocateMessage(size_t dataLength);
 		void deallocateMessage(trss_message* msg);
 
-		bool checkFile(const char* filename);
+		int checkFile(const char* filename);
 		trss_message* loadFile(const char* filename);
 		trss_message* loadFileRaw(const char* filename);
 		void saveFile(const char* filename, trss_message* data);

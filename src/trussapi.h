@@ -61,7 +61,7 @@ TRSS_C_API uint64_t trss_get_hp_freq();
 
 /* FileIO */
 /* Note that when saving the message_type field is not saved */
-TRSS_C_API int trss_check_file(const char* filename); /* returns 1 if file exists, 0 otherwise */
+TRSS_C_API int trss_check_file(const char* filename); /* returns 1 if file exists, 2 if directory, 0 otherwise */
 TRSS_C_API trss_message* trss_load_file(const char* filename);
 TRSS_C_API int trss_save_file(const char* filename, trss_message* data);
 TRSS_C_API int trss_add_fs_path(const char* path, const char* mountpath, int append);
