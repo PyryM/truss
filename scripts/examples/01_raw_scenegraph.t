@@ -9,9 +9,10 @@ terralib = core.terralib
 trss = core.trss
 sdl = addons.sdl
 
-local Vector = require("math/vec.t").Vector
-local Matrix4 = require("math/matrix.t").Matrix4
-local Quaternion = require("math/quat.t").Quaternion
+local math = require("math")
+local Vector = math.Vector
+local Matrix4 = math.Matrix4
+local Quaternion = math.Quaternion
 local debugcube = require("geometry/debugcube.t")
 local shaderutils = require('utils/shaderutils.t')
 local Object3D = require('gfx/object3d.t').Object3D
