@@ -74,7 +74,7 @@ function drawCube(cube)
 
     -- Setting default state is not strictly necessary, but good practice
     bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)
-    bgfx.bgfx_submit(0, program, 0)
+    bgfx.bgfx_submit(0, program, 0, false)
 end
 
 function updateAndDrawCubes()
