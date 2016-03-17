@@ -72,6 +72,27 @@ function StaticGeometry:setAttribute(attribName, attribList)
 end
 DynamicGeometry.setAttribute = StaticGeometry.setAttribute
 
+function StaticGeometry:fromData(vertexInfo, modeldata, noBuild)
+    if modeldata == nil or vertexInfo == nil then 
+        log.error("Geometry:fromData: nil vertexInfo or modeldata!")
+        return 
+    end
+
+    self:allocate(vertexInfo, #(modeldata.attributes.position), #(modeldata.indices))
+
+    for attribName, attribData in pairs(modeldata.attributes) do
+        self:setAttribute(attribName, attribData)
+    end
+    self:setIndices(modeldata.indices)
+
+    if noBuild then
+        return self
+    else
+        return self:build()
+    end
+end
+DynamicGeometry.fromData = StaticGeometry.fromData
+
 function StaticGeometry:build(recreate)
     if not self.allocated then
         log.error("Cannot build geometry with no allocated data!")
@@ -104,6 +125,8 @@ function StaticGeometry:build(recreate)
           bgfx.bgfx_make_ref(self.indices, self.indexDataSize), flags )
 
     self.built = (self.vbh ~= nil) and (self.ibh ~= nil)
+
+    return self
 end
 
 local function check_built_(geo)
@@ -154,6 +177,8 @@ function DynamicGeometry:build(recreate)
           bgfx.bgfx_make_ref(self.indices, self.indexDataSize), flags )
 
     self.built = (self.vbh ~= nil) and (self.ibh ~= nil)
+
+    return self
 end
 
 function DynamicGeometry:update()
@@ -163,6 +188,8 @@ function DynamicGeometry:update()
         self:updateVertices()
         self:updateIndices()
     end
+
+    return self
 end
 
 function DynamicGeometry:updateVertices()
@@ -170,6 +197,8 @@ function DynamicGeometry:updateVertices()
 
     bgfx.bgfx_update_dynamic_vertex_buffer(self.vbh, 0,
         bgfx.bgfx_make_ref(self.verts, self.vertDataSize))
+
+    return self
 end
 
 function DynamicGeometry:updateIndices()
@@ -177,6 +206,8 @@ function DynamicGeometry:updateIndices()
 
     bgfx.bgfx_update_dynamic_index_buffer(self.ibh, 0,
          bgfx.bgfx_make_ref(self.indices, self.indexDataSize))
+
+    return self
 end
 
 function DynamicGeometry:bind()
@@ -189,23 +220,6 @@ function DynamicGeometry:bind()
     bgfx.bgfx_set_dynamic_index_buffer(self.ibh, 
                                         0, bgfx.UINT32_MAX)
 end
-
--- function Geometry:fromData(vertexInfo, modeldata)
---     if modeldata == nil or vertexInfo == nil then return end
-
---     -- allocate static buffers
---     self:allocate(vertexInfo, #(modeldata.positions), #(modeldata.indices), false)
---     self:setIndices(modeldata.indices)
-
---     self:setAttribute("position", modeldata.position)
---     self:setAttribute("normal", modeldata.normal)
---     self:setAttribute("tangent", modeldata.tangent)
---     self:setAttribute("tex0", modeldata.tex0)
---     self:setAttribute("color", modeldata.color)
-
---     self:update()
---     return self
--- end
 
 m.StaticGeometry    = StaticGeometry -- 'export' Geometry
 m.DynamicGeometry   = DynamicGeometry

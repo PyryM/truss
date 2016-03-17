@@ -20,25 +20,26 @@ height = 600
 time = 0.0
 
 function makeCubeGeometry()
-    local positions = { {-1.0,  1.0,  1.0},
+    local data = {
+        attributes = {
+            position = {{-1.0,  1.0,  1.0},
                         { 1.0,  1.0,  1.0},
                         {-1.0, -1.0,  1.0},
                         { 1.0, -1.0,  1.0},
                         {-1.0,  1.0, -1.0},
                         { 1.0,  1.0, -1.0},
                         {-1.0, -1.0, -1.0},
-                        { 1.0, -1.0, -1.0} }
-
-    local colors = { { 0.0, 0.0, 0.0, 255},
-                     { 255, 0.0, 0.0, 255},
-                     { 0.0, 255, 0.0, 255},
-                     { 255, 255, 0.0, 255},
-                     { 0.0, 0.0, 255, 255},
-                     { 255, 0.0, 255, 255},
-                     { 0.0, 255, 255, 255},
-                     { 255, 255, 255, 255} }
-
-    local indices = { 0, 2, 1,
+                        { 1.0, -1.0, -1.0}},
+            color0   = {{ 0.0, 0.0, 0.0, 255},
+                        { 255, 0.0, 0.0, 255},
+                        { 0.0, 255, 0.0, 255},
+                        { 255, 255, 0.0, 255},
+                        { 0.0, 0.0, 255, 255},
+                        { 255, 0.0, 255, 255},
+                        { 0.0, 255, 255, 255},
+                        { 255, 255, 255, 255}}
+        },
+        indices   = { 0, 2, 1,
                       1, 2, 3,
                       4, 5, 6, 
                       5, 7, 6,
@@ -50,12 +51,10 @@ function makeCubeGeometry()
                       4, 1, 5,
                       2, 6, 3, 
                       6, 7, 3 }
+    }
 
-    local cubegeo = StaticGeometry("cube"):allocate(vertexInfo, #positions, #indices)
-    cubegeo:setIndices(indices)
-    cubegeo:setAttribute("position", positions)
-    cubegeo:setAttribute("color0", colors)
-    cubegeo:build()
+
+    local cubegeo = StaticGeometry("cube"):fromData(vertexInfo, data)
     return cubegeo
 end
 
