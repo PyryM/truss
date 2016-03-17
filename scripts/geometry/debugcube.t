@@ -51,7 +51,7 @@ function m.createGeo(name, vertexInfo)
     local cubegeo = StaticGeometry("cube"):allocate(vertexInfo, #positions, #indices)
     cubegeo:setIndices(indices)
     cubegeo:setAttribute("position", positions)
-    cubegeo:setAttribute("color", colors)
+    cubegeo:setAttribute("color0", colors)
     cubegeo:build()
     return cubegeo
 end

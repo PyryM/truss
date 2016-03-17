@@ -3,10 +3,11 @@
 -- utility functions for managing bgfx buffers
 
 local m = {}
+local vertexdefs = require("gfx/vertexdefs.t")
 
 local function check_index_size_(geo, nindices)
     if geo.nIndices ~= nindices then
-        error("Wrong number of indices, expected " 
+        log.error("Wrong number of indices, expected " 
                 .. (geo.nIndices or "nil")
                 .. " got " .. (nindices or "nil"))
         return false
@@ -61,16 +62,17 @@ function m.setIndicesFlat(geo, indexlist)
     end
 end
 
--- makeSetter
+-- makeLSetter
 --
 -- makes a function to set an attribute name from a 
 -- number of values
-function m.makeSetter(attribname, nvals)
+function m.makeLSetter(attribname, nvals)
     if nvals > 1 then
         return function(vdata, vindex, attribVal)
+            local tgt = vdata[vindex][attribname]
             for i = 1,nvals do
-                -- vdata is C-style struct and so zero indexed
-                vdata[vindex][attribname][i-1] = attribVal[i]
+                -- the attribute is C-style struct and so zero indexed
+                tgt[i-1] = attribVal[i]
             end
         end
     else 
@@ -80,65 +82,85 @@ function m.makeSetter(attribname, nvals)
     end
 end
 
--- convenience setters
-m.positionSetter = m.makeSetter("position", 3)
-m.normalSetter = m.makeSetter("normal", 3)
-m.uvSetter = m.makeSetter("tex0", 2)
-m.colorSetter = m.makeSetter("color", 4)
+-- makeVSetter
+--
+-- makes a setter function that sets from a Vector
+function m.makeVSetter(attribname, nvals)
+    local keys = {"x", "y", "z", "w"}
+    return function(vdata, vindex, attribVal)
+        local tgt = vdata[vindex][attribname]
+        local src = attribVal.elem
+        for i = 1,nvals do
+            -- the attribute is C-style struct and so zero indexed
+            tgt[i-1] = src[keys[i]]
+        end
+    end
+end
+
+-- populate setter list
+m.setters = {}
+for _, aName in ipairs(vertexdefs.AttributeNames) do
+    m.setters[aName .. "_F"] = m.makeLSetter(aName, 1)
+    for i = 1,4 do
+        m.setters[aName .. "_L" .. i] = m.makeLSetter(aName, i)
+        m.setters[aName .. "_V" .. i] = m.makeVSetter(aName, i)
+    end
+end
 
 -- setter for when you just need random colors, ignores attribVal
-function m.randomColorSetter(vdata, vindex, attribVal)
-    vdata[vindex].color[0] = math.random() * 255.0
-    vdata[vindex].color[1] = math.random() * 255.0
-    vdata[vindex].color[2] = math.random() * 255.0
-    vdata[vindex].color[3] = math.random() * 255.0
+m.setters.color0_RAND = function(vdata, vindex, attribVal)
+    vdata[vindex].color0[0] = math.random() * 255.0
+    vdata[vindex].color0[1] = math.random() * 255.0
+    vdata[vindex].color0[2] = math.random() * 255.0
+    vdata[vindex].color0[3] = math.random() * 255.0
 end
 
-local attrib_setters = {
-    position = m.positionSetter,
-    normal = m.normalSetter,
-    tex0 = m.uvSetter,
-    color = m.colorSetter
-}
+function m.findSetter(target, attribName, attribList)
+    -- figure out how many elements the target has for the attribute
+    -- (e.g., 3 element colors [rgb] vs. 4 element color [rgba])
+    local datanum = target.vertInfo.attributes[attribName]
 
-function m.setNamedAttribute(data, attribname, attriblist)
-    local setter = attrib_setters[attribname]
+    -- determine what setter to use based on the src list
+    -- (assume list is homogeneous: probably unsafe but :effort:)
+    local setterTag = ""
+    local src1 = attribList[1]
+    if type(src1) == "number" then -- list of numbers
+        setterTag = attribName .. "_F"
+    elseif src1.elem then          -- list of Vectors
+        setterTag = attribName .. "_V" .. datanum
+    else                           -- list of lists
+        setterTag = attribName .. "_L" .. datanum
+    end
+    local setter = m.setters[setterTag]
+
     if setter == nil then
-        log.error("No setter for attribute [" .. attribname .. "]")
-        return
+        log.error("Could not find setter for attribute type " .. setterTag)
+        return nil
     end
-    m.setAttributesSafe(data, attribname, setter, attriblist)
+
+    return setter
 end
 
--- setAttributesSafe
---
--- like set attributes but checks if the attribute exists
-function m.setAttributesSafe(data, attribname, setter, attriblist)
-    if data.vertInfo.attributes[attribname] == nil then
-        trss.trss_log(0, "Buffer does not have attribute " .. attribname)
-        return
-    end
-    m.setAttributes(data, setter, attriblist)
-end
-
--- setAttributes
---
--- sets vertex attributes (e.g, positions) given a list
--- of attributes (per vertex) and a setter for that attrib
--- setter(vertData, vertexIndex, attribValue)
-function m.setAttributes(data, setter, attriblist)
-    local nvertices = #attriblist
-    if data.nVertices ~= nvertices then
-        error("Wrong number of vertices, expected " 
+function m.setAttribute(target, attribName, attribList, setter)
+    local listSize = #attribList
+    if listSize == 0 then 
+        log.warn("setAttribute with #attribList == 0 does nothing")
+        return 
+    elseif listSize ~= target.nVertices then
+        log.error("setAttribute: wrong number of vertices, expected " 
                 .. (data.nVertices or "nil")
-                .. " got " .. (nvertices or "nil"))
+                .. " got " .. (listSize or "nil"))
         return
     end
 
-    local dest = data.verts
-    for v = 1,nvertices do
+    setter = setter or m.findSetter(target, attribName, attribList)
+    if not setter then return end -- couldn't find setter and none supplied
+
+    -- actually set the data
+    local dest = target.verts
+    for v = 1,listSize do
         -- dest (data.verts) is a C-style array so zero indexed
-        setter(dest, v-1, attriblist[v])
+        setter(dest, v-1, attribList[v])
     end
 end
 

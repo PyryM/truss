@@ -4,20 +4,45 @@
 
 local m = {}
 
+m.AttributeNames = {
+	"position",
+    "normal",
+    "tangent",
+    "bitangent",
+    "color0",
+    "color1",
+    "indices",
+    "weight",
+    "texcoord0",
+    "texcoord1",
+    "texcoord2",
+    "texcoord3",
+    "texcoord4",
+    "texcoord5",
+    "texcoord6",
+    "texcoord7"
+}
+
+m.AttributeBGFXEnums = {}
+for i,attribName in ipairs(m.AttributeNames) do
+	local enumVal = bgfx["BGFX_ATTRIB_" .. string.upper(attribName)]
+	m.AttributeBGFXEnums[attribName] = enumVal
+end
+
 struct m.PosColorVertex {
 	position: float[3];
-	color: uint8[4];
+	color0:   uint8[4];
 }
 
 struct m.PosNormalVertex {
 	position: float[3];
-	normal: float[3];
+	normal:   float[3];
 }
 
 struct m.PosNormalUVVertex {
-	position: float[3];
-	normal: float[3];
-	uv: float[2];
+	position:  float[3];
+	normal:    float[3];
+	texcoord0: float[2];
 }
 
 terra m.declarePosColorVertex(vertDecl : &bgfx.bgfx_vertex_decl_t)
@@ -46,19 +71,19 @@ end
 function m.createPosColorVertexInfo()
 	local vspec = terralib.new(bgfx.bgfx_vertex_decl_t)
 	m.declarePosColorVertex(vspec)
-	return {vertType = m.PosColorVertex, vertDecl = vspec, attributes = {position=true, color=true}}
+	return {vertType = m.PosColorVertex, vertDecl = vspec, attributes = {position=3, color0=4}}
 end
 
 function m.createPosNormalVertexInfo()
 	local vspec = terralib.new(bgfx.bgfx_vertex_decl_t)
 	m.declarePosNormalVertex(vspec)
-	return {vertType = m.PosNormalVertex, vertDecl = vspec, attributes = {position=true, normal=true}}
+	return {vertType = m.PosNormalVertex, vertDecl = vspec, attributes = {position=3, normal=3}}
 end
 
 function m.createPosNormalUVVertexInfo()
 	local vspec = terralib.new(bgfx.bgfx_vertex_decl_t)
 	m.declarePosNormalUVVertex(vspec)
-	return {vertType = m.PosNormalUVVertex, vertDecl = vspec, attributes = {position=true, normal=true, uv=true}}
+	return {vertType = m.PosNormalUVVertex, vertDecl = vspec, attributes = {position=3, normal=3, texcoord0=2}}
 end
 
 return m

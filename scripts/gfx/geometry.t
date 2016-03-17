@@ -17,7 +17,7 @@ local m = {}
 
 local INDEX_TYPE = uint16
 
-local buffer_library_ = {} -- needed for memory management reasons?
+local buffer_library_ = {} -- needed for memory management reasons
 local last_geo_idx_ = 0
 
 local StaticGeometry = class("StaticGeometry")
@@ -60,27 +60,17 @@ function StaticGeometry:allocate(vertInfo, nVertices, nIndices)
     allocate_buffer_data_(self, vertInfo, nVertices, nIndices)
     return self
 end
-
-function DynamicGeometry:allocate(vertInfo, nVertices, nIndices)
-    allocate_buffer_data_(self, vertInfo, nVertices, nIndices)
-    return self
-end
+DynamicGeometry.allocate = StaticGeometry.allocate
 
 function StaticGeometry:setIndices(indices)
     bufferutils.setIndices(self, indices)
 end
+DynamicGeometry.setIndices = StaticGeometry.setIndices
 
 function StaticGeometry:setAttribute(attribName, attribList)
-    bufferutils.setNamedAttribute(self, attribName, attribList)
+    bufferutils.setAttribute(self, attribName, attribList)
 end
-
-function DynamicGeometry:setIndices(indices)
-    bufferutils.setIndices(self, indices)
-end
-
-function DynamicGeometry:setAttribute(attribName, attribList)
-    bufferutils.setNamedAttribute(self, attribName, attribList)
-end
+DynamicGeometry.setAttribute = StaticGeometry.setAttribute
 
 function StaticGeometry:build(recreate)
     if not self.allocated then
