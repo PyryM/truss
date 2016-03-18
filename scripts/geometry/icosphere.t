@@ -1,0 +1,3 @@
+-- icosphere.t
+-- 
+-- generates an icosphere

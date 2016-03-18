@@ -78,7 +78,13 @@ function StaticGeometry:fromData(vertexInfo, modeldata, noBuild)
         return 
     end
 
-    self:allocate(vertexInfo, #(modeldata.attributes.position), #(modeldata.indices))
+    local nindices
+    if type(modeldata.indices[0]) == "number" then
+        nindices = #modeldata.indices
+    else
+        nindices = #modeldata.indices * 3
+    end
+    self:allocate(vertexInfo, #(modeldata.attributes.position), nindices)
 
     for attribName, attribData in pairs(modeldata.attributes) do
         self:setAttribute(attribName, attribData)

@@ -25,6 +25,14 @@ function Vector:set(x, y, z, w)
     return self
 end
 
+function Vector:identity()
+    self:set(0,0,0,1)
+end
+
+function Vector:zero()
+    self:set(0,0,0,0)
+end
+
 local terra copyvec(src: &matrix.vec4_, dest: &matrix.vec4_)
     @dest = @src
 end
