@@ -34,16 +34,18 @@ end
 -- actually creates the cube structure
 function createCubeThing()
     local geoutils = require("geometry/geoutils.t")
+    local icosphere = require("geometry/icosphere.t")
+    local cylinder = require("geometry/cylinder.t")
 
     local ncubes = 20
 
-    local cylinder = require("geometry/cylinder.t")
-    local cylinderData = cylinder.cylinderData(0.5, 1.0, 3, true)
-    cylinderData = geoutils.subdivide(cylinderData)
-    cylinderData = geoutils.subdivide(cylinderData)
-    cylinderData = geoutils.subdivide(cylinderData)
+    --local cylinderData = icosphere.icosahedronData(1.0) --cylinder.cylinderData(0.5, 1.0, 3, true)
+    --cylinderData = geoutils.subdivide(cylinderData)
+    --cylinderData = geoutils.subdivide(cylinderData)
+    --cylinderData = geoutils.subdivide(cylinderData)
 
-    geoutils.spherize(cylinderData, 2.0)
+    --geoutils.spherize(cylinderData, 2.0)
+    local cylinderData = icosphere.icosphereData(2.0, 3)
     geoutils.colorRandomly(cylinderData)
 
     local vertInfo = require("gfx/vertexdefs.t").createPosColorVertexInfo()
