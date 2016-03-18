@@ -33,15 +33,18 @@ end
 
 -- actually creates the cube structure
 function createCubeThing()
+    local geoutils = require("geometry/geoutils.t")
+
     local ncubes = 20
 
     local cylinder = require("geometry/cylinder.t")
-    local cylinderData = cylinder.cylinderData(0.5, 16.0, 20, true)
-    local geoutils = require("geometry/geoutils.t")
-    cylinderData.attributes.color0 = geoutils.mapAttribute(cylinderData.attributes.position,
-        function (v)
-            return Vector(math.random()*255, math.random()*255, math.random()*255)
-        end)
+    local cylinderData = cylinder.cylinderData(0.5, 1.0, 3, true)
+    cylinderData = geoutils.subdivide(cylinderData)
+    cylinderData = geoutils.subdivide(cylinderData)
+    cylinderData = geoutils.subdivide(cylinderData)
+
+    geoutils.spherize(cylinderData, 2.0)
+    geoutils.colorRandomly(cylinderData)
 
     local vertInfo = require("gfx/vertexdefs.t").createPosColorVertexInfo()
     local cylinderGeo = StaticGeometry("cylinder"):fromData(vertInfo, cylinderData)

@@ -19,8 +19,8 @@ function m.cylinderData(radius, height, nsegs, capped)
         local theta = (i-1) * dtheta
         local x = math.cos(theta) * radius
         local z = math.sin(theta) * radius
-        table.insert(positions, Vector(x, yTop, z))
-        table.insert(positions, Vector(x, yBot, z))
+        table.insert(positions, Vector(x, yTop, z, 0))
+        table.insert(positions, Vector(x, yBot, z, 0))
     end
 
     local indices = {}
@@ -35,8 +35,8 @@ function m.cylinderData(radius, height, nsegs, capped)
     end
     -- caps
     if capped then
-        table.insert(positions, Vector(0, yTop, 0))
-        table.insert(positions, Vector(0, yBot, 0))
+        table.insert(positions, Vector(0, yTop, 0, 0))
+        table.insert(positions, Vector(0, yBot, 0, 0))
 
         local vTop = #(positions)-2
         local vBot = vTop + 1

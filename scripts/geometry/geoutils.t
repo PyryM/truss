@@ -3,6 +3,29 @@
 -- various geometry utilities
 
 local m = {}
+local Vector = require("math").Vector
+
+local function getRandomColor(vertex)
+    local rand = math.random
+    return Vector(rand()*255, rand()*255, rand()*255)
+end
+
+-- assigns random colors to all the vertices, in place
+-- any existing colors are discarded
+function m.colorRandomly(srcdata)
+    local attr = srcdata.attributes
+    attr.color0 = m.mapAttribute(attr.position, getRandomColor)
+    return srcdata
+end
+
+local function normalizeVertex(v, rad)
+    v:normalize():multiplyScalar(rad)
+end
+
+-- projects the positions of the srcdata in place onto a sphere
+function m.spherize(srcdata, radius)
+    m.mapAttribute(srcdata.attributes.position, normalizeVertex, radius)
+end
 
 local function canonizeVertex(v, precision)
     local p = precision
@@ -64,15 +87,75 @@ function m.combineDuplicateVertices(srcdata, precision)
     }
 end
 
--- does a single subdivision of each triangular face of the data
-function m.subdivide(srcdata)
-    -- TODO
+local function remapVertex(srcPositions, idx, newpositions, nextidx, vtable)
+    local strid = tostring(idx)
+    local remappedIdx = vtable[strid]
+    if remappedIdx then 
+        return remappedIdx, nextidx 
+    end
+    newpositions[nextidx+1] = srcPositions[idx+1]
+    vtable[strid] = nextidx
+    return nextidx, nextidx+1
 end
 
-function m.mapAttribute(attribData, f)
+
+local function remapMidpoint(srcPositions, idx1, idx2, newpositions, nextidx, vtable)
+    if idx1 > idx2 then
+        idx1, idx2 = idx2, idx1
+    end
+    local strid = idx1 .. "|" .. idx2
+    local remappedIdx = vtable[strid]
+    if remappedIdx then 
+        return remappedIdx, nextidx 
+    end
+    local newvert = Vector()
+    newvert:addVecs(srcPositions[idx1+1], srcPositions[idx2+1])
+    newvert:multiplyScalar(0.5)
+    newpositions[nextidx+1] = newvert
+    vtable[strid] = nextidx
+    return nextidx, nextidx+1
+end
+
+-- does a single subdivision of each triangular face of the data
+-- assumes indices in list-of-lists format
+-- only subdivides positions; other attributes are ignored
+function m.subdivide(srcdata)
+    local vtable = {}
+
+    local newindices = {}
+    local newpositions = {}
+    
+    local srcindices = srcdata.indices
+    local positions = srcdata.attributes.position
+
+    local nextidx = 0
+
+    for _, face in ipairs(srcindices) do
+        local i0, i1, i2, i01, i02, i12
+        i0, nextidx = remapVertex(positions, face[1], newpositions, nextidx, vtable)
+        i1, nextidx = remapVertex(positions, face[2], newpositions, nextidx, vtable)
+        i2, nextidx = remapVertex(positions, face[3], newpositions, nextidx, vtable)
+        i01, nextidx = remapMidpoint(positions, face[1], face[2], newpositions, nextidx, vtable)
+        i02, nextidx = remapMidpoint(positions, face[1], face[3], newpositions, nextidx, vtable)
+        i12, nextidx = remapMidpoint(positions, face[2], face[3], newpositions, nextidx, vtable)
+        table.insert(newindices, {i0, i01, i02})
+        table.insert(newindices, {i01, i1, i12})
+        table.insert(newindices, {i02, i12, i2})
+        table.insert(newindices, {i01, i12, i02})
+    end
+
+    return {
+        indices = newindices,
+        attributes = {
+            position = newpositions
+        }
+    }
+end
+
+function m.mapAttribute(attribData, f, arg)
     local ret = {}
     for i,v in ipairs(attribData) do
-        ret[i] = f(v)
+        ret[i] = f(v, arg)
     end
     return ret
 end
@@ -80,7 +163,6 @@ end
 -- computes normals for data, modifying srcdata in place to add
 -- srcdata.attributes.normal
 function m.computeNormals(srcdata)
-    local Vector = require("math").Vector
     local tempV0 = Vector()
     local tempV1 = Vector()
     local tempN  = Vector() 
