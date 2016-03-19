@@ -3,124 +3,78 @@
 -- class for conveniently setting up uniforms
 
 local class = require("class")
+local vec4_ = require("math/matrix.t").vec4_
+
 local m = {}
-
-local RAW_UNIFORM   = 0
-local CLASS_UNIFORM = 1
-local TEX_UNIFORM   = 2 
-
-struct m.TTypeRGBA {
-    r: float;
-    g: float;
-    b: float;
-    a: float;
-}
-
-struct m.TTypeXYZW {
-    x: float;
-    y: float;
-    z: float;
-    w: float;   
-}
-
-m.XYZW = {
-    bgfxType  = bgfx.BGFX_UNIFORM_TYPE_VEC4,
-    terraType = m.TTypeXYZW,
-    uType     = m.RAW_UNIFORM
-}
-
-m.RGBA = {
-    bgfxType  = bgfx.BGFX_UNIFORM_TYPE_VEC4,
-    terraType = m.TTypeRGBA,
-    uType     = m.RAW_UNIFORM
-}
 
 m.VECTOR = {
     bgfxType  = bgfx.BGFX_UNIFORM_TYPE_VEC4,
-    terraType = nil,
-    uType     = m.CLASS_UNIFORM
+    terraType = vec4_
 }
 
 m.MAT4 = {
     bgfxType  = bgfx.BGFX_UNIFORM_TYPE_MAT4,
-    terraType = nil,
-    uType     = m.CLASS_UNIFORM
+    terraType = float[16]
 }
 
-m.TEXTURE = {
-    bgfx.BGFX_UNIFORM_TYPE_INT1,
-    uType     = TEX_UNIFORM
-}
+local Uniform = class("Uniform")
+function Uniform:init(uniName, uniType, uniNum)
+    uniNum = uniNum or 1
 
-local Uniforms = class("Uniforms")
+    local uType = uniType.uType
+    self.bh = bgfx.bgfx_create_uniform(uniName, uniType.bgfxType,
+                                        uniNum)
+    self.num = uniNum
+    self.val = terralib.new(uniType.terraType[uniNum])
 
-function Uniforms:init()
-    self.uniforms = {}
-    self.nextTexSampler_ = 0
+    return self
 end
 
-function Uniforms:add(uniformName, uniformType, uniformNum)
-    if self.uniforms[uniformName] then
-        log.error("Cannot add: uniform [" .. uniformName .. "] exists!")
-        return
+function Uniform:set(v, pos)
+    if not v.elem then
+        log.error("Uniform:set:: v is not a Vector!")
+        return nil
     end
 
-    uniformNum = uniformNum or 1
-
-    local uType = uniformType.uType
-    if uType ~= RAW_UNIFORM and uniformNum > 1 then
-        log.error("Only raw uniforms support arrays!")
-        return
+    if self.num == 1 then
+        -- no need to copy to an intermediate if we only have one value
+        self.val = v.elem
+    else
+        self.val[pos or 0] = v.elem
     end
 
-    local bgfxHandle = bgfx.bgfx_create_uniform(uniformName, 
-                                                uniformType.bgfxType,
-                                                uniformNum)
-    local uData = { n = uniformNum,
-                    bh = bgfxHandle,
-                    ut = uType }
-
-    if uType == RAW_UNIFORM then
-        uData.val = terralib.new(uniformType.terraType[uniformNum]) 
-    elseif uType == TEX_UNIFORM then
-        uData.ts = self.nextTexSampler_
-        self.nextTexSampler_ = self.nextTexSampler_ + 1
-    elseif uType == CLASS_UNIFORM then
-        -- nothing to do
-    end
-    self.uniforms[uniformName] = uData
-    return uData
+    return self
 end
 
--- Warning! This does no type validation
-function Uniforms:setFromTable(t)
-    local unis = self.uniforms
-    for k,v in pairs(t) do
-        if unis[k] then
-            unis[k].val = v
-        end
+function Uniform:bind()
+    if self.val then
+        bgfx.bgfx_set_uniform(self.bh, self.val, self.num)
     end
     return self
 end
 
-function Uniforms:bind()
-    for k,v in pairs(self.uniforms) do
-        local uniformType = v.ut
-        if uniformType == RAW_UNIFORM then
-            bgfx.bgfx_set_uniform(v.bh, v.val, v.n)
-        elseif uniformType == TEX_UNIFORM then
-            if v.val then
-                bgfx.bgfx_set_texture(v.ts, v.bh, v.val, bgfx.UINT32_MAX)
-            end
-        elseif uniformType == CLASS_UNIFORM then
-            if v.val and v.val.elem then
-                bgfx.bgfx_set_uniform(v.bh, v.val.elem, 1)
-            end
-        end
+local TexUniform = class("TexUniform")
+function TexUniform:init(uniName, uniSampler)
+    local textype = bgfx.BGFX_UNIFORM_TYPE_INT1
+    self.bh = bgfx.bgfx_create_uniform(uniName, textype, 1)
+    self.samplerID = uniSampler
+    self.tex = nil
+end
+
+function TexUniform:set(tex)
+    self.tex = tex
+    return self
+end
+
+function TexUniform:bind()
+    if self.tex then
+        bgfx.bgfx_set_texture(self.samplerID, self.bh, 
+                                self.tex, bgfx.UINT32_MAX)
     end
+    return self
 end
 
 -- Export the class
-m.Uniforms = Uniforms
+m.Uniform = Uniform
 
 return m
