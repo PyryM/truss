@@ -26,6 +26,7 @@ function Uniform:init(uniName, uniType, uniNum)
                                         uniNum)
     self.num = uniNum
     self.val = terralib.new(uniType.terraType[uniNum])
+    self.uniName = uniName
 
     return self
 end
@@ -46,6 +47,14 @@ function Uniform:set(v, pos)
     return self
 end
 
+function Uniform:setMultiple(vList)
+    for i = 1,self.num do
+        if not vList[i] then break end
+        self:set(vList[i], i-1)
+    end
+    return self
+end
+
 function Uniform:bind()
     if self.val then
         bgfx.bgfx_set_uniform(self.bh, self.val, self.num)
@@ -59,6 +68,7 @@ function TexUniform:init(uniName, uniSampler)
     self.bh = bgfx.bgfx_create_uniform(uniName, textype, 1)
     self.samplerID = uniSampler
     self.tex = nil
+    self.uniName = uniName
 end
 
 function TexUniform:set(tex)
@@ -74,7 +84,43 @@ function TexUniform:bind()
     return self
 end
 
+local UniformSet = class("UniformSet")
+function UniformSet:init()
+    self.uniforms_ = {}
+end
+
+function UniformSet:add(uniform, alias)
+    local newname = alias or uniform.uniName
+    if self[newname] then
+        log.error("UniformSet.add : uniform named [" .. newname ..
+                  "] already exists.")
+        return
+    end
+
+    table.insert(self.uniforms_, uniform)
+    self[newname] = uniform
+    return self
+end
+
+function UniformSet:bind()
+    for _,v in ipairs(self.uniforms_) do
+        v:bind()
+    end
+end
+
+-- sets the uniform values from the table of vals
+function UniformSet:tableSet(vals)
+    for k,v in pairs(vals) do
+        local target = self[k]
+        if target then
+            target:set(v)
+        end
+    end
+end
+
 -- Export the class
 m.Uniform = Uniform
+m.TexUniform = TexUniform
+m.UniformSet = UniformSet
 
 return m
