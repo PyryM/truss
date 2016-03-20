@@ -75,5 +75,5 @@ void main()
 	gl_FragColor.w = 1.0;
 	// convert to gamma so we can use 'physical'
 	// light intensities (i.e., not clamped [0,1])
-	//gl_FragColor = toGamma(gl_FragColor);
+	gl_FragColor = toGamma(gl_FragColor);
 }

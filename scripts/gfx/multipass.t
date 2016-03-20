@@ -9,7 +9,7 @@ local m = {}
 
 local MultiPass = class("MultiPass")
 function MultiPass:init(options)
-    self.globals = options.globals or {}
+    self.globals = options.globals
     self.shaders_ = {}
     for shaderName, shader in pairs(options.shaders or {}) do
         self:addShader(shaderName, shader)
@@ -21,6 +21,7 @@ function MultiPass:addShader(name, options)
     if not options.program then
         log.error("MultiPass.addShader : shader [" .. name ..
                   "] has no .program!" )
+    end
     self.shaders_[name] = options
 end
 
@@ -45,12 +46,14 @@ local function renderObject_(obj, mpass)
 end
 
 function MultiPass:render(params)
+    if self.globals then self.globals:bind() end
+
     if params.camera then
-        params.camera:setMatrices(self.viewid_)
+        params.camera:setViewMatrices(self.viewid_)
     end
 
     if params.scene then
-        params.scene:map(self.renderObject_, self)
+        params.scene:map(renderObject_, self)
     end
 end
 

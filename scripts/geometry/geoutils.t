@@ -176,11 +176,12 @@ function m.computeNormals(srcdata)
     -- Compute face normals and sum into the 3 vertices of each face
     local idxs = srcdata.indices
     local ps = srcdata.attributes.position
-    local nindices = #idxs
-    for i = 1, nindices-2 do
-        local idx0 = idxs[i  ]+1
-        local idx1 = idxs[i+1]+1
-        local idx2 = idxs[i+2]+1
+    local nfaces = #idxs
+    for i = 1, nfaces do
+        local f = idxs[i]
+        local idx0 = f[1]+1
+        local idx1 = f[2]+1
+        local idx2 = f[3]+1
         tempV0:subVecs(ps[idx1], ps[idx0])
         tempV1:subVecs(ps[idx2], ps[idx0])
         tempN:crossVecs(tempV0, tempV1):normalize()
@@ -193,6 +194,8 @@ function m.computeNormals(srcdata)
     -- Average the vertex normals by dividing by the sum (in w)
     for _, v in ipairs(normals) do
         v:multiplyScalar(1.0 / math.max(v.elem.w, 1))
+        v.elem.w = 0.0
+        v:normalize()
     end
 
     srcdata.attributes.normal = normals

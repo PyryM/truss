@@ -27,10 +27,12 @@ end
 
 function Vector:identity()
     self:set(0,0,0,1)
+    return self
 end
 
 function Vector:zero()
     self:set(0,0,0,0)
+    return self
 end
 
 local terra copyvec(src: &matrix.vec4_, dest: &matrix.vec4_)

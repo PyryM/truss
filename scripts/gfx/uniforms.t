@@ -106,6 +106,7 @@ function UniformSet:bind()
     for _,v in ipairs(self.uniforms_) do
         v:bind()
     end
+    return self
 end
 
 -- sets the uniform values from the table of vals
@@ -116,6 +117,7 @@ function UniformSet:tableSet(vals)
             target:set(v)
         end
     end
+    return self
 end
 
 -- Export the class
