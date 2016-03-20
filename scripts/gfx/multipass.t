@@ -11,8 +11,8 @@ local MultiPass = class("MultiPass")
 function MultiPass:init(options)
     self.globals = options.globals or {}
     self.shaders_ = {}
-    for _,v in ipairs(options.shaders or {}) do
-        self:addShader(v)
+    for shaderName, shader in pairs(options.shaders or {}) do
+        self:addShader(shaderName, shader)
     end
     self.viewid_ = options.viewid or 0
 end

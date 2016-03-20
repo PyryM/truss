@@ -17,9 +17,10 @@ local debugcube = require("geometry/debugcube.t")
 local shaderutils = require('utils/shaderutils.t')
 local Object3D = require('gfx/object3d.t').Object3D
 local StaticGeometry = require("gfx/geometry.t").StaticGeometry
+local Camera = require("gfx/camera.t").Camera
 
-width = 800
-height = 600
+width = 1280
+height = 720
 time = 0.0
 
 function updateEvents()
@@ -54,9 +55,15 @@ function createCubeThing()
     -- create a dummy object to move the whole stack in front of the camera
     local rootobj = Object3D()
     rootobj.name = "rootobj"
-    rootobj.position:set(0.0, -5.0, -10.0)
+    rootobj.position:set(0.0, 0.0, 0.0)
     rootobj:updateMatrix()
     sg = rootobj
+    rotator = Object3D()
+    rootobj:add(rotator)
+    rotator:add(camera)
+    camera.position:set(0.0, 5.0, 10.0)
+    camera:updateMatrix()
+
     local prevcube = rootobj
 
     for i = 1,ncubes do
@@ -97,6 +104,8 @@ end
 
 function updateAndDrawCubes()
     sg:map(twiddleCube)
+    rotator.quaternion:fromEuler({x=0,y=time*0.25,z=0})
+    rotator:updateMatrix()
     sg:updateMatrices()
     sg:map(drawCube)
 end
@@ -134,14 +143,11 @@ function init()
     log.info("Loading program")
     program = shaderutils.loadProgram("vs_cubes", "fs_cubes")
 
-    -- create matrices
-    projmat = Matrix4():makeProjection(70, width/height, 0.1, 100.0)
-    viewmat = Matrix4():identity()
-    modelmat = Matrix4():identity()
+    -- create camera
+    camera = Camera():makeProjection(70, width/height, 0.1, 100.0)
 
     -- create and populate scenegraph
     createCubeThing()
-
 
     -- posvec = Vector(0.0, 0.0, -10.0)
     -- scalevec = Vector(1.0, 1.0, 1.0)
@@ -168,7 +174,7 @@ function update()
     bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
 
     -- Set viewprojection matrix
-    bgfx.bgfx_set_view_transform(0, viewmat.data, projmat.data)
+    camera:setViewMatrices(0)
 
     -- update and draw cubes
     updateAndDrawCubes()
