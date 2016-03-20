@@ -15,8 +15,6 @@ local Vector = vec.Vector
 
 local m = {}
 
-local INDEX_TYPE = uint16
-
 local buffer_library_ = {} -- needed for memory management reasons
 local last_geo_idx_ = 0
 
@@ -44,20 +42,22 @@ function DynamicGeometry:init(name)
     self.built     = false
 end
 
-
-local function allocate_buffer_data_(geo, vertInfo, nVertices, nIndices)
-    geo.vertInfo = vertInfo
-    geo.verts = terralib.new(vertInfo.vertType[nVertices])
-    geo.nVertices = nVertices
-    geo.indices = terralib.new(INDEX_TYPE[nIndices])
-    geo.nIndices = nIndices
-    geo.vertDataSize = sizeof(vertInfo.vertType[nVertices])
-    geo.indexDataSize = sizeof(INDEX_TYPE[nIndices])
-    geo.allocated = true
-end
-
 function StaticGeometry:allocate(vertInfo, nVertices, nIndices)
-    allocate_buffer_data_(self, vertInfo, nVertices, nIndices)
+    local indexType = uint16
+    if nVertices >= 2^16 then
+        log.debug("Using 32 bit indices in index buffer!")
+        indexType = uint32
+        self.has32bitIndices = true
+    end
+
+    self.vertInfo = vertInfo
+    self.verts = terralib.new(vertInfo.vertType[nVertices])
+    self.nVertices = nVertices
+    self.indices = terralib.new(indexType[nIndices])
+    self.nIndices = nIndices
+    self.vertDataSize = sizeof(vertInfo.vertType[nVertices])
+    self.indexDataSize = sizeof(indexType[nIndices])
+    self.allocated = true
     return self
 end
 DynamicGeometry.allocate = StaticGeometry.allocate
@@ -105,7 +105,11 @@ function StaticGeometry:build(recreate)
         return
     end
 
-    local flags = 0
+    local flags = bgfx_const.BGFX_BUFFER_NONE
+    if self.has32bitIndices then
+        log.debug("Building w/ 32 bit index buffer!")
+        flags = bgfx_const.BGFX_BUFFER_INDEX32
+    end
 
     if (self.vbh or self.ibh) and (not recreate) then
         log.warn("Tried to rebuild StaticGeometry [" .. 
