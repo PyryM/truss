@@ -91,28 +91,42 @@ end
 
 function UniformSet:add(uniform, alias)
     local newname = alias or uniform.uniName
+    log.debug("Adding " .. alias)
     if self[newname] then
         log.error("UniformSet.add : uniform named [" .. newname ..
                   "] already exists.")
         return
     end
 
-    table.insert(self.uniforms_, uniform)
+    self.uniforms_[newname] = uniform
     self[newname] = uniform
     return self
 end
 
 function UniformSet:bind()
-    for _,v in ipairs(self.uniforms_) do
+    for _,v in pairs(self.uniforms_) do
         v:bind()
+    end
+    return self
+end
+
+function UniformSet:merge(otherUniforms)
+    for alias, uniform in pairs(otherUniforms.uniforms_) do
+        if not self[alias] then
+            self:add(uniform, alias)
+        else
+            log.debug("Skipping merge of " .. alias .. "; already present.")
+        end
     end
     return self
 end
 
 -- sets the uniform values from the table of vals
 function UniformSet:tableSet(vals)
+    if vals.vals then vals = vals.vals end -- allows materials to be classes
     for k,v in pairs(vals) do
-        local target = self[k]
+        local target = self.uniforms_[k]
+        log.debug(k)
         if target then
             target:set(v)
         end

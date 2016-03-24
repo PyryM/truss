@@ -69,11 +69,14 @@ function createCubeThing()
     camera:updateMatrix()
 
     local prevcube = rootobj
+    local pbr = require("shaders/pbr.t")
 
     for i = 1,ncubes do
-        local cube = Object3D(cylinderGeo, basicmat)
+        local mat = pbr.PBRMaterial("solid"):roughness(0.8):tint(0.1,0.1,0.1)
+        local cube = Object3D(cylinderGeo, mat)
         cube.position:set(0.0, 2.0, 0.0)
         cube.frequency = i * 0.1
+        cube.phase = math.pi * 6.0 * i/ncubes
         cube.scale:set(0.9, 0.9, 0.9)
         cube.name = "cube_" .. i
         prevcube:add(cube)
@@ -84,11 +87,14 @@ end
 function twiddleCube(cube)
     --log.info("Twiddling " .. (cube.name or cube.id))
     if cube.frequency then
-        local theta0 = math.cos(cube.frequency * 0.9 * time)
-        local theta1 = math.cos(cube.frequency * 1.0 * time)
-        local theta2 = math.cos(cube.frequency * 1.1 * time)
+        local f = cube.frequency
+        local theta0 = math.cos(f * 0.9 * time)
+        local theta1 = math.cos(f * 1.0 * time)
+        local theta2 = math.cos(f * 1.1 * time)
         cube.quaternion:fromEuler({x=theta0, y=theta1, z=theta2})
         cube:updateMatrix()
+        local vv = 0.5 + 0.5 * math.cos(3.0 * f * time + (cube.phase or 0))
+        cube.mat:diffuse(vv, vv, vv)
     end
 end
 
@@ -101,51 +107,23 @@ function updateAndDrawCubes()
 end
 
 function setupPipeline()
-    local lightDirs = uniforms.Uniform("u_lightDir", uniforms.VECTOR, 4)
-    local lightColors = uniforms.Uniform("u_lightRgb", uniforms.VECTOR, 4)
+    renderpass = MultiPass()
 
-    local baseColor = uniforms.Uniform("u_baseColor", uniforms.VECTOR, 4)
-    local pbrParams = uniforms.Uniform("u_pbrParams", uniforms.VECTOR, 4)
-
-    gLightStuff = uniforms.UniformSet()
-    gLightStuff:add(lightDirs, "lightDirs")
-    gLightStuff:add(lightColors, "lightColors")
-
-    gMatStuff = uniforms.UniformSet()
-    gMatStuff:add(baseColor, "diffuse")
-    gMatStuff:add(pbrParams, "pbrParams")
+    local pbrshader = require("shaders/pbr.t").PBRShader()
+    renderpass:addShader("solid", pbrshader)
 
     -- set default lights
-    lightDirs:setMultiple({
+    renderpass.globals.lightDirs:setMultiple({
             Vector( 1.0,  1.0,  0.0),
             Vector(-1.0,  1.0,  0.0),
             Vector( 0.0, -1.0,  1.0),
             Vector( 0.0, -1.0, -1.0)})
 
-    lightColors:setMultiple({
-            Vector(0.8, 0.8, 0.6),
-            Vector(1.0, 1.0, 0.8),
-            Vector(0.1, 0.1, 0.15),
-            Vector(0.1, 0.1, 0.15)})
-
-    renderpass = MultiPass({
-        globals = gLightStuff
-    })
-
-    local pbrshader = {
-        uniforms = gMatStuff,
-        program = shaderutils.loadProgram("vs_basicpbr", "fs_basicpbr_x4")
-    }
-
-    renderpass:addShader("solid", pbrshader)
-end
-
-function createMaterial()
-    basicmat = {
-        shadername = "solid",
-        diffuse = Vector(0.1,0.1,0.1,1.0),
-        pbrParams = Vector(1.0, 1.0, 0.6, 0.6)
-    }
+    renderpass.globals.lightColors:setMultiple({
+            Vector(0.8, 0.8, 0.8),
+            Vector(1.0, 1.0, 1.0),
+            Vector(0.1, 0.1, 0.1),
+            Vector(0.1, 0.1, 0.1)})
 end
 
 function init()
@@ -183,9 +161,6 @@ function init()
 
     -- create camera
     camera = Camera():makeProjection(70, width/height, 0.1, 100.0)
-
-    -- create material
-    createMaterial()
 
     -- create and populate scenegraph
     createCubeThing()

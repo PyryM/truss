@@ -9,7 +9,8 @@ local m = {}
 
 local MultiPass = class("MultiPass")
 function MultiPass:init(options)
-    self.globals = options.globals
+    options = options or {}
+    self.globals = options.globals or require("gfx/uniforms.t").UniformSet()
     self.shaders_ = {}
     for shaderName, shader in pairs(options.shaders or {}) do
         self:addShader(shaderName, shader)
@@ -17,12 +18,15 @@ function MultiPass:init(options)
     self.viewid_ = options.viewid or 0
 end
 
-function MultiPass:addShader(name, options)
-    if not options.program then
+function MultiPass:addShader(name, shader)
+    if not shader.program then
         log.error("MultiPass.addShader : shader [" .. name ..
                   "] has no .program!" )
     end
-    self.shaders_[name] = options
+    self.shaders_[name] = shader
+    if shader.globals then
+        self.globals:merge(shader.globals)
+    end
 end
 
 local function renderObject_(obj, mpass)
