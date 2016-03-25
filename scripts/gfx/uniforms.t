@@ -126,7 +126,6 @@ function UniformSet:tableSet(vals)
     if vals.vals then vals = vals.vals end -- allows materials to be classes
     for k,v in pairs(vals) do
         local target = self.uniforms_[k]
-        log.debug(k)
         if target then
             target:set(v)
         end
