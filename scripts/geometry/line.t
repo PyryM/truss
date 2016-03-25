@@ -8,7 +8,9 @@ local Matrix4 = math.Matrix4
 local Quaternion = math.Quaternion
 local Vector = math.Vector
 local geometry = require("gfx/geometry.t")
-local Object3D = require("gfx/object3d.").Object3D
+local Object3D = require("gfx/object3d.t").Object3D
+local uniforms = require("gfx/uniforms.t")
+local shaderutils = require("utils/shaderutils.t")
 
 local m = {}
 
@@ -51,6 +53,7 @@ function LineObject:init(maxpoints, dynamic)
     self.dynamic = not not dynamic -- coerce to boolean
     self:createBuffers_()
     self.material = m.LineMaterial()
+    self.mat = self.material
 end
 
 local function packVec3(dest, arr)
@@ -63,8 +66,8 @@ end
 local function packVertex(dest, curPoint, prevPoint, nextPoint, dir)
     packVec3(dest.position, curPoint)
     packVec3(dest.normal, prevPoint)
-    packVec3(dest.color, nextPoint)
-    dest.color[3] = dir
+    packVec3(dest.color0, nextPoint)
+    dest.color0[3] = dir
 end
 
 function LineObject:appendSegment_(segpoints, vertidx, idxidx)
@@ -155,8 +158,8 @@ function LineShader:init()
     self.program = shaderutils.loadProgram("vs_line", "fs_line")
 end
 
-local function LineMaterial()
-    return {shadername = "solidline",
+local function LineMaterial(pass)
+    return {shadername = pass or "line",
             color = math.Vector(1.0,0.2,0.1,1.0),
             thickness = math.Vector(1.0)}
 end
