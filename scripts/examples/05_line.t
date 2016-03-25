@@ -71,25 +71,43 @@ function createLineThing()
     camera.position:set(0.0, 0.0, 10.0)
     camera:updateMatrix()
 
-    local npoints = 200
-    local isDynamic = false
+    local npoints = 5000
+    local isDynamic = true
 
-    local lineobj = line.LineObject(npoints, isDynamic)
-    local f = 5 * math.pi * 2.0
+    lineobj = line.LineObject(npoints, isDynamic)
+    local f = 50 * math.pi * 2.0
 
-    local linedata = {}
+    linedata = {}
+    local curtheta = 0.1
     for i = 1,npoints do
-        local t = (i-1) / (npoints-1)
-        local x = math.cos(t * f) * t * 3.0
-        local y = math.sin(t * f) * t * 3.0
-        local z = t * 3.0
-        linedata[i] = {x,y,z}
+        local currad = curtheta / 20.0
+        local thetaStep = math.min(0.1, 2.0 / currad)
+        curtheta = curtheta + thetaStep
+        local x = math.cos(curtheta) * currad
+        local y = math.sin(curtheta) * currad
+        local z = 0.0
+        linedata[i] = {x,z,y}
     end
 
     lineobj:setPoints({linedata})
     lineobj.position:set(0.0, 0.0, 0.0)
+    lineobj.material.color:set(0.8,0.8,0.8)
     lineobj.material.thickness:set(0.1)
     rootobj:add(lineobj)
+end
+
+function heightField(x, y)
+    local r = math.sqrt(x*x + y*y) + math.cos(x)*math.sin(y)
+    return math.cos(r + time) * 0.6
+end
+
+function twiddleLine()
+    if not lineobj.dynamic then return end
+    for _,v in ipairs(linedata) do
+        v[2] = heightField(v[1], v[3])
+    end
+
+    lineobj:setPoints({linedata})
 end
 
 function init()
@@ -129,7 +147,10 @@ function init()
 end
 
 function updateAndDraw()
-    rotator.quaternion:fromEuler({x=0,y=time*0.25,z=0})
+    twiddleLine()
+    rotator.quaternion:fromEuler({x= -math.pi / 3.0,
+                                    y=0, --time*0.25,
+                                    z=0}, 'ZYX')
     rotator:updateMatrix()
     sg:updateMatrices()
     renderpass:render({camera = camera, scene = sg})
@@ -154,7 +175,7 @@ function update()
     bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/01_raw_scenegraph.t")
     bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
 
-    -- update and draw cubes
+    -- update and draw line
     updateAndDraw()
 
     -- Advance to next frame. Rendering thread will be kicked to
