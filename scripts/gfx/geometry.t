@@ -230,7 +230,8 @@ function DynamicGeometry:bind()
     -- for some reason set_dynamic_vertex_buffer does not take a start
     -- index argument, only the number of vertices
     bgfx.bgfx_set_dynamic_vertex_buffer(self.vbh, 
-                                        bgfx.UINT32_MAX)
+                                         0, bgfx.UINT32_MAX)
+
     bgfx.bgfx_set_dynamic_index_buffer(self.ibh, 
                                         0, bgfx.UINT32_MAX)
 end
