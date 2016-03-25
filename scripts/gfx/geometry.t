@@ -139,6 +139,10 @@ function StaticGeometry:build(recreate)
     return self
 end
 
+function StaticGeometry:update()
+    self:build()
+end
+
 local function check_built_(geo)
     if geo.built then return true end
     
