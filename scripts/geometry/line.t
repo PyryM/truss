@@ -110,9 +110,9 @@ function LineObject:createBuffers_()
     local vinfo = getVertexInfo()
     log.debug("Allocating line buffers...")
     if self.dynamic then
-        self.geo = geometry.StaticGeometry()
-    else
         self.geo = geometry.DynamicGeometry()
+    else 
+        self.geo = geometry.StaticGeometry()
     end
     self.geo:allocate(vinfo, self.maxpoints * 2, self.maxpoints * 6)
 end
