@@ -19,6 +19,7 @@ local StaticGeometry = require("gfx/geometry.t").StaticGeometry
 local Camera = require("gfx/camera.t").Camera
 local line = require("geometry/line.t")
 local MultiPass = require("gfx/multipass.t").MultiPass
+local grid = require("geometry/grid.t")
 
 width = 720
 height = 720
@@ -97,6 +98,13 @@ function createLineThing()
     lineobj.material.color:set(0.8,0.8,0.8)
     lineobj.material.thickness:set(0.1)
     rootobj:add(lineobj)
+
+    -- create a grid
+    local thegrid = grid.Grid({numlines = 0, numcircles = 20, spacing = 1.0})
+    thegrid.position:set(0.0, -5.0, 0.0)
+    thegrid.quaternion:fromEuler({x= -math.pi / 2.0, y=0, z=0}, 'ZYX')
+    thegrid:updateMatrix()
+    rootobj:add(thegrid)
 end
 
 function heightField(x, y, z)
