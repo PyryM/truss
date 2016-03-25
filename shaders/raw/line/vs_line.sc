@@ -59,7 +59,7 @@ void main() {
   normal *= len/2.0;
   normal.x /= aspect;
 
-  v_wpos = vec3(u_viewRect.z, u_viewRect.w, 0.75); //currentProjected.xyz; // just shove something into it
+  v_wpos = currentProjected.xyz;
 
   vec4 offset = vec4(normal * orientation, 0.0, 0.0);
   gl_Position = currentProjected + offset;

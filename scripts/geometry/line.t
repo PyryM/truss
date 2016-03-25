@@ -147,7 +147,7 @@ function LineObject:setPoints(lines)
 end
 
 local LineShader = class("LineShader")
-function LineShader:init()
+function LineShader:init(vshader, fshader)
     local color = uniforms.Uniform("u_color", uniforms.VECTOR, 1)
     local thickness = uniforms.Uniform("u_thickness", uniforms.VECTOR, 1)
     local matUniforms = uniforms.UniformSet()
@@ -155,7 +155,8 @@ function LineShader:init()
     matUniforms:add(thickness, "thickness")
 
     self.uniforms = matUniforms
-    self.program = shaderutils.loadProgram("vs_line", "fs_line")
+    self.program = shaderutils.loadProgram(vshader or "vs_line", 
+                                           fshader or "fs_line")
 end
 
 local function LineMaterial(pass)

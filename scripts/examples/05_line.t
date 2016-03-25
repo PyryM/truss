@@ -20,7 +20,7 @@ local Camera = require("gfx/camera.t").Camera
 local line = require("geometry/line.t")
 local MultiPass = require("gfx/multipass.t").MultiPass
 
-width = 1280
+width = 720
 height = 720
 time = 0.0
 
@@ -39,7 +39,7 @@ function setupPipeline()
     local pbrshader = require("shaders/pbr.t").PBRShader()
     renderpass:addShader("solid", pbrshader)
 
-    local lineshader = line.LineShader()
+    local lineshader = line.LineShader("vs_line", "fs_line_depth")
     renderpass:addShader("line", lineshader)
 
     -- set default lights
@@ -68,7 +68,7 @@ function createLineThing()
     rotator = Object3D()
     rootobj:add(rotator)
     rotator:add(camera)
-    camera.position:set(0.0, 0.0, 10.0)
+    camera.position:set(0.0, 0.0, 20.0)
     camera:updateMatrix()
 
     local npoints = 5000
@@ -77,16 +77,19 @@ function createLineThing()
     lineobj = line.LineObject(npoints, isDynamic)
     local f = 50 * math.pi * 2.0
 
+    initialLineData = {}
     linedata = {}
     local curtheta = 0.1
     for i = 1,npoints do
-        local currad = curtheta / 20.0
+        local z = 10.0 * (i/npoints - 0.5)
+        local currad = 5.0 - math.abs(z)
+        --math.sqrt(25.0 - z*z)
         local thetaStep = math.min(0.1, 2.0 / currad)
         curtheta = curtheta + thetaStep
         local x = math.cos(curtheta) * currad
         local y = math.sin(curtheta) * currad
-        local z = 0.0
         linedata[i] = {x,z,y}
+        initialLineData[i] = {x,z,y}
     end
 
     lineobj:setPoints({linedata})
@@ -96,15 +99,19 @@ function createLineThing()
     rootobj:add(lineobj)
 end
 
-function heightField(x, y)
-    local r = math.sqrt(x*x + y*y) + math.cos(x)*math.sin(y)
-    return math.cos(r + time) * 0.6
+function heightField(x, y, z)
+    --local mult = 1.0 + math.tanh((math.tan(x + y * 3.0 + time)*0.5)*0.1)
+    --mult = math.max(-5.0, math.min(5.0, mult))
+    local mult = math.sin(y*1.1 + time)*0.1*math.cos(x + time) + math.cos(z + time)*0.1
+    mult = 1.0 + (mult * mult)*10
+    return x*mult, y*mult, z*mult
 end
 
 function twiddleLine()
     if not lineobj.dynamic then return end
-    for _,v in ipairs(linedata) do
-        v[2] = heightField(v[1], v[3])
+    for i,v in ipairs(linedata) do
+        local v2 = initialLineData[i]
+        v[1], v[2], v[3] = heightField(v2[1], v2[2], v2[3])
     end
 
     lineobj:setPoints({linedata})
@@ -140,7 +147,7 @@ function init()
     setupPipeline()
 
     -- create camera
-    camera = Camera():makeProjection(70, width/height, 0.1, 100.0)
+    camera = Camera():makeProjection(40, width/height, 0.1, 100.0)
 
     -- create and populate scenegraph
     createLineThing()
@@ -148,9 +155,9 @@ end
 
 function updateAndDraw()
     twiddleLine()
-    rotator.quaternion:fromEuler({x= -math.pi / 3.0,
-                                    y=0, --time*0.25,
-                                    z=0}, 'ZYX')
+    rotator.quaternion:fromEuler({x= -math.pi / 6.0,
+                                  y= 0, --time*0.25,
+                                  z=0}, 'ZYX')
     rotator:updateMatrix()
     sg:updateMatrices()
     renderpass:render({camera = camera, scene = sg})
