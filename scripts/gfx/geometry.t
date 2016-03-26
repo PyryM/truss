@@ -42,6 +42,67 @@ function DynamicGeometry:init(name)
     self.built     = false
 end
 
+local TransientGeometry = class("TransientGeometry")
+function TransientGeometry:init(name)
+    self.name = name or "__anon_transientgeometry_" .. last_geo_idx_
+    last_geo_idx_ = last_geo_idx_ + 1
+    self.allocated = false
+
+    self.transientVB_ = terralib.new(bgfx.bgfx_transient_vertex_buffer_t)
+    self.transientIB_ = terralib.new(bgfx.bgfx_transient_index_buffer_t)
+end
+
+function TransientGeometry:allocate(vertInfo, nVertices, nIndices)
+    if self.allocated then
+        log.error("TransientGeometry [" .. self.name .. 
+                    "] must be bound before it can be allocated again!")
+        return
+    end
+
+    local hasSpace = bgfx.bgfx_check_avail_transient_buffers(nVertices,
+                                           vertInfo.vertDecl, nIndices)
+    if not hasSpace then
+        log.error("Not enough space to allocate " .. nVertices .. 
+                    " / " .. nIndices .. " in transient buffer.")
+        return
+    end
+
+    bgfx.bgfx_alloc_transient_buffers(self.transientVB_, vertInfo.vertDecl, nVertices, 
+                                      self.transientIB_, nIndices)
+
+    self.indices = terralib.cast(&uint16, self.transientIB_.data)
+    self.verts   = terralib.cast(&vertInfo.vertType, self.transientVB_.data) 
+    self.allocated = true
+end
+
+function TransientGeometry:bind()
+    if not self.allocated then
+        log.error("Cannot bind unallocated transient buffer!")
+        return
+    end
+
+    bgfx.bgfx_set_transient_vertex_buffer(self.transientVB_, 0, bgfx.UINT32_MAX)
+    bgfx.bgfx_set_transient_index_buffer(self.transientIB_, 0, bgfx.UINT32_MAX)
+
+    self.bound = true
+end
+
+function TransientGeometry:build()
+    -- transient geometry does not need to be built; this stub exists only for
+    -- compatibility with functions that do try to build
+end
+
+function TransientGeometry:beginFrame()
+    if self.allocated and not self.bound then
+        log.warn("Allocating transient geometry without binding it the same frame will leak memory!")
+    end
+
+    self.indices = nil
+    self.verts = nil
+    self.allocated = false
+    self.bound = false
+end
+
 function StaticGeometry:allocate(vertInfo, nVertices, nIndices)
     local indexType = uint16
     if nVertices >= 2^16 then
@@ -66,11 +127,13 @@ function StaticGeometry:setIndices(indices)
     bufferutils.setIndices(self, indices)
 end
 DynamicGeometry.setIndices = StaticGeometry.setIndices
+TransientGeometry.setIndices = StaticGeometry.setIndices
 
 function StaticGeometry:setAttribute(attribName, attribList)
     bufferutils.setAttribute(self, attribName, attribList)
 end
 DynamicGeometry.setAttribute = StaticGeometry.setAttribute
+TransientGeometry.setAttribute = StaticGeometry.setAttribute
 
 function StaticGeometry:fromData(vertexInfo, modeldata, noBuild)
     if modeldata == nil or vertexInfo == nil then 
@@ -98,6 +161,7 @@ function StaticGeometry:fromData(vertexInfo, modeldata, noBuild)
     end
 end
 DynamicGeometry.fromData = StaticGeometry.fromData
+TransientGeometry.fromData = StaticGeometry.fromData
 
 function StaticGeometry:build(recreate)
     if not self.allocated then
@@ -238,6 +302,6 @@ end
 
 m.StaticGeometry    = StaticGeometry -- 'export' Geometry
 m.DynamicGeometry   = DynamicGeometry
---m.TransientGeometry = TransientGeometry 
+m.TransientGeometry = TransientGeometry 
 
 return m
