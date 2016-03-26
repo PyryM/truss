@@ -4,29 +4,35 @@
 
 local m = {}
 
-m.AttributeNames = {
-    "position",
-    "normal",
-    "tangent",
-    "bitangent",
-    "color0",
-    "color1",
-    "indices",
-    "weight",
-    "texcoord0",
-    "texcoord1",
-    "texcoord2",
-    "texcoord3",
-    "texcoord4",
-    "texcoord5",
-    "texcoord6",
-    "texcoord7"
+m.AttributeInfo = {
+    {"position",  float, 3},
+    {"normal",    float, 3},
+    {"tangent",   float, 3},
+    {"bitangent", float, 3},
+    {"color0",    uint8, 4},
+    {"color1",    uint8, 4},
+    {"indices",   uint8, 4},
+    {"weight",    float, 4},
+    {"texcoord0", float, 2},
+    {"texcoord1", float, 2},
+    {"texcoord2", float, 2},
+    {"texcoord3", float, 2},
+    {"texcoord4", float, 2},
+    {"texcoord5", float, 2},
+    {"texcoord6", float, 2},
+    {"texcoord7", float, 2}
 }
 
 m.AttributeBGFXEnums = {}
-for i,attribName in ipairs(m.AttributeNames) do
+for i,attribData in ipairs(m.AttributeInfo) do
+    local attribName = attribData[1]
     local enumVal = bgfx["BGFX_ATTRIB_" .. string.upper(attribName)]
     m.AttributeBGFXEnums[attribName] = enumVal
+end
+
+m.StandardVertexTypes = {}
+function createStandardVertexType(attributeInfo)
+    -- todo
 end
 
 struct m.PosColorVertex {

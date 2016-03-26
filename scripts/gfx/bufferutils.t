@@ -99,7 +99,8 @@ end
 
 -- populate setter list
 m.setters = {}
-for _, aName in ipairs(vertexdefs.AttributeNames) do
+for _, aInfo in ipairs(vertexdefs.AttributeInfo) do
+    local aName = aInfo[1]
     m.setters[aName .. "_F"] = m.makeLSetter(aName, 1)
     for i = 1,4 do
         m.setters[aName .. "_L" .. i] = m.makeLSetter(aName, i)
