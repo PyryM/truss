@@ -1,5 +1,4 @@
 High priority:
--- Shared vertex defs
 -- Transient buffers
 -- Post processing / offscreen render
 -- Remote console
