@@ -3,14 +3,14 @@
 -- a yaw/pitch orbiting camera
 
 local class = require("class")
-local Matrix4 = require("math/matrix.t").Matrix4
-local Quaternion = require("math/quat.t").Quaternion
-local Vector = require("math/vec.t").Vector
+local math = require("math")
 
-local OrbitCam = class("OrbitCam")
+local OrbitCameraRig = class("OrbitCameraRig")
 local sdl = addons.sdl
 
-function OrbitCam:init()
+function OrbitCameraRig:init(target)
+    self.target = target
+
     self.phi = 0.0
     self.theta = 0.0
     self.rad = 3.0
@@ -36,14 +36,7 @@ function OrbitCam:init()
 
     self.minrad = 0.1
     self.maxrad = 10.0
-    self.orbitpoint = Vector(0, 0, 0)
-
-    self.mat = Matrix4():identity()
-    self.viewmat = Matrix4():identity()
-    self.quat = Quaternion():identity()
-    self.pos = Vector(0, 0, 0)
-    self.scale = Vector(1, 1, 1)
-    self.dirty = false
+    self.orbitpoint = math.Vector(0, 0, 0)
 end
 
 -- currently just uses a simple exponential approach
@@ -57,26 +50,26 @@ local function tweenTo(val, target, alpha, tolerance, dt)
     end
 end
 
-function OrbitCam:moveTheta(dv)
+function OrbitCameraRig:moveTheta(dv)
     self.thetaTarget = self.thetaTarget + (dv * self.thetaRate)
 end
 
-function OrbitCam:movePhi(dv)
+function OrbitCameraRig:movePhi(dv)
     self.phiTarget = self.phiTarget + (dv * self.phiRate)
     self.phiTarget = math.max(-math.pi/2, math.min(math.pi/2, self.phiTarget))
 end
 
-function OrbitCam:moveRad(dv)
+function OrbitCameraRig:moveRad(dv)
     self.radTarget = self.radTarget + (dv * self.radRate)
     self.radTarget = math.max(self.minrad, math.min(self.maxrad, self.radTarget))
 end
 
-function OrbitCam:panOrbitPoint(dx, dy)
+function OrbitCameraRig:panOrbitPoint(dx, dy)
     self:updateMatrix_()
     -- pan using basis vectors from rotation matrix
     -- Note that Matrix4:getColumn is 1-indexed
-    local basisX = self.mat:getColumn(1)
-    local basisY = self.mat:getColumn(2)
+    local basisX = target.matrix:getColumn(1)
+    local basisY = target.matrix:getColumn(2)
 
     -- orbitpoint += (bx*dx + by*dy)
     basisX:multiplyScalar(dx)
@@ -85,12 +78,12 @@ function OrbitCam:panOrbitPoint(dx, dy)
     self.orbitpoint:add(basisY)
 end
 
-function OrbitCam:updateSDLZoom(evt)
+function OrbitCameraRig:updateSDLZoom(evt)
     local dwheel = evt.y
     self:moveRad(-dwheel)
 end
 
-function OrbitCam:updateFromSDL(evt)
+function OrbitCameraRig:updateFromSDL(evt)
     if evt.event_type == sdl.TRSS_SDL_EVENT_MOUSEWHEEL then
         self:updateSDLZoom(evt)
         return
@@ -114,7 +107,7 @@ function OrbitCam:updateFromSDL(evt)
     self.lastMouseX, self.lastMouseY = x, y
 end
 
-function OrbitCam:update(dt)
+function OrbitCameraRig:update(dt)
     local alpha, tolerance = self.alpha, self.tolerance
     self.phi = tweenTo(self.phi, self.phiTarget, alpha, tolerance, dt)
     self.theta = tweenTo(self.theta, self.thetaTarget, alpha, tolerance, dt)
@@ -124,27 +117,22 @@ function OrbitCam:update(dt)
 end
 
 -- updates the actual matrix from theta/phi/rad
-function OrbitCam:updateMatrix_()
+function OrbitCameraRig:updateMatrix_()
     local rr = self.rad * math.cos(self.phi)
     local y = -self.rad * math.sin(self.phi)
     local x = rr * math.cos(self.theta)
     local z = rr * math.sin(self.theta)
     local scale = self.scale
 
-    local pos = self.pos
-    local quat = self.quat
+    local pos = target.pos
+    local quat = target.quaternion
 
     pos:set(x, y, z)
     pos:add(self.orbitpoint)
     quat:fromEuler({x=self.phi,
                     y=-self.theta+math.pi/2.0,
                     z=0}, 'ZYX')
-    self.mat:compose(self.quat, scale, pos)
+    target:updateMatrix()
 end
 
-function OrbitCam:getViewMat()
-    self.viewmat:invert(self.mat)
-    return self.viewmat
-end
-
-return OrbitCam
+return {OrbitCameraRig = OrbitCameraRig}
