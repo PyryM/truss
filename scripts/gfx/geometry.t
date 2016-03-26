@@ -142,7 +142,7 @@ function StaticGeometry:fromData(vertexInfo, modeldata, noBuild)
     end
 
     local nindices
-    if type(modeldata.indices[0]) == "number" then
+    if type(modeldata.indices[1]) == "number" then
         nindices = #modeldata.indices
     else
         nindices = #modeldata.indices * 3
