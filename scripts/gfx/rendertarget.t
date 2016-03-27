@@ -7,30 +7,69 @@ local class = require("class")
 local m = {}
 local RenderTarget = class("RenderTarget")
 
-function RenderTarget:init(width, height, hasDepth)
-    local bc = bgfx_const
-    local flags = bc.BGFX_TEXTURE_RT + 
-                  bc.BGFX_TEXTURE_U_CLAMP + 
-                  bc.BGFX_TEXTURE_V_CLAMP
+m.ColorFormats = {
+    default   = bgfx.BGFX_TEXTURE_FORMAT_BGRA8,
+    BGRA8     = bgfx.BGFX_TEXTURE_FORMAT_BGRA8,
+    UINT8     = bgfx.BGFX_TEXTURE_FORMAT_BGRA8,
+    HALFFLOAT = bgfx.BGFX_TEXTURE_FORMAT_RGBA16F,
+    FLOAT     = bgfx.BGFX_TEXTURE_FORMAT_RGBA32F
+}
 
-    local color = bgfx.bgfx_create_texture_2d(width, height, 1, 
-                        bgfx.BGFX_TEXTURE_FORMAT_BGRA8, flags, nil)
+function RenderTarget:init(width, height)
+    self.width = width
+    self.height = height
+    self.attachments = {}
+end
 
-    local attachments = terralib.new(bgfx.bgfx_texture_handle_t[2])
-    attachments[0] = color
-    numAttachments = 1
-
+function RenderTarget:makeRGB8(hasDepth)
+    hasDepth = (hasDepth == nil) or hasDepth
+    self:addColorAttachment(self.width, self.height, m.ColorFormats.BGRA8)
     if hasDepth then
-        local depthflags = bc.BGFX_TEXTURE_RT_WRITE_ONLY
-        local depth = bgfx.bgfx_create_texture_2d(width, height, 1, 
-                            bgfx.BGFX_TEXTURE_FORMAT_D16, depthflags, nil)
-
-        attachments[1] = depth
-        numAttachments = 2
+        log.debug("Creating render target with depth buffer.")
+        self:addDepthAttachment(self.width, self.height)
     end
+    self:finalize()
+    return self
+end
 
-    self.frameBuffer = bgfx.bgfx_create_frame_buffer_from_handles(numAttachments, attachments, true)
-    self.attachments = attachments
+local bc = bgfx_const
+function RenderTarget:addColorAttachment(width, height, colorformat)
+    if self.finalized then
+        log.error("Cannot add more attachments to finalized buffer!") 
+        return 
+    end
+    local colorflags = bc.BGFX_TEXTURE_RT + 
+                       bc.BGFX_TEXTURE_U_CLAMP + 
+                       bc.BGFX_TEXTURE_V_CLAMP
+    local color = bgfx.bgfx_create_texture_2d(width, height, 1, 
+                        colorformat or m.ColorFormats.default, 
+                        colorflags, nil)
+    table.insert(self.attachments, color)
+    return self
+end
+
+function RenderTarget:addDepthAttachment(width, height)
+    if self.finalized then 
+        log.error("Cannot add more attachments to finalized buffer!")
+        return 
+    end
+    local depthflags = bc.BGFX_TEXTURE_RT_WRITE_ONLY -- can't read back depth
+    local depth = bgfx.bgfx_create_texture_2d(width, height, 1, 
+                        bgfx.BGFX_TEXTURE_FORMAT_D16, depthflags, nil)
+    table.insert(self.attachments, depth)
+    return self
+end
+
+function RenderTarget:finalize()
+    local attachments = self.attachments
+    local cattachments = terralib.new(bgfx.bgfx_texture_handle_t[#attachments])
+    for i,v in ipairs(attachments) do
+        cattachments[i-1] = v -- ffi cstructs are zero indexed
+    end
+    self.frameBuffer = bgfx.bgfx_create_frame_buffer_from_handles(#attachments, cattachments, true)
+    self.cattachments = cattachments
+    self.finalized = true
+    return self
 end
 
 function RenderTarget:destroy()
@@ -39,6 +78,7 @@ function RenderTarget:destroy()
     end
     self.frameBuffer = nil
     self.attachments = nil
+    self.cattachments = nil
 end
 
 function RenderTarget:bindToView(viewid)
