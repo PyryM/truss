@@ -1,4 +1,4 @@
-propStartingWith = function (obj, prefix) {
+function propStartingWith(obj, prefix) {
   var res = [];
   for(var m in obj) {
     if(m.indexOf(prefix) === 0) {
@@ -6,9 +6,34 @@ propStartingWith = function (obj, prefix) {
     }
   }
   return res;
-};
+}
 
-$(function() {
+function continueLine(command) {
+  // Continue line if can't compile the command.
+  try {
+    Function(command);
+  } catch (e) {
+    if (/[\[\{\(]$/.test(command)) {
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+  return false;  
+}
+
+function handler(command) {
+  if (command) {
+    try {
+      jqconsole.Write('==> ' + window.eval(command) + '\n');
+    } catch (e) {
+      jqconsole.Write('ERROR: ' + e.message + '\n');
+    }
+  }
+  jqconsole.Prompt(true, handler, continueLine);
+}
+
+function init() {
   // Creating the console.
   var header = 'Welcome to JQConsole!\n' +
                'Use jqconsole.Write() to write and ' +
@@ -33,29 +58,6 @@ $(function() {
   jqconsole.RegisterMatching('{', '}', 'brace');
   jqconsole.RegisterMatching('(', ')', 'paran');
   jqconsole.RegisterMatching('[', ']', 'bracket');
-  // Handle a command.
-  var handler = function(command) {
-    if (command) {
-      try {
-        jqconsole.Write('==> ' + window.eval(command) + '\n');
-      } catch (e) {
-        jqconsole.Write('ERROR: ' + e.message + '\n');
-      }
-    }
-    jqconsole.Prompt(true, handler, function(command) {
-      // Continue line if can't compile the command.
-      try {
-        Function(command);
-      } catch (e) {
-        if (/[\[\{\(]$/.test(command)) {
-          return 1;
-        } else {
-          return 0;
-        }
-      }
-      return false;
-    });
-  };
 
   jqconsole.SetKeyPressHandler(function(e) {
     var text = jqconsole.GetPromptText() + String.fromCharCode(e.which);
@@ -89,5 +91,9 @@ $(function() {
     }
   });
   // Initiate the first prompt.
-  handler();
+  handler();  
+}
+
+$(function() {
+  init();
 });
