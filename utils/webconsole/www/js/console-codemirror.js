@@ -2,10 +2,21 @@ $(function(){
     initCodeMirror();
 });
 
+var repl = null;
+var connection = null;
+
+function trussEval(code) {
+    if(connection != null) {
+        // do something
+    } else {
+        repl.print("[NO CONNECTION]");
+    }
+}
+
 function initCodeMirror() {
     var geval = eval;
 
-    var repl = new CodeMirrorREPL("repl", {
+    repl = new CodeMirrorREPL("repl", {
         mode: "lua",
         theme: "dracula"
     });
@@ -58,18 +69,7 @@ function initCodeMirror() {
     };
 
     repl.eval = function (code) {
-        setTimeout(function(){
-            repl.print("Evaluated [" + code + "]");
-        }, 500);
-        //repl.print("Evaluating [" + code + "]");
-        // try {
-        //     if (isExpression(code)) {
-        //         geval("__expression__ = " + code);
-        //         express(__expression__);
-        //     } else geval(code);
-        // } catch (error) {
-        //     repl.print(error, "error");
-        // }
+        trussEval(code);
     };
 
     function isExpression(code) {
