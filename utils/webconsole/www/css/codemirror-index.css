@@ -7,11 +7,11 @@ body {
 }
 
 .message {
-    color: #000000 !important;
     font-weight: normal !important;
 }
 
 .error {
     color: #FF0000 !important;
     font-weight: bold;
+    background-color: #000;
 }

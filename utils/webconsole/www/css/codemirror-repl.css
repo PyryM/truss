@@ -2,6 +2,7 @@
   height: 100%;
   line-height: 1em;
   font-family: monospace;
+  color: #aaa;
 
   /* Necessary so the scrollbar can be absolutely positioned within the wrapper on Lion. */
   position: relative;
@@ -51,8 +52,8 @@
 .CodeMirror-gutter {
   position: absolute; left: 0; top: 0;
   z-index: 10;
-  background-color: #f7f7f7;
-  border-right: 1px solid #eee;
+/*  background-color: #f7f7f7;
+  border-right: 1px solid #eee;*/
   min-width: 2em;
   height: 100%;
 }
@@ -102,7 +103,7 @@
   z-index: 10;
   position: absolute;
   visibility: hidden;
-  border-left: 1px solid black;
+  border-left: 1px solid white;
   border-right: none;
   width: 0;
 }

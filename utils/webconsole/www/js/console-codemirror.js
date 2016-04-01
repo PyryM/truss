@@ -1,15 +1,19 @@
-window.addEventListener("DOMContentLoaded", function () {
+$(function(){
+    initCodeMirror();
+});
+
+function initCodeMirror() {
     var geval = eval;
 
     var repl = new CodeMirrorREPL("repl", {
         mode: "lua",
-        theme: "eclipse"
+        theme: "dracula"
     });
 
-    repl.print("/* JavaScript REPL  Copyright (C) 2013  Aadit M Shah */");
+    repl.print("-- truss webconsole --");
 
-    window.print = function (message) {
-        repl.print(message, "message");
+    window.print = function (message, mclass) {
+        repl.print(message, mclass || "message");
     };
 
     repl.isBalanced = function (code) {
@@ -54,14 +58,18 @@ window.addEventListener("DOMContentLoaded", function () {
     };
 
     repl.eval = function (code) {
-        try {
-            if (isExpression(code)) {
-                geval("__expression__ = " + code);
-                express(__expression__);
-            } else geval(code);
-        } catch (error) {
-            repl.print(error, "error");
-        }
+        setTimeout(function(){
+            repl.print("Evaluated [" + code + "]");
+        }, 500);
+        //repl.print("Evaluating [" + code + "]");
+        // try {
+        //     if (isExpression(code)) {
+        //         geval("__expression__ = " + code);
+        //         express(__expression__);
+        //     } else geval(code);
+        // } catch (error) {
+        //     repl.print(error, "error");
+        // }
     };
 
     function isExpression(code) {
@@ -98,4 +106,4 @@ window.addEventListener("DOMContentLoaded", function () {
             repl.print(value, "error");
         }
     }
-}, false);
+}
