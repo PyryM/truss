@@ -1,9 +1,21 @@
 html, body {
     height: 100%;
+    background-color: #282a36;
 }
 
 body {
     margin: 0;
+}
+
+.console-column {
+    border-right: 1px solid #888;
+}
+
+.log-column {
+    background-color: #282a36;
+    height: 100%;
+    color: #fff;
+    border-left: 1px solid #888;
 }
 
 .message {

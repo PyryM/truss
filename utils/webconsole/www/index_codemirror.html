@@ -3,9 +3,16 @@
     <head>
         <meta charset="UTF-8"/>
         <title>truss REPL</title>
+
+        <!-- Bootstrap (for columns) -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+        <script src="lib/bootstrap.min.js"></script>
+
         <link rel="stylesheet" href="css/codemirror-index.css">
         <link rel="stylesheet" href="css/codemirror-repl.css">
         <link rel="stylesheet" href="css/themes/dracula.css">
+
         <script src="lib/jquery-2.2.2.min.js"></script>
         <script src="lib/codemirror-repl.js"></script>
         <script src="lib/modes/lua.js"></script>
@@ -13,6 +20,15 @@
         <script src="js/console-codemirror.js"></script>
     </head>
     <body>
-        <textarea id="repl" autofocus="true"></textarea>
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-md-8 console-column">
+                <textarea id="repl" autofocus="true"></textarea>
+            </div>
+            <div class="col-md-4 log-column">
+                log?
+            </div>
+          </div>
+        </div>
     </body>
 </html>
