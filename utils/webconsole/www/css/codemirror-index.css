@@ -7,15 +7,30 @@ body {
     margin: 0;
 }
 
+#content-area {
+    overflow: hidden;
+    position: relative;
+    height: 100vh;
+    display: flex;
+    width: 100%;
+    will-change: overflow;
+}
+
 .console-column {
+    width: 75%;
     border-right: 1px solid #888;
+    overflow: auto;
+    height: auto;
 }
 
 .log-column {
     background-color: #282a36;
-    height: 100%;
     color: #fff;
     border-left: 1px solid #888;
+    overflow: auto;
+    height: auto;
+    flex: 1;
+    padding-left: 10px;
 }
 
 .message {
