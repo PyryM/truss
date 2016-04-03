@@ -32,7 +32,7 @@ endif()
 # Configure platform-specific build commands.
 if("${CMAKE_GENERATOR}" MATCHES "Visual Studio 14 2015.*")
     set(bgfx_COMPILER "vs2015")
-    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}.exe" "${bgfx_COMPILER}")
+    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}.exe" --with-tools "${bgfx_COMPILER}")
     set(bgfx_BUILD_COMMAND "devenv" "<SOURCE_DIR>/.build/projects/${bgfx_COMPILER}/bgfx.sln" /Build Release|x64)
 elseif("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
     set(bgfx_CONFIGURE_COMMAND "echo")

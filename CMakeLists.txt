@@ -19,7 +19,17 @@ include(physfs)
 include(stb)
 
 # Get SDL2 from a global install location.
+# Add the extra libraries that it requires on each platform.
 find_package(SDL2 REQUIRED)
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+    set(SDL2_LIBRARIES ${SDL2_LIBRARY})
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+    set(SDL2_LIBRARIES ${SDL2_LIBRARY} "-framework IOKit" "-framework Metal" "-framework QuartzCore")
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    set(SDL2_LIBRARIES ${SDL2_LIBRARY} "-lX11")
+else()
+    message(FATAL_ERROR "Terra does not have precompiled binaries for '${CMAKE_SYSTEM_NAME}'.")
+endif()
 
 set(truss_SOURCES
     src/main.cpp
@@ -42,9 +52,7 @@ target_include_directories(truss
 )
 target_link_libraries(truss
     bgfx physfs terra stb
-    "${SDL2_LIBRARY}"
-    # "-lX11"
-    "-framework IOKit" "-framework Metal" "-framework QuartzCore"
+    "${SDL2_LIBRARIES}"
 )
 
 # Fix obscure LuaJIT issue on OSX.
