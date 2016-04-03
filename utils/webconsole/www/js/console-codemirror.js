@@ -6,7 +6,7 @@ $(function(){
 var repl = null;
 var connection = null;
 
-function trussEval(code) {
+function remoteEval(code) {
     if(connection != null) {
         var msg = {
             source: "console",
@@ -53,6 +53,72 @@ function connectToServer() {
     }
 }
 
+function bracketsBalanced(code) {
+    var length = code.length;
+    var delimiter = '';
+    var brackets = [];
+    var matching = {
+        ')': '(',
+        ']': '[',
+        '}': '{'
+    };
+
+    for (var i = 0; i < length; i++) {
+        var char = code.charAt(i);
+
+        switch (delimiter) {
+        case "'":
+        case '"':
+        default:
+            switch (char) {
+            case "'":
+            case '"':
+                delimiter = char;
+                break;
+            case "(":
+            case "[":
+            case "{":
+                brackets.push(char);
+                break;
+            case ")":
+            case "]":
+            case "}":
+                if (!brackets.length || matching[char] !== brackets.pop()) {
+                    repl.print(new SyntaxError("Unexpected closing bracket: '" + char + "'"), "error");
+                    return null;
+                }
+            }
+        }
+    }
+
+    return brackets.length ? false : true;
+}
+
+function doEndBalanced(code) {
+    var startTokens = new Set(["function", "do"]);
+    var endTokens = new Set(["end"]);
+
+    codeTokens = code.split(/\s+/);
+    var nestLevel = 0;
+    var curtoken;
+
+    for(var i = 0; i < codeTokens.length; ++i) {
+        curtoken = codeTokens[i];
+        if(startTokens.has(curtoken)) {
+            nestLevel += 1;
+        } else if(endTokens.has(curtoken)) {
+            nestLevel -= 1;
+        }
+
+        // unrecoverable situation like "do [...] end end"
+        if(nestLevel < 0) {
+            return null;
+        }
+    }
+
+    return (nestLevel == 0);
+}
+
 function initCodeMirror() {
     var geval = eval;
 
@@ -61,55 +127,22 @@ function initCodeMirror() {
         theme: "dracula"
     });
 
-    repl.print("-- truss webconsole --");
-
     window.print = function (message, mclass) {
         repl.print(message, mclass || "message");
     };
 
     repl.isBalanced = function (code) {
-        var length = code.length;
-        var delimiter = '';
-        var brackets = [];
-        var matching = {
-            ')': '(',
-            ']': '[',
-            '}': '{'
-        };
-
-        for (var i = 0; i < length; i++) {
-            var char = code.charAt(i);
-
-            switch (delimiter) {
-            case "'":
-            case '"':
-            default:
-                switch (char) {
-                case "'":
-                case '"':
-                    delimiter = char;
-                    break;
-                case "(":
-                case "[":
-                case "{":
-                    brackets.push(char);
-                    break;
-                case ")":
-                case "]":
-                case "}":
-                    if (!brackets.length || matching[char] !== brackets.pop()) {
-                        repl.print(new SyntaxError("Unexpected closing bracket: '" + char + "'"), "error");
-                        return null;
-                    }
-                }
-            }
+        var b0 = bracketsBalanced(code);
+        var b1 = doEndBalanced(code);
+        if(b0 == null || b1 == null) {
+            return null;
+        } else {
+            return b0 && b1;
         }
-
-        return brackets.length ? false : true;
     };
 
     repl.eval = function (code) {
-        trussEval(code);
+        remoteEval(code);
     };
 
     function isExpression(code) {
