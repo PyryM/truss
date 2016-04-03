@@ -12,7 +12,7 @@
 #include "SDL_thread.h"
 #include "SDL_mutex.h"
 
-#include "terra.h"
+#include "terra/terra.h"
 
 namespace trss {
 

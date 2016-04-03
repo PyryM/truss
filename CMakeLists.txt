@@ -1,38 +1,39 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+cmake_minimum_required(VERSION 3.3)
+project(truss)
+set(CMAKE_CXX_STANDARD 11)
 
-# Change these to point where you installed these things:
-set(TERRADIR "/home/pmatikai/Projects/terra")
-set(BGFXDIR "/home/pmatikai/Projects/bgfx")
-set(BXDIR "/home/pmatikai/Projects/bx")
- 
-PROJECT(truss)
+# Install and build required dependencies.
+# (BGFX, Terra, PhysFS)
+add_subdirectory(external)
 
-INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/src")
-INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/include")
-INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/extras/bgfx_nanovg")
-INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/extras/websocket_client")
- 
-INCLUDE(FindPkgConfig)
-PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
-INCLUDE_DIRECTORIES(${SDL2_INCLUDE_DIRS})
+# Get SDL2 from a global install location.
+include(FindPkgConfig)
+pkg_search_module(SDL2 REQUIRED sdl2)
 
-add_library( bgfx-shared-libRelease SHARED IMPORTED )
-set_target_properties( bgfx-shared-libRelease PROPERTIES IMPORTED_LOCATION "${BGFXDIR}/.build/linux64_gcc/bin/libbgfx-shared-libRelease.so")
-INCLUDE_DIRECTORIES("${BGFXDIR}/include")
-INCLUDE_DIRECTORIES("${BXDIR}/include")
-INCLUDE_DIRECTORIES("${BGFXDIR}/3rdparty")
+#find_package(OpenGL REQUIRED)
+#include_directories(${OpenGL_INCLUDE_DIRS})
+#add_definitions(${OpenGL_DEFINITIONS})
+#link_directories(${OpenGL_LIBRARY_DIRS})
+#message(STATUS "OPENGL_LIBRARIES={${OPENGL_LIBRARY}}")
 
-add_library( terra SHARED IMPORTED )
-set_target_properties( terra PROPERTIES IMPORTED_LOCATION "${TERRADIR}/libterra.so")
-INCLUDE_DIRECTORIES("${TERRADIR}/include")
+set(truss_SOURCES
+    src/main.cpp
+    src/truss.cpp
+    src/truss_sdl.cpp
+)
 
-find_package(OpenGL REQUIRED)
-include_directories(${OpenGL_INCLUDE_DIRS})
-link_directories(${OpenGL_LIBRARY_DIRS})
-add_definitions(${OpenGL_DEFINITIONS})
-message(STATUS "OPENGL_LIBRARIES={${OPENGL_LIBRARY}}")
-
-ADD_EXECUTABLE(truss src/minimain.cpp src/truss.cpp src/truss_sdl.cpp extras/bgfx_nanovg/nanovg_addon.cpp extras/bgfx_nanovg/nanovg.cpp extras/bgfx_nanovg/nanovg_bgfx_c99.cpp extras/websocket_client/wsclient_addon.cpp extras/websocket_client/easywsclient/easywsclient.cpp)
-set_property(TARGET truss PROPERTY BUILD_WITH_INSTALL_RPATH TRUE)
-TARGET_LINK_LIBRARIES(truss bgfx-shared-libRelease ${SDL2_LIBRARIES} terra GL GLU X11 SDL2)
-
+add_executable(truss ${truss_SOURCES})
+target_compile_definitions(truss PRIVATE
+    "${SDL2_DEFINITIONS}"
+)
+target_include_directories(truss
+    PRIVATE
+    "${SDL2_INCLUDE_DIRS}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+target_link_libraries(truss
+    "${SDL2_LIBRARIES}"
+    bgfx physfs terra stb
+)

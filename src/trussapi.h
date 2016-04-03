@@ -8,7 +8,8 @@
 
 #define TRSS_VERSION_STRING "0.0.1"
 
-#include <stdint.h> /* Needed for uint64_t etc. */
+#include <cstdint> // Needed for uint64_t etc.
+#include <cstddef> // Needed for size_t etc.
 
 /* Windows needs dllexports for Terra / luajit ffi to be able
    to link against the truss api functions (even when statically built) */

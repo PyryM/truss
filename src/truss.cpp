@@ -7,7 +7,6 @@
 #include "bx_utils.h" // has to be included early or else luaconfig.h will clobber winver
 #include "trussapi.h"
 #include "truss.h"
-#include "terra.h"
 #include "physfs.h"
 
 using namespace trss;
