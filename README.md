@@ -12,14 +12,14 @@ Truss is designed for relatively modern computers. In particular,
 
 ## Miscellaneous tips
 
-### Compiling dx11 shaders
+### Compiling DirectX11 (dx11) shaders
 ```
 shaderc -f source_fs_file.sc -o output_fs_file.bin --type f -i common\ --platform windows -p ps_4_0 -O 3
 ```
 For vertex shader change `ps_4_0` to `vs_4_0`
-(for dx9 use `ps_3_0` and `vs_3_0`)
+(for DirectX9 (dx9) use `ps_3_0` and `vs_3_0`)
 
-### Compiling opengl shaders
+### Compiling OpenGL shaders
 ```
 shaderc -f source_fs_file.sc -o output_fs_file.bin --type f -i common\ --platform linux -p 120
 ```
