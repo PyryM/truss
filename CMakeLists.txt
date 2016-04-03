@@ -42,9 +42,9 @@ target_include_directories(truss
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 target_link_libraries(truss
-    "${SDL2_LIBRARIES}"
     bgfx physfs terra stb
-    "-ldl" "-lpthread" "-lGL" "-lX11"
+    "${SDL2_LIBRARIES}"
+    "-lX11"
 )
 
 # Unlike most builds, we want the resulting executable to be installed into
