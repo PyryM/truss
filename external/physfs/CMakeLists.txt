@@ -1,5 +1,8 @@
 include(ExternalProject)
 
+# Resolve ZLIB library.
+find_package(ZLIB REQUIRED)
+
 # Use this version of physfs.
 set(physfs_VERSION "2.0.3")
 
@@ -22,11 +25,8 @@ file(MAKE_DIRECTORY "${physfs_INCLUDE_DIR}")
 # can add dependencies to the library here.
 add_library(physfs STATIC IMPORTED GLOBAL)
 add_dependencies(physfs physfs_EXTERNAL)
-set_property(TARGET physfs
-    PROPERTY INTERFACE_INCLUDE_DIRECTORIES
-    "${physfs_INCLUDE_DIR}"
-)
-set_property(TARGET physfs
-    PROPERTY IMPORTED_LOCATION
-    "${physfs_LIBRARY}"
+set_target_properties(physfs PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${physfs_INCLUDE_DIR}"
+    INTERFACE_LINK_LIBRARIES "${ZLIB_LIBRARIES}"
+    IMPORTED_LOCATION "${physfs_LIBRARY}"
 )

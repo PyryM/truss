@@ -25,11 +25,8 @@ file(MAKE_DIRECTORY "${terra_INCLUDE_DIR}")
 # can add dependencies to the library here.
 add_library(terra STATIC IMPORTED GLOBAL)
 add_dependencies(terra terra_EXTERNAL)
-set_property(TARGET terra
-    PROPERTY INTERFACE_INCLUDE_DIRECTORIES
-    "${terra_INCLUDE_DIR}"
-)
-set_property(TARGET terra
-    PROPERTY IMPORTED_LOCATION
-    "${terra_LIBRARY}"
+set_target_properties(terra PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${terra_INCLUDE_DIR}"
+    # INTERFACE_COMPILE_DEFINITIONS "-lgl;-lpthread"
+    IMPORTED_LOCATION "${terra_LIBRARY}"
 )

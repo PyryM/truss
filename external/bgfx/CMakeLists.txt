@@ -1,5 +1,8 @@
 include(ExternalProject)
 
+# Resolve OpenGL library.
+find_package(OpenGL REQUIRED)
+
 # Get the name of the system as `bx` uses it.
 string(TOLOWER "${CMAKE_SYSTEM_NAME}" bx_OS_NAME)
 set(bx_COMPILER "gcc") # TODO: cross-platform this.
@@ -40,11 +43,8 @@ file(MAKE_DIRECTORY "${bgfx_INCLUDE_DIR}")
 # can add dependencies to the library here.
 add_library(bgfx SHARED IMPORTED GLOBAL)
 add_dependencies(bgfx bgfx_EXTERNAL)
-set_property(TARGET bgfx
-    PROPERTY INTERFACE_INCLUDE_DIRECTORIES
-    "${bgfx_INCLUDE_DIR}" "${bx_INCLUDE_DIR}"
-)
-set_property(TARGET bgfx
-    PROPERTY IMPORTED_LOCATION
-    "${bgfx_LIBRARY}"
+set_target_properties(bgfx PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${bgfx_INCLUDE_DIR};${bx_INCLUDE_DIR}"
+    INTERFACE_LINK_LIBRARIES "${OPENGL_LIBRARIES}"
+    IMPORTED_LOCATION "${bgfx_LIBRARY}"
 )
