@@ -26,6 +26,6 @@ add_library(terra STATIC IMPORTED)
 add_dependencies(terra terra_EXTERNAL)
 set_target_properties(terra PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${terra_INCLUDE_DIR}"
-    INTERFACE_LINK_LIBRARIES "dl;pthread"
+    INTERFACE_LINK_LIBRARIES "dl"
     IMPORTED_LOCATION "${terra_LIBRARY}"
 )

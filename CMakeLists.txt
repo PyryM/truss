@@ -13,8 +13,7 @@ include(physfs)
 include(stb)
 
 # Get SDL2 from a global install location.
-include(FindPkgConfig)
-pkg_search_module(SDL2 REQUIRED sdl2)
+find_package(SDL2 REQUIRED)
 
 set(truss_SOURCES
     src/main.cpp
@@ -28,19 +27,16 @@ set(truss_SOURCES
 )
 
 add_executable(truss ${truss_SOURCES})
-target_compile_definitions(truss PRIVATE
-    "${SDL2_DEFINITIONS}"
-)
 target_include_directories(truss
     PRIVATE
-    "${SDL2_INCLUDE_DIRS}"
+    "${SDL2_INCLUDE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 target_link_libraries(truss
     bgfx physfs terra stb
-    "${SDL2_LIBRARIES}"
+    "${SDL2_LIBRARY}"
     "-lX11"
 )
 
