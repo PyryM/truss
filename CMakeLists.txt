@@ -47,6 +47,10 @@ target_link_libraries(truss
     "-framework IOKit" "-framework Metal" "-framework QuartzCore"
 )
 
+# Fix obscure LuaJIT issue on OSX.
+# http://www.freelists.org/post/luajit/luaL-newstate-fails-on-64bit-Mac-cant-set-linker-flags
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000")
+
 # Unlike most builds, we want the resulting executable to be installed into
 # the root of this directory, as this entire directory comprises a
 # distribution package.
