@@ -1,8 +1,5 @@
 include(ExternalProject)
 
-# Resolve ZLIB library.
-find_package(ZLIB REQUIRED)
-
 # Use this version of physfs.
 set(physfs_VERSION "2.0.3")
 
@@ -11,6 +8,7 @@ include(ExternalProject)
 ExternalProject_Add(physfs_EXTERNAL
     URL "https://icculus.org/physfs/downloads/physfs-${physfs_VERSION}.tar.bz2"
     INSTALL_COMMAND ""
+    CMAKE_ARGS "-DPHYSFS_INTERNAL_ZLIB=TRUE"
 )
 
 # Recover project paths for additional settings.
@@ -27,6 +25,5 @@ add_library(physfs STATIC IMPORTED)
 add_dependencies(physfs physfs_EXTERNAL)
 set_target_properties(physfs PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${physfs_INCLUDE_DIR}"
-    INTERFACE_LINK_LIBRARIES "${ZLIB_LIBRARIES}"
     IMPORTED_LOCATION "${physfs_LIBRARY}"
 )
