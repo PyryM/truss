@@ -4,7 +4,6 @@ include(ExternalProject)
 set(physfs_VERSION "2.0.3")
 
 # Download `physfs` and build it using CMake.
-include(ExternalProject)
 ExternalProject_Add(physfs_EXTERNAL
     URL "https://icculus.org/physfs/downloads/physfs-${physfs_VERSION}.tar.bz2"
     INSTALL_COMMAND ""
