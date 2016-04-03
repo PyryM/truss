@@ -12,9 +12,6 @@ include(terra)
 include(physfs)
 include(stb)
 
-#print_target_properties(bgfx)
-#print_properties()
-
 # Get SDL2 from a global install location.
 include(FindPkgConfig)
 pkg_search_module(SDL2 REQUIRED sdl2)
