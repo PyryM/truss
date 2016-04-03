@@ -5,7 +5,6 @@ set(terra_RELEASE_DATE "2016-02-26")
 set(terra_RELEASE_HASH "2fa8d0a")
 
 # Download `terra` and unzip its binaries.
-include(ExternalProject)
 ExternalProject_Add(terra_EXTERNAL
     URL "https://github.com/zdevito/terra/releases/download/release-${terra_RELEASE_DATE}/terra-${CMAKE_SYSTEM_NAME}-x86_64-${terra_RELEASE_HASH}.zip"
     CONFIGURE_COMMAND ""

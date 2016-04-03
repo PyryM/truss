@@ -1,7 +1,6 @@
 include(ExternalProject)
 
 # Download `stb` and extract source path.
-include(ExternalProject)
 ExternalProject_Add(stb_EXTERNAL
     GIT_REPOSITORY "https://github.com/nothings/stb.git"
     GIT_TAG "master"

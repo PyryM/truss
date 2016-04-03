@@ -2,13 +2,17 @@ cmake_minimum_required(VERSION 3.3)
 project(truss)
 set(CMAKE_CXX_STANDARD 11)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 include(PrintTargetProperties)
 
 # Install and build required dependencies.
-# (BGFX, Terra, PhysFS)
-add_subdirectory(external)
+# (BGFX, Terra, PhysFS, STB)
+include(bgfx)
+include(terra)
+include(physfs)
+include(stb)
 
-print_target_properties(bgfx)
+#print_target_properties(bgfx)
 #print_properties()
 
 # Get SDL2 from a global install location.
@@ -42,3 +46,8 @@ target_link_libraries(truss
     bgfx physfs terra stb
     "-ldl" "-lpthread" "-lGL"
 )
+
+# Unlike most builds, we want the resulting executable to be installed into
+# the root of this directory, as this entire directory comprises a
+# distribution package.
+set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}")

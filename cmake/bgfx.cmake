@@ -37,6 +37,7 @@ set(bgfx_INCLUDE_DIR "${SOURCE_DIR}/include")
 set(bgfx_LIBRARY "${SOURCE_DIR}/.build/${bx_OS_NAME}64_${bx_COMPILER}/bin/libbgfx-shared-libRelease.so")
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
+file(MAKE_DIRECTORY "${bx_INCLUDE_DIR}")
 file(MAKE_DIRECTORY "${bgfx_INCLUDE_DIR}")
 
 # Tell CMake that the external project generated a library so we
