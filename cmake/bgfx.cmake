@@ -13,22 +13,32 @@ ExternalProject_Add(bx_EXTERNAL
 ExternalProject_Get_Property(bx_EXTERNAL SOURCE_DIR)
 set(bx_DIR "${SOURCE_DIR}")
 set(bx_INCLUDE_DIR "${SOURCE_DIR}/include")
-string(TOLOWER "${CMAKE_SYSTEM_NAME}" bx_OS_NAME)
-set(bx_GENIE "${SOURCE_DIR}/tools/bin/${bx_OS_NAME}/genie")
+string(TOLOWER "${CMAKE_SYSTEM_NAME}" bx_SYSTEM_NAME)
+set(bx_GENIE "${SOURCE_DIR}/tools/bin/${bx_SYSTEM_NAME}/genie")
+
+# Create a system name compatible with BGFX build scripts.
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+    set(bgfx_SYSTEM_NAME "win")
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+    set(bgfx_SYSTEM_NAME "osx")
+    set(bgfx_COMPILER "clang")
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    set(bgfx_SYSTEM_NAME "linux")
+    set(bgfx_COMPILER "gcc")
+else()
+    message(FATAL_ERROR "BGFX does not support the system '${CMAKE_SYSTEM_NAME}'.")
+endif()
 
 # Configure platform-specific build commands.
 if("${CMAKE_GENERATOR}" MATCHES "Visual Studio 14 2015.*")
-    set(bx_OS_SHORT "win")
-    set(bx_COMPILER "vs2015")
-    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}.exe" "${bx_COMPILER}")
-    set(bgfx_BUILD_COMMAND "devenv" "<SOURCE_DIR>/.build/projects/${bx_COMPILER}/bgfx.sln" /Build Release|x64)
+    set(bgfx_COMPILER "vs2015")
+    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}.exe" "${bgfx_COMPILER}")
+    set(bgfx_BUILD_COMMAND "devenv" "<SOURCE_DIR>/.build/projects/${bgfx_COMPILER}/bgfx.sln" /Build Release|x64)
 elseif("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
-    set(bx_OS_SHORT "${bx_OS_NAME}")
-    set(bx_COMPILER "gcc")
-    set(bgfx_CONFIGURE_COMMAND "")
-    set(bgfx_BUILD_COMMAND "make" -C <SOURCE_DIR> "BX_DIR=${bx_SOURCE_DIR}" "${bx_OS_NAME}-release64")
+    set(bgfx_CONFIGURE_COMMAND "echo")
+    set(bgfx_BUILD_COMMAND "make" -C <SOURCE_DIR> "BX_DIR=${bx_SOURCE_DIR}" "${bgfx_SYSTEM_NAME}-release64")
 else()
-    message(FATAL_ERROR "BGFX does not support the compiler '${CMAKE_GENERATOR}'.")
+    message(FATAL_ERROR "BGFX does not support the generator '${CMAKE_GENERATOR}'.")
 endif()
 
 # Download `bgfx` and build it using `bx`.
@@ -46,7 +56,7 @@ ExternalProject_Add(bgfx_EXTERNAL
 # Recover BGFX paths for additional settings.
 ExternalProject_Get_Property(bgfx_EXTERNAL SOURCE_DIR)
 set(bgfx_INCLUDE_DIR "${SOURCE_DIR}/include")
-set(bgfx_LIBRARY "${SOURCE_DIR}/.build/${bx_OS_SHORT}64_${bx_COMPILER}/bin/${CMAKE_STATIC_LIBRARY_PREFIX}bgfxRelease${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(bgfx_LIBRARY "${SOURCE_DIR}/.build/${bgfx_SYSTEM_NAME}64_${bgfx_COMPILER}/bin/${CMAKE_STATIC_LIBRARY_PREFIX}bgfxRelease${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
 file(MAKE_DIRECTORY "${bx_INCLUDE_DIR}")

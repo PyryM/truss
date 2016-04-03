@@ -43,7 +43,8 @@ target_include_directories(truss
 target_link_libraries(truss
     bgfx physfs terra stb
     "${SDL2_LIBRARY}"
-    "-lX11"
+    # "-lX11"
+    "-framework IOKit" "-framework Metal" "-framework QuartzCore"
 )
 
 # Unlike most builds, we want the resulting executable to be installed into
