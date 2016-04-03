@@ -50,6 +50,7 @@ function CodeMirrorREPL(textareaId, options) {
     repl.setMode = setMode;
     repl.setTheme = setTheme;
     mirror.setMarker(line, ">>");
+    repl.mirror = mirror;
 
     function undo() {}
 

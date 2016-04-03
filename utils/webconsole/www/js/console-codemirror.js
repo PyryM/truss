@@ -132,6 +132,10 @@ function initCodeMirror() {
         theme: "dracula"
     });
 
+    $("#console-column").click(function() {
+        repl.mirror.focus();
+    });
+
     window.print = function (message, mclass) {
         repl.print(message, mclass || "message");
     };
