@@ -16,6 +16,7 @@ ExternalProject_Add(terra_EXTERNAL
 ExternalProject_Get_Property(terra_EXTERNAL SOURCE_DIR)
 set(terra_INCLUDE_DIR "${SOURCE_DIR}/include")
 set(terra_LIBRARY "${SOURCE_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}terra${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(lua51_LIBRARY "${SOURCE_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}lua51${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
 file(MAKE_DIRECTORY "${terra_INCLUDE_DIR}")
@@ -26,6 +27,6 @@ add_library(terra STATIC IMPORTED)
 add_dependencies(terra terra_EXTERNAL)
 set_target_properties(terra PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${terra_INCLUDE_DIR}"
-    INTERFACE_LINK_LIBRARIES "dl"
+    INTERFACE_LINK_LIBRARIES "${lua51_LIBRARY}"
     IMPORTED_LOCATION "${terra_LIBRARY}"
 )

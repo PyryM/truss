@@ -17,7 +17,7 @@ string(TOLOWER "${CMAKE_SYSTEM_NAME}" bx_OS_NAME)
 set(bx_GENIE "${SOURCE_DIR}/tools/bin/${bx_OS_NAME}/genie")
 
 # Configure platform-specific build commands.
-if("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 14 2015")
+if("${CMAKE_GENERATOR}" MATCHES "Visual Studio 14 2015.*")
     set(bx_OS_SHORT "win")
     set(bx_COMPILER "vs2015")
     set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}.exe" "${bx_COMPILER}")
@@ -58,6 +58,6 @@ add_library(bgfx STATIC IMPORTED)
 add_dependencies(bgfx bgfx_EXTERNAL)
 set_target_properties(bgfx PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${bgfx_INCLUDE_DIR};${bx_INCLUDE_DIR}"
-    INTERFACE_LINK_LIBRARIES "GL"
+    # INTERFACE_LINK_LIBRARIES "libGL"
     IMPORTED_LOCATION "${bgfx_LIBRARY}"
 )
