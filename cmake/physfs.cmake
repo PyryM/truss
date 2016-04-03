@@ -7,7 +7,7 @@ set(physfs_VERSION "2.0.3")
 ExternalProject_Add(physfs_EXTERNAL
     URL "https://icculus.org/physfs/downloads/physfs-${physfs_VERSION}.tar.bz2"
     INSTALL_COMMAND ""
-    CMAKE_ARGS "-DPHYSFS_INTERNAL_ZLIB=TRUE"
+    CMAKE_ARGS "-DPHYSFS_INTERNAL_ZLIB=TRUE" "-DPHYSFS_BUILD_STATIC=TRUE" "-DPHYSFS_BUILD_SHARED=FALSE" "-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE=<BINARY_DIR>"
 )
 
 # Recover project paths for additional settings.

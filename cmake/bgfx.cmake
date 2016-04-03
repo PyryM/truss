@@ -18,10 +18,12 @@ set(bx_GENIE "${SOURCE_DIR}/tools/bin/${bx_OS_NAME}/genie")
 
 # Configure platform-specific build commands.
 if("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 14 2015")
+    set(bx_OS_SHORT "win")
     set(bx_COMPILER "vs2015")
     set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}.exe" "${bx_COMPILER}")
     set(bgfx_BUILD_COMMAND "devenv" "<SOURCE_DIR>/.build/projects/${bx_COMPILER}/bgfx.sln" /Build Release|x64)
 elseif("${CMAKE_GENERATOR}" STREQUAL "gcc")
+    set(bx_OS_SHORT "${bx_OS_NAME}")
     set(bx_COMPILER "gcc")
     set(bgfx_CONFIGURE_COMMAND "")
     set(bgfx_BUILD_COMMAND "make" -C <SOURCE_DIR> "BX_DIR=${bx_SOURCE_DIR}" "${bx_OS_NAME}-release64")
@@ -44,7 +46,7 @@ ExternalProject_Add(bgfx_EXTERNAL
 # Recover BGFX paths for additional settings.
 ExternalProject_Get_Property(bgfx_EXTERNAL SOURCE_DIR)
 set(bgfx_INCLUDE_DIR "${SOURCE_DIR}/include")
-set(bgfx_LIBRARY "${SOURCE_DIR}/.build/linux64_${bx_COMPILER}/bin/${CMAKE_STATIC_LIBRARY_PREFIX}bgfxRelease${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(bgfx_LIBRARY "${SOURCE_DIR}/.build/${bx_OS_SHORT}64_${bx_COMPILER}/bin/${CMAKE_STATIC_LIBRARY_PREFIX}bgfxRelease${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
 file(MAKE_DIRECTORY "${bx_INCLUDE_DIR}")
