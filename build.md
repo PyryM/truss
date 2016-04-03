@@ -6,6 +6,7 @@
 ## Windows (vs2013)
 * Dependencies: bgfx, bx, terra, sdl
   * Get and build bgfx + bx (bx is header only and needed by bgfx):
+
     ```bash
     git clone git://github.com/bkaradzic/bx.git
     git clone git://github.com/bkaradzic/bgfx.git
