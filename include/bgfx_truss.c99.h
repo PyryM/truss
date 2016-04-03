@@ -13,6 +13,7 @@
 #include <stdint.h>  // uint32_t
 #include <stdlib.h>  // size_t
 
+#undef UINT32_MAX
 #define UINT32_MAX 4294967295
 
 //#include <bgfx/bgfxdefines.h>
