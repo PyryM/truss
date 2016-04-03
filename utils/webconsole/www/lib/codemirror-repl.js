@@ -97,9 +97,8 @@ function CodeMirrorREPL(textareaId, options) {
                 mirror.setMarker(line, ">>");
             } else {
                 if (balanced === null) {
-                    buffer.pop();
-                    code = buffer.join('\n').replace('\r', '\n');
-                    mirror.setMarker(line, repl.isBalanced(code) ? ">>" : "..");
+                    buffer.length = 0;
+                    mirror.setMarker(line, ">>");
                 } else mirror.setMarker(line, "..");
             }
         }

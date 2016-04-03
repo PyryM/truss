@@ -110,6 +110,11 @@ function doEndBalanced(code) {
             nestLevel -= 1;
         }
 
+        // allow !! to break out of a multiline entry
+        if(curtoken == "!!") {
+            return null;
+        }
+
         // unrecoverable situation like "do [...] end end"
         if(nestLevel < 0) {
             return null;
