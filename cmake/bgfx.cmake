@@ -29,6 +29,7 @@ ExternalProject_Add(bgfx_EXTERNAL
     CONFIGURE_COMMAND ""
     BUILD_COMMAND "make" -C <SOURCE_DIR> "BX_DIR=${bx_SOURCE_DIR}" "${bx_OS_NAME}-release64"
     INSTALL_COMMAND ""
+    LOG_BUILD 1
 )
 
 # Recover project paths for additional settings.
@@ -42,7 +43,7 @@ file(MAKE_DIRECTORY "${bgfx_INCLUDE_DIR}")
 
 # Tell CMake that the external project generated a library so we
 # can add dependencies to the library here.
-add_library(bgfx SHARED IMPORTED GLOBAL)
+add_library(bgfx SHARED IMPORTED)
 add_dependencies(bgfx bgfx_EXTERNAL)
 set_target_properties(bgfx PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${bgfx_INCLUDE_DIR};${bx_INCLUDE_DIR}"

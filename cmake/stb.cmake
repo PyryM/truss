@@ -18,7 +18,7 @@ file(MAKE_DIRECTORY "${stb_INCLUDE_DIR}")
 
 # Tell CMake that the external project generated a library so we
 # can add dependencies to the library here.
-add_library(stb INTERFACE IMPORTED GLOBAL)
+add_library(stb INTERFACE IMPORTED)
 add_dependencies(stb stb_EXTERNAL)
 set_property(TARGET stb
     PROPERTY INTERFACE_INCLUDE_DIRECTORIES

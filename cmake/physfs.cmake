@@ -23,7 +23,7 @@ file(MAKE_DIRECTORY "${physfs_INCLUDE_DIR}")
 
 # Tell CMake that the external project generated a library so we
 # can add dependencies to the library here.
-add_library(physfs STATIC IMPORTED GLOBAL)
+add_library(physfs STATIC IMPORTED)
 add_dependencies(physfs physfs_EXTERNAL)
 set_target_properties(physfs PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${physfs_INCLUDE_DIR}"

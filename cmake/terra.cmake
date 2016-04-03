@@ -22,7 +22,7 @@ file(MAKE_DIRECTORY "${terra_INCLUDE_DIR}")
 
 # Tell CMake that the external project generated a library so we
 # can add dependencies to the library here.
-add_library(terra STATIC IMPORTED GLOBAL)
+add_library(terra STATIC IMPORTED)
 add_dependencies(terra terra_EXTERNAL)
 set_target_properties(terra PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${terra_INCLUDE_DIR}"
