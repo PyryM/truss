@@ -69,6 +69,11 @@ function WebSocketConnection:update()
 	end
 end
 
+function WebSocketConnection:onJSON(cbfunc)
+	self.decodeJSON = true
+	self:onMessage(cbfunc)
+end
+
 function WebSocketConnection:onMessage(cbfunc)
 	if self.callback then
 		log.warn("Warning: WebSocketConnection already had callback,")

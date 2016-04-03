@@ -1,5 +1,6 @@
 $(function(){
     initCodeMirror();
+    connectToServer();
 });
 
 var repl = null;
@@ -7,9 +8,48 @@ var connection = null;
 
 function trussEval(code) {
     if(connection != null) {
-        // do something
+        var msg = {
+            source: "console",
+            mtype: "eval",
+            code: code
+        }
+        connection.send(JSON.stringify(msg));
     } else {
         repl.print("[NO CONNECTION]");
+    }
+}
+
+function replLog(message, topic) {
+    $('<div class="log-' + topic + '">[' + topic + '] ' +
+        message +
+        '</div>').appendTo("#log-column");
+}
+
+function connectToServer() {
+    connection = new WebSocket("ws://localhost:8087");
+
+    connection.onopen = function (event) {
+        var msg = {
+            source: "console",
+            mtype: "ping"
+        } 
+        connection.send(JSON.stringify(msg));
+        repl.print("[server connection opened]");
+    }
+
+    connection.onmessage = function (event) {
+        console.log(event.data);
+        var jdata = JSON.parse(event.data);
+        if(jdata.mtype == "print") {
+            repl.print(jdata.message);
+        } else if(jdata.mtype == "log") {
+            replLog(jdata.message, jdata.topic);
+        }
+    }
+
+    connection.onclose = function (event) {
+        repl.print("[server connection closed: " + event.reason + "]");
+        connection = null;
     }
 }
 

@@ -9,6 +9,11 @@ function sendToTruss(msg){
   if(trussConnection && 
       trussConnection.readyState == trussConnection.OPEN){
       trussConnection.send(msg);
+  } else {
+    var jmsg = {"source": "server",
+                "mtype": "print",
+                "message": "[no remote connection]"};
+    sendToClients(JSON.stringify(jmsg));
   }
 }
 
@@ -18,7 +23,7 @@ function sendToClients(msg) {
     if(currconn.readyState == currconn.OPEN) {
       currconn.send(msg);
     } else {
-      console.log("Puring connection " + cname);
+      console.log("Purging connection " + cname);
       delete clientConnections[cname];
     }
   }
@@ -30,12 +35,16 @@ wss.on('connection', function connection(ws) {
 
   ws.on('message', function incoming(message) {
     var jdata = JSON.parse(message);
-    if(jdata.source == "truss") {
+    if(jdata.source == "host") {
       trussConnection = ws;
-      sendToClients(message);
-    } else if(jdata.source == "client") {
+      if(jdata.mtype != "ping") {
+        sendToClients(message);
+      }
+    } else if(jdata.source == "console") {
       clientConnections[cname] = ws;
-      sendToTruss(message);
+      if(jdata.mtype != "ping") {
+        sendToTruss(message);
+      }
     }
 
     console.log('received: %s', message);
