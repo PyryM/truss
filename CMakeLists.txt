@@ -44,7 +44,7 @@ target_include_directories(truss
 target_link_libraries(truss
     "${SDL2_LIBRARIES}"
     bgfx physfs terra stb
-    "-ldl" "-lpthread" "-lGL"
+    "-ldl" "-lpthread" "-lGL" "-lX11"
 )
 
 # Unlike most builds, we want the resulting executable to be installed into

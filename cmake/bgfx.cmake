@@ -35,7 +35,7 @@ ExternalProject_Add(bgfx_EXTERNAL
 # Recover project paths for additional settings.
 ExternalProject_Get_Property(bgfx_EXTERNAL SOURCE_DIR)
 set(bgfx_INCLUDE_DIR "${SOURCE_DIR}/include")
-set(bgfx_LIBRARY "${SOURCE_DIR}/.build/${bx_OS_NAME}64_${bx_COMPILER}/bin/libbgfx-shared-libRelease.so")
+set(bgfx_LIBRARY "${SOURCE_DIR}/.build/${bx_OS_NAME}64_${bx_COMPILER}/bin/libbgfxRelease.a")
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
 file(MAKE_DIRECTORY "${bx_INCLUDE_DIR}")
@@ -43,7 +43,7 @@ file(MAKE_DIRECTORY "${bgfx_INCLUDE_DIR}")
 
 # Tell CMake that the external project generated a library so we
 # can add dependencies to the library here.
-add_library(bgfx SHARED IMPORTED)
+add_library(bgfx STATIC IMPORTED)
 add_dependencies(bgfx bgfx_EXTERNAL)
 set_target_properties(bgfx PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${bgfx_INCLUDE_DIR};${bx_INCLUDE_DIR}"
