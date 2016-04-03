@@ -30,7 +30,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #ifndef _MSC_VER // [
-#error "Use this header only with Microsoft Visual C++ compilers!"
+#warning "Use this header only with Microsoft Visual C++ compilers!"
 #endif // _MSC_VER ]
 
 #ifndef _MSC_STDINT_H_ // [
@@ -92,8 +92,8 @@
    typedef unsigned __int16  uint16_t;
    typedef unsigned __int32  uint32_t;
 #endif
-typedef signed __int64       int64_t;
-typedef unsigned __int64     uint64_t;
+typedef long long            int64_t;
+typedef unsigned long long   uint64_t;
 
 
 // 7.18.1.2 Minimum-width integer types
@@ -129,7 +129,7 @@ typedef uint64_t  uint_fast64_t;
 typedef int64_t   intmax_t;
 typedef uint64_t  uintmax_t;
 
-typedef uint64_t size_t;
+//typedef uint64_t size_t;
 
 
 // 7.18.2 Limits of specified-width integer types
