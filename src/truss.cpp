@@ -112,6 +112,12 @@ void Interpreter::execute() {
 
 void Interpreter::threadEntry() {
 	terraState_ = luaL_newstate();
+	if (!terraState_) {
+		core()->logMessage(TRSS_LOG_ERROR, "Error creating a new Lua state.");
+		running_ = false;
+		return;
+	}
+
 	luaL_openlibs(terraState_);
 	terra_Options* opts = new terra_Options;
 	opts->verbose = verboseLevel_;
