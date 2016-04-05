@@ -61,7 +61,7 @@ function m.icosphereData(rad, subdivisions)
     local geoutils = require("geometry/geoutils.t")
 
     subdivisions = subdivisions or 2
-    local data = m.icosahedronData(rad)
+    local data = m.icosahedronData(1.0)
 
     for i = 1, subdivisions do
         data = geoutils.subdivide(data)
@@ -69,6 +69,19 @@ function m.icosphereData(rad, subdivisions)
 
     geoutils.spherize(data, rad)
     return data
+end
+
+-- creates a basic icosphere StaticGeometry with a
+-- position + normal vertex layout
+function m.icosphereGeo(rad, subdivisions, gname)
+    local geoutils = require("geometry/geoutils.t")
+    local StaticGeometry = require("gfx/geometry.t").StaticGeometry
+    local sphereData = m.icosphereData(rad, subdivisions)
+    geoutils.computeNormals(sphereData)
+    local vertexdefs = require("gfx/vertexdefs.t")
+    local vertInfo = vertexdefs.createStandardVertexType({"position", 
+                                                          "normal"})
+    return StaticGeometry(gname):fromData(vertInfo, sphereData)
 end
 
 return m
