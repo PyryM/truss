@@ -15,6 +15,7 @@ function CodeMirrorREPL(textareaId, options) {
         "Delete": del,
         "Ctrl-Z": undo,
         "Enter": enter,
+        "Tab": suggest,
         "Ctrl-A": select,
         "Ctrl-Delete": del,
         "Shift-Enter": enter,
@@ -77,6 +78,10 @@ function CodeMirrorREPL(textareaId, options) {
         }
 
         mirror.setLine(line, history[n]);
+    }
+
+    function suggest() {
+        // todo
     }
 
     function enter() {
@@ -145,8 +150,11 @@ function CodeMirrorREPL(textareaId, options) {
         var length = text.length;
 
         if (user) {
-            if (from.line < line || from.ch < ch) mirror.undo();
-            else if (length-- > 1) {
+            // prevent editing of history
+            if (from.line < line || from.ch < ch){
+                mirror.undo();
+            // if a multi-line string is pasted, treat each line as a cmd
+            } else if (length-- > 1) { 
                 mirror.undo();
 
                 var ln = mirror.getLine(line).slice(ch);
