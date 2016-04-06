@@ -61,6 +61,36 @@ function PerfApp:bindFFIBGFX()
     self.ffipgm.idx = self.pgm.idx
 end
 
+local bgfx = core.bgfx
+local bgfx_const = core.bgfx_const
+struct BGFXJunk {
+    vbuff: bgfx.bgfx_vertex_buffer_handle_t;
+    ibuff: bgfx.bgfx_index_buffer_handle_t;
+    pgm: bgfx.bgfx_program_handle_t;
+}
+
+terra terraDrawLoop(nside: int, binfo: &BGFXJunk, tmat: &float)
+    for row = 1,nside do
+        for col = 1,nside do
+            tmat[12] = row*2 - nside
+            tmat[13] = col*2 - nside
+            bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)
+            bgfx.bgfx_set_transform(tmat, 1)
+            bgfx.bgfx_set_vertex_buffer(binfo.vbuff, 0, bgfx.UINT32_MAX)
+            bgfx.bgfx_set_index_buffer(binfo.ibuff, 0, bgfx.UINT32_MAX)
+            bgfx.bgfx_submit(0, binfo.pgm, 0, false)
+        end
+    end
+end
+
+terra terraSingleDrawCall(binfo: &BGFXJunk, tmat: &float)
+    bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)
+    bgfx.bgfx_set_transform(tmat, 1)
+    bgfx.bgfx_set_vertex_buffer(binfo.vbuff, 0, bgfx.UINT32_MAX)
+    bgfx.bgfx_set_index_buffer(binfo.ibuff, 0, bgfx.UINT32_MAX)
+    bgfx.bgfx_submit(0, binfo.pgm, 0, false)
+end
+
 function PerfApp:render()
     local bgfx = core.bgfx
     local bgfx_const = core.bgfx_const
@@ -100,6 +130,22 @@ function PerfApp:render()
             end
         end
         log.info("sumval: " .. sumval)
+    elseif self.terraCalls then
+        local binfo = terralib.new(BGFXJunk)
+        binfo.vbuff = vbuff
+        binfo.ibuff = ibuff
+        binfo.pgm = pgm
+        if self.allTerra then
+            terraDrawLoop(nside, binfo, tmat)
+        else
+            for row = 1,nside do
+                for col = 1,nside do
+                    tmat[12] = row*2 - nside
+                    tmat[13] = col*2 - nside
+                    terraSingleDrawCall(binfo, tmat)
+                end
+            end
+        end
     else
         for row = 1,nside do
             for col = 1,nside do
@@ -121,6 +167,8 @@ function init()
                        height = 720,
                        usenvg = false})
     app.sidesize = 100
+    app.terraCalls = true
+    --app.allTerra = true
     --app.fakeCalls = true
     --app:bindFFIBGFX()
 end
