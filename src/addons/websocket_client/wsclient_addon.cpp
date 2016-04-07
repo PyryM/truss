@@ -45,7 +45,7 @@ WSClientAddon::WSClientAddon() {
 		"void trss_wsclient_close(Addon* addon);\n"
 		"void trss_wsclient_send(Addon* addon, const char* msg);\n"
 		"void trss_wsclient_receive_callback(Addon* addon, messageCallback callback);\n"
-		"unsigned int trss_wsclient_receive(Addon* addon);\n"
+		"int trss_wsclient_receive(Addon* addon);\n"
 		"const char* trss_wsclient_getmessage(Addon* addon, int msgindex);\n";
 }
 
@@ -127,7 +127,7 @@ void push_message(const std::string& message)
 	target_->push_back(message);
 }
 
-unsigned int WSClientAddon::receive() {
+int WSClientAddon::receive() {
 	messages_.clear();
     if(ws_ && ws_->getReadyState() != WebSocket::CLOSED) {
 		ws_->poll();
@@ -173,7 +173,7 @@ void trss_wsclient_receive_callback(WSClientAddon* addon, messageCallback callba
 	addon->receiveCallback(callback);
 }
 
-unsigned int trss_wsclient_receive(WSClientAddon* addon){
+int trss_wsclient_receive(WSClientAddon* addon){
 	return addon->receive();
 }
 
