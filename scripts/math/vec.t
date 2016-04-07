@@ -16,6 +16,11 @@ function Vector:init(x, y, z, w)
     self:set(x, y, z, w)
 end
 
+function Vector:__tostring()
+    local e = self.elem
+    return ("Vector {%.2f, %.2f, %.2f, %.2f}"):format(e.x, e.y, e.z, e.w)
+end
+
 function Vector:set(x, y, z, w)
     local e = self.elem
     e.x = x or 0.0

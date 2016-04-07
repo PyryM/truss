@@ -12,6 +12,11 @@ local vec = require("math/vec.t")
 
 local Quaternion = vec.Vector:extend("Quaternion")
 
+function Quaternion:__tostring()
+    local e = self.elem
+    return ("Quaternion {%.2f, %.2f, %.2f, %.2f}"):format(e.x, e.y, e.z, e.w)
+end
+
 function Quaternion:fromEuler(euler, order)
     -- handle either {x=..., y=..., z=...} or {x,y,z} style
     local x = euler.x or euler[1]

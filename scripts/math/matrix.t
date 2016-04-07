@@ -508,19 +508,24 @@ function Matrix4:getColumn(idx, dest)
 end
 
 function Matrix4:prettystr()
-    local ret = "["
+    local ret = "Matrix4 {"
     local data = self.data
     for row = 0,3 do
-        for col = 0,3 do
-            -- column major
-            local v = data[col*4 + row]
-            ret = ret .. v
-            if col < 3 then ret = ret .. ", " end
+        if row > 0 then
+            ret = ret .. "         "
         end
-        if row < 3 then ret = ret .. "\n" end
+        local p = row
+        -- column major
+        local a,b,c,d = data[p], data[p+4], data[p+8], data[p+12]
+        ret = ret .. ("{%.2f, %.2f, %.2f, %.2f}"):format(a,b,c,d)
+        if row < 3 then ret = ret .. ",\n" end
     end
-    ret = ret .. "]"
+    ret = ret .. "}"
     return ret
+end
+
+function Matrix4:__tostring()
+    return self:prettystr()
 end
 
 -- fovy in degrees

@@ -72,7 +72,7 @@ function m.print(msg)
     local mdata = {
         source = "host",
         mtype = "print",
-        message = msg
+        message = tostring(msg)
     }
     m.socket:sendJSON(mdata)
 end
