@@ -135,13 +135,13 @@ function m.parseBinarySTL(databuf, datalength, invert)
 			local vertexstart = start + i * 12
 
 			-- vertices and normals are normal lua arrays and hence 1-indexed
-			vertices[ offset + 1 ] = Vector(m.readFloat32(databuf, vertexstart ),
+			vertices[ offset + 1 ] =  {m.readFloat32(databuf, vertexstart ),
 									  		m.readFloat32(databuf, vertexstart + 4 ),
-									 		m.readFloat32(databuf, vertexstart + 8 ))
+									 		m.readFloat32(databuf, vertexstart + 8 )}
 
-			normals[ offset + 1 ] = Vector(normalX,
+			normals[ offset + 1 ] = {normalX,
 								     normalY,
-								     normalZ)
+								     normalZ}
 
 			offset = offset + 1
 		end
