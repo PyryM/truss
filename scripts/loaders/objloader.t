@@ -132,7 +132,7 @@ function m.gatherVertices(vertexlist, posList, texList, normalList)
     if texIndex    then uvs[i]       =    texList[texIndex]    end
     if normalIndex then normals[i]   = normalList[normalIndex] end
   end
-  return {positions = positions, uvs = uvs, normals = normals}
+  return {position = positions, texcoord0 = uvs, normal = normals}
 end
 
 function m.parseOBJ(objstring, invert)
@@ -172,21 +172,23 @@ function m.parseOBJ(objstring, invert)
   local faces, vertexlist = m.reindexVertices(rawfaces)
 
   -- produce attribute lists
-  local ret = m.gatherVertices(vertexlist, attributes.positions or {},
+  local finalAttr = m.gatherVertices(vertexlist, attributes.positions or {},
                                            attributes.uvs or {},
                                            attributes.normals or {})
 
   -- add in face index list
-  ret.indices = faces
-  ret.vertices = ret.positions -- aliased for reasons
-  if #(ret.normals) == 0 then ret.normals = nil end
-  if #(ret.uvs) == 0 then ret.uvs = nil end
+  local ret = {
+    indices = faces,
+    attributes = finalAttr
+  }
+  if #(finalAttr.normal) == 0 then finalAttr.normal = nil end
+  if #(finalAttr.texcoord0) == 0 then finalAttr.texcoord0 = nil end
 
   if m.verbose then
     log.debug("#triangles (faces): " .. #ret.indices)
-    log.debug("#vertices: " .. #(ret.vertices or {}))
-    log.debug("#normals: " .. #(ret.normals or {}))
-    log.debug("#uvs: " .. #(ret.uvs or {}))
+    log.debug("#vertices: " .. #(finalAttr.position or {}))
+    log.debug("#normals: " .. #(finalAttr.normal or {}))
+    log.debug("#uvs: " .. #(finalAttr.texcoord0 or {}))
   end
 
   return ret
