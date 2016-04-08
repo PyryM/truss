@@ -17,8 +17,8 @@ local Object3D = class("Object3D")
 function Object3D:init(geo, mat)
     self.matrix = Matrix4():identity()
     self.quaternion = Quaternion():identity()
-    self.position = Vector(0.0, 0.0, 0.0)
-    self.scale = Vector(1.0, 1.0, 1.0)
+    self.position = Vector(0.0, 0.0, 0.0, 0.0)
+    self.scale = Vector(1.0, 1.0, 1.0, 0.0)
     self.id = nextid
     nextid = nextid + 1
 

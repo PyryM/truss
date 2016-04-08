@@ -26,7 +26,7 @@ function Vector:set(x, y, z, w)
     e.x = x or 0.0
     e.y = y or 0.0
     e.z = z or 0.0
-    e.w = w or 1.0
+    e.w = w or 0.0
     return self
 end
 
