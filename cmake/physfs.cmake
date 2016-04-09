@@ -20,7 +20,7 @@ ExternalProject_Add(physfs_EXTERNAL
 # Recover project paths for additional settings.
 ExternalProject_Get_Property(physfs_EXTERNAL SOURCE_DIR BINARY_DIR)
 set(physfs_INCLUDE_DIR "${SOURCE_DIR}")
-set(physfs_LIBRARY "${BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}physfs${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(physfs_LIBRARY "${BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}physfs${CMAKE_SHARED_LIBRARY_SUFFIX}")
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
 file(MAKE_DIRECTORY "${physfs_INCLUDE_DIR}")
