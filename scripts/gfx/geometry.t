@@ -53,26 +53,80 @@ function TransientGeometry:init(name)
 end
 
 function TransientGeometry:allocate(vertInfo, nVertices, nIndices)
-    if self.allocated then
-        log.error("TransientGeometry [" .. self.name .. 
+    if self.allocated and not self.bound then
+        log.error("TransientGeometry [" .. self.name ..
                     "] must be bound before it can be allocated again!")
+        return
+    end
+
+    if nVertices >= 2^16 then
+        log.error("TransientGeometry [" .. self.name ..
+                   "] cannot have more then 2^16 vertices.")
         return
     end
 
     local hasSpace = bgfx.bgfx_check_avail_transient_buffers(nVertices,
                                            vertInfo.vertDecl, nIndices)
     if not hasSpace then
-        log.error("Not enough space to allocate " .. nVertices .. 
+        log.error("Not enough space to allocate " .. nVertices ..
                     " / " .. nIndices .. " in transient buffer.")
         return
     end
 
-    bgfx.bgfx_alloc_transient_buffers(self.transientVB_, vertInfo.vertDecl, nVertices, 
+    bgfx.bgfx_alloc_transient_buffers(self.transientVB_, vertInfo.vertDecl, nVertices,
                                       self.transientIB_, nIndices)
 
     self.indices = terralib.cast(&uint16, self.transientIB_.data)
-    self.verts   = terralib.cast(&vertInfo.vertType, self.transientVB_.data) 
+    self.verts   = terralib.cast(&vertInfo.vertType, self.transientVB_.data)
     self.allocated = true
+
+    return self
+end
+
+-- create what would typically be called a "screenSpaceQuad"
+-- width and height default to 1.0, uv coordinates go 0-1
+--
+--        /|  actually implemented as a triangle that overflows the screen
+--      /__|  like this
+--    /|   |
+--  /__|___|  hey it saves one triangle, that adds up
+function TransientGeometry:fullScreenTri(width, height, originBottomLeft, vinfo)
+    local minx = -width
+    local maxx =  width
+    local miny =  0.0
+    local maxy =  height*2.0
+    local minu = -1.0
+    local maxu =  1.0
+    local minv =  0.0
+    local maxv =  2.0
+
+    if originBottomLeft then
+        minv, maxv = 1, -1
+    end
+
+    local vdefs = require("gfx/vertexdefs.t")
+    if not vinfo then
+        vinfo = vdefs.createStandardVertexType({"position", "texcoord0"})
+    end
+
+    self:allocate(vinfo, 3, 3)
+    local verts = self.verts
+    local v0p, v0t = verts[0].position, verts[0].texcoord0
+    local v1p, v1t = verts[1].position, verts[1].texcoord0
+    local v2p, v2t = verts[2].position, verts[2].texcoord0
+
+    v0p[0], v0p[1], v0p[2] = minx, miny, 0.0
+    v0t[0], v0t[1] = minu, minv
+    v1p[0], v1p[1], v1p[2] = maxx, miny, 0.0
+    v1t[0], v1t[1] = maxu, minv
+    v2p[0], v2p[1], v2p[2] = maxx, maxy, 0.0
+    v2t[0], v2t[1] = maxu, maxv
+
+    for i = 0,2 do
+        self.indices[i] = i
+    end
+
+    return self
 end
 
 function TransientGeometry:bind()
@@ -85,11 +139,13 @@ function TransientGeometry:bind()
     bgfx.bgfx_set_transient_index_buffer(self.transientIB_, 0, bgfx.UINT32_MAX)
 
     self.bound = true
+    return self
 end
 
 function TransientGeometry:build()
     -- transient geometry does not need to be built; this stub exists only for
     -- compatibility with functions that do try to build
+    return self
 end
 
 function TransientGeometry:beginFrame()
@@ -101,6 +157,7 @@ function TransientGeometry:beginFrame()
     self.verts = nil
     self.allocated = false
     self.bound = false
+    return self
 end
 
 function StaticGeometry:allocate(vertInfo, nVertices, nIndices)
@@ -136,9 +193,9 @@ DynamicGeometry.setAttribute = StaticGeometry.setAttribute
 TransientGeometry.setAttribute = StaticGeometry.setAttribute
 
 function StaticGeometry:fromData(vertexInfo, modeldata, noBuild)
-    if modeldata == nil or vertexInfo == nil then 
+    if modeldata == nil or vertexInfo == nil then
         log.error("Geometry:fromData: nil vertexInfo or modeldata!")
-        return 
+        return
     end
 
     local nindices
@@ -176,7 +233,7 @@ function StaticGeometry:build(recreate)
     end
 
     if (self.vbh or self.ibh) and (not recreate) then
-        log.warn("Tried to rebuild StaticGeometry [" .. 
+        log.warn("Tried to rebuild StaticGeometry [" ..
                     self.name .. "] without explicit recreate!")
         return
     end
@@ -209,7 +266,7 @@ end
 
 local function check_built_(geo)
     if geo.built then return true end
-    
+
     if not geo.warned then
         log.warn("Warning: geometry [" .. geo.name .. "] has not been built.")
         geo.warned = true
@@ -260,7 +317,7 @@ function DynamicGeometry:build(recreate)
 end
 
 function DynamicGeometry:update()
-    if not self.built then 
+    if not self.built then
         self:build()
     else
         self:updateVertices()
@@ -293,15 +350,15 @@ function DynamicGeometry:bind()
 
     -- for some reason set_dynamic_vertex_buffer does not take a start
     -- index argument, only the number of vertices
-    bgfx.bgfx_set_dynamic_vertex_buffer(self.vbh, 
+    bgfx.bgfx_set_dynamic_vertex_buffer(self.vbh,
                                          0, bgfx.UINT32_MAX)
 
-    bgfx.bgfx_set_dynamic_index_buffer(self.ibh, 
+    bgfx.bgfx_set_dynamic_index_buffer(self.ibh,
                                         0, bgfx.UINT32_MAX)
 end
 
 m.StaticGeometry    = StaticGeometry -- 'export' Geometry
 m.DynamicGeometry   = DynamicGeometry
-m.TransientGeometry = TransientGeometry 
+m.TransientGeometry = TransientGeometry
 
 return m

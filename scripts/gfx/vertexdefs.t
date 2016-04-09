@@ -59,7 +59,7 @@ function m.createStandardVertexType(orderedAttributes)
         local vdecl = terralib.new(bgfx.bgfx_vertex_decl_t)
         local acounts = {}
 
-        bgfx.bgfx_vertex_decl_begin(vdecl, bgfx.bgfx_get_renderer_type()) 
+        bgfx.bgfx_vertex_decl_begin(vdecl, bgfx.bgfx_get_renderer_type())
         for i,attribName in ipairs(orderedAttributes) do
             log.info("Adding " .. attribName)
             local attrib = m.AttributeMap[attribName]
@@ -76,15 +76,18 @@ function m.createStandardVertexType(orderedAttributes)
         bgfx.bgfx_vertex_decl_end(vdecl)
 
         ntype.entries = entries
+        -- terra will automatically complete types in some, but not all, cases
+        -- so force the type to complete now to avoid cryptic bugs
+        ntype:complete()
 
-        m.StandardVertexInfo[cname] = {vertType = ntype, 
-                                       vertDecl = vdecl, 
+        m.StandardVertexInfo[cname] = {vertType = ntype,
+                                       vertDecl = vdecl,
                                        attributes = acounts}
     end
     return m.StandardVertexInfo[cname]
 end
 
-function m.createPosColorVertexInfo() 
+function m.createPosColorVertexInfo()
     return m.createStandardVertexType({"position", "color0"})
 end
 
