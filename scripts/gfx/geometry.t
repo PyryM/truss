@@ -104,8 +104,8 @@ function TransientGeometry:fullScreenTri(width, height, originBottomLeft, vinfo)
         minv, maxv = 1, -1
     end
 
-    local vdefs = require("gfx/vertexdefs.t")
     if not vinfo then
+        local vdefs = require("gfx/vertexdefs.t")
         vinfo = vdefs.createStandardVertexType({"position", "texcoord0"})
     end
 
@@ -125,6 +125,86 @@ function TransientGeometry:fullScreenTri(width, height, originBottomLeft, vinfo)
     for i = 0,2 do
         self.indices[i] = i
     end
+
+    return self
+end
+
+function m.makeFastTransientQuadFunc(vinfo)
+    if not vinfo then
+        local vdefs = require("gfx/vertexdefs.t")
+        vinfo = vdefs.createStandardVertexType({"position", "texcoord0"})
+    end
+    local vtype = vinfo.vertType
+    local vdecl = vinfo.vertDecl
+    local terra fastQuad(x0: float, y0: float, x1: float, y1: float, z: float)
+        var vb: bgfx.bgfx_transient_vertex_buffer_t
+        var ib: bgfx.bgfx_transient_index_buffer_t
+
+        bgfx.bgfx_alloc_transient_buffers(&vb, &vdecl, 4, &ib, 6)
+        var vertex: &vtype = [&vtype](vb.data)
+
+        vertex[0].position[0] = x0
+        vertex[0].position[1] = y0
+        vertex[0].position[2] = z
+        vertex[0].texcoord0[0] = 0.0
+        vertex[0].texcoord0[1] = 0.0
+
+        vertex[1].position[0] = x1
+        vertex[1].position[1] = y0
+        vertex[1].position[2] = z
+        vertex[1].texcoord0[0] = 1.0
+        vertex[1].texcoord0[1] = 0.0
+
+        vertex[2].position[0] = x1
+        vertex[2].position[1] = y1
+        vertex[2].position[2] = z
+        vertex[2].texcoord0[0] = 1.0
+        vertex[2].texcoord0[1] = 1.0
+
+        vertex[3].position[0] = x0
+        vertex[3].position[1] = y1
+        vertex[3].position[2] = z
+        vertex[3].texcoord0[0] = 0.0
+        vertex[3].texcoord0[1] = 1.0
+
+        var indexb: &uint16 = [&uint16](ib.data)
+        indexb[0] = 0
+        indexb[1] = 1
+        indexb[2] = 2
+
+        indexb[3] = 2
+        indexb[4] = 3
+        indexb[5] = 0
+
+        bgfx.bgfx_set_transient_vertex_buffer(&vb, 0, 4)
+        bgfx.bgfx_set_transient_index_buffer(&ib, 0, 6)
+    end
+    return fastQuad
+end
+
+function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
+    if not vinfo then
+        local vdefs = require("gfx/vertexdefs.t")
+        vinfo = vdefs.createStandardVertexType({"position", "texcoord0"})
+    end
+    self:allocate(vinfo, 4, 6)
+    local vs = self.verts
+    local v0,v1,v2,v3 = vs[0],vs[1],vs[2],vs[3]
+    v0.position[0], v0.position[1], v0.position[2] = x0, y0, z
+    v0.texcoord0[0], v0.texcoord0[1] = 0.0, 0.0
+
+    v1.position[0], v1.position[1], v1.position[2] = x1, y0, z
+    v1.texcoord0[0], v1.texcoord0[1] = 1.0, 0.0
+
+    v2.position[0], v2.position[1], v2.position[2] = x1, y1, z
+    v2.texcoord0[0], v2.texcoord0[1] = 1.0, 1.0
+
+    v3.position[0], v3.position[1], v3.position[2] = x0, y1, z
+    v3.texcoord0[0], v3.texcoord0[1] = 0.0, 1.0
+
+    local idx = self.indices
+    idx[0], idx[1], idx[2] = 0, 1, 2
+    idx[3], idx[4], idx[5] = 2, 3, 0
 
     return self
 end
