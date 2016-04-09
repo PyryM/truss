@@ -14,9 +14,10 @@ include(PrintTargetProperties)
 # Install and build required dependencies.
 # (BGFX, Terra, PhysFS, STB)
 include(bgfx)
-include(terra)
 include(physfs)
+include(sfml)
 include(stb)
+include(terra)
 
 # Get SDL2 from a global install location.
 # Add the extra libraries that it requires on each platform.
@@ -45,19 +46,20 @@ set(truss_SOURCES
 add_executable(truss ${truss_SOURCES})
 target_include_directories(truss
     PRIVATE
-    "${SDL2_INCLUDE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 target_link_libraries(truss
-    bgfx physfs terra stb
-    "${SDL2_LIBRARIES}"
+    bgfx physfs terra stb sfml
+    dl GL
 )
 
 # Fix obscure LuaJIT issue on OSX.
 # http://www.freelists.org/post/luajit/luaL-newstate-fails-on-64bit-Mac-cant-set-linker-flags
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000")
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000")
+endif()
 
 # Unlike most builds, we want the resulting executable to be installed into
 # the root of this directory, as this entire directory comprises a
