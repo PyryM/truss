@@ -12,13 +12,23 @@ local vec = require("math/vec.t")
 
 local Quaternion = vec.Vector:extend("Quaternion")
 
+function Quaternion:__tostring()
+    local e = self.elem
+    return ("Quaternion {%.2f, %.2f, %.2f, %.2f}"):format(e.x, e.y, e.z, e.w)
+end
+
 function Quaternion:fromEuler(euler, order)
-    local c1 = math.cos( euler.x / 2 );
-    local c2 = math.cos( euler.y / 2 );
-    local c3 = math.cos( euler.z / 2 );
-    local s1 = math.sin( euler.x / 2 );
-    local s2 = math.sin( euler.y / 2 );
-    local s3 = math.sin( euler.z / 2 );
+    -- handle either {x=..., y=..., z=...} or {x,y,z} style
+    local x = euler.x or euler[1]
+    local y = euler.y or euler[2]
+    local z = euler.z or euler[3]
+
+    local c1 = math.cos( x / 2 )
+    local c2 = math.cos( y / 2 )
+    local c3 = math.cos( z / 2 )
+    local s1 = math.sin( x / 2 )
+    local s2 = math.sin( y / 2 )
+    local s3 = math.sin( z / 2 )
     order = order or 'XYZ'
 
     local e = self.elem

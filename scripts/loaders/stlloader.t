@@ -3,6 +3,7 @@
 -- loads binary STL files
 
 local m = {}
+local Vector = require("math").Vector
 
 m.verbose = false
 m.MAXFACES = 21845 -- each face needs 3 vertices, to fit into 16 bit index
@@ -73,8 +74,7 @@ function m.parseBinarySTL(databuf, datalength, invert)
 	end
 
 	if faces > m.MAXFACES then
-		log.warn("Warning: STL contains >2^16 vertices. Truncating to first 2^16.")
-		faces = m.MAXFACES
+		log.warn("Warning: STL contains >2^16 vertices, will need 32bit index buffer")
 	end
 
 	local defaultR, defaultG, defaultB, alpha = 128, 128, 128, 255
@@ -135,9 +135,9 @@ function m.parseBinarySTL(databuf, datalength, invert)
 			local vertexstart = start + i * 12
 
 			-- vertices and normals are normal lua arrays and hence 1-indexed
-			vertices[ offset + 1 ] = {m.readFloat32(databuf, vertexstart ),
-									  m.readFloat32(databuf, vertexstart + 4 ),
-									  m.readFloat32(databuf, vertexstart + 8 )}
+			vertices[ offset + 1 ] =  {m.readFloat32(databuf, vertexstart ),
+									  		m.readFloat32(databuf, vertexstart + 4 ),
+									 		m.readFloat32(databuf, vertexstart + 8 )}
 
 			normals[ offset + 1 ] = {normalX,
 								     normalY,
@@ -147,9 +147,10 @@ function m.parseBinarySTL(databuf, datalength, invert)
 		end
 	end -- face loop
 
-	return {vertices = vertices,
-			positions = vertices, -- alias positions to vertices
-	        normals = normals,
+	return {attributes = {
+				position = vertices,
+	        	normal = normals
+	        	},
 	        indices = indices,
 	        color = {defaultR, defaultG, defaultB, alpha}}
 end

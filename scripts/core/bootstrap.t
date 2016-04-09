@@ -263,6 +263,13 @@ subenv.loadStringFromFile = loadStringFromFile
 subenv.args = execArgs
 subenv.log = log
 
+-- create a fresh copy of subenv for modules that need to have
+-- a clean-ish sandbox
+clean_subenv = {}
+for sk,sv in pairs(subenv) do
+	clean_subenv[sk] = sv
+end
+
 -- replace terra/lua's require with truss's import mechanism
 lua_require = require
 require = truss_import
