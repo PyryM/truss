@@ -40,6 +40,7 @@ local fastQuad = geometry.makeFastTransientQuadFunc()
 terra fastQuadDraw(x0: float, y0: float, x1: float, y1: float, mat: &float,
                    pgm: bgfx.bgfx_program_handle_t)
     -- draw a quad the fast way, by collecting all the bgfx calls into Terra
+    -- this is approximately 6x faster than naiveDraw
     bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)
     bgfx.bgfx_set_transform(mat, 1)
     fastQuad(x0, y0, x1, y1, 0.0) -- fastQuad is a Terra func: can be inlined
