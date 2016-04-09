@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cstring>
 #include "bx_utils.h" // has to be included early or else luaconfig.h will clobber winver
 #include "trussapi.h"
 #include "truss.h"
@@ -11,17 +12,22 @@
 
 using namespace trss;
 
-Interpreter::Interpreter(int id, const char* name) {
-		thread_ = NULL;
-		messageLock_ = SDL_CreateMutex();
-		execLock_ = SDL_CreateMutex();
-		terraState_ = NULL;
-		running_ = false;
-		name_ = name;
-		id_ = id;
-		curMessages_ = new std::vector < trss_message* > ;
-		fetchedMessages_ = new std::vector < trss_message* >;
-		arg_ = "";
+int run_interpreter_thread(void* interpreter) {
+	Interpreter* target = (Interpreter*)interpreter;
+	target->threadEntry();
+	return 0;
+}
+
+Interpreter::Interpreter(int id, const char* name)
+	: thread_(run_interpreter_thread, this)
+	, terraState_(NULL)
+	, name_(name)
+	, id_(id)
+{
+	// TODO: Is any of this necessary?
+	curMessages_ = new std::vector < trss_message* > ;
+	fetchedMessages_ = new std::vector < trss_message* >;
+	arg_ = "";
 }
 
 Interpreter::~Interpreter() {
@@ -37,7 +43,7 @@ int Interpreter::getID() const {
 }
 
 void Interpreter::attachAddon(Addon* addon) {
-	if(!running_ && thread_ == NULL) {
+	if(!running_) {
 		addons_.push_back(addon);
 	} else {
 		core()->logMessage(TRSS_LOG_ERROR, "Cannot attach addon to running interpreter.");
@@ -71,31 +77,25 @@ void Interpreter::setDebug(int debugLevel) {
 	}
 }
 
-int run_interpreter_thread(void* interpreter) {
-	Interpreter* target = (Interpreter*)interpreter;
-	target->threadEntry();
-	return 0;
-}
-
 void Interpreter::start(const char* arg) {
-	if(thread_ != NULL || running_) {
+	if(running_) {
 		core()->logMessage(TRSS_LOG_ERROR, "Can't start interpreter twice: already running"); 
 		return;
 	}
 
+	// TODO: should this be locked?
 	arg_ = arg;
 	running_ = true;
-	thread_ = SDL_CreateThread(run_interpreter_thread, 
-								name_.c_str(), 
-								(void*)this);
+	thread_.launch();
 }
 
 void Interpreter::startUnthreaded(const char* arg) {
-	if(thread_ != NULL || running_) {
+	if(running_) {
 		core()->logMessage(TRSS_LOG_ERROR, "Can't start interpreter twice: already running");
 		return;
 	}
 
+	// TODO: should this be locked?
 	arg_ = arg;
 	running_ = true;
 	threadEntry();
@@ -103,6 +103,7 @@ void Interpreter::startUnthreaded(const char* arg) {
 
 void Interpreter::stop() {
 	running_ = false;
+	thread_.wait();
 }
 
 void Interpreter::execute() {
@@ -179,14 +180,14 @@ void Interpreter::threadEntry() {
 }
 
 void Interpreter::sendMessage(trss_message* message) {
-	SDL_LockMutex(messageLock_);
+	sf::Lock Lock(messageLock_);
 	trss_acquire_message(message);
 	curMessages_->push_back(message);
-	SDL_UnlockMutex(messageLock_);
 }
 
 int Interpreter::fetchMessages() {
-	SDL_LockMutex(messageLock_);
+	sf::Lock Lock(messageLock_);
+
 	// swap messages
 	std::vector<trss_message*>* temp = curMessages_;
 	curMessages_ = fetchedMessages_;
@@ -197,10 +198,7 @@ int Interpreter::fetchMessages() {
 		trss_release_message((*curMessages_)[i]);
 	}
 	curMessages_->clear();
-	size_t numMessages = fetchedMessages_->size();
-
-	SDL_UnlockMutex(messageLock_);
-	return (int)(numMessages);
+	return fetchedMessages_->size();
 }
 
 trss_message* Interpreter::getMessage(int index) {
@@ -412,7 +410,7 @@ trss_message* trss_copy_message(trss_message* src){
 
 	trss_message* newmsg = Core::getCore()->allocateMessage(src->data_length);
 	newmsg->message_type = src->message_type;
-	memcpy(newmsg->data, src->data, newmsg->data_length);
+	std::memcpy(newmsg->data, src->data, newmsg->data_length);
 	return newmsg;
 }
 
@@ -466,58 +464,50 @@ std::ostream& Core::logStream(int log_level) {
 }
 
 void Core::logMessage(int log_level, const char* msg) {
-	SDL_LockMutex(coreLock_);
+	sf::Lock Lock(coreLock_);
 	// dump to logfile
 	logfile_ << "[" << log_level << "] " << msg << std::endl;
-	SDL_UnlockMutex(coreLock_);
 }
 
 Interpreter* Core::getInterpreter(int idx){
-	Interpreter* ret = NULL;
-	SDL_LockMutex(coreLock_);
-	if(idx >= 0 && idx < interpreters_.size()) {
-		ret = interpreters_[idx];
-	}
-	SDL_UnlockMutex(coreLock_);
-	return ret;
+	sf::Lock Lock(coreLock_);
+
+	if(idx < 0)
+		return NULL;
+	if (idx >= interpreters_.size())
+		return NULL;
+	return interpreters_[idx];
 }
 
 Interpreter* Core::getNamedInterpreter(const char* name){
+	sf::Lock Lock(coreLock_);
+
 	std::string sname(name);
-	Interpreter* ret = NULL;
-	SDL_LockMutex(coreLock_);
 	for(size_t i = 0; i < interpreters_.size(); ++i) {
 		if(interpreters_[i]->getName() == sname) {
-			ret = interpreters_[i];
-			break;
+			return interpreters_[i];
 		}
 	}
-	SDL_UnlockMutex(coreLock_);
-	return ret;
+	return NULL;
 }
 
 Interpreter* Core::spawnInterpreter(const char* name){
-	SDL_LockMutex(coreLock_);
+	sf::Lock Lock(coreLock_);
 	Interpreter* interpreter = new Interpreter((int)(interpreters_.size()), name);
 	interpreters_.push_back(interpreter);
-	SDL_UnlockMutex(coreLock_);
 	return interpreter;
 }
 
 void Core::stopAllInterpreters() {
-	SDL_LockMutex(coreLock_);
+	sf::Lock Lock(coreLock_);
 	for (unsigned int i = 0; i < interpreters_.size(); ++i) {
 		interpreters_[i]->stop();
 	}
-	SDL_UnlockMutex(coreLock_);
 }
 
-int Core::numInterpreters(){
-	int ret = 0;
-	SDL_LockMutex(coreLock_);
-	ret = (int)(interpreters_.size());
-	SDL_UnlockMutex(coreLock_);
-	return ret;
+int Core::numInterpreters() {
+	sf::Lock Lock(coreLock_);
+	return interpreters_.size();
 }
 
 void Core::dispatchMessage(int targetIdx, trss_message* msg){
@@ -528,26 +518,23 @@ void Core::dispatchMessage(int targetIdx, trss_message* msg){
 }
 
 void Core::acquireMessage(trss_message* msg){
-	SDL_LockMutex(coreLock_);
+	sf::Lock Lock(coreLock_);
 	++(msg->refcount);
-	SDL_UnlockMutex(coreLock_);
 }
 
 void Core::releaseMessage(trss_message* msg){
-	SDL_LockMutex(coreLock_);
+	sf::Lock Lock(coreLock_);
 	--(msg->refcount);
 	if(msg->refcount <= 0) {
 		deallocateMessage(msg);
 	}
-	SDL_UnlockMutex(coreLock_);
 }
 
 trss_message* Core::copyMessage(trss_message* src){
-	SDL_LockMutex(coreLock_);
+	sf::Lock Lock(coreLock_);
 	trss_message* newmsg = allocateMessage(src->data_length);
 	newmsg->message_type = src->message_type;
-	memcpy(newmsg->data, src->data, newmsg->data_length);
-	SDL_UnlockMutex(coreLock_);
+	std::memcpy(newmsg->data, src->data, newmsg->data_length);
 	return newmsg;
 }
 
@@ -667,7 +654,7 @@ int Core::setStoreValue(const std::string& key, trss_message* val) {
 int Core::setStoreValue(const std::string& key, const std::string& val) {
 	trss_message* newmsg = allocateMessage(val.length());
 	const char* src = val.c_str();
-	memcpy(newmsg->data, src, newmsg->data_length);
+	std::memcpy(newmsg->data, src, newmsg->data_length);
 	int result = setStoreValue(key, newmsg);
 	releaseMessage(newmsg); // avoid double-acquiring this message
 	return result;
@@ -682,7 +669,6 @@ Core::~Core(){
 }
 
 Core::Core(){
-	coreLock_ = SDL_CreateMutex();
 	physFSInitted_ = false;
 
 	// open log file

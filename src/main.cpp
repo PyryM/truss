@@ -1,7 +1,7 @@
 // Minimal main example (with truss sdl)
 
 #include "truss.h"
-#include "truss_sdl.h"
+//#include "truss_sdl.h"
 #include "addons/bgfx_nanovg/nanovg_addon.h"
 #include "addons/websocket_client/wsclient_addon.h"
 #include <iostream>
@@ -27,7 +27,7 @@ int main(int argc, char** argv){
 
 	trss::Interpreter* interpreter = trss::core()->spawnInterpreter("interpreter_0");
 	interpreter->setDebug(0); // want most verbose debugging output
-	interpreter->attachAddon(new SDLAddon);
+	// interpreter->attachAddon(new SDLAddon);
 	interpreter->attachAddon(new NanoVGAddon);
 	interpreter->attachAddon(new WSClientAddon);
 	trss_log(0, "Starting interpreter!");

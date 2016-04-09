@@ -1,6 +1,7 @@
 #include "nanovg_addon.h"
 #include <stb_image.h>
 #include <iostream>
+#include <cstring>
 
 NanoVGAddon::NanoVGAddon() {
 	name_ = "nanovg";
@@ -63,7 +64,7 @@ trss_message* NanoVGAddon::loadImage(const char* filename, int& width, int& heig
 	std::cout << "w: " << width << ", h: " << height << ", n: " << numChannels << std::endl;
 	unsigned int datalength = width * height * numChannels;
 	trss_message* ret = trss_create_message(datalength);
-	memcpy(ret->data, img, datalength);
+	std::memcpy(ret->data, img, datalength);
 	stbi_image_free(img);
 
 	return ret;

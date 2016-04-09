@@ -22,7 +22,7 @@ include(terra)
 set(truss_SOURCES
     src/main.cpp
     src/truss.cpp
-    src/truss_sdl.cpp
+    #src/truss_sdl.cpp
     src/addons/websocket_client/easywsclient.cpp
     src/addons/websocket_client/wsclient_addon.cpp
     src/addons/bgfx_nanovg/nanovg.cpp
@@ -39,7 +39,7 @@ target_include_directories(truss
 )
 target_link_libraries(truss
     bgfx physfs terra stb sfml
-    dl GL
+    dl GL pthread X11
 )
 
 # Fix obscure LuaJIT issue on OSX.

@@ -4,15 +4,14 @@
 #define TRSS_H_HEADER_GUARD
 
 #include "trussapi.h"
+
 #include <string>
 #include <vector>
 #include <map>
 #include <fstream>
 
-#include "SDL_thread.h"
-#include "SDL_mutex.h"
-
-#include "terra/terra.h"
+#include <SFML/System.hpp>
+#include <terra/terra.h>
 
 namespace trss {
 
@@ -97,10 +96,10 @@ namespace trss {
 		std::vector<Addon*> addons_;
 
 		// Actual thread
-		SDL_Thread* thread_;
+		sf::Thread thread_;
 
 		// Lock for messaging
-		SDL_mutex* messageLock_;
+		sf::Mutex messageLock_;
 
 		// Messages
 		std::vector<trss_message*>* curMessages_;
@@ -108,7 +107,7 @@ namespace trss {
 
 		// Lock for execution
 		// (only used if not autoexecuting)
-		SDL_mutex* execLock_;
+		sf::Mutex execLock_;
 
 		// Terra state
 		lua_State* terraState_;
@@ -163,7 +162,7 @@ namespace trss {
 		static Core* core__;
 
 		Core();
-		SDL_mutex* coreLock_;
+		sf::Mutex coreLock_;
 		bool physFSInitted_;
 		std::vector<Interpreter*> interpreters_;
 		std::map<std::string, trss_message*> store_;
