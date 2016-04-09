@@ -19,19 +19,6 @@ include(sfml)
 include(stb)
 include(terra)
 
-# Get SDL2 from a global install location.
-# Add the extra libraries that it requires on each platform.
-find_package(SDL2 REQUIRED)
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-    set(SDL2_LIBRARIES ${SDL2_LIBRARY})
-elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
-    set(SDL2_LIBRARIES ${SDL2_LIBRARY} "-framework IOKit" "-framework Metal" "-framework QuartzCore")
-elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-    set(SDL2_LIBRARIES ${SDL2_LIBRARY} "-lX11")
-else()
-    message(FATAL_ERROR "Terra does not have precompiled binaries for '${CMAKE_SYSTEM_NAME}'.")
-endif()
-
 set(truss_SOURCES
     src/main.cpp
     src/truss.cpp
@@ -64,7 +51,7 @@ endif()
 # Unlike most builds, we want the resulting executable to be installed into
 # the root of this directory, as this entire directory comprises a
 # distribution package.
-set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
-set(RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
-set(RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}")
-set(RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}")
+set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dist")
+set(RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist")
+set(RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/dist")
+set(RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/dist")
