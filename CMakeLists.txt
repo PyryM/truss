@@ -20,7 +20,7 @@ set(DIST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dist")
 set(truss_SOURCES
     src/main.cpp
     src/truss.cpp
-    #src/truss_sdl.cpp
+    src/truss_sfml.cpp
     src/addons/websocket_client/easywsclient.cpp
     src/addons/websocket_client/wsclient_addon.cpp
     src/addons/bgfx_nanovg/nanovg.cpp
