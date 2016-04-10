@@ -56,11 +56,7 @@ foreach(component_name IN ITEMS audio graphics network system window)
         IMPORTED_LOCATION "${sfml_LIBRARY}"
         IMPORTED_IMPLIB "${sfml_IMPLIB}"
     )
-
-    # Create an install command to install the shared libs.
-    file(GLOB sfml_LIBRARIES "${sfml_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sfml-${component_name}${CMAKE_SHARED_LIBRARY_SUFFIX}*")
-    install(
-        FILES ${sfml_LIBRARIES}
-        DESTINATION "${DIST_DIR}/lib"
-    )
 endforeach()
+
+# Create an install command to install the shared libs.
+copy_libraries(sfml_EXTERNAL "${sfml_LIBRARIES_DIR}")

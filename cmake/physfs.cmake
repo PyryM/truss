@@ -38,8 +38,4 @@ set_target_properties(physfs PROPERTIES
 )
 
 # Create an install command to install the shared libs.
-file(GLOB physfs_LIBRARIES "${physfs_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
-install(
-    FILES ${physfs_LIBRARIES}
-    DESTINATION "${DIST_DIR}/lib"
-)
+copy_libraries(physfs_EXTERNAL "${physfs_LIBRARIES_DIR}")

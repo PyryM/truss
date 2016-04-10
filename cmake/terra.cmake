@@ -65,8 +65,4 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 endif()
 
 # Create an install command to install the shared libs.
-file(GLOB terra_LIBRARIES "${terra_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
-install(
-    FILES "${terra_LIBRARIES}"
-    DESTINATION "${DIST_DIR}/lib"
-)
+copy_libraries(terra_EXTERNAL "${terra_LIBRARIES_DIR}")

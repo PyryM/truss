@@ -16,6 +16,20 @@ include(PrintTargetProperties)
 # distribution package.
 set(DIST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dist")
 
+# Copies every library in the given path to the `dist` lib directory.
+function(copy_libraries target target_library_path)
+    file(GLOB target_libraries
+        "${target_library_path}/${CMAKE_SHARED_LIBRARY_PREFIX}*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+
+    foreach(library_path ${target_libraries})
+        get_filename_component(library_file "${library_path}" NAME)
+        add_custom_command(
+            TARGET "${target}" POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "${library_path}" "${DIST_DIR}/lib/${library_file}"
+        )
+    endforeach()
+endfunction()
+
 # Install and build required dependencies.
 # (BGFX, Terra, PhysFS, STB)
 include(bgfx)
@@ -52,15 +66,12 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000")
 endif()
 
+# Configure the RPATH for Linux and OSX.
 SET(CMAKE_SKIP_BUILD_RPATH TRUE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set_target_properties(truss PROPERTIES
     INSTALL_RPATH "./lib"
-)
-
-install(
-    TARGETS truss
-    RUNTIME DESTINATION "${DIST_DIR}"
-    LIBRARY DESTINATION "${DIST_DIR}/lib"
-    ARCHIVE DESTINATION "${DIST_DIR}/lib"
+    RUNTIME_OUTPUT_DIRECTORY "${DIST_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${DIST_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${DIST_DIR}"
 )
