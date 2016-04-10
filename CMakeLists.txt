@@ -24,7 +24,6 @@ set(truss_HEADERS
     src/addons/bgfx_nanovg/nanovg.h
     src/addons/bgfx_nanovg/nanovg_addon.h
 )
-
 set(truss_SOURCES
     src/main.cpp
     src/truss.cpp
