@@ -1,7 +1,7 @@
 // Minimal main example (with truss sdl)
 
 #include "truss.h"
-//#include "truss_sdl.h"
+#include "truss_sfml.h"
 #include "addons/bgfx_nanovg/nanovg_addon.h"
 #include "addons/websocket_client/wsclient_addon.h"
 #include <iostream>
