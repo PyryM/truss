@@ -9,8 +9,8 @@
 #include <vector>
 #include <map>
 #include <fstream>
+#include "tinythread.h"
 
-#include <SFML/System.hpp>
 #include <terra/terra.h>
 
 namespace trss {
@@ -35,7 +35,7 @@ namespace trss {
 		virtual void update(double dt) = 0;
 		virtual ~Addon(){
 			// needed so it can be deleted cleanly
-		} 
+		}
 	};
 
 	class Interpreter {
@@ -49,7 +49,7 @@ namespace trss {
 		// Get the interpreter's name
 		const std::string& getName() const;
 
-		// the attached addon is considered to be owned by 
+		// the attached addon is considered to be owned by
 		// the interpreter and will be deleted by it when the
 		// interpreter shuts down
 		void attachAddon(Addon* addon);
@@ -96,18 +96,14 @@ namespace trss {
 		std::vector<Addon*> addons_;
 
 		// Actual thread
-		sf::Thread thread_;
+		tthread::thread* thread_;
 
 		// Lock for messaging
-		sf::Mutex messageLock_;
+		tthread::mutex messageLock_;
 
 		// Messages
 		std::vector<trss_message*>* curMessages_;
 		std::vector<trss_message*>* fetchedMessages_;
-
-		// Lock for execution
-		// (only used if not autoexecuting)
-		sf::Mutex execLock_;
 
 		// Terra state
 		lua_State* terraState_;

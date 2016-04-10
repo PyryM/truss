@@ -27,6 +27,7 @@ set(truss_HEADERS
 set(truss_SOURCES
     src/main.cpp
     src/truss.cpp
+    src/tinythread.cpp
     src/truss_sfml.cpp
     src/addons/websocket_client/easywsclient.cpp
     src/addons/websocket_client/wsclient_addon.cpp

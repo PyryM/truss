@@ -19,7 +19,7 @@ int run_interpreter_thread(void* interpreter) {
 }
 
 Interpreter::Interpreter(int id, const char* name)
-	: thread_(run_interpreter_thread, this)
+	: thread_(NULL)
 	, running_(false)
 	, terraState_(NULL)
 	, name_(name)
@@ -79,19 +79,19 @@ void Interpreter::setDebug(int debugLevel) {
 }
 
 void Interpreter::start(const char* arg) {
-	if(running_) {
-		core()->logMessage(TRSS_LOG_ERROR, "Can't start interpreter twice: already running"); 
+	if(running_ || thread_ != NULL) {
+		core()->logMessage(TRSS_LOG_ERROR, "Can't start interpreter twice: already running");
 		return;
 	}
 
 	// TODO: should this be locked?
 	arg_ = arg;
 	running_ = true;
-	thread_.launch();
+	thread_ = new tthread::thread(run_interpreter_thread, this);
 }
 
 void Interpreter::startUnthreaded(const char* arg) {
-	if(running_) {
+	if(running_ || thread_ != NULL) {
 		core()->logMessage(TRSS_LOG_ERROR, "Can't start interpreter twice: already running");
 		return;
 	}
@@ -104,7 +104,8 @@ void Interpreter::startUnthreaded(const char* arg) {
 
 void Interpreter::stop() {
 	running_ = false;
-	thread_.wait();
+	thread_.join();
+	delete thread_;
 }
 
 void Interpreter::execute() {
@@ -138,14 +139,14 @@ void Interpreter::threadEntry() {
 		running_ = false;
 		return;
 	}
-	terra_loadbuffer(terraState_, 
-                     (char*)bootstrap->data, 
-                     bootstrap->data_length, 
+	terra_loadbuffer(terraState_,
+                     (char*)bootstrap->data,
+                     bootstrap->data_length,
                      "bootstrap.t");
 	trss_release_message(bootstrap);
 	int res = lua_pcall(terraState_, 0, 0, 0);
 	if(res != 0) {
-		core()->logStream(TRSS_LOG_ERROR) << "Error bootstrapping interpreter: " 
+		core()->logStream(TRSS_LOG_ERROR) << "Error bootstrapping interpreter: "
 				  << lua_tostring(terraState_, -1) << std::endl;
 		running_ = false;
 		return;
@@ -181,13 +182,13 @@ void Interpreter::threadEntry() {
 }
 
 void Interpreter::sendMessage(trss_message* message) {
-	sf::Lock Lock(messageLock_);
+	tthread::lock_guard<tthread::mutex> Lock(messageLock_);
 	trss_acquire_message(message);
 	curMessages_->push_back(message);
 }
 
 int Interpreter::fetchMessages() {
-	sf::Lock Lock(messageLock_);
+	tthread::lock_guard<tthread::mutex> Lock(messageLock_);
 
 	// swap messages
 	std::vector<trss_message*>* temp = curMessages_;
@@ -214,7 +215,7 @@ bool Interpreter::safeLuaCall(const char* funcname, const char* argstr) {
 	lua_getglobal(terraState_, funcname);
 	if(argstr != NULL) {
 		nargs = 1;
-		lua_pushstring(terraState_, argstr);	
+		lua_pushstring(terraState_, argstr);
 	}
 	int res = lua_pcall(terraState_, nargs, 0, 0);
 	if(res != 0) {
@@ -465,13 +466,13 @@ std::ostream& Core::logStream(int log_level) {
 }
 
 void Core::logMessage(int log_level, const char* msg) {
-	sf::Lock Lock(coreLock_);
+	tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 	// dump to logfile
 	logfile_ << "[" << log_level << "] " << msg << std::endl;
 }
 
 Interpreter* Core::getInterpreter(int idx){
-	sf::Lock Lock(coreLock_);
+	tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 
 	if(idx < 0)
 		return NULL;
@@ -481,7 +482,7 @@ Interpreter* Core::getInterpreter(int idx){
 }
 
 Interpreter* Core::getNamedInterpreter(const char* name){
-	sf::Lock Lock(coreLock_);
+	tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 
 	std::string sname(name);
 	for(size_t i = 0; i < interpreters_.size(); ++i) {
@@ -493,21 +494,21 @@ Interpreter* Core::getNamedInterpreter(const char* name){
 }
 
 Interpreter* Core::spawnInterpreter(const char* name){
-	sf::Lock Lock(coreLock_);
+	tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 	Interpreter* interpreter = new Interpreter((int)(interpreters_.size()), name);
 	interpreters_.push_back(interpreter);
 	return interpreter;
 }
 
 void Core::stopAllInterpreters() {
-	sf::Lock Lock(coreLock_);
+	tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 	for (unsigned int i = 0; i < interpreters_.size(); ++i) {
 		interpreters_[i]->stop();
 	}
 }
 
 int Core::numInterpreters() {
-	sf::Lock Lock(coreLock_);
+	tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 	return interpreters_.size();
 }
 
@@ -519,12 +520,12 @@ void Core::dispatchMessage(int targetIdx, trss_message* msg){
 }
 
 void Core::acquireMessage(trss_message* msg){
-	sf::Lock Lock(coreLock_);
+	tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 	++(msg->refcount);
 }
 
 void Core::releaseMessage(trss_message* msg){
-	sf::Lock Lock(coreLock_);
+	tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 	--(msg->refcount);
 	if(msg->refcount <= 0) {
 		deallocateMessage(msg);
@@ -532,7 +533,7 @@ void Core::releaseMessage(trss_message* msg){
 }
 
 trss_message* Core::copyMessage(trss_message* src){
-	sf::Lock Lock(coreLock_);
+	tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 	trss_message* newmsg = allocateMessage(src->data_length);
 	newmsg->message_type = src->message_type;
 	std::memcpy(newmsg->data, src->data, newmsg->data_length);
@@ -580,8 +581,8 @@ trss_message* Core::loadFileRaw(const char* filename) {
 		return ret;
 	} else {
 		logStream(TRSS_LOG_ERROR) << "Unable to open file " << filename << "\n";
-		return NULL;	
-	} 
+		return NULL;
+	}
 }
 
 trss_message* Core::loadFile(const char* filename) {
