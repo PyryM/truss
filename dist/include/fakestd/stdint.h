@@ -129,7 +129,7 @@ typedef uint64_t  uint_fast64_t;
 typedef int64_t   intmax_t;
 typedef uint64_t  uintmax_t;
 
-//typedef uint64_t size_t;
+typedef uint64_t size_t;
 
 
 // 7.18.2 Limits of specified-width integer types
