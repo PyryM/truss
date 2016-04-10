@@ -44,7 +44,6 @@ target_include_directories(truss
 )
 target_link_libraries(truss
     bgfx physfs terra stb sfml_system
-    # dl GL pthread X11
 )
 
 # Fix obscure LuaJIT issue on OSX.

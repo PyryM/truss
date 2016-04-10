@@ -77,6 +77,13 @@ set_target_properties(bgfx PROPERTIES
     IMPORTED_IMPLIB "${bgfx_IMPLIB}"
 )
 
+# On Linux, BGFX needs a few other libraries.
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+    set_target_properties(bgfx PROPERTIES
+        INTERFACE_LINK_LIBRARIES "dl;GL;pthread;X11"
+    )
+endif()
+
 # Create an install command to install the shared libs.
 file(GLOB bgfx_LIBRARIES "${bgfx_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
 install(
