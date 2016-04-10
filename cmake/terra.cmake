@@ -24,19 +24,37 @@ ExternalProject_Add(terra_EXTERNAL
 
 # Recover project paths for additional settings.
 ExternalProject_Get_Property(terra_EXTERNAL SOURCE_DIR)
+
+# On linux systems, fix terra's naming convention.
+add_custom_command(TARGET terra_EXTERNAL
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+            "${SOURCE_DIR}/lib/terra${CMAKE_SHARED_LIBRARY_SUFFIX}"
+            "${SOURCE_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}terra${CMAKE_SHARED_LIBRARY_SUFFIX}"
+)
+
 set(terra_INCLUDE_DIR "${SOURCE_DIR}/include")
-set(terra_LIBRARY "${SOURCE_DIR}/lib/terra${CMAKE_SHARED_LIBRARY_SUFFIX}")
-# set(lua51_LIBRARY "${SOURCE_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}lua51${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(terra_LIBRARIES_DIR "${SOURCE_DIR}/lib/")
+set(terra_LIBRARY "${terra_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}terra${CMAKE_SHARED_LIBRARY_SUFFIX}")
+# set(lua51_LIBRARY "${terra_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}lua51${CMAKE_SHARED_LIBRARY_SUFFIX}")
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
 file(MAKE_DIRECTORY "${terra_INCLUDE_DIR}")
 
 # Tell CMake that the external project generated a library so we
 # can add dependencies to the library here.
-add_library(terra STATIC IMPORTED)
+add_library(terra SHARED IMPORTED)
 add_dependencies(terra terra_EXTERNAL)
 set_target_properties(terra PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${terra_INCLUDE_DIR}"
+    IMPORTED_NO_SONAME 1
+	INTERFACE_INCLUDE_DIRECTORIES "${terra_INCLUDE_DIR}"
     # INTERFACE_LINK_LIBRARIES "${lua51_LIBRARY}"
     IMPORTED_LOCATION "${terra_LIBRARY}"
+)
+
+# Create an install command to install the shared libs.
+file(GLOB terra_LIBRARIES "${terra_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+install(
+    FILES "${terra_LIBRARIES}"
+    DESTINATION lib
 )

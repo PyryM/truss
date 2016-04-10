@@ -11,6 +11,11 @@ set(CMAKE_CXX_STANDARD 11)
 
 include(PrintTargetProperties)
 
+# Unlike most builds, we want the resulting executable to be installed into
+# the root of the `dist` directory, as this entire directory comprises a
+# distribution package.
+set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/dist")
+
 # Install and build required dependencies.
 # (BGFX, Terra, PhysFS, STB)
 include(bgfx)
@@ -48,10 +53,15 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000")
 endif()
 
-# Unlike most builds, we want the resulting executable to be installed into
-# the root of this directory, as this entire directory comprises a
-# distribution package.
-set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dist")
-set(RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dist")
-set(RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/dist")
-set(RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/dist")
+SET(CMAKE_SKIP_BUILD_RPATH TRUE)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+set_target_properties(truss PROPERTIES
+    INSTALL_RPATH "./lib"
+)
+
+install(
+    TARGETS truss
+    RUNTIME DESTINATION "."
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
