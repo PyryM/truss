@@ -59,4 +59,4 @@ foreach(component_name IN ITEMS audio graphics network system window)
 endforeach()
 
 # Create an install command to install the shared libs.
-copy_libraries(sfml_EXTERNAL "${sfml_LIBRARIES_DIR}")
+copy_truss_libraries(sfml_EXTERNAL "${sfml_LIBRARIES_DIR}")

@@ -85,4 +85,4 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 endif()
 
 # Create an install command to install the shared libs.
-copy_libraries(bgfx_EXTERNAL "${bgfx_LIBRARIES_DIR}")
+copy_truss_libraries(bgfx_EXTERNAL "${bgfx_LIBRARIES_DIR}")

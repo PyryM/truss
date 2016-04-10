@@ -7,6 +7,19 @@
 #include <iostream>
 #include <sstream>
 
+#if defined(WIN32)
+// On Windows, manually construct an RPATH to the `./lib` subdirectory.
+#include "windows.h"
+void setWindowsRPath() {
+	char exe_filepath[MAX_PATH], exe_drive[MAX_PATH], exe_path[MAX_PATH];
+	GetModuleFileName(NULL, exe_filepath, MAX_PATH);
+	_splitpath_s(exe_filepath, exe_drive, MAX_PATH, exe_path, MAX_PATH, NULL, 0, NULL, 0);
+	std::stringstream ss;
+	ss << exe_drive << exe_path << "\\lib";
+	SetDllDirectory(ss.str().c_str());
+}
+#endif
+
 void storeArgs(int argc, char** argv) {
 	for (int i = 0; i < argc; ++i) {
 		std::stringstream ss;
@@ -16,7 +29,11 @@ void storeArgs(int argc, char** argv) {
 	}
 }
 
-int main(int argc, char** argv){
+int main(int argc, char** argv) {
+#	if defined(WIN32)
+	setWindowsRPath();
+#	endif
+
 	trss_test();
 	trss_log(0, "Entered main!");
 	storeArgs(argc, argv);

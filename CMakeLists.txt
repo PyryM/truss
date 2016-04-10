@@ -16,17 +16,36 @@ include(PrintTargetProperties)
 # distribution package.
 set(DIST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dist")
 
+# Create the main `truss` target.
+set(truss_SOURCES
+    src/main.cpp
+    src/truss.cpp
+    #src/truss_sdl.cpp
+    src/addons/websocket_client/easywsclient.cpp
+    src/addons/websocket_client/wsclient_addon.cpp
+    src/addons/bgfx_nanovg/nanovg.cpp
+    src/addons/bgfx_nanovg/nanovg_addon.cpp
+    src/addons/bgfx_nanovg/nanovg_bgfx_c99.cpp
+)
+add_executable(truss ${truss_SOURCES})
+
 # Copies every library in the given path to the `dist` lib directory.
-function(copy_libraries target target_library_path)
+function(copy_truss_libraries target target_library_path)
     file(GLOB target_libraries
         "${target_library_path}/${CMAKE_SHARED_LIBRARY_PREFIX}*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
 
     foreach(library_path ${target_libraries})
+        # Extract library name and create a rule to copy it to the `lib` directory.
         get_filename_component(library_file "${library_path}" NAME)
         add_custom_command(
             TARGET "${target}" POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy "${library_path}" "${DIST_DIR}/lib/${library_file}"
         )
+
+        # On Windows, we delay loading for a bit to allow time for an RPATH modification.
+        if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+            set_property(TARGET truss APPEND_STRING PROPERTY LINK_FLAGS "/DELAYLOAD:${library_file} ")
+        endif()
     endforeach()
 endfunction()
 
@@ -38,24 +57,15 @@ include(sfml)
 include(stb)
 include(terra)
 
-set(truss_SOURCES
-    src/main.cpp
-    src/truss.cpp
-    #src/truss_sdl.cpp
-    src/addons/websocket_client/easywsclient.cpp
-    src/addons/websocket_client/wsclient_addon.cpp
-    src/addons/bgfx_nanovg/nanovg.cpp
-    src/addons/bgfx_nanovg/nanovg_addon.cpp
-    src/addons/bgfx_nanovg/nanovg_bgfx_c99.cpp
-)
-
-add_executable(truss ${truss_SOURCES})
+# Configure truss to handle include directories properly.
 target_include_directories(truss
     PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
+
+# Link against required dependencies.
 target_link_libraries(truss
     bgfx physfs terra stb sfml_system
 )

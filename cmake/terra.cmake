@@ -65,4 +65,4 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 endif()
 
 # Create an install command to install the shared libs.
-copy_libraries(terra_EXTERNAL "${terra_LIBRARIES_DIR}")
+copy_truss_libraries(terra_EXTERNAL "${terra_LIBRARIES_DIR}")

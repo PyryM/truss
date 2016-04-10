@@ -38,4 +38,4 @@ set_target_properties(physfs PROPERTIES
 )
 
 # Create an install command to install the shared libs.
-copy_libraries(physfs_EXTERNAL "${physfs_LIBRARIES_DIR}")
+copy_truss_libraries(physfs_EXTERNAL "${physfs_LIBRARIES_DIR}")
