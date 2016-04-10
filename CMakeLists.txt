@@ -17,6 +17,16 @@ include(PrintTargetProperties)
 set(DIST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dist")
 
 # Create the main `truss` target.
+set(truss_HEADERS
+    src/truss.h
+    src/trussapi.h
+    src/truss_sfml.h
+    src/addons/websocket_client/easywsclient.hpp
+    src/addons/websocket_client/wsclient_addon.h
+    src/addons/bgfx_nanovg/nanovg.h
+    src/addons/bgfx_nanovg/nanovg_addon.h
+)
+
 set(truss_SOURCES
     src/main.cpp
     src/truss.cpp
@@ -27,7 +37,7 @@ set(truss_SOURCES
     src/addons/bgfx_nanovg/nanovg_addon.cpp
     src/addons/bgfx_nanovg/nanovg_bgfx_c99.cpp
 )
-add_executable(truss ${truss_SOURCES})
+add_executable(truss ${truss_SOURCES} ${truss_HEADERS})
 
 # Copies every library in the given path to the `dist` lib directory.
 function(copy_truss_libraries target target_library_path)
