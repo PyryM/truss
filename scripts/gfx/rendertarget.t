@@ -35,26 +35,26 @@ end
 local bc = bgfx_const
 function RenderTarget:addColorAttachment(width, height, colorformat)
     if self.finalized then
-        log.error("Cannot add more attachments to finalized buffer!") 
-        return 
+        log.error("Cannot add more attachments to finalized buffer!")
+        return
     end
-    local colorflags = bc.BGFX_TEXTURE_RT + 
-                       bc.BGFX_TEXTURE_U_CLAMP + 
+    local colorflags = bc.BGFX_TEXTURE_RT +
+                       bc.BGFX_TEXTURE_U_CLAMP +
                        bc.BGFX_TEXTURE_V_CLAMP
-    local color = bgfx.bgfx_create_texture_2d(width, height, 1, 
-                        colorformat or m.ColorFormats.default, 
+    local color = bgfx.bgfx_create_texture_2d(width, height, 1,
+                        colorformat or m.ColorFormats.default,
                         colorflags, nil)
     table.insert(self.attachments, color)
     return self
 end
 
 function RenderTarget:addDepthAttachment(width, height)
-    if self.finalized then 
+    if self.finalized then
         log.error("Cannot add more attachments to finalized buffer!")
-        return 
+        return
     end
     local depthflags = bc.BGFX_TEXTURE_RT_WRITE_ONLY -- can't read back depth
-    local depth = bgfx.bgfx_create_texture_2d(width, height, 1, 
+    local depth = bgfx.bgfx_create_texture_2d(width, height, 1,
                         bgfx.BGFX_TEXTURE_FORMAT_D16, depthflags, nil)
     table.insert(self.attachments, depth)
     return self
@@ -81,8 +81,11 @@ function RenderTarget:destroy()
     self.cattachments = nil
 end
 
-function RenderTarget:bindToView(viewid)
+function RenderTarget:bindToView(viewid, setViewRect)
     if self.frameBuffer then
+        if setViewRect == nil or setViewRect then -- default to true
+            bgfx.bgfx_set_view_frame_rect(viewid, 0, 0, self.width, self.height)
+        end
         bgfx.bgfx_set_view_frame_buffer(viewid, self.frameBuffer)
     else
         log.error("Cannot bind null framebuffer to view!")
