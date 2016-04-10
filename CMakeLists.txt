@@ -7,7 +7,6 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
 project(truss)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 11)
-include(PrintTargetProperties)
 include(utils)
 
 # Unlike most builds, we want the resulting executable to be installed into
