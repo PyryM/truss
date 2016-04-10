@@ -14,7 +14,7 @@ include(PrintTargetProperties)
 # Unlike most builds, we want the resulting executable to be installed into
 # the root of the `dist` directory, as this entire directory comprises a
 # distribution package.
-set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/dist")
+set(DIST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dist")
 
 # Install and build required dependencies.
 # (BGFX, Terra, PhysFS, STB)
@@ -43,8 +43,8 @@ target_include_directories(truss
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 target_link_libraries(truss
-    bgfx physfs terra stb sfml
-    dl GL pthread X11
+    bgfx physfs terra stb sfml_system
+    # dl GL pthread X11
 )
 
 # Fix obscure LuaJIT issue on OSX.
@@ -61,7 +61,7 @@ set_target_properties(truss PROPERTIES
 
 install(
     TARGETS truss
-    RUNTIME DESTINATION "."
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION "${DIST_DIR}"
+    LIBRARY DESTINATION "${DIST_DIR}/lib"
+    ARCHIVE DESTINATION "${DIST_DIR}/lib"
 )

@@ -1,7 +1,8 @@
 include(ExternalProject)
 
 # Select binary package based on platform name.
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+    set(sfml_SHARED_LIBS_DIR "bin")
     if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
         set(sfml_PACKAGE_FILENAME "SFML-2.0-windows-vc11-64bits.zip")
     elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
@@ -9,7 +10,8 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     else()
         message(FATAL_ERROR "SFML does not have precompiled binaries for compiler '${CMAKE_CXX_COMPILER_ID}'.")    
     endif()
-elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+    set(sfml_SHARED_LIBS_DIR "lib")
     if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
         set(sfml_PACKAGE_FILENAME "SFML-2.0-osx-clang-universal.zip")
     elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
@@ -17,7 +19,8 @@ elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     else()
         message(FATAL_ERROR "SFML does not have precompiled binaries for compiler '${CMAKE_CXX_COMPILER_ID}'.")    
     endif()
-elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+    set(sfml_SHARED_LIBS_DIR "lib")
     set(sfml_PACKAGE_FILENAME "SFML-2.0-linux-gcc-64bits.tar.bz2")
 else()
     message(FATAL_ERROR "SFML does not have precompiled binaries for '${CMAKE_SYSTEM_NAME}'.")
@@ -34,31 +37,30 @@ ExternalProject_Add(sfml_EXTERNAL
 # Recover project paths for additional settings.
 ExternalProject_Get_Property(sfml_EXTERNAL SOURCE_DIR)
 set(sfml_INCLUDE_DIR "${SOURCE_DIR}/include")
-set(sfml_LIBRARIES_DIR "${SOURCE_DIR}/lib")
-set(sfml_LIBRARY "${sfml_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sfml-system${CMAKE_SHARED_LIBRARY_SUFFIX}.2")
-set(sfml_LIBRARIES
-    "${sfml_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sfml-audio${CMAKE_SHARED_LIBRARY_SUFFIX}.2"
-    "${sfml_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sfml-graphics${CMAKE_SHARED_LIBRARY_SUFFIX}.2"
-    "${sfml_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sfml-network${CMAKE_SHARED_LIBRARY_SUFFIX}.2"
-    "${sfml_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sfml-window${CMAKE_SHARED_LIBRARY_SUFFIX}.2"
-)
+set(sfml_LIBRARIES_DIR "${SOURCE_DIR}/${sfml_SHARED_LIBS_DIR}")
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
 file(MAKE_DIRECTORY "${sfml_INCLUDE_DIR}")
 
-# Tell CMake that the external project generated a library so we
-# can add dependencies to the library here.
-add_library(sfml SHARED IMPORTED)
-add_dependencies(sfml sfml_EXTERNAL)
-set_target_properties(sfml PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${sfml_INCLUDE_DIR}"
-    INTERFACE_LINK_LIBRARIES "${sfml_LIBRARIES}"
-    IMPORTED_LOCATION "${sfml_LIBRARY}"
-)
+# Create a target for each SFML component.
+foreach(component_name IN ITEMS audio graphics network system window)
+    set(sfml_LIBRARY "${sfml_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sfml-${component_name}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(sfml_IMPLIB "${SOURCE_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}sfml-${component_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
-# Create an install command to install the shared libs.
-file(GLOB sfml_LIBRARIES "${sfml_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
-install(
-    FILES ${sfml_LIBRARIES}
-    DESTINATION lib
-)
+    # Tell CMake that the external project generated a library so we
+    # can add dependencies to the library here.
+    add_library("sfml_${component_name}" SHARED IMPORTED)
+    add_dependencies("sfml_${component_name}" sfml_EXTERNAL)
+    set_target_properties("sfml_${component_name}" PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${sfml_INCLUDE_DIR}"
+        IMPORTED_LOCATION "${sfml_LIBRARY}"
+        IMPORTED_IMPLIB "${sfml_IMPLIB}"
+    )
+
+    # Create an install command to install the shared libs.
+    file(GLOB sfml_LIBRARIES "${sfml_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}sfml-${component_name}${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+    install(
+        FILES ${sfml_LIBRARIES}
+        DESTINATION "${DIST_DIR}/lib"
+    )
+endforeach()

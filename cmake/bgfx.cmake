@@ -60,6 +60,7 @@ ExternalProject_Get_Property(bgfx_EXTERNAL SOURCE_DIR)
 set(bgfx_INCLUDE_DIR "${SOURCE_DIR}/include")
 set(bgfx_LIBRARIES_DIR "${SOURCE_DIR}/.build/${bgfx_SYSTEM_NAME}64_${bgfx_COMPILER}/bin")
 set(bgfx_LIBRARY "${bgfx_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}bgfx-shared-libRelease${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(bgfx_IMPLIB "${bgfx_LIBRARIES_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}bgfx-shared-libRelease${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
 file(MAKE_DIRECTORY "${bx_INCLUDE_DIR}")
@@ -73,11 +74,12 @@ set_target_properties(bgfx PROPERTIES
     IMPORTED_NO_SONAME 1
     INTERFACE_INCLUDE_DIRECTORIES "${bgfx_INCLUDE_DIR};${bx_INCLUDE_DIR}"
     IMPORTED_LOCATION "${bgfx_LIBRARY}"
+    IMPORTED_IMPLIB "${bgfx_IMPLIB}"
 )
 
 # Create an install command to install the shared libs.
 file(GLOB bgfx_LIBRARIES "${bgfx_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
 install(
     FILES ${bgfx_LIBRARIES}
-    DESTINATION lib
+    DESTINATION "${DIST_DIR}/lib"
 )
