@@ -20,6 +20,7 @@ int run_interpreter_thread(void* interpreter) {
 
 Interpreter::Interpreter(int id, const char* name)
 	: thread_(run_interpreter_thread, this)
+	, running_(false)
 	, terraState_(NULL)
 	, name_(name)
 	, id_(id)
