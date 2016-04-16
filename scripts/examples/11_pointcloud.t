@@ -22,27 +22,31 @@ function createGeometry()
     thegrid:updateMatrix()
     app.scene:add(thegrid)
 
-    pwidth = 64
-    pheight = 64
+    pwidth = 256
+    pheight = 256
     ptex = tex.MemTexture(pwidth, pheight)
     thecloud = pcloud.PointCloudObject(pwidth, pheight)
 
-    itex = require('utils/textureutils.t').loadTexture('test.png')
+    --itex = require('utils/textureutils.t').loadTexture('test.png')
 
-    thecloud.mat.texColorDepth = itex --ptex.tex
-    updateTex()
+    thecloud.mat.texColorDepth = ptex.tex
+    --updateTex()
     app.scene:add(thecloud)
 end
 
+local function w(x,y,t)
+    return 63 * (2.0 + math.sin(x*0.1 + t) + math.cos(y*0.1 + t))
+end
+
 function updateTex()
-    local d = ptex.newdata
+    local d = ptex.data
     local dpos = 0
     for y = 1,pheight do
         for x = 1,pwidth do
-            d[dpos+0] = 255
-            d[dpos+1] = 255
-            d[dpos+2] = 255
-            d[dpos+3] = 255
+            d[dpos+0] = math.random()*255
+            d[dpos+1] = math.random()*255
+            d[dpos+2] = math.random()*255
+            d[dpos+3] = w(x, y, app.time)
             dpos = dpos + 4
         end
     end
@@ -77,4 +81,5 @@ end
 function update()
     webconsole.update()
     app:update()
+    updateTex()
 end

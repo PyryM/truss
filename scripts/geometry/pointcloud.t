@@ -25,7 +25,7 @@ function PointCloudObject:init(hres, vres)
     self.vres = vres or 120
     self:createBuffers_()
     self.material = {shadername = "pointcloud",
-                     pointParams = math.Vector(0.001,1.0,1.0,1.0),
+                     pointParams = math.Vector(0.002,1.0,3.0,2.0),
                      texColorDepth = nil}
     self.mat = self.material
 end
