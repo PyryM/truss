@@ -10,13 +10,13 @@ void main() {
   vec3 scaledPos = a_position.xyz * vec3(u_pointParams.zw, 1.0);
   vec4 centerPoint = mul(u_modelView, vec4(scaledPos, 1.0));
 
-  vec4 pointcolordepth = texture2D(s_texColorDepth, a_texcoord0);
+  vec4 pointcolordepth = texture2DLod(s_texColorDepth, a_texcoord0, 0);
   float depth = pointcolordepth.w * u_pointParams.y;
   centerPoint.xyz *= depth;
   centerPoint.xyz += a_normal * u_pointParams.x;
   centerPoint = mul(u_proj, centerPoint);
 
-  v_color = pointcolordepth.xyz;
+  v_color.xyz = pointcolordepth.xyz;
 
   gl_Position = centerPoint;
 }
