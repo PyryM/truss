@@ -45,6 +45,8 @@ function AppScaffold:init(options)
         self:initNVG()
     end
     self:initScene()
+
+    self.startTime = tic()
 end
 
 function AppScaffold:initBGFX()
@@ -62,7 +64,7 @@ function AppScaffold:initBGFX()
     -- Enable debug text.
     bgfx.bgfx_set_debug(debug)
 
-    bgfx.bgfx_set_view_clear(0, 
+    bgfx.bgfx_set_view_clear(0,
     0x0001 + 0x0002, -- clear color + clear depth
     0x303030ff,
     1.0,
@@ -100,7 +102,7 @@ end
 
 function AppScaffold:initScene()
     self.scene = Object3D()
-    self.camera = Camera():makeProjection(70, self.width/self.height, 
+    self.camera = Camera():makeProjection(70, self.width/self.height,
                                             0.1, 100.0)
 end
 
@@ -150,7 +152,7 @@ end
 
 function AppScaffold:render()
     self.scene:updateMatrices()
-    self.pipeline:render({camera = self.camera, 
+    self.pipeline:render({camera = self.camera,
                           scene  = self.scene})
 end
 
@@ -158,7 +160,7 @@ function AppScaffold:update()
     self.frame = self.frame + 1
     self.time = self.time + 1.0 / 60.0
 
-    self.startTime = tic()
+
 
     -- Deal with input events
     self:updateEvents()
@@ -173,9 +175,9 @@ function AppScaffold:update()
 
     -- Use debug font to print information about this example.
     bgfx.bgfx_dbg_text_clear(0, false)
-    bgfx.bgfx_dbg_text_printf(0, 1, 0x6f, "total: " .. self.frametime*1000.0 
-                                                    .. " ms, script: " 
-                                                    .. self.scripttime*1000.0 
+    bgfx.bgfx_dbg_text_printf(0, 1, 0x6f, "total: " .. self.frametime*1000.0
+                                                    .. " ms, script: "
+                                                    .. self.scripttime*1000.0
                                                     .. " ms")
     if self.preRender then
         self:preRender()
@@ -189,6 +191,7 @@ function AppScaffold:update()
     bgfx.bgfx_frame()
 
     self.frametime = toc(self.startTime)
+    self.startTime = tic()
 end
 
 local m = {}
