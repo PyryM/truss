@@ -24,9 +24,8 @@ function PointCloudObject:init(hres, vres)
     self.hres = hres or 160
     self.vres = vres or 120
     self:createBuffers_()
-    self:createTex_()
     self.material = {shadername = "pointcloud",
-                     pointParams = math.Vector(0.01,1.0,1.0,1.0),
+                     pointParams = math.Vector(0.001,1.0,1.0,1.0),
                      texColorDepth = nil}
     self.mat = self.material
 end
@@ -37,12 +36,16 @@ function PointCloudObject:setPlaneSize(w,h)
     params.elem.w = h
 end
 
+function PointCloudObject:setPointSize(p)
+    self.mat.pointParams.elem.x = p
+end
+
 function PointCloudObject:createBuffers_()
     local vdefs = require("gfx/vertexdefs.t")
     local vinfo = vdefs.createStandardVertexType({"position",
                                                   "normal",
                                                   "texcoord0"})
-    local rawdata = m.createParticleArrayData(1.0, 1.0, 1.0,
+    local rawdata = m.createParticleArrayData(1.0, 1.0, -1.0,
                                               self.hres, self.vres)
     self.geo = geometry.StaticGeometry():fromData(vinfo, rawdata)
 end

@@ -20,6 +20,7 @@ local terra loadTexture_mem(filename: &int8)
 		log.error("Error loading texture!")
 	end
 	trss.trss_release_message(msg)
+	log.info("Creating texture...")
 	var ret = bgfx.bgfx_create_texture_2d(w, h, 0, bgfx.BGFX_TEXTURE_FORMAT_RGBA8, 0, bmem)
 	return ret
 end
