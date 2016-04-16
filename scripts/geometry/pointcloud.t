@@ -103,3 +103,7 @@ function m.createParticleArrayData(width, height, z, wdivs, hdivs)
                           texcoord0 = texcoord0}
             }
 end
+
+m.PointCloudObject = PointCloudObject
+m.PointCloudShader = PointCloudShader
+return m
