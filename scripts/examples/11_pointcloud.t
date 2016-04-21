@@ -23,14 +23,22 @@ function createGeometry()
     thegrid:updateMatrix()
     app.scene:add(thegrid)
 
-    pwidth = 160
-    pheight = 120
+    pwidth = 128*2
+    pheight = 106*2
     ptex = tex.MemTexture(pwidth, pheight)
     thecloud = pcloud.PointCloudObject(pwidth, pheight)
+    thecloud:setPlaneSize(1,1)
+    thecloud:setPointSize(0.004)
+    thecloud.position:set(0.0, 1.0, 0.0)
+    thecloud.quaternion:fromEuler({x=-math.pi / 2,y=0,z=0})
+    thecloud:updateMatrix()
 
-    --itex = require('utils/textureutils.t').loadTexture('test.png')
+    -- 128*106
+    local bc = core.bgfx_const
+    local texflags = bc.BGFX_TEXTURE_MIN_POINT + bc.BGFX_TEXTURE_MAG_POINT
+    itex = require('utils/textureutils.t').loadTexture('data/test_half.png', texflags)
 
-    thecloud.mat.texColorDepth = ptex.tex
+    thecloud.mat.texColorDepth = itex --ptex.tex
     --updateTex()
     app.scene:add(thecloud)
 end
@@ -97,5 +105,5 @@ end
 function update()
     webconsole.update()
     app:update()
-    updateTex()
+    --updateTex()
 end
