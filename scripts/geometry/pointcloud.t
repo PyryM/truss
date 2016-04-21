@@ -26,6 +26,7 @@ function PointCloudObject:init(hres, vres)
     self:createBuffers_()
     self.material = {shadername = "pointcloud",
                      pointParams = math.Vector(0.002,1.0,3.0,2.0),
+                     depthParams = math.Vector(0.3333333333, -0.1111111111),
                      texColorDepth = nil}
     self.mat = self.material
 end
@@ -51,14 +52,22 @@ function PointCloudObject:createBuffers_()
 end
 
 local PointCloudShader = class("PointCloudShader")
-function PointCloudShader:init(vshader, fshader)
+function PointCloudShader:init(invz, vshader, fshader)
     local pointParams = uniforms.Uniform("u_pointParams", uniforms.VECTOR, 1)
     local texColorDepth = uniforms.TexUniform("s_texColorDepth", 0)
     local matUniforms = uniforms.UniformSet()
     matUniforms:add(pointParams, "pointParams")
     matUniforms:add(texColorDepth, "texColorDepth")
+    if invz then
+        local depthParams = uniforms.Uniform("u_depthParams", uniforms.VECTOR, 1)
+        matUniforms:add(depthParams, "depthParams")
+    end
     self.uniforms = matUniforms
-    self.program = shaderutils.loadProgram(vshader or "vs_points",
+    local vertexProgram = vshader
+    if vertexProgram == nil and invz then
+        vertexProgram = "vs_points_invz"
+    end
+    self.program = shaderutils.loadProgram(vertexProgram or "vs_points",
                                            fshader or "fs_points")
 end
 

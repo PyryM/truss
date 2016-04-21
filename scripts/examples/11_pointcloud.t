@@ -15,6 +15,7 @@ local line = require('geometry/line.t')
 local grid = require('geometry/grid.t')
 local pcloud = require('geometry/pointcloud.t')
 local tex = require('gfx/texture.t')
+local stringutils = require('utils/stringutils.t')
 
 function createGeometry()
     thegrid = grid.Grid({thickness = 0.01})
@@ -22,8 +23,8 @@ function createGeometry()
     thegrid:updateMatrix()
     app.scene:add(thegrid)
 
-    pwidth = 256
-    pheight = 256
+    pwidth = 160
+    pheight = 120
     ptex = tex.MemTexture(pwidth, pheight)
     thecloud = pcloud.PointCloudObject(pwidth, pheight)
 
@@ -58,7 +59,22 @@ function preRender(appSelf)
     rotator:updateMatrix()
 end
 
+function testb64()
+    local src_str = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
+    local src = terralib.cast(&uint8, src_str)
+    srclen = src_str:len()
+    destlen = 1000
+    local dest = terralib.new(uint8[destlen+1])
+    dest[destlen] = 0 -- null terminate
+    local retlen = stringutils.b64decodeRaw(src, srclen, dest, destlen)
+    log.info(ffi.string(dest, retlen))
+    for i = 0,16 do
+        log.info(dest[i])
+    end
+end
+
 function init()
+    testb64()
     app = AppScaffold({title = "adathing",
                        width = 1280,
                        height = 720,
@@ -73,7 +89,7 @@ function init()
     app.camera:updateMatrix()
 
     app.pipeline:addShader("line", line.LineShader("vs_line", "fs_line_depth"))
-    app.pipeline:addShader("pointcloud", pcloud.PointCloudShader())
+    app.pipeline:addShader("pointcloud", pcloud.PointCloudShader(true))
 
     createGeometry()
 end
