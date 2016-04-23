@@ -9,14 +9,21 @@
 
 #if defined(WIN32)
 // On Windows, manually construct an RPATH to the `./lib` subdirectory.
+// TODO: refactor this into a config.in
 #include "windows.h"
 void setWindowsRPath() {
+	// Get path to current executable.
 	char exe_filepath[MAX_PATH], exe_drive[MAX_PATH], exe_path[MAX_PATH];
 	GetModuleFileName(NULL, exe_filepath, MAX_PATH);
 	_splitpath_s(exe_filepath, exe_drive, MAX_PATH, exe_path, MAX_PATH, NULL, 0, NULL, 0);
+
+	// Add absolute path to "./lib" directory to "RPATH".
 	std::stringstream ss;
 	ss << exe_drive << exe_path << "\\lib";
 	SetDllDirectory(ss.str().c_str());
+
+	// Manually force loading of DELAYLOAD-ed libraries.
+	LoadLibrary("bgfx-shared-libRelease.dll");
 }
 #endif
 
@@ -44,7 +51,7 @@ int main(int argc, char** argv) {
 
 	trss::Interpreter* interpreter = trss::core()->spawnInterpreter("interpreter_0");
 	interpreter->setDebug(0); // want most verbose debugging output
-	// interpreter->attachAddon(new SDLAddon);
+	interpreter->attachAddon(new SDLAddon);
 	interpreter->attachAddon(new NanoVGAddon);
 	interpreter->attachAddon(new WSClientAddon);
 	trss_log(0, "Starting interpreter!");
