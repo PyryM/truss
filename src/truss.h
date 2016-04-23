@@ -4,13 +4,12 @@
 #define TRSS_H_HEADER_GUARD
 
 #include "trussapi.h"
+#include "external/tinythread.h"
 
 #include <string>
 #include <vector>
 #include <map>
 #include <fstream>
-#include "tinythread.h"
-
 #include <terra/terra.h>
 
 namespace trss {

@@ -1,5 +1,5 @@
 #include "truss.h"
-#include "truss_sdl.h"
+#include "sdl_addon.h"
 #include <algorithm>
 #include <iostream>
 #include <sstream>

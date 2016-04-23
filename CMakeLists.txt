@@ -14,22 +14,22 @@ set(DIST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dist")
 set(truss_HEADERS
     src/truss.h
     src/trussapi.h
-    src/truss_sdl.h
-    src/addons/websocket_client/easywsclient.hpp
-    src/addons/websocket_client/wsclient_addon.h
-    src/addons/bgfx_nanovg/nanovg.h
-    src/addons/bgfx_nanovg/nanovg_addon.h
+    src/addons/sdl/sdl_addon.h
+    src/addons/wsclient/easywsclient.hpp
+    src/addons/wsclient/wsclient_addon.h
+    src/addons/nanovg/nanovg.h
+    src/addons/nanovg/nanovg_addon.h
 )
 set(truss_SOURCES
     src/main.cpp
     src/truss.cpp
-    src/tinythread.cpp
-    src/truss_sdl.cpp
-    src/addons/websocket_client/easywsclient.cpp
-    src/addons/websocket_client/wsclient_addon.cpp
-    src/addons/bgfx_nanovg/nanovg.cpp
-    src/addons/bgfx_nanovg/nanovg_addon.cpp
-    src/addons/bgfx_nanovg/nanovg_bgfx_c99.cpp
+    src/external/tinythread.cpp
+    src/addons/sdl/sdl_addon.cpp
+    src/addons/wsclient/easywsclient.cpp
+    src/addons/wsclient/wsclient_addon.cpp
+    src/addons/nanovg/nanovg.cpp
+    src/addons/nanovg/nanovg_addon.cpp
+    src/addons/nanovg/nanovg_bgfx_c99.cpp
 )
 add_executable(truss ${truss_SOURCES} ${truss_HEADERS})
 
