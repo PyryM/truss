@@ -5,10 +5,10 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
-#include "bx_utils.h" // has to be included early or else luaconfig.h will clobber winver
+#include "external/bx_utils.h" // has to be included early or else luaconfig.h will clobber winver
 #include "trussapi.h"
 #include "truss.h"
-#include "physfs.h"
+#include <physfs.h>
 
 using namespace trss;
 
