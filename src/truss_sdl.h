@@ -1,11 +1,12 @@
 #ifndef TRUSS_SDL_HEADER
 #define TRUSS_SDL_HEADER
 
-#include <vector>
+#include "truss.h"
+
+#include <SDL_config.h>
 #include <SDL.h>
 #include <SDL_syswm.h>
-
-#include "truss.h"
+#include <vector>
 
 // tell bgfx that it's using a shared library
 #define BGFX_SHARED_LIB_USE 1

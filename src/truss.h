@@ -158,7 +158,7 @@ namespace trss {
 		static Core* core__;
 
 		Core();
-		sf::Mutex coreLock_;
+		tthread::mutex coreLock_;
 		bool physFSInitted_;
 		std::vector<Interpreter*> interpreters_;
 		std::map<std::string, trss_message*> store_;

@@ -18,7 +18,7 @@ set(DIST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dist")
 set(truss_HEADERS
     src/truss.h
     src/trussapi.h
-    src/truss_sfml.h
+    src/truss_sdl.h
     src/addons/websocket_client/easywsclient.hpp
     src/addons/websocket_client/wsclient_addon.h
     src/addons/bgfx_nanovg/nanovg.h
@@ -28,7 +28,7 @@ set(truss_SOURCES
     src/main.cpp
     src/truss.cpp
     src/tinythread.cpp
-    src/truss_sfml.cpp
+    src/truss_sdl.cpp
     src/addons/websocket_client/easywsclient.cpp
     src/addons/websocket_client/wsclient_addon.cpp
     src/addons/bgfx_nanovg/nanovg.cpp
@@ -41,7 +41,7 @@ add_executable(truss ${truss_SOURCES} ${truss_HEADERS})
 # (BGFX, Terra, PhysFS, STB)
 include(bgfx)
 include(physfs)
-include(sfml)
+include(sdl)
 include(stb)
 include(terra)
 
@@ -55,7 +55,7 @@ target_include_directories(truss
 
 # Link against required dependencies.
 target_link_libraries(truss
-    bgfx physfs terra stb sfml_system
+    bgfx physfs terra stb sdl
 )
 
 # Fix obscure LuaJIT issue on OSX.
