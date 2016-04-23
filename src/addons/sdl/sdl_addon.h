@@ -1,7 +1,7 @@
 #ifndef TRUSS_SDL_HEADER
 #define TRUSS_SDL_HEADER
 
-#include "truss.h"
+#include "../../truss.h"
 
 #include <SDL_config.h>
 #include <SDL.h>

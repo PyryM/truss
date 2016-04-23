@@ -1,4 +1,3 @@
-#include "truss.h"
 #include "sdl_addon.h"
 #include <algorithm>
 #include <iostream>
