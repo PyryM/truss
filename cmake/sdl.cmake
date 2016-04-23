@@ -25,15 +25,15 @@ set(sdl_LIBRARIES_DIR "${BINARY_DIR}")
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
     set(sdl_LIBRARY "${sdl_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}SDL2${CMAKE_SHARED_LIBRARY_SUFFIX}")
     set(sdl_IMPLIB "${sdl_LIBRARIES_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}SDL2${CMAKE_STATIC_LIBRARY_SUFFIX}")
-    list(APPEND sdl_INTERFACE_LIBRARIES "${sdl_LIBRARIES_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}SDL2main${CMAKE_STATIC_LIBRARY_SUFFIX}")
 else()
     set(sdl_LIBRARY "${sdl_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}SDL2-2.0${CMAKE_SHARED_LIBRARY_SUFFIX}")
     set(sdl_IMPLIB "${sdl_LIBRARIES_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}SDL2-2.0${CMAKE_STATIC_LIBRARY_SUFFIX}")
-    set(sdl_INTERFACE_LIBRARIES "")
 endif()
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
-file(MAKE_DIRECTORY "${sdl_INCLUDE_DIR}")
+foreach(include_dir ${sdl_INCLUDE_DIRS})
+    file(MAKE_DIRECTORY "${include_dir}")
+endforeach()
 
 # Tell CMake that the external project generated a library so we
 # can add dependencies to the library here.
@@ -41,7 +41,6 @@ add_library(sdl SHARED IMPORTED)
 add_dependencies(sdl sdl_EXTERNAL)
 set_target_properties(sdl PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${sdl_INCLUDE_DIRS}"
-    INTERFACE_LINK_LIBRARIES "${sdl_INTERFACE_LIBRARIES}"
     IMPORTED_LOCATION "${sdl_LIBRARY}"
     IMPORTED_IMPLIB "${sdl_IMPLIB}"
 )
