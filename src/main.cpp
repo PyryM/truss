@@ -11,7 +11,7 @@
 // On Windows, manually construct an RPATH to the `./lib` subdirectory.
 // TODO: refactor this into a config.in
 #include "windows.h"
-void setWindowsRPath() {
+void setupRPath() {
 	// Get path to current executable.
 	char exe_filepath[MAX_PATH], exe_drive[MAX_PATH], exe_path[MAX_PATH];
 	GetModuleFileName(NULL, exe_filepath, MAX_PATH);
@@ -25,6 +25,10 @@ void setWindowsRPath() {
 	// Manually force loading of DELAYLOAD-ed libraries.
 	LoadLibrary("bgfx-shared-libRelease.dll");
 }
+#else
+void setupRPath() {
+	// Do nothing on non-WIN32 platforms.
+}
 #endif
 
 void storeArgs(int argc, char** argv) {
@@ -37,9 +41,7 @@ void storeArgs(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
-#	if defined(WIN32)
-	setWindowsRPath();
-#	endif
+	setupRPath();
 
 	trss_test();
 	trss_log(0, "Entered main!");
