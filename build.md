@@ -1,25 +1,20 @@
 # Truss Build Instructions
 
-> :warning: **IMPORTANT: truss is currently using bgfx commit**
-> `f7130318c0cf62f42ae4b8a76633c9e09409f32b`
+## Windows (vs2015)
+* Dependencies: `cmake`
+  * Get and install `cmake`
 
-## Windows (vs2013)
-* Dependencies: `bgfx`, `bx`, `terra`, `sdl`
-  * Get and build `bgfx` + `bx` (`bx` is header only and needed by `bgfx`):
-
-    ```bash
-    git clone git://github.com/bkaradzic/bx.git
-    git clone git://github.com/bkaradzic/bgfx.git
-    cd bgfx
-    ..\bx\tools\bin\windows\genie --with-shared-lib --with-tools vs2013
-          (might also want --with-ovr)
-          (note: what does --with-sdl do? It doesn't seem to be needed...)
-    start .build\projects\vs2013\bgfx.sln
-          (make sure to build in x64!)
-    ```
+* Compilation
+  * Run `cmake-gui`
+    * Specify the source directory as your git checkout
+    * Specify the build directory as your git checkout + `./build`
+    * Click `Configure` and select the compiler (make sure to choose 64-bit).
+    * Click `Generate`
+  * Open the `./build` directory and double-click `truss.sln`
+  * In Visual Studio, build the `ALL_BUILD` project to build everything.
 
 ## Linux
-* Dependencies: `cmake`, `sdl`
+* Dependencies: `cmake`
   * Get CMake version 3.3+
 
     **For Ubuntu 16.04+:**
@@ -40,13 +35,7 @@
     sudo checkinstall
     ```
 
-  * Get SDL:
-
-    ```bash
-    sudo apt-get install libsdl2-dev
-    ```
-
-* Make:
+* Compilation
 
   ```bash
   mkdir build
@@ -55,9 +44,9 @@
   make
   ```
 
-Now you can hopefully run:
+Now you can run:
 ```bash
-./truss scripts/examples/dart_gui_test.t
+./truss examples/00_buffercube.t
 ```
 
 > Note: if you want `bgfx` to use OpenGL > 2.1, then you need to compile it with
