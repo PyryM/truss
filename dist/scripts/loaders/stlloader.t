@@ -12,11 +12,11 @@ m.MAXFACES = 21845 -- each face needs 3 vertices, to fit into 16 bit index
 function m.loadSTL(filename, invert)
 	local starttime = tic()
 	local srcMessage = trss.trss_load_file(filename)
-	if srcMessage == nil then 
+	if srcMessage == nil then
 		log.error("Error: unable to open file " .. filename)
-		return nil 
+		return nil
 	end
-	
+
 	local ret = m.parseBinarySTL(srcMessage.data, srcMessage.data_length, invert)
 	trss.trss_release_message(srcMessage)
 	local dtime = toc(starttime)
@@ -98,9 +98,9 @@ function m.parseBinarySTL(databuf, datalength, invert)
 	end
 
 	if m.verbose then
-		log.debug("stl color: " .. defaultR 
-							.. " " .. defaultG 
-							.. " " .. defaultB 
+		log.debug("stl color: " .. defaultR
+							.. " " .. defaultG
+							.. " " .. defaultB
 							.. " " .. alpha)
 	end
 
@@ -136,8 +136,8 @@ function m.parseBinarySTL(databuf, datalength, invert)
 
 			-- vertices and normals are normal lua arrays and hence 1-indexed
 			vertices[ offset + 1 ] =  {m.readFloat32(databuf, vertexstart ),
-									  		m.readFloat32(databuf, vertexstart + 4 ),
-									 		m.readFloat32(databuf, vertexstart + 8 )}
+									   m.readFloat32(databuf, vertexstart + 4 ),
+									   m.readFloat32(databuf, vertexstart + 8 )}
 
 			normals[ offset + 1 ] = {normalX,
 								     normalY,
