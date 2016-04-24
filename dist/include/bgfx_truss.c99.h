@@ -13,9 +13,7 @@
 #include <stdint.h>  // uint32_t
 #include <stdlib.h>  // size_t
 
-/* hacky hack: llvm/clang on linux really doesn't
-   want to have the limits defined for some reason */
-#define TESTO 1723
+#undef UINT32_MAX
 #define UINT32_MAX 4294967295
 
 //#include <bgfx/bgfxdefines.h>

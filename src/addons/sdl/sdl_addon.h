@@ -1,11 +1,17 @@
 #ifndef TRUSS_SDL_HEADER
 #define TRUSS_SDL_HEADER
 
-#include <vector>
+#include "../../truss.h"
+
+#include <SDL_config.h>
 #include <SDL.h>
 #include <SDL_syswm.h>
+#include <vector>
 
-#include "truss.h"
+// SDL defines a "main" prototype to use `SDL_main()`, but we don't want this.
+// Instead, we use our own main function so we can control the platform-specific
+// runtime library loading.
+#undef main
 
 // tell bgfx that it's using a shared library
 #define BGFX_SHARED_LIB_USE 1

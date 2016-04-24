@@ -1,11 +1,35 @@
 // Minimal main example (with truss sdl)
 
 #include "truss.h"
-#include "truss_sdl.h"
-#include "addons/bgfx_nanovg/nanovg_addon.h"
-#include "addons/websocket_client/wsclient_addon.h"
+#include "addons/sdl/sdl_addon.h"
+#include "addons/nanovg/nanovg_addon.h"
+#include "addons/wsclient/wsclient_addon.h"
 #include <iostream>
 #include <sstream>
+
+#if defined(WIN32)
+// On Windows, manually construct an RPATH to the `./lib` subdirectory.
+// TODO: refactor this into a config.in
+#include "windows.h"
+void setupRPath() {
+	// Get path to current executable.
+	char exe_filepath[MAX_PATH], exe_drive[MAX_PATH], exe_path[MAX_PATH];
+	GetModuleFileName(NULL, exe_filepath, MAX_PATH);
+	_splitpath_s(exe_filepath, exe_drive, MAX_PATH, exe_path, MAX_PATH, NULL, 0, NULL, 0);
+
+	// Add absolute path to "./lib" directory to "RPATH".
+	std::stringstream ss;
+	ss << exe_drive << exe_path << "\\lib";
+	SetDllDirectory(ss.str().c_str());
+
+	// Manually force loading of DELAYLOAD-ed libraries.
+	LoadLibrary("bgfx-shared-libRelease.dll");
+}
+#else
+void setupRPath() {
+	// Do nothing on non-WIN32 platforms.
+}
+#endif
 
 void storeArgs(int argc, char** argv) {
 	for (int i = 0; i < argc; ++i) {
@@ -16,7 +40,9 @@ void storeArgs(int argc, char** argv) {
 	}
 }
 
-int main(int argc, char** argv){
+int main(int argc, char** argv) {
+	setupRPath();
+
 	trss_test();
 	trss_log(0, "Entered main!");
 	storeArgs(argc, argv);

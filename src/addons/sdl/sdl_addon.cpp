@@ -1,5 +1,4 @@
-#include "truss.h"
-#include "truss_sdl.h"
+#include "sdl_addon.h"
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -21,30 +20,27 @@ bool sdlSetWindow(SDL_Window* window_)
 		return false;
 	}
 
-#	if BX_PLATFORM_LINUX || BX_PLATFORM_FREEBSD
 	bgfx_platform_data pd;
+#	if BX_PLATFORM_LINUX || BX_PLATFORM_FREEBSD
 	pd.ndt          = wmi.info.x11.display;
 	pd.nwh          = (void*)(uintptr_t)wmi.info.x11.window;
 	pd.context      = NULL;
 	pd.backBuffer   = NULL;
 	pd.backBufferDS = NULL;
-	bgfx_set_platform_data(&pd);
 #	elif BX_PLATFORM_OSX
 	pd.ndt          = NULL;
 	pd.nwh          = wmi.info.cocoa.window;
 	pd.context      = NULL;
 	pd.backBuffer   = NULL;
 	pd.backBufferDS = NULL;
-	bgfx_set_platform_data(&pd);
 #	elif BX_PLATFORM_WINDOWS
-	bgfx_platform_data pd;
 	pd.ndt          = NULL;
 	pd.nwh          = wmi.info.win.window;
 	pd.context      = NULL;
 	pd.backBuffer   = NULL;
 	pd.backBufferDS = NULL;
-	bgfx_set_platform_data(&pd);
 #	endif // BX_PLATFORM_
+	bgfx_set_platform_data(&pd);
 
 	return true;
 }
