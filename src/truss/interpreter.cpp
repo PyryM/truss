@@ -103,8 +103,10 @@ void Interpreter::startUnthreaded(const char* arg) {
 
 void Interpreter::stop() {
     running_ = false;
-    thread_->join();
-    delete thread_;
+	if (thread_ != NULL && thread_->joinable()) {
+		thread_->join();
+		delete thread_;
+	}
 }
 
 void Interpreter::execute() {
