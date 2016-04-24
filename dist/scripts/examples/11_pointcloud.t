@@ -36,7 +36,7 @@ function createGeometry()
     -- 128*106
     local bc = core.bgfx_const
     local texflags = bc.BGFX_TEXTURE_MIN_POINT + bc.BGFX_TEXTURE_MAG_POINT
-    itex = require('utils/textureutils.t').loadTexture('data/test_half.png', texflags)
+    itex = require('utils/textureutils.t').loadTexture('textures/cone.png', texflags)
 
     thecloud.mat.texColorDepth = itex --ptex.tex
     --updateTex()
