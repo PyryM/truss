@@ -8,12 +8,12 @@ end
 
 -- Have terra include path include the *fake* std so systems without
 -- dev tools can still run it
-terralib.includepath = terralib.includepath .. ";include"
+terralib.includepath = terralib.includepath .. ";include/fakestd"
 
 -- Link in truss api
 trss = terralib.includecstring([[
-#include <compat/stdint.h>
-
+#include <stdint.h>
+//#include <stddef.h>
 #define TRSS_MESSAGE_UNKNOWN 0
 #define TRSS_MESSAGE_CSTR 1
 #define TRSS_MESSAGE_BLOB 2
