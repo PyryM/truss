@@ -22,7 +22,9 @@ set(truss_HEADERS
 )
 set(truss_SOURCES
     src/main.cpp
-    src/truss.cpp
+    src/truss/core.cpp
+    src/truss/interpreter.cpp
+    src/truss/trussapi.cpp
     src/external/tinythread.cpp
     src/addons/sdl/sdl_addon.cpp
     src/addons/wsclient/easywsclient.cpp
