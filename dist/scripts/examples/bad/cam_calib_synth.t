@@ -11,17 +11,17 @@ sdl = raw_addons.sdl.functions
 sdlPointer = raw_addons.sdl.pointer
 nvgUtils = raw_addons.nvgutils.functions
 nvgAddonPointer = raw_addons.nvgutils.pointer
-TRSS_ID = libs.TRSS_ID
+TRUSS_ID = libs.TRUSS_ID
 nanovg = libs.nanovg
 
 function init()
-	trss.trss_log(TRSS_ID, "cam_calib_synth.t init")
+	trss.trss_log(TRUSS_ID, "cam_calib_synth.t init")
 	sdl.trss_sdl_create_window(sdlPointer, width, totalheight, 'TRUSS TEST')
 	initBGFX()
 	initNVG()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
+	trss.trss_log(TRUSS_ID, "Renderer type: " .. rendererName)
 end
 
 width = 1024
@@ -56,13 +56,13 @@ function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
 		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
-		if evt.event_type == sdl.TRSS_SDL_EVENT_MOUSEMOVE then
+		if evt.event_type == sdl.TRUSS_SDL_EVENT_MOUSEMOVE then
 			mousex = evt.x
 			mousey = evt.y
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRSS_SDL_EVENT_KEYUP then
+		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRUSS_SDL_EVENT_KEYUP then
 			local sname = "up"
 			local keyname = ffi.string(evt.keycode)
-			if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN then
+			if evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN then
 				if keyname == "F5" then
 					savingShots = true
 				elseif keyname == "F10" then
@@ -72,9 +72,9 @@ function updateEvents()
 			end
 			trss.trss_log(0, "Key event: " .. sname .. " " .. keyname)
 			trss.trss_log(0, "x: " .. evt.x .. ", y: " .. evt.y .. ", flags: " .. evt.flags)
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
-			trss.trss_log(TRSS_ID, "Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(TRSS_ID)
+		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_WINDOW and evt.flags == 14 then
+			trss.trss_log(TRUSS_ID, "Received window close, stopping interpreter...")
+			trss.trss_stop_interpreter(TRUSS_ID)
 		end
 	end
 end

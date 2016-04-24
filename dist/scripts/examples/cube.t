@@ -9,7 +9,7 @@ terralib = core.terralib
 trss = core.trss
 sdl = raw_addons.sdl.functions
 sdlPointer = raw_addons.sdl.pointer
-TRSS_ID = core.TRSS_ID
+TRUSS_ID = core.TRUSS_ID
 
 struct BGRAColor {
 	b: uint8;
@@ -117,9 +117,9 @@ function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
 		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
-		if evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
+		if evt.event_type == sdl.TRUSS_SDL_EVENT_WINDOW and evt.flags == 14 then
 			log.info("Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(TRSS_ID)
+			trss.trss_stop_interpreter(TRUSS_ID)
 		end
 	end
 end

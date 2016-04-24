@@ -7,10 +7,10 @@ local raw_get_event = nil
 local raw_num_events = nil
 
 function m.wrap(addonName, addonTable, addonPointer, addonVersion)
-    -- rename constants from TRSS_SDL_EVENT_... to just EVENT_...
+    -- rename constants from TRUSS_SDL_EVENT_... to just EVENT_...
     -- so that they can be accessed by sdl.EVENT_... 
     for k,v in pairs(addonTable) do
-        local prefix = 'TRSS_SDL_'
+        local prefix = 'TRUSS_SDL_'
         if string.find(k, prefix) then
             local newname = string.sub(k, string.len(prefix)+1)
             m[newname] = v

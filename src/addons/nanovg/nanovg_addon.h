@@ -27,6 +27,6 @@ private:
 // stbi will be unhappy if we try to implement it twice, so since
 // nanovg already implements it, might as well expose stbi image loading
 // functionality here
-TRSS_C_API trss_message* trss_nanovg_load_image(NanoVGAddon* addon, const char* filename, int* w, int* h, int* n);
+TRUSS_C_API trss_message* trss_nanovg_load_image(NanoVGAddon* addon, const char* filename, int* w, int* h, int* n);
 
 #endif //NANOVG_ADDON_HEADER_GUARD

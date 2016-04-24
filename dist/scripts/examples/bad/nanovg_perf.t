@@ -8,7 +8,7 @@ terralib = libs.terralib
 trss = libs.trss
 sdl = libs.sdl
 sdlPointer = libs.sdlPointer
-TRSS_ID = libs.TRSS_ID
+TRUSS_ID = libs.TRUSS_ID
 nanovg = libs.nanovg
 
 width = 800
@@ -18,13 +18,13 @@ time = 0.0
 mousex, mousey = 0, 0
 
 function init()
-	trss.trss_log(TRSS_ID, "nanovg.t init")
+	trss.trss_log(TRUSS_ID, "nanovg.t init")
 	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	initNVG()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
+	trss.trss_log(TRUSS_ID, "Renderer type: " .. rendererName)
 end
 
 mtx = truss_import("math/matrix.t")
@@ -40,18 +40,18 @@ function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
 		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
-		if evt.event_type == sdl.TRSS_SDL_EVENT_MOUSEMOVE then
+		if evt.event_type == sdl.TRUSS_SDL_EVENT_MOUSEMOVE then
 			mousex = evt.x
 			mousey = evt.y
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
-			trss.trss_log(TRSS_ID, "Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(TRSS_ID)
+		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_WINDOW and evt.flags == 14 then
+			trss.trss_log(TRUSS_ID, "Received window close, stopping interpreter...")
+			trss.trss_stop_interpreter(TRUSS_ID)
 		end
 	end
 end
 
 function log(msg)
-	trss.trss_log(TRSS_ID, msg)
+	trss.trss_log(TRUSS_ID, msg)
 end
 
 function initBGFX()
@@ -92,11 +92,11 @@ lines = {"this is a set of text lines",
 		 "here is the next one",
 		 "woo yay",
 		 "/* Begin some code to see how it aligns */",
-		 "#define TRSS_LOG_CRITICAL 0",
-		 "#define TRSS_LOG_ERROR    1",
-		 "#define TRSS_LOG_WARNING  2",
-		 "#define TRSS_LOG_INFO     3",
-		 "#define TRSS_LOG_DEBUG    4",
+		 "#define TRUSS_LOG_CRITICAL 0",
+		 "#define TRUSS_LOG_ERROR    1",
+		 "#define TRUSS_LOG_WARNING  2",
+		 "#define TRUSS_LOG_INFO     3",
+		 "#define TRUSS_LOG_DEBUG    4",
 		 "All random numbers changing every frame:"}
 
 function makeRandomLines(startpos, endpos)

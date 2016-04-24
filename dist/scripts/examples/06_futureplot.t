@@ -71,7 +71,7 @@ function updateEvents()
     for evt in sdl:events() do
         if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
             log.info("Received window close, stopping interpreter...")
-            trss.trss_stop_interpreter(core.TRSS_ID)
+            trss.trss_stop_interpreter(core.TRUSS_ID)
         end
     end
 end

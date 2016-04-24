@@ -15,9 +15,9 @@ trss = terralib.includecstring([[
 #include <stdint.h>
 #include <stddef.h>
 
-#define TRSS_MESSAGE_UNKNOWN 0
-#define TRSS_MESSAGE_CSTR 1
-#define TRSS_MESSAGE_BLOB 2
+#define TRUSS_MESSAGE_UNKNOWN 0
+#define TRUSS_MESSAGE_CSTR 1
+#define TRUSS_MESSAGE_BLOB 2
 typedef struct {
 	unsigned int message_type;
 	size_t data_length;
@@ -25,11 +25,11 @@ typedef struct {
 	unsigned int refcount;
 } trss_message;
 typedef struct Addon Addon;
-#define TRSS_LOG_CRITICAL 0
-#define TRSS_LOG_ERROR 1
-#define TRSS_LOG_WARNING 2
-#define TRSS_LOG_INFO 3
-#define TRSS_LOG_DEBUG 4
+#define TRUSS_LOG_CRITICAL 0
+#define TRUSS_LOG_ERROR 1
+#define TRUSS_LOG_WARNING 2
+#define TRUSS_LOG_INFO 3
+#define TRUSS_LOG_DEBUG 4
 const char* trss_get_version_string();
 void trss_test();
 void trss_log(int log_level, const char* str);
@@ -64,8 +64,8 @@ trss_message* trss_copy_message(trss_message* src);
 ]])
 
 trss.trss_test()
-trss.trss_log(0, "Bootstrapping [" .. TRSS_INTERPRETER_ID .. "]")
-local TRSS_ID = TRSS_INTERPRETER_ID
+trss.trss_log(0, "Bootstrapping [" .. TRUSS_INTERPRETER_ID .. "]")
+local TRUSS_ID = TRUSS_INTERPRETER_ID
 
 log = {}
 log.debug = function(msg) trss.trss_log(4, tostring(msg)) end
@@ -207,17 +207,17 @@ truss_insert_library("bit", bit)
 -- alias core/30log.lua to class so we can just require("class")
 truss_import_as("core/30log.lua", "class")
 
-local numAddons = trss.trss_get_addon_count(TRSS_ID)
+local numAddons = trss.trss_get_addon_count(TRUSS_ID)
 log.info("Found " .. numAddons .. " addons.")
 
 addons = {}
 raw_addons = {}
 
 for addonIdx = 1,numAddons do
-	local addonHeader = ffi.string(trss.trss_get_addon_header(TRSS_ID, addonIdx-1))
-	local addonPointer = trss.trss_get_addon(TRSS_ID, addonIdx-1)
-	local addonName = ffi.string(trss.trss_get_addon_name(TRSS_ID, addonIdx-1))
-	local addonVersion = ffi.string(trss.trss_get_addon_version_string(TRSS_ID, addonIdx-1))
+	local addonHeader = ffi.string(trss.trss_get_addon_header(TRUSS_ID, addonIdx-1))
+	local addonPointer = trss.trss_get_addon(TRUSS_ID, addonIdx-1)
+	local addonName = ffi.string(trss.trss_get_addon_name(TRUSS_ID, addonIdx-1))
+	local addonVersion = ffi.string(trss.trss_get_addon_version_string(TRUSS_ID, addonIdx-1))
 	log.info("Loading addon [" .. addonName .. "]")
 	local addonwrapper = truss_import("addons/" .. addonName .. ".t")
 	local addonTable = terralib.includecstring(addonHeader)
@@ -246,8 +246,8 @@ core.terralib = terralib
 core.bgfx = bgfx
 core.bgfx_const = bgfx_const
 core.nanovg = nanovg
-core.TRSS_ID = TRSS_ID
-core.TRSS_VERSION = vstr
+core.TRUSS_ID = TRUSS_ID
+core.TRUSS_VERSION = vstr
 
 subenv = lsubenv
 subenv.core = core

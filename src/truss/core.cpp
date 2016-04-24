@@ -23,7 +23,7 @@ Core* Core::getCore() {
 
 void Core::initFS(char* argv0, bool mountBaseDir) {
     if (physFSInitted_) {
-        logMessage(TRSS_LOG_WARNING, "PhysFS already initted.");
+        logMessage(TRUSS_LOG_WARNING, "PhysFS already initted.");
         return;
     }
 
@@ -38,8 +38,8 @@ void Core::initFS(char* argv0, bool mountBaseDir) {
 void Core::addFSPath(const char* pathname, const char* mountname, int append) {
     std::stringstream ss;
     ss << PHYSFS_getBaseDir() << PHYSFS_getDirSeparator() << pathname;
-    logMessage(TRSS_LOG_DEBUG, "Adding physFS path: ");
-    logMessage(TRSS_LOG_DEBUG, ss.str().c_str());
+    logMessage(TRUSS_LOG_DEBUG, "Adding physFS path: ");
+    logMessage(TRUSS_LOG_DEBUG, ss.str().c_str());
 
     int retval = PHYSFS_mount(ss.str().c_str(), mountname, append);
     // TODO: do something with the return value (e.g., if it's an error)
@@ -48,8 +48,8 @@ void Core::addFSPath(const char* pathname, const char* mountname, int append) {
 void Core::setWriteDir(const char* writepath) {
     std::stringstream ss;
     ss << PHYSFS_getBaseDir() << PHYSFS_getDirSeparator() << writepath;
-    logMessage(TRSS_LOG_DEBUG, "Setting physFS write path: ");
-    logMessage(TRSS_LOG_DEBUG, ss.str().c_str());
+    logMessage(TRUSS_LOG_DEBUG, "Setting physFS write path: ");
+    logMessage(TRUSS_LOG_DEBUG, ss.str().c_str());
 
     int retval = PHYSFS_setWriteDir(ss.str().c_str());
     // TODO: do something with the return value (e.g., if it's an error)
@@ -151,7 +151,7 @@ void Core::deallocateMessage(trss_message* msg){
 
 int Core::checkFile(const char* filename) {
     if (!physFSInitted_) {
-        logMessage(TRSS_LOG_WARNING, "PhysFS not initted: checkFile always returns 0.");
+        logMessage(TRUSS_LOG_WARNING, "PhysFS not initted: checkFile always returns 0.");
         return false;
     }
 
@@ -176,27 +176,27 @@ trss_message* Core::loadFileRaw(const char* filename) {
 
         return ret;
     } else {
-        logStream(TRSS_LOG_ERROR) << "Unable to open file " << filename << "\n";
+        logStream(TRUSS_LOG_ERROR) << "Unable to open file " << filename << "\n";
         return NULL;
     }
 }
 
 trss_message* Core::loadFile(const char* filename) {
     if (!physFSInitted_) {
-        logMessage(TRSS_LOG_ERROR, "Cannot load file: PhysFS not initted.");
-        logMessage(TRSS_LOG_ERROR, filename);
+        logMessage(TRUSS_LOG_ERROR, "Cannot load file: PhysFS not initted.");
+        logMessage(TRUSS_LOG_ERROR, filename);
         return NULL;
     }
 
     if (PHYSFS_exists(filename) == 0) {
-        logMessage(TRSS_LOG_ERROR, "Error opening file: does not exist.");
-        logMessage(TRSS_LOG_ERROR, filename);
+        logMessage(TRUSS_LOG_ERROR, "Error opening file: does not exist.");
+        logMessage(TRUSS_LOG_ERROR, filename);
         return NULL;
     }
 
     if (PHYSFS_isDirectory(filename) != 0) {
-        logMessage(TRSS_LOG_ERROR, "Attempted to read directory as a file.");
-        logMessage(TRSS_LOG_ERROR, filename);
+        logMessage(TRUSS_LOG_ERROR, "Attempted to read directory as a file.");
+        logMessage(TRUSS_LOG_ERROR, filename);
         return NULL;
     }
 
@@ -211,8 +211,8 @@ trss_message* Core::loadFile(const char* filename) {
 
 void Core::saveFile(const char* filename, trss_message* data) {
     if (!physFSInitted_) {
-        logMessage(TRSS_LOG_ERROR, "Cannot save file; PhysFS not initted.");
-        logMessage(TRSS_LOG_ERROR, filename);
+        logMessage(TRUSS_LOG_ERROR, "Cannot save file; PhysFS not initted.");
+        logMessage(TRUSS_LOG_ERROR, filename);
         return;
     }
 

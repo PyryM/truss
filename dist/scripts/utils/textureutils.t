@@ -17,10 +17,10 @@ local terra loadTexture_mem(filename: &int8, flags: uint32)
 	if msg ~= nil then
 		bmem = bgfx.bgfx_copy(msg.data, msg.data_length)
 	else
-		trss.trss_log(trss.TRSS_LOG_ERROR, "Error loading texture!")
+		trss.trss_log(trss.TRUSS_LOG_ERROR, "Error loading texture!")
 	end
 	trss.trss_release_message(msg)
-	trss.trss_log(trss.TRSS_LOG_INFO, "Creating texture...")
+	trss.trss_log(trss.TRUSS_LOG_INFO, "Creating texture...")
 	var ret = bgfx.bgfx_create_texture_2d(w, h, 0, bgfx.BGFX_TEXTURE_FORMAT_RGBA8, flags, bmem)
 	return ret
 end

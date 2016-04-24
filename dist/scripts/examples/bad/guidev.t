@@ -8,7 +8,7 @@ terralib = core.terralib
 trss = core.trss
 sdl = raw_addons.sdl.functions
 sdlPointer = raw_addons.sdl.pointer
-TRSS_ID = core.TRSS_ID
+TRUSS_ID = core.TRUSS_ID
 nanovg = core.nanovg
 
 width = 1280
@@ -52,9 +52,9 @@ function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
 		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
-		if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRSS_SDL_EVENT_KEYUP then
+		if evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRUSS_SDL_EVENT_KEYUP then
 			local keyname = ffi.string(evt.keycode)
-			if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN then
+			if evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN then
 				if not downkeys[keyname] then
 					downkeys[keyname] = true
 					onKeyDown(keyname, evt.flags)
@@ -63,9 +63,9 @@ function updateEvents()
 				downkeys[keyname] = false
 				onKeyUp(keyname)
 			end
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
+		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_WINDOW and evt.flags == 14 then
 			log.info("Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(TRSS_ID)
+			trss.trss_stop_interpreter(TRUSS_ID)
 		end
 	end
 end

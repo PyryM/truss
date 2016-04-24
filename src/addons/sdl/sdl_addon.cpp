@@ -53,15 +53,15 @@ SDLAddon::SDLAddon(){
 	header_ = "/*SDLAddon Embedded Header*/\n"
 		"typedef struct Addon Addon;\n"
 		"typedef struct bgfx_callback_interface bgfx_callback_interface_t;\n"
-		"#define TRSS_SDL_EVENT_OUTOFBOUNDS 0\n"
-		"#define TRSS_SDL_EVENT_KEYDOWN 1\n"
-		"#define TRSS_SDL_EVENT_KEYUP		2\n"
-		"#define TRSS_SDL_EVENT_MOUSEDOWN 	3\n"
-		"#define TRSS_SDL_EVENT_MOUSEUP	 	4\n"
-		"#define TRSS_SDL_EVENT_MOUSEMOVE 	5\n"
-		"#define TRSS_SDL_EVENT_MOUSEWHEEL  6\n"
-		"#define TRSS_SDL_EVENT_WINDOW      7\n"
-		"#define TRSS_SDL_EVENT_TEXTINPUT   8\n"
+		"#define TRUSS_SDL_EVENT_OUTOFBOUNDS 0\n"
+		"#define TRUSS_SDL_EVENT_KEYDOWN 1\n"
+		"#define TRUSS_SDL_EVENT_KEYUP		2\n"
+		"#define TRUSS_SDL_EVENT_MOUSEDOWN 	3\n"
+		"#define TRUSS_SDL_EVENT_MOUSEUP	 	4\n"
+		"#define TRUSS_SDL_EVENT_MOUSEMOVE 	5\n"
+		"#define TRUSS_SDL_EVENT_MOUSEWHEEL  6\n"
+		"#define TRUSS_SDL_EVENT_WINDOW      7\n"
+		"#define TRUSS_SDL_EVENT_TEXTINPUT   8\n"
 		"typedef struct {\n"
 		"    unsigned int event_type;\n"
 		"    char keycode[16];\n"
@@ -81,7 +81,7 @@ SDLAddon::SDLAddon(){
 		"const char* trss_sdl_get_clipboard(Addon* addon);\n"
 		"bgfx_callback_interface_t* trss_sdl_get_bgfx_cb(Addon* addon);\n"
 		"void trss_sdl_set_relative_mouse_mode(Addon* addon, int mode);";
-	errorEvent_.event_type = TRSS_SDL_EVENT_OUTOFBOUNDS;
+	errorEvent_.event_type = TRUSS_SDL_EVENT_OUTOFBOUNDS;
 }
 
 const std::string& SDLAddon::getName(){
@@ -115,7 +115,7 @@ void SDLAddon::shutdown(){
 
 void copyKeyName(trss_sdl_event& newEvent, SDL_Event& event) {
 	const char* keyname = SDL_GetKeyName(event.key.keysym.sym);
-	size_t namelength = std::min<size_t>(TRSS_SDL_MAX_KEYCODE_LENGTH, strlen(keyname));
+	size_t namelength = std::min<size_t>(TRUSS_SDL_MAX_KEYCODE_LENGTH, strlen(keyname));
 	memcpy(newEvent.keycode, keyname, namelength);
 	newEvent.keycode[namelength] = '\0'; // zero terminate
 }
@@ -144,18 +144,18 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	case SDL_KEYDOWN:
 	case SDL_KEYUP:
 		newEvent.event_type = (event.type == SDL_KEYDOWN ?
-								TRSS_SDL_EVENT_KEYDOWN : TRSS_SDL_EVENT_KEYUP);
+								TRUSS_SDL_EVENT_KEYDOWN : TRUSS_SDL_EVENT_KEYUP);
 		newEvent.flags = event.key.keysym.mod;
 		newEvent.x = event.key.keysym.scancode;
 		newEvent.y = event.key.keysym.sym;
 		copyKeyName(newEvent, event);
 		break;
 	case SDL_TEXTINPUT:
-		newEvent.event_type = TRSS_SDL_EVENT_TEXTINPUT;
-		hackCStrCpy(newEvent.keycode, event.text.text, TRSS_SDL_KEYCODE_BUFF_SIZE);
+		newEvent.event_type = TRUSS_SDL_EVENT_TEXTINPUT;
+		hackCStrCpy(newEvent.keycode, event.text.text, TRUSS_SDL_KEYCODE_BUFF_SIZE);
 		break;
 	case SDL_MOUSEMOTION:
-		newEvent.event_type = TRSS_SDL_EVENT_MOUSEMOVE;
+		newEvent.event_type = TRUSS_SDL_EVENT_MOUSEMOVE;
 		newEvent.x = event.motion.x;
 		newEvent.y = event.motion.y;
 		newEvent.dx = event.motion.xrel;
@@ -165,19 +165,19 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	case SDL_MOUSEBUTTONDOWN:
 	case SDL_MOUSEBUTTONUP:
 		newEvent.event_type = (event.type == SDL_MOUSEBUTTONDOWN ? 
-								TRSS_SDL_EVENT_MOUSEDOWN : TRSS_SDL_EVENT_MOUSEUP);
+								TRUSS_SDL_EVENT_MOUSEDOWN : TRUSS_SDL_EVENT_MOUSEUP);
 		newEvent.x = event.button.x;
 		newEvent.y = event.button.y;
 		newEvent.flags = event.button.button;
 		break;
 	case SDL_MOUSEWHEEL:
-		newEvent.event_type = TRSS_SDL_EVENT_MOUSEWHEEL;
+		newEvent.event_type = TRUSS_SDL_EVENT_MOUSEWHEEL;
 		newEvent.x = event.wheel.x;
 		newEvent.y = event.wheel.y;
 		newEvent.flags = event.wheel.which;
 		break;
 	case SDL_WINDOWEVENT:
-		newEvent.event_type = TRSS_SDL_EVENT_WINDOW;
+		newEvent.event_type = TRUSS_SDL_EVENT_WINDOW;
 		newEvent.flags = event.window.event;
 		break;
 	default:
@@ -287,35 +287,35 @@ void trss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode) {
 void bgfx_cb_fatal(bgfx_callback_interface_t* _this, bgfx_fatal_t _code, const char* _str) {
 	std::stringstream ss;
 	ss << "Fatal BGFX Error, code [" << _code << "]: " << _str;
-	trss_log(TRSS_LOG_CRITICAL, ss.str().c_str());
+	trss_log(TRUSS_LOG_CRITICAL, ss.str().c_str());
 }
 
 void bgfx_cb_trace_vargs(bgfx_callback_interface_t* _this, const char* _filePath, uint16_t _line, const char* _format, va_list _argList) {
 	// oh boy what is this supposed to do?
-	trss_log(TRSS_LOG_CRITICAL, "I have no clue what the trace_vargs callback is supposed to do??");
+	trss_log(TRUSS_LOG_CRITICAL, "I have no clue what the trace_vargs callback is supposed to do??");
 }
 
 uint32_t bgfx_cb_cache_read_size(bgfx_callback_interface_t* _this, uint64_t _id) {
-	trss_log(TRSS_LOG_WARNING, "bgfx_cb_cache_read_size not implemented.");
+	trss_log(TRUSS_LOG_WARNING, "bgfx_cb_cache_read_size not implemented.");
 	return 0;
 }
 
 bool bgfx_cb_cache_read(bgfx_callback_interface_t* _this, uint64_t _id, void* _data, uint32_t _size) {
-	trss_log(TRSS_LOG_WARNING, "bgfx_cb_cache_read not implemented.");
+	trss_log(TRUSS_LOG_WARNING, "bgfx_cb_cache_read not implemented.");
 	return false;
 }
 
 void bgfx_cb_cache_write(bgfx_callback_interface_t* _this, uint64_t _id, const void* _data, uint32_t _size) {
-	trss_log(TRSS_LOG_WARNING, "bgfx_cb_cache_write not implemented.");
+	trss_log(TRUSS_LOG_WARNING, "bgfx_cb_cache_write not implemented.");
 	// nothing to do
 }
 
 void bgfx_cb_screen_shot(bgfx_callback_interface_t* _this, const char* _filePath, uint32_t _width, uint32_t _height, uint32_t _pitch, const void* _data, uint32_t _size, bool _yflip) {
-	trss_log(TRSS_LOG_WARNING, "bgfx_cb_screen_shot implemented with direct writes to file!");
-	trss_log(TRSS_LOG_INFO, _filePath);
+	trss_log(TRUSS_LOG_WARNING, "bgfx_cb_screen_shot implemented with direct writes to file!");
+	trss_log(TRUSS_LOG_INFO, _filePath);
 	std::stringstream ss;
 	ss << "w: " << _width << ", h: " << _height << ", p: " << _pitch << ", s: " << _size << ", yf: " << _yflip;
-	trss_log(TRSS_LOG_INFO, ss.str().c_str());
+	trss_log(TRUSS_LOG_INFO, ss.str().c_str());
 	char* temp = new char[_size];
 	bgfx_image_swizzle_bgra8(_width, _height, _pitch, _data, temp);
 	stbi_write_png(_filePath, _width, _height, 4, temp, _pitch);
@@ -323,11 +323,11 @@ void bgfx_cb_screen_shot(bgfx_callback_interface_t* _this, const char* _filePath
 }
 
 void bgfx_cb_capture_begin(bgfx_callback_interface_t* _this, uint32_t _width, uint32_t _height, uint32_t _pitch, bgfx_texture_format_t _format, bool _yflip) {
-	trss_log(TRSS_LOG_WARNING, "bgfx_cb_capture_begin not implemented.");
+	trss_log(TRUSS_LOG_WARNING, "bgfx_cb_capture_begin not implemented.");
 }
 
 void bgfx_cb_capture_end(bgfx_callback_interface_t* _this) {
-	trss_log(TRSS_LOG_WARNING, "bgfx_cb_capture_end not implemented.");
+	trss_log(TRUSS_LOG_WARNING, "bgfx_cb_capture_end not implemented.");
 }
 
 void bgfx_cb_capture_frame(bgfx_callback_interface_t* _this, const void* _data, uint32_t _size) {

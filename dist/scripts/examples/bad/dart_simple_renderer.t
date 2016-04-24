@@ -9,16 +9,16 @@ terralib = libs.terralib
 trss = libs.trss
 sdl = libs.sdl
 sdlPointer = libs.sdlPointer
-TRSS_ID = libs.TRSS_ID
+TRUSS_ID = libs.TRUSS_ID
 nanovg = libs.nanovg
 
 function init()
-	trss.trss_log(TRSS_ID, "dart_simple_renderer.t init")
+	trss.trss_log(TRUSS_ID, "dart_simple_renderer.t init")
 	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
+	trss.trss_log(TRUSS_ID, "Renderer type: " .. rendererName)
 end
 
 width = 1280
@@ -43,17 +43,17 @@ function updateEvents()
 	local nevents = sdl.trss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
 		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
-		if evt.event_type == sdl.TRSS_SDL_EVENT_MOUSEMOVE then
+		if evt.event_type == sdl.TRUSS_SDL_EVENT_MOUSEMOVE then
 			mousex = evt.x
 			mousey = evt.y
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRSS_SDL_EVENT_KEYUP then
+		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRUSS_SDL_EVENT_KEYUP then
 			local sname = "up"
-			if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN then sname = "down" end
+			if evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN then sname = "down" end
 			trss.trss_log(0, "Key event: " .. sname .. " " .. ffi.string(evt.keycode))
 			trss.trss_log(0, "x: " .. evt.x .. ", y: " .. evt.y .. ", flags: " .. evt.flags)
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
-			trss.trss_log(TRSS_ID, "Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(TRSS_ID)
+		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_WINDOW and evt.flags == 14 then
+			trss.trss_log(TRUSS_ID, "Received window close, stopping interpreter...")
+			trss.trss_stop_interpreter(TRUSS_ID)
 		end
 		orbitcam:updateFromSDL(evt)
 	end

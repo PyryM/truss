@@ -75,6 +75,6 @@ NanoVGAddon::~NanoVGAddon() {
 }
 
 
-TRSS_C_API trss_message* trss_nanovg_load_image(NanoVGAddon* addon, const char* filename, int* w, int* h, int* n) {
+TRUSS_C_API trss_message* trss_nanovg_load_image(NanoVGAddon* addon, const char* filename, int* w, int* h, int* n) {
 	return addon->loadImage(filename, *w, *h, *n);
 }

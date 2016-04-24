@@ -142,7 +142,7 @@ function AppScaffold:updateEvents()
             end
         elseif evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
             log.info("Received window close, stopping interpreter...")
-            trss.trss_stop_interpreter(core.TRSS_ID)
+            trss.trss_stop_interpreter(core.TRUSS_ID)
         end
         if self.userEventHandler then
             self:userEventHandler(evt)

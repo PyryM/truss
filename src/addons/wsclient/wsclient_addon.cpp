@@ -18,10 +18,10 @@ bool initWSA() {
 
     rc = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (rc) {
-        trss_log(TRSS_LOG_ERROR, "WSAStartup Failed.");
+        trss_log(TRUSS_LOG_ERROR, "WSAStartup Failed.");
         return false;
 	} else {
-		trss_log(TRSS_LOG_INFO, "WSAStartup Succeeded.");
+		trss_log(TRUSS_LOG_INFO, "WSAStartup Succeeded.");
 		return true;
 	}
 #endif
@@ -75,12 +75,12 @@ void WSClientAddon::update(double dt) {
 
 bool WSClientAddon::open(const std::string& url) {
 	if(ws_ != NULL) {
-		trss_log(TRSS_LOG_WARNING, "WSClientAddon::open: Websocket already open.");
+		trss_log(TRUSS_LOG_WARNING, "WSClientAddon::open: Websocket already open.");
 		return true;
 	}
 	ws_ = WebSocket::from_url(url);
 	if(ws_ == NULL) {
-		trss_log(TRSS_LOG_ERROR, "WSClientAddon::open: Error opening websocket.");
+		trss_log(TRUSS_LOG_ERROR, "WSClientAddon::open: Error opening websocket.");
 		return false;
 	} else {
 		return true;
@@ -97,7 +97,7 @@ void WSClientAddon::close() {
 
 void WSClientAddon::send(const std::string& msg) {
 	if(ws_ == NULL || ws_->getReadyState() == WebSocket::CLOSED) {
-		trss_log(TRSS_LOG_ERROR, "WSClientAddon::send: socket not open");
+		trss_log(TRUSS_LOG_ERROR, "WSClientAddon::send: socket not open");
 		return;
 	}
 	ws_->send(msg);
@@ -116,7 +116,7 @@ void WSClientAddon::receiveCallback(messageCallback callback) {
 		ws_->dispatch(dispatch_to_c_callback);
     } else {
     	ws_ = NULL;
-    	trss_log(TRSS_LOG_ERROR, "WSClientAddon::receiveCallback: cannot receive from closed socket.");
+    	trss_log(TRUSS_LOG_ERROR, "WSClientAddon::receiveCallback: cannot receive from closed socket.");
     }
 }
 
@@ -136,7 +136,7 @@ int WSClientAddon::receive() {
 		return (unsigned int)messages_.size();
     } else {
     	ws_ = NULL;
-    	trss_log(TRSS_LOG_WARNING, "WSClientAddon::receive: socket is closed.");
+    	trss_log(TRUSS_LOG_WARNING, "WSClientAddon::receive: socket is closed.");
 		return -1;
     }
 }

@@ -13,12 +13,12 @@
 using namespace trss;
 
 const char* trss_get_version_string() {
-    return TRSS_VERSION_STRING;
+    return TRUSS_VERSION_STRING;
 }
 
 void trss_test() {
-    std::cout << ">>>>>>>>>>>>>> TRSS_TEST CALLED <<<<<<<<<<<<<\n";
-    core()->logMessage(TRSS_LOG_CRITICAL, ">>>>>>>>>>>>>> TRSS_TEST CALLED <<<<<<<<<<<<<");
+    std::cout << ">>>>>>>>>>>>>> TRUSS_TEST CALLED <<<<<<<<<<<<<\n";
+    core()->logMessage(TRUSS_LOG_CRITICAL, ">>>>>>>>>>>>>> TRUSS_TEST CALLED <<<<<<<<<<<<<");
 }
 
 void trss_log(int log_level, const char* str){

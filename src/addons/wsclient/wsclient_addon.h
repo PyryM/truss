@@ -9,12 +9,12 @@ typedef void (*messageCallback)(const char*);
 
 class WSClientAddon;
 
-TRSS_C_API bool trss_wsclient_open(WSClientAddon* addon, const char* url);
-TRSS_C_API void trss_wsclient_close(WSClientAddon* addon);
-TRSS_C_API void trss_wsclient_send(WSClientAddon* addon, const char* msg);
-TRSS_C_API void trss_wsclient_receive_callback(WSClientAddon* addon, messageCallback callback);
-TRSS_C_API int trss_wsclient_receive(WSClientAddon* addon);
-TRSS_C_API const char* trss_wsclient_getmessage(WSClientAddon* addon, int msgindex);
+TRUSS_C_API bool trss_wsclient_open(WSClientAddon* addon, const char* url);
+TRUSS_C_API void trss_wsclient_close(WSClientAddon* addon);
+TRUSS_C_API void trss_wsclient_send(WSClientAddon* addon, const char* msg);
+TRUSS_C_API void trss_wsclient_receive_callback(WSClientAddon* addon, messageCallback callback);
+TRUSS_C_API int trss_wsclient_receive(WSClientAddon* addon);
+TRUSS_C_API const char* trss_wsclient_getmessage(WSClientAddon* addon, int msgindex);
 
 class WSClientAddon : public trss::Addon {
 public:
