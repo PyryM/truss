@@ -46,4 +46,4 @@ set_target_properties(sdl PROPERTIES
 )
 
 # Create an install command to install the shared libs.
-copy_truss_libraries(sdl_EXTERNAL "${sdl_LIBRARIES_DIR}")
+copy_truss_libraries(sdl_EXTERNAL "${sdl_LIBRARY}")

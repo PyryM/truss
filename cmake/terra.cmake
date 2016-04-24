@@ -28,7 +28,7 @@ ExternalProject_Add(terra_EXTERNAL
 # Recover project paths for additional settings.
 ExternalProject_Get_Property(terra_EXTERNAL SOURCE_DIR)
 
-# On linux systems, fix terra's naming convention.
+# On Linux systems, fix terra's naming convention.
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
     add_custom_command(TARGET terra_EXTERNAL
         POST_BUILD
@@ -57,12 +57,15 @@ set_target_properties(terra PROPERTIES
     IMPORTED_IMPLIB "${terra_IMPLIB}"
 )
 
+# Create an install command to install the shared libs.
+copy_truss_libraries(terra_EXTERNAL "${terra_LIBRARY}")
+
 # On Windows, Terra uses a separate Lua library for some reason.
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
-    set(lua51_IMPLIB "${SOURCE_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}lua51${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    set(lua51_LIBRARY "${SOURCE_DIR}/bin/lua51.dll")
+    set(lua51_IMPLIB "${SOURCE_DIR}/lib/lua51.lib")
+    
     set_target_properties(terra PROPERTIES
         INTERFACE_LINK_LIBRARIES "${lua51_IMPLIB}")
+    copy_truss_libraries(terra_EXTERNAL "${lua51_LIBRARY}")
 endif()
-
-# Create an install command to install the shared libs.
-copy_truss_libraries(terra_EXTERNAL "${terra_LIBRARIES_DIR}")
