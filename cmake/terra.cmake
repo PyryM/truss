@@ -1,8 +1,8 @@
 include(ExternalProject)
 
-# Use this version of physfs.
-set(terra_RELEASE_DATE "2016-02-26")
-set(terra_RELEASE_HASH "2fa8d0a")
+# Use this version of terra.
+set(terra_RELEASE_DATE "2016-03-25")
+set(terra_RELEASE_HASH "332a506")
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
     set(terra_SYSTEM_NAME "Windows")
