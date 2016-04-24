@@ -1,17 +1,5 @@
 docs/
 build/
-distbins/
-./lib/
-neobuild/
-models/
-sounds/
-temp/
-dump/
-datasets/
-data/
-.vs/
-node_modules/
-scripts/sandbox/
 *.exe
 *.pdb
 *.idb
@@ -23,4 +11,3 @@ scripts/sandbox/
 *.bin
 *.ilk
 trusslog.txt
-truss
