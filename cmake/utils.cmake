@@ -1,9 +1,6 @@
 # Utility functions for building truss.
 # Copies every library in the given path to the `dist` lib directory.
-function(copy_truss_libraries target target_library_path)
-    file(GLOB target_libraries
-        "${target_library_path}/${CMAKE_SHARED_LIBRARY_PREFIX}*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
-
+function(copy_truss_libraries target target_libraries)
     foreach(library_path ${target_libraries})
         # Extract library name and create a rule to copy it to the `lib` directory.
         get_filename_component(library_file "${library_path}" NAME)
