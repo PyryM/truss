@@ -52,7 +52,7 @@ function m.drawMajorDivider(nvg, x0, y0, width, color)
 	nanovg.nvgFill(nvg)
 
 	nanovg.nvgRestore(nvg)
-	--trss.trss_log(0, "drew?")
+	--truss.truss_log(0, "drew?")
 
 	return y0 + m.blocksize
 end

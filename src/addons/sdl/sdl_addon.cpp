@@ -70,17 +70,17 @@ SDLAddon::SDLAddon(){
 		"    double dx;\n"
 		"    double dy;\n"
 		"    int flags;\n"
-		"} trss_sdl_event;\n"
-		"void trss_sdl_create_window(Addon* addon, int width, int height, const char* name);\n"
-		"void trss_sdl_destroy_window(Addon* addon);\n"
-		"int  trss_sdl_num_events(Addon* addon);\n"
-		"trss_sdl_event trss_sdl_get_event(Addon* addon, int index);\n"
-		"void trss_sdl_start_textinput(Addon* addon);\n"
-		"void trss_sdl_stop_textinput(Addon* addon);\n"
-		"void trss_sdl_set_clipboard(Addon* addon, const char* data);\n"
-		"const char* trss_sdl_get_clipboard(Addon* addon);\n"
-		"bgfx_callback_interface_t* trss_sdl_get_bgfx_cb(Addon* addon);\n"
-		"void trss_sdl_set_relative_mouse_mode(Addon* addon, int mode);";
+		"} truss_sdl_event;\n"
+		"void truss_sdl_create_window(Addon* addon, int width, int height, const char* name);\n"
+		"void truss_sdl_destroy_window(Addon* addon);\n"
+		"int  truss_sdl_num_events(Addon* addon);\n"
+		"truss_sdl_event truss_sdl_get_event(Addon* addon, int index);\n"
+		"void truss_sdl_start_textinput(Addon* addon);\n"
+		"void truss_sdl_stop_textinput(Addon* addon);\n"
+		"void truss_sdl_set_clipboard(Addon* addon, const char* data);\n"
+		"const char* truss_sdl_get_clipboard(Addon* addon);\n"
+		"bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(Addon* addon);\n"
+		"void truss_sdl_set_relative_mouse_mode(Addon* addon, int mode);";
 	errorEvent_.event_type = TRUSS_SDL_EVENT_OUTOFBOUNDS;
 }
 
@@ -96,7 +96,7 @@ const std::string& SDLAddon::getVersionString(){
 	return version_;
 }
 
-void SDLAddon::init(trss::Interpreter* owner){
+void SDLAddon::init(truss::Interpreter* owner){
 	owner_ = owner;
 
 	// Init SDL
@@ -113,7 +113,7 @@ void SDLAddon::shutdown(){
 	SDL_Quit();
 }
 
-void copyKeyName(trss_sdl_event& newEvent, SDL_Event& event) {
+void copyKeyName(truss_sdl_event& newEvent, SDL_Event& event) {
 	const char* keyname = SDL_GetKeyName(event.key.keysym.sym);
 	size_t namelength = std::min<size_t>(TRUSS_SDL_MAX_KEYCODE_LENGTH, strlen(keyname));
 	memcpy(newEvent.keycode, keyname, namelength);
@@ -139,7 +139,7 @@ void hackCStrCpy(char* dest, char* src, size_t destsize) {
 }
 
 void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
-	trss_sdl_event newEvent;
+	truss_sdl_event newEvent;
 	switch(event.type) {
 	case SDL_KEYDOWN:
 	case SDL_KEYUP:
@@ -235,7 +235,7 @@ int SDLAddon::numEvents() {
 	return (int)(eventBuffer_.size());
 }
 
-trss_sdl_event& SDLAddon::getEvent(int index) {
+truss_sdl_event& SDLAddon::getEvent(int index) {
 	if (index >= 0 && index < eventBuffer_.size()) {
 		return eventBuffer_[index];
 	}
@@ -244,39 +244,39 @@ trss_sdl_event& SDLAddon::getEvent(int index) {
 	}
 }
 
-void trss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name){
+void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name){
 	addon->createWindow(width, height, name);
 }
 
-void trss_sdl_destroy_window(SDLAddon* addon){
+void truss_sdl_destroy_window(SDLAddon* addon){
 	addon->destroyWindow();
 }
 
-int  trss_sdl_num_events(SDLAddon* addon) {
+int  truss_sdl_num_events(SDLAddon* addon) {
 	return addon->numEvents();
 }
 
-trss_sdl_event trss_sdl_get_event(SDLAddon* addon, int index) {
+truss_sdl_event truss_sdl_get_event(SDLAddon* addon, int index) {
 	return addon->getEvent(index);
 }
 
-void trss_sdl_start_textinput(SDLAddon* addon) {
+void truss_sdl_start_textinput(SDLAddon* addon) {
 	SDL_StartTextInput();
 }
 
-void trss_sdl_stop_textinput(SDLAddon* addon) {
+void truss_sdl_stop_textinput(SDLAddon* addon) {
 	SDL_StopTextInput();
 }
 
-void trss_sdl_set_clipboard(SDLAddon* addon, const char* data) {
+void truss_sdl_set_clipboard(SDLAddon* addon, const char* data) {
 	SDL_SetClipboardText(data);
 }
 
-const char* trss_sdl_get_clipboard(SDLAddon* addon) {
+const char* truss_sdl_get_clipboard(SDLAddon* addon) {
 	return addon->getClipboardText();
 }
 
-void trss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode) {
+void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode) {
 	if (mode > 0) {
 		SDL_SetRelativeMouseMode(SDL_TRUE);
 	} else {
@@ -287,35 +287,35 @@ void trss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode) {
 void bgfx_cb_fatal(bgfx_callback_interface_t* _this, bgfx_fatal_t _code, const char* _str) {
 	std::stringstream ss;
 	ss << "Fatal BGFX Error, code [" << _code << "]: " << _str;
-	trss_log(TRUSS_LOG_CRITICAL, ss.str().c_str());
+	truss_log(TRUSS_LOG_CRITICAL, ss.str().c_str());
 }
 
 void bgfx_cb_trace_vargs(bgfx_callback_interface_t* _this, const char* _filePath, uint16_t _line, const char* _format, va_list _argList) {
 	// oh boy what is this supposed to do?
-	trss_log(TRUSS_LOG_CRITICAL, "I have no clue what the trace_vargs callback is supposed to do??");
+	truss_log(TRUSS_LOG_CRITICAL, "I have no clue what the trace_vargs callback is supposed to do??");
 }
 
 uint32_t bgfx_cb_cache_read_size(bgfx_callback_interface_t* _this, uint64_t _id) {
-	trss_log(TRUSS_LOG_WARNING, "bgfx_cb_cache_read_size not implemented.");
+	truss_log(TRUSS_LOG_WARNING, "bgfx_cb_cache_read_size not implemented.");
 	return 0;
 }
 
 bool bgfx_cb_cache_read(bgfx_callback_interface_t* _this, uint64_t _id, void* _data, uint32_t _size) {
-	trss_log(TRUSS_LOG_WARNING, "bgfx_cb_cache_read not implemented.");
+	truss_log(TRUSS_LOG_WARNING, "bgfx_cb_cache_read not implemented.");
 	return false;
 }
 
 void bgfx_cb_cache_write(bgfx_callback_interface_t* _this, uint64_t _id, const void* _data, uint32_t _size) {
-	trss_log(TRUSS_LOG_WARNING, "bgfx_cb_cache_write not implemented.");
+	truss_log(TRUSS_LOG_WARNING, "bgfx_cb_cache_write not implemented.");
 	// nothing to do
 }
 
 void bgfx_cb_screen_shot(bgfx_callback_interface_t* _this, const char* _filePath, uint32_t _width, uint32_t _height, uint32_t _pitch, const void* _data, uint32_t _size, bool _yflip) {
-	trss_log(TRUSS_LOG_WARNING, "bgfx_cb_screen_shot implemented with direct writes to file!");
-	trss_log(TRUSS_LOG_INFO, _filePath);
+	truss_log(TRUSS_LOG_WARNING, "bgfx_cb_screen_shot implemented with direct writes to file!");
+	truss_log(TRUSS_LOG_INFO, _filePath);
 	std::stringstream ss;
 	ss << "w: " << _width << ", h: " << _height << ", p: " << _pitch << ", s: " << _size << ", yf: " << _yflip;
-	trss_log(TRUSS_LOG_INFO, ss.str().c_str());
+	truss_log(TRUSS_LOG_INFO, ss.str().c_str());
 	char* temp = new char[_size];
 	bgfx_image_swizzle_bgra8(_width, _height, _pitch, _data, temp);
 	stbi_write_png(_filePath, _width, _height, 4, temp, _pitch);
@@ -323,11 +323,11 @@ void bgfx_cb_screen_shot(bgfx_callback_interface_t* _this, const char* _filePath
 }
 
 void bgfx_cb_capture_begin(bgfx_callback_interface_t* _this, uint32_t _width, uint32_t _height, uint32_t _pitch, bgfx_texture_format_t _format, bool _yflip) {
-	trss_log(TRUSS_LOG_WARNING, "bgfx_cb_capture_begin not implemented.");
+	truss_log(TRUSS_LOG_WARNING, "bgfx_cb_capture_begin not implemented.");
 }
 
 void bgfx_cb_capture_end(bgfx_callback_interface_t* _this) {
-	trss_log(TRUSS_LOG_WARNING, "bgfx_cb_capture_end not implemented.");
+	truss_log(TRUSS_LOG_WARNING, "bgfx_cb_capture_end not implemented.");
 }
 
 void bgfx_cb_capture_frame(bgfx_callback_interface_t* _this, const void* _data, uint32_t _size) {
@@ -350,6 +350,6 @@ static bgfx_callback_interface_t sdl_cb_struct = {
 	&sdl_vtbl
 };
 
-bgfx_callback_interface_t* trss_sdl_get_bgfx_cb(SDLAddon* addon) {
+bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(SDLAddon* addon) {
 	return &sdl_cb_struct;
 }

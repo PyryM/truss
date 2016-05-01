@@ -6,7 +6,7 @@ local class = require('class')
 local bgfx = core.bgfx
 local bgfx_const = core.bgfx_const
 local terralib = core.terralib
-local trss = core.trss
+local truss = core.truss
 local sdl = addons.sdl
 local nanovg = core.nanovg
 
@@ -55,7 +55,7 @@ function AppScaffold:initBGFX()
     local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
     --local reset = bgfx_const.BGFX_RESET_MSAA_X8
 
-    --local cbInterfacePtr = sdl.trss_sdl_get_bgfx_cb(sdlPointer)
+    --local cbInterfacePtr = sdl.truss_sdl_get_bgfx_cb(sdlPointer)
     local cbInterfacePtr = nil
 
     bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
@@ -142,7 +142,7 @@ function AppScaffold:updateEvents()
             end
         elseif evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
             log.info("Received window close, stopping interpreter...")
-            trss.trss_stop_interpreter(core.TRUSS_ID)
+            truss.truss_stop_interpreter(core.TRUSS_ID)
         end
         if self.userEventHandler then
             self:userEventHandler(evt)

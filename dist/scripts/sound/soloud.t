@@ -44,7 +44,7 @@ end
 
 function m.loadWav(filename, alias)
     alias = alias or filename
-    local data = trss.trss_load_file(filename)
+    local data = truss.truss_load_file(filename)
     if data == nil then
         log.error("Unable to load wavefile " .. filename 
                     .. ": low-level error (file doesn't exist?)")
@@ -55,7 +55,7 @@ function m.loadWav(filename, alias)
     -- the 1,0 args are copy = true, takeOwnership = false
     -- (so that it copies the data and doesn't take ownership of our pointer)
     local result = soloud_.Wav_loadMemEx(sound, data.data, data.data_length, 1, 0)
-    trss.trss_release_message(data)
+    truss.truss_release_message(data)
 
     if result == 0 then
         m.rawWavs_[filename] = sound

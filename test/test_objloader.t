@@ -7,7 +7,7 @@ local emulator = require("trussemulator")
 
 -- define truss import so that other things will work
 truss_import = emulator.makeImport(importpath)
-trss = emulator.makeTRSS()
+truss = emulator.makeTRUSS()
 
 objloader = truss_import("loaders/objloader.t")
 stringutils = truss_import("utils/stringutils.t")

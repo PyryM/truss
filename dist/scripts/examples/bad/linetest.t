@@ -5,19 +5,19 @@
 bgfx = libs.bgfx
 bgfx_const = libs.bgfx_const
 terralib = libs.terralib
-trss = libs.trss
+truss = libs.truss
 sdl = libs.sdl
 sdlPointer = libs.sdlPointer
 TRUSS_ID = libs.TRUSS_ID
 nanovg = libs.nanovg
 
 function init()
-	trss.trss_log(TRUSS_ID, "vgr_dev.t init")
-	sdl.trss_sdl_create_window(sdlPointer, width, height, 'Very Good: Risky')
+	truss.truss_log(TRUSS_ID, "vgr_dev.t init")
+	sdl.truss_sdl_create_window(sdlPointer, width, height, 'Very Good: Risky')
 	initBGFX()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(TRUSS_ID, "Renderer type: " .. rendererName)
+	truss.truss_log(TRUSS_ID, "Renderer type: " .. rendererName)
 end
 
 width = 1280
@@ -65,9 +65,9 @@ end
 downkeys = {}
 
 function updateEvents()
-	local nevents = sdl.trss_sdl_num_events(sdlPointer)
+	local nevents = sdl.truss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
-		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
+		local evt = sdl.truss_sdl_get_event(sdlPointer, i-1)
 		if evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRUSS_SDL_EVENT_KEYUP then
 			local keyname = ffi.string(evt.keycode)
 			if evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN then
@@ -82,15 +82,15 @@ function updateEvents()
 		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_TEXTINPUT then
 			onTextInput(ffi.string(evt.keycode))
 		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_WINDOW and evt.flags == 14 then
-			trss.trss_log(0, "Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(TRUSS_ID)
+			truss.truss_log(0, "Received window close, stopping interpreter...")
+			truss.truss_stop_interpreter(TRUSS_ID)
 		end
 		orbitcam:updateFromSDL(evt)
 	end
 end
 
 function log(msg)
-	trss.trss_log(0, msg)
+	truss.truss_log(0, msg)
 end
 
 function updateCamera()
@@ -117,7 +117,7 @@ function initBGFX()
 	1.0,
 	0)
 
-	trss.trss_log(0, "Initted bgfx I hope?")
+	truss.truss_log(0, "Initted bgfx I hope?")
 
 	-- Init renderer
 	renderer = simple_renderer.SimpleRenderer(width, height)

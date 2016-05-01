@@ -11,7 +11,7 @@ end
 terralib.includepath = terralib.includepath .. ";include/compat"
 
 -- Link in truss api
-trss = terralib.includecstring([[
+truss = terralib.includecstring([[
 #include <stdint.h>
 #include <stddef.h>
 
@@ -23,66 +23,66 @@ typedef struct {
 	size_t data_length;
 	unsigned char* data;
 	unsigned int refcount;
-} trss_message;
+} truss_message;
 typedef struct Addon Addon;
 #define TRUSS_LOG_CRITICAL 0
 #define TRUSS_LOG_ERROR 1
 #define TRUSS_LOG_WARNING 2
 #define TRUSS_LOG_INFO 3
 #define TRUSS_LOG_DEBUG 4
-const char* trss_get_version_string();
-void trss_test();
-void trss_log(int log_level, const char* str);
-void trss_shutdown();
-uint64_t trss_get_hp_time();
-uint64_t trss_get_hp_freq();
-int trss_check_file(const char* filename);
-trss_message* trss_load_file(const char* filename);
-int trss_save_file(const char* filename, trss_message* data);
-int trss_add_fs_path(const char* path, const char* mountpath, int append);
-int trss_set_fs_savedir(const char* path);
-trss_message* trss_get_store_value(const char* key);
-int trss_set_store_value(const char* key, trss_message* val);
-int trss_set_store_value_str(const char* key, const char* msg);
-typedef int trss_interpreter_id;
-int trss_spawn_interpreter(const char* name, trss_message* arg_message);
-void trss_stop_interpreter(trss_interpreter_id target_id);
-void trss_execute_interpreter(trss_interpreter_id target_id);
-int trss_find_interpreter(const char* name);
-int trss_get_addon_count(trss_interpreter_id target_id);
-Addon* trss_get_addon(trss_interpreter_id target_id, int addon_idx);
-const char* trss_get_addon_name(trss_interpreter_id target_id, int addon_idx);
-const char* trss_get_addon_header(trss_interpreter_id target_id, int addon_idx);
-const char* trss_get_addon_version_string(trss_interpreter_id target_id, int addon_idx);
-void trss_send_message(trss_interpreter_id dest, trss_message* message);
-int trss_fetch_messages(trss_interpreter_id interpreter);
-trss_message* trss_get_message(trss_interpreter_id interpreter, int message_index);
-trss_message* trss_create_message(size_t data_length);
-void trss_acquire_message(trss_message* msg);
-void trss_release_message(trss_message* msg);
-trss_message* trss_copy_message(trss_message* src);
+const char* truss_get_version_string();
+void truss_test();
+void truss_log(int log_level, const char* str);
+void truss_shutdown();
+uint64_t truss_get_hp_time();
+uint64_t truss_get_hp_freq();
+int truss_check_file(const char* filename);
+truss_message* truss_load_file(const char* filename);
+int truss_save_file(const char* filename, truss_message* data);
+int truss_add_fs_path(const char* path, const char* mountpath, int append);
+int truss_set_fs_savedir(const char* path);
+truss_message* truss_get_store_value(const char* key);
+int truss_set_store_value(const char* key, truss_message* val);
+int truss_set_store_value_str(const char* key, const char* msg);
+typedef int truss_interpreter_id;
+int truss_spawn_interpreter(const char* name, truss_message* arg_message);
+void truss_stop_interpreter(truss_interpreter_id target_id);
+void truss_execute_interpreter(truss_interpreter_id target_id);
+int truss_find_interpreter(const char* name);
+int truss_get_addon_count(truss_interpreter_id target_id);
+Addon* truss_get_addon(truss_interpreter_id target_id, int addon_idx);
+const char* truss_get_addon_name(truss_interpreter_id target_id, int addon_idx);
+const char* truss_get_addon_header(truss_interpreter_id target_id, int addon_idx);
+const char* truss_get_addon_version_string(truss_interpreter_id target_id, int addon_idx);
+void truss_send_message(truss_interpreter_id dest, truss_message* message);
+int truss_fetch_messages(truss_interpreter_id interpreter);
+truss_message* truss_get_message(truss_interpreter_id interpreter, int message_index);
+truss_message* truss_create_message(size_t data_length);
+void truss_acquire_message(truss_message* msg);
+void truss_release_message(truss_message* msg);
+truss_message* truss_copy_message(truss_message* src);
 ]])
 
-trss.trss_test()
-trss.trss_log(0, "Bootstrapping [" .. TRUSS_INTERPRETER_ID .. "]")
+truss.truss_test()
+truss.truss_log(0, "Bootstrapping [" .. TRUSS_INTERPRETER_ID .. "]")
 local TRUSS_ID = TRUSS_INTERPRETER_ID
 
 log = {}
-log.debug = function(msg) trss.trss_log(4, tostring(msg)) end
-log.info = function(msg) trss.trss_log(3, tostring(msg)) end
-log.warn = function(msg) trss.trss_log(2, tostring(msg)) end
-log.error = function(msg) trss.trss_log(1, tostring(msg)) end
-log.critical = function(msg) trss.trss_log(1, tostring(msg)) end
+log.debug = function(msg) truss.truss_log(4, tostring(msg)) end
+log.info = function(msg) truss.truss_log(3, tostring(msg)) end
+log.warn = function(msg) truss.truss_log(2, tostring(msg)) end
+log.error = function(msg) truss.truss_log(1, tostring(msg)) end
+log.critical = function(msg) truss.truss_log(1, tostring(msg)) end
 
 -- from luajit
 ffi = require("ffi")
 bit = require("bit")
 
-tic = trss.trss_get_hp_time
+tic = truss.truss_get_hp_time
 
 terra toc(startTime: uint64)
-	var curtime = trss.trss_get_hp_time()
-	var freq = trss.trss_get_hp_freq()
+	var curtime = truss.truss_get_hp_time()
+	var freq = truss.truss_get_hp_freq()
 	var deltaF : float = curtime - startTime
 	return deltaF / [float](freq)
 end
@@ -92,7 +92,7 @@ local function readArgs()
 	local idx = 0
 	while true do
 		local argname = "arg" .. idx
-		local argval = trss.trss_get_store_value(argname)
+		local argval = truss.truss_get_store_value(argname)
 		if argval == nil then break end
 		local argstr = ffi.string(argval.data, argval.data_length)
 		log.debug(argname .. ": " .. argstr)
@@ -105,10 +105,10 @@ end
 readArgs()
 
 function loadStringFromFile(filename)
-	local temp = trss.trss_load_file(filename)
+	local temp = truss.truss_load_file(filename)
 	if temp ~= nil then
 		local ret = ffi.string(temp.data, temp.data_length)
-		trss.trss_release_message(temp)
+		truss.truss_release_message(temp)
 		return ret
 	else
 		log.error("Unable to load " .. filename)
@@ -150,7 +150,7 @@ function truss_import(filename, force)
 
 		-- check if the file is actually a directory, in which case we should try to load __init__.t
 		local fullpath = "scripts/" .. _requirePrefixPath .. filename
-		if trss.trss_check_file(fullpath) == 2 then
+		if truss.truss_check_file(fullpath) == 2 then
 			fullpath = fullpath .. "/init.t"
 			log.info("Required directory; trying to load [" .. fullpath .. "]")
 		end
@@ -207,17 +207,17 @@ truss_insert_library("bit", bit)
 -- alias core/30log.lua to class so we can just require("class")
 truss_import_as("core/30log.lua", "class")
 
-local numAddons = trss.trss_get_addon_count(TRUSS_ID)
+local numAddons = truss.truss_get_addon_count(TRUSS_ID)
 log.info("Found " .. numAddons .. " addons.")
 
 addons = {}
 raw_addons = {}
 
 for addonIdx = 1,numAddons do
-	local addonHeader = ffi.string(trss.trss_get_addon_header(TRUSS_ID, addonIdx-1))
-	local addonPointer = trss.trss_get_addon(TRUSS_ID, addonIdx-1)
-	local addonName = ffi.string(trss.trss_get_addon_name(TRUSS_ID, addonIdx-1))
-	local addonVersion = ffi.string(trss.trss_get_addon_version_string(TRUSS_ID, addonIdx-1))
+	local addonHeader = ffi.string(truss.truss_get_addon_header(TRUSS_ID, addonIdx-1))
+	local addonPointer = truss.truss_get_addon(TRUSS_ID, addonIdx-1)
+	local addonName = ffi.string(truss.truss_get_addon_name(TRUSS_ID, addonIdx-1))
+	local addonVersion = ffi.string(truss.truss_get_addon_version_string(TRUSS_ID, addonIdx-1))
 	log.info("Loading addon [" .. addonName .. "]")
 	local addonwrapper = truss_import("addons/" .. addonName .. ".t")
 	local addonTable = terralib.includecstring(addonHeader)
@@ -233,7 +233,7 @@ for addonIdx = 1,numAddons do
 	addons[addonName] = addonTable
 end
 
-local vstr = ffi.string(trss.trss_get_version_string())
+local vstr = ffi.string(truss.truss_get_version_string())
 
 -- these are important enough to just be dumped into the global namespace
 bgfx = terralib.includec("include/bgfx_truss.c99.h")
@@ -241,7 +241,7 @@ bgfx_const = truss_import("bgfx_constants.t")
 nanovg = terralib.includec("include/nanovg_terra.h")
 
 core = {}
-core.trss = trss
+core.truss = truss
 core.terralib = terralib
 core.bgfx = bgfx
 core.bgfx_const = bgfx_const
@@ -283,7 +283,7 @@ function _addPaths()
 			local mountPath = execArgs[i+2]
 			log.info("Adding path " .. physicalPath ..
 					 " => " .. mountPath)
-			trss.trss_add_fs_path(physicalPath, 
+			truss.truss_add_fs_path(physicalPath, 
 								  mountPath,
 								  0)
 		end
@@ -300,7 +300,7 @@ function _coreInit(argstring)
 	local script = loadStringFromFile(fn)
 	local scriptfunc, loaderror = loadNamed(script, argstring)
 	if scriptfunc == nil then
-		trss.trss_log(0, "Script error: " .. loaderror)
+		truss.truss_log(0, "Script error: " .. loaderror)
 	end
 	setfenv(scriptfunc, subenv)
 	scriptfunc()

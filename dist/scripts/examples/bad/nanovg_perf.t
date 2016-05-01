@@ -5,7 +5,7 @@
 bgfx = libs.bgfx
 bgfx_const = libs.bgfx_const
 terralib = libs.terralib
-trss = libs.trss
+truss = libs.truss
 sdl = libs.sdl
 sdlPointer = libs.sdlPointer
 TRUSS_ID = libs.TRUSS_ID
@@ -18,13 +18,13 @@ time = 0.0
 mousex, mousey = 0, 0
 
 function init()
-	trss.trss_log(TRUSS_ID, "nanovg.t init")
-	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
+	truss.truss_log(TRUSS_ID, "nanovg.t init")
+	sdl.truss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	initNVG()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(TRUSS_ID, "Renderer type: " .. rendererName)
+	truss.truss_log(TRUSS_ID, "Renderer type: " .. rendererName)
 end
 
 mtx = truss_import("math/matrix.t")
@@ -37,21 +37,21 @@ function setViewMatrices()
 end
 
 function updateEvents()
-	local nevents = sdl.trss_sdl_num_events(sdlPointer)
+	local nevents = sdl.truss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
-		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
+		local evt = sdl.truss_sdl_get_event(sdlPointer, i-1)
 		if evt.event_type == sdl.TRUSS_SDL_EVENT_MOUSEMOVE then
 			mousex = evt.x
 			mousey = evt.y
 		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_WINDOW and evt.flags == 14 then
-			trss.trss_log(TRUSS_ID, "Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(TRUSS_ID)
+			truss.truss_log(TRUSS_ID, "Received window close, stopping interpreter...")
+			truss.truss_stop_interpreter(TRUSS_ID)
 		end
 	end
 end
 
 function log(msg)
-	trss.trss_log(TRUSS_ID, msg)
+	truss.truss_log(TRUSS_ID, msg)
 end
 
 function initBGFX()
@@ -72,7 +72,7 @@ function initBGFX()
 	1.0,
 	0)
 
-	trss.trss_log(0, "Initted bgfx I hope?")
+	truss.truss_log(0, "Initted bgfx I hope?")
 end
 
 function initNVG()

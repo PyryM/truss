@@ -11,16 +11,16 @@ local terra loadTexture_mem(filename: &int8, flags: uint32)
 	var w: int32 = -1
 	var h: int32 = -1
 	var n: int32 = -1
-	var msg: &trss.trss_message = nvgUtils.trss_nanovg_load_image(nvgAddonPointer, filename, &w, &h, &n)
+	var msg: &truss.truss_message = nvgUtils.truss_nanovg_load_image(nvgAddonPointer, filename, &w, &h, &n)
 	--return msg
 	var bmem: &bgfx.bgfx_memory = nil
 	if msg ~= nil then
 		bmem = bgfx.bgfx_copy(msg.data, msg.data_length)
 	else
-		trss.trss_log(trss.TRUSS_LOG_ERROR, "Error loading texture!")
+		truss.truss_log(truss.TRUSS_LOG_ERROR, "Error loading texture!")
 	end
-	trss.trss_release_message(msg)
-	trss.trss_log(trss.TRUSS_LOG_INFO, "Creating texture...")
+	truss.truss_release_message(msg)
+	truss.truss_log(truss.TRUSS_LOG_INFO, "Creating texture...")
 	var ret = bgfx.bgfx_create_texture_2d(w, h, 0, bgfx.BGFX_TEXTURE_FORMAT_RGBA8, flags, bmem)
 	return ret
 end
@@ -28,9 +28,9 @@ end
 -- function loadTexture(filename)
 -- 	--return loadTexture_mem(filename)
 -- 	local msg = loadTexture_mem(filename)
--- 	trss.trss_log(0, "Texture data size: " .. msg.data_length)
+-- 	truss.truss_log(0, "Texture data size: " .. msg.data_length)
 -- 	local bmem = bgfx.bgfx_copy(msg.data, msg.data_length)
--- 	trss.trss_release_message(msg)
+-- 	truss.truss_release_message(msg)
 -- 	return bgfx.bgfx_create_texture_2d(512, 512, 0, bgfx.BGFX_TEXTURE_FORMAT_BGRA8, 0, bmem)
 -- end
 

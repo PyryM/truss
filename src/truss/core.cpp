@@ -10,7 +10,7 @@
 #include "trussapi.h"
 #include <physfs.h>
 
-using namespace trss;
+using namespace truss;
 
 Core* Core::core__ = NULL;
 
@@ -108,19 +108,19 @@ int Core::numInterpreters() {
     return interpreters_.size();
 }
 
-void Core::dispatchMessage(int targetIdx, trss_message* msg){
+void Core::dispatchMessage(int targetIdx, truss_message* msg){
     Interpreter* interpreter = getInterpreter(targetIdx);
     if(interpreter) {
         interpreter->sendMessage(msg);
     }
 }
 
-void Core::acquireMessage(trss_message* msg){
+void Core::acquireMessage(truss_message* msg){
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
     ++(msg->refcount);
 }
 
-void Core::releaseMessage(trss_message* msg){
+void Core::releaseMessage(truss_message* msg){
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
     --(msg->refcount);
     if(msg->refcount <= 0) {
@@ -128,23 +128,23 @@ void Core::releaseMessage(trss_message* msg){
     }
 }
 
-trss_message* Core::copyMessage(trss_message* src){
+truss_message* Core::copyMessage(truss_message* src){
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
-    trss_message* newmsg = allocateMessage(src->data_length);
+    truss_message* newmsg = allocateMessage(src->data_length);
     newmsg->message_type = src->message_type;
     std::memcpy(newmsg->data, src->data, newmsg->data_length);
     return newmsg;
 }
 
-trss_message* Core::allocateMessage(size_t dataLength){
-    trss_message* ret = new trss_message;
+truss_message* Core::allocateMessage(size_t dataLength){
+    truss_message* ret = new truss_message;
     ret->data = new unsigned char[dataLength];
     ret->data_length = dataLength;
     ret->refcount = 1;
     return ret;
 }
 
-void Core::deallocateMessage(trss_message* msg){
+void Core::deallocateMessage(truss_message* msg){
     delete[] msg->data;
     delete msg;
 }
@@ -164,12 +164,12 @@ int Core::checkFile(const char* filename) {
     }
 }
 
-trss_message* Core::loadFileRaw(const char* filename) {
+truss_message* Core::loadFileRaw(const char* filename) {
     std::streampos size;
     std::ifstream file(filename, std::ios::in|std::ios::binary|std::ios::ate);
     if (file.is_open()) {
         size = file.tellg();
-        trss_message* ret = allocateMessage((int)size);
+        truss_message* ret = allocateMessage((int)size);
         file.seekg (0, std::ios::beg);
         file.read ((char*)(ret->data), size);
         file.close();
@@ -181,7 +181,7 @@ trss_message* Core::loadFileRaw(const char* filename) {
     }
 }
 
-trss_message* Core::loadFile(const char* filename) {
+truss_message* Core::loadFile(const char* filename) {
     if (!physFSInitted_) {
         logMessage(TRUSS_LOG_ERROR, "Cannot load file: PhysFS not initted.");
         logMessage(TRUSS_LOG_ERROR, filename);
@@ -202,14 +202,14 @@ trss_message* Core::loadFile(const char* filename) {
 
     PHYSFS_file* myfile = PHYSFS_openRead(filename);
     PHYSFS_sint64 file_size = PHYSFS_fileLength(myfile);
-    trss_message* ret = allocateMessage(file_size);
+    truss_message* ret = allocateMessage(file_size);
     PHYSFS_read(myfile, ret->data, 1, file_size);
     PHYSFS_close(myfile);
 
     return ret;
 }
 
-void Core::saveFile(const char* filename, trss_message* data) {
+void Core::saveFile(const char* filename, truss_message* data) {
     if (!physFSInitted_) {
         logMessage(TRUSS_LOG_ERROR, "Cannot save file; PhysFS not initted.");
         logMessage(TRUSS_LOG_ERROR, filename);
@@ -221,14 +221,14 @@ void Core::saveFile(const char* filename, trss_message* data) {
     PHYSFS_close(myfile);
 }
 
-void Core::saveFileRaw(const char* filename, trss_message* data) {
+void Core::saveFileRaw(const char* filename, truss_message* data) {
     std::ofstream outfile;
     outfile.open(filename, std::ios::binary | std::ios::out);
     outfile.write((char*)(data->data), data->data_length);
     outfile.close();
 }
 
-trss_message* Core::getStoreValue(const std::string& key) {
+truss_message* Core::getStoreValue(const std::string& key) {
     if (store_.count(key) > 0) {
         return store_[key];
     } else {
@@ -236,10 +236,10 @@ trss_message* Core::getStoreValue(const std::string& key) {
     }
 }
 
-int Core::setStoreValue(const std::string& key, trss_message* val) {
+int Core::setStoreValue(const std::string& key, truss_message* val) {
     acquireMessage(val);
     if (store_.count(key) > 0) {
-        trss_message* oldmsg = store_[key];
+        truss_message* oldmsg = store_[key];
         store_[key] = val;
         releaseMessage(oldmsg);
         return 1;
@@ -250,7 +250,7 @@ int Core::setStoreValue(const std::string& key, trss_message* val) {
 }
 
 int Core::setStoreValue(const std::string& key, const std::string& val) {
-    trss_message* newmsg = allocateMessage(val.length());
+    truss_message* newmsg = allocateMessage(val.length());
     const char* src = val.c_str();
     std::memcpy(newmsg->data, src, newmsg->data_length);
     int result = setStoreValue(key, newmsg);

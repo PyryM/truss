@@ -10,7 +10,7 @@
 #include <trussapi.h>
 #include <physfs.h>
 
-using namespace trss;
+using namespace truss;
 
 void run_interpreter_thread(void* interpreter) {
     Interpreter* target = (Interpreter*)interpreter;
@@ -25,8 +25,8 @@ Interpreter::Interpreter(int id, const char* name)
     , id_(id)
 {
     // TODO: Is any of this necessary?
-    curMessages_ = new std::vector < trss_message* > ;
-    fetchedMessages_ = new std::vector < trss_message* >;
+    curMessages_ = new std::vector < truss_message* > ;
+    fetchedMessages_ = new std::vector < truss_message* >;
     arg_ = "";
 }
 
@@ -134,7 +134,7 @@ void Interpreter::threadEntry() {
     lua_setglobal(terraState_, "TRUSS_INTERPRETER_ID");
 
     // load and execute the bootstrap script
-    trss_message* bootstrap = core()->loadFile("scripts/core/bootstrap.t");
+    truss_message* bootstrap = core()->loadFile("scripts/core/bootstrap.t");
     if (!bootstrap) {
         core()->logMessage(TRUSS_LOG_ERROR, "Error loading bootstrap script.");
         running_ = false;
@@ -144,7 +144,7 @@ void Interpreter::threadEntry() {
                      (char*)bootstrap->data,
                      bootstrap->data_length,
                      "bootstrap.t");
-    trss_release_message(bootstrap);
+    truss_release_message(bootstrap);
     int res = lua_pcall(terraState_, 0, 0, 0);
     if(res != 0) {
         core()->logStream(TRUSS_LOG_ERROR) << "Error bootstrapping interpreter: "
@@ -182,9 +182,9 @@ void Interpreter::threadEntry() {
     // TODO: actually shutdown stuff here
 }
 
-void Interpreter::sendMessage(trss_message* message) {
+void Interpreter::sendMessage(truss_message* message) {
     tthread::lock_guard<tthread::mutex> Lock(messageLock_);
-    trss_acquire_message(message);
+    truss_acquire_message(message);
     curMessages_->push_back(message);
 }
 
@@ -192,19 +192,19 @@ int Interpreter::fetchMessages() {
     tthread::lock_guard<tthread::mutex> Lock(messageLock_);
 
     // swap messages
-    std::vector<trss_message*>* temp = curMessages_;
+    std::vector<truss_message*>* temp = curMessages_;
     curMessages_ = fetchedMessages_;
     fetchedMessages_ = temp;
 
     // clear the 'current' messages (i.e., the old fetched messages)
     for(unsigned int i = 0; i < curMessages_->size(); ++i) {
-        trss_release_message((*curMessages_)[i]);
+        truss_release_message((*curMessages_)[i]);
     }
     curMessages_->clear();
     return fetchedMessages_->size();
 }
 
-trss_message* Interpreter::getMessage(int index) {
+truss_message* Interpreter::getMessage(int index) {
     // Note: don't need to lock because only 'our' thread
     // should call fetchMessages (which is the only other function
     // that touches fetchedMessages_)

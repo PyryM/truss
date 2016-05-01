@@ -47,26 +47,26 @@ typedef struct {
 	double dx;
 	double dy;
 	int flags;
-} trss_sdl_event;
+} truss_sdl_event;
 
-TRUSS_C_API void trss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name);
-TRUSS_C_API void trss_sdl_destroy_window(SDLAddon* addon);
-TRUSS_C_API int trss_sdl_num_events(SDLAddon* addon);
-TRUSS_C_API trss_sdl_event trss_sdl_get_event(SDLAddon* addon, int index);
-TRUSS_C_API void trss_sdl_start_textinput(SDLAddon* addon);
-TRUSS_C_API void trss_sdl_stop_textinput(SDLAddon* addon);
-TRUSS_C_API void trss_sdl_set_clipboard(SDLAddon* addon, const char* data);
-TRUSS_C_API const char* trss_sdl_get_clipboard(SDLAddon* addon);
-TRUSS_C_API bgfx_callback_interface_t* trss_sdl_get_bgfx_cb(SDLAddon* addon);
-TRUSS_C_API void trss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode);
+TRUSS_C_API void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name);
+TRUSS_C_API void truss_sdl_destroy_window(SDLAddon* addon);
+TRUSS_C_API int truss_sdl_num_events(SDLAddon* addon);
+TRUSS_C_API truss_sdl_event truss_sdl_get_event(SDLAddon* addon, int index);
+TRUSS_C_API void truss_sdl_start_textinput(SDLAddon* addon);
+TRUSS_C_API void truss_sdl_stop_textinput(SDLAddon* addon);
+TRUSS_C_API void truss_sdl_set_clipboard(SDLAddon* addon, const char* data);
+TRUSS_C_API const char* truss_sdl_get_clipboard(SDLAddon* addon);
+TRUSS_C_API bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(SDLAddon* addon);
+TRUSS_C_API void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode);
 
-class SDLAddon : public trss::Addon {
+class SDLAddon : public truss::Addon {
 public:
 	SDLAddon();
 	const std::string& getName();
 	const std::string& getCHeader();
 	const std::string& getVersionString();
-	void init(trss::Interpreter* owner);
+	void init(truss::Interpreter* owner);
 	void shutdown();
 	void update(double dt);
 
@@ -77,7 +77,7 @@ public:
 	const char* getClipboardText();
 
 	int numEvents();
-	trss_sdl_event& getEvent(int index);
+	truss_sdl_event& getEvent(int index);
 
 	~SDLAddon(); // needed so it can be deleted cleanly
 private:
@@ -90,9 +90,9 @@ private:
 
 	SDL_Window* window_;
 	SDL_Event event_;
-	trss::Interpreter* owner_;
-	std::vector<trss_sdl_event> eventBuffer_;
-	trss_sdl_event errorEvent_;
+	truss::Interpreter* owner_;
+	std::vector<truss_sdl_event> eventBuffer_;
+	truss_sdl_event errorEvent_;
 };
 
 extern "C" {

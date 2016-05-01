@@ -18,10 +18,10 @@ bool initWSA() {
 
     rc = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (rc) {
-        trss_log(TRUSS_LOG_ERROR, "WSAStartup Failed.");
+        truss_log(TRUSS_LOG_ERROR, "WSAStartup Failed.");
         return false;
 	} else {
-		trss_log(TRUSS_LOG_INFO, "WSAStartup Succeeded.");
+		truss_log(TRUSS_LOG_INFO, "WSAStartup Succeeded.");
 		return true;
 	}
 #endif
@@ -41,12 +41,12 @@ WSClientAddon::WSClientAddon() {
 		"#include <stdbool.h>\n"
 		"typedef struct Addon Addon;\n"
 		"typedef void(*messageCallback)(const char*);\n"
-		"bool trss_wsclient_open(Addon* addon, const char* url);\n"
-		"void trss_wsclient_close(Addon* addon);\n"
-		"void trss_wsclient_send(Addon* addon, const char* msg);\n"
-		"void trss_wsclient_receive_callback(Addon* addon, messageCallback callback);\n"
-		"int trss_wsclient_receive(Addon* addon);\n"
-		"const char* trss_wsclient_getmessage(Addon* addon, int msgindex);\n";
+		"bool truss_wsclient_open(Addon* addon, const char* url);\n"
+		"void truss_wsclient_close(Addon* addon);\n"
+		"void truss_wsclient_send(Addon* addon, const char* msg);\n"
+		"void truss_wsclient_receive_callback(Addon* addon, messageCallback callback);\n"
+		"int truss_wsclient_receive(Addon* addon);\n"
+		"const char* truss_wsclient_getmessage(Addon* addon, int msgindex);\n";
 }
 
 const std::string& WSClientAddon::getName() {
@@ -61,7 +61,7 @@ const std::string& WSClientAddon::getVersionString() {
 	return version_;
 }
 
-void WSClientAddon::init(trss::Interpreter* owner) {
+void WSClientAddon::init(truss::Interpreter* owner) {
 	// nothing special to do
 }
 
@@ -75,12 +75,12 @@ void WSClientAddon::update(double dt) {
 
 bool WSClientAddon::open(const std::string& url) {
 	if(ws_ != NULL) {
-		trss_log(TRUSS_LOG_WARNING, "WSClientAddon::open: Websocket already open.");
+		truss_log(TRUSS_LOG_WARNING, "WSClientAddon::open: Websocket already open.");
 		return true;
 	}
 	ws_ = WebSocket::from_url(url);
 	if(ws_ == NULL) {
-		trss_log(TRUSS_LOG_ERROR, "WSClientAddon::open: Error opening websocket.");
+		truss_log(TRUSS_LOG_ERROR, "WSClientAddon::open: Error opening websocket.");
 		return false;
 	} else {
 		return true;
@@ -97,7 +97,7 @@ void WSClientAddon::close() {
 
 void WSClientAddon::send(const std::string& msg) {
 	if(ws_ == NULL || ws_->getReadyState() == WebSocket::CLOSED) {
-		trss_log(TRUSS_LOG_ERROR, "WSClientAddon::send: socket not open");
+		truss_log(TRUSS_LOG_ERROR, "WSClientAddon::send: socket not open");
 		return;
 	}
 	ws_->send(msg);
@@ -116,7 +116,7 @@ void WSClientAddon::receiveCallback(messageCallback callback) {
 		ws_->dispatch(dispatch_to_c_callback);
     } else {
     	ws_ = NULL;
-    	trss_log(TRUSS_LOG_ERROR, "WSClientAddon::receiveCallback: cannot receive from closed socket.");
+    	truss_log(TRUSS_LOG_ERROR, "WSClientAddon::receiveCallback: cannot receive from closed socket.");
     }
 }
 
@@ -136,7 +136,7 @@ int WSClientAddon::receive() {
 		return (unsigned int)messages_.size();
     } else {
     	ws_ = NULL;
-    	trss_log(TRUSS_LOG_WARNING, "WSClientAddon::receive: socket is closed.");
+    	truss_log(TRUSS_LOG_WARNING, "WSClientAddon::receive: socket is closed.");
 		return -1;
     }
 }
@@ -155,28 +155,28 @@ WSClientAddon::~WSClientAddon(){
 	cleanupWSA();
 }
 
-bool trss_wsclient_open(WSClientAddon* addon, const char* url){
+bool truss_wsclient_open(WSClientAddon* addon, const char* url){
 	std::string temp(url);
 	return addon->open(temp);
 }
 
-void trss_wsclient_close(WSClientAddon* addon){
+void truss_wsclient_close(WSClientAddon* addon){
 	addon->close();
 }
 
-void trss_wsclient_send(WSClientAddon* addon, const char* msg){
+void truss_wsclient_send(WSClientAddon* addon, const char* msg){
 	std::string temp(msg);
 	addon->send(temp);
 }
 
-void trss_wsclient_receive_callback(WSClientAddon* addon, messageCallback callback){
+void truss_wsclient_receive_callback(WSClientAddon* addon, messageCallback callback){
 	addon->receiveCallback(callback);
 }
 
-int trss_wsclient_receive(WSClientAddon* addon){
+int truss_wsclient_receive(WSClientAddon* addon){
 	return addon->receive();
 }
 
-const char* trss_wsclient_getmessage(WSClientAddon* addon, int msgindex){
+const char* truss_wsclient_getmessage(WSClientAddon* addon, int msgindex){
 	return addon->getMessage(msgindex).c_str();
 }

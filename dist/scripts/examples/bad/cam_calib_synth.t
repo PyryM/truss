@@ -6,7 +6,7 @@
 bgfx = libs.bgfx
 bgfx_const = libs.bgfx_const
 terralib = libs.terralib
-trss = libs.trss
+truss = libs.truss
 sdl = raw_addons.sdl.functions
 sdlPointer = raw_addons.sdl.pointer
 nvgUtils = raw_addons.nvgutils.functions
@@ -15,13 +15,13 @@ TRUSS_ID = libs.TRUSS_ID
 nanovg = libs.nanovg
 
 function init()
-	trss.trss_log(TRUSS_ID, "cam_calib_synth.t init")
-	sdl.trss_sdl_create_window(sdlPointer, width, totalheight, 'TRUSS TEST')
+	truss.truss_log(TRUSS_ID, "cam_calib_synth.t init")
+	sdl.truss_sdl_create_window(sdlPointer, width, totalheight, 'TRUSS TEST')
 	initBGFX()
 	initNVG()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(TRUSS_ID, "Renderer type: " .. rendererName)
+	truss.truss_log(TRUSS_ID, "Renderer type: " .. rendererName)
 end
 
 width = 1024
@@ -53,9 +53,9 @@ function takeScreenshot()
 end
 
 function updateEvents()
-	local nevents = sdl.trss_sdl_num_events(sdlPointer)
+	local nevents = sdl.truss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
-		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
+		local evt = sdl.truss_sdl_get_event(sdlPointer, i-1)
 		if evt.event_type == sdl.TRUSS_SDL_EVENT_MOUSEMOVE then
 			mousex = evt.x
 			mousey = evt.y
@@ -70,17 +70,17 @@ function updateEvents()
 				end
 				sname = "down" 
 			end
-			trss.trss_log(0, "Key event: " .. sname .. " " .. keyname)
-			trss.trss_log(0, "x: " .. evt.x .. ", y: " .. evt.y .. ", flags: " .. evt.flags)
+			truss.truss_log(0, "Key event: " .. sname .. " " .. keyname)
+			truss.truss_log(0, "x: " .. evt.x .. ", y: " .. evt.y .. ", flags: " .. evt.flags)
 		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_WINDOW and evt.flags == 14 then
-			trss.trss_log(TRUSS_ID, "Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(TRUSS_ID)
+			truss.truss_log(TRUSS_ID, "Received window close, stopping interpreter...")
+			truss.truss_stop_interpreter(TRUSS_ID)
 		end
 	end
 end
 
 function log(msg)
-	trss.trss_log(0, msg)
+	truss.truss_log(0, msg)
 end
 
 function initNVG()
@@ -125,7 +125,7 @@ function initBGFX()
 	--local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
 	--local reset = bgfx_const.BGFX_RESET_MSAA_X8
 
-	local cbInterfacePtr = sdl.trss_sdl_get_bgfx_cb(sdlPointer)
+	local cbInterfacePtr = sdl.truss_sdl_get_bgfx_cb(sdlPointer)
 
 	bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
 	bgfx.bgfx_reset(width, totalheight, reset)
@@ -152,7 +152,7 @@ function initBGFX()
 	1.0,
 	0)
 
-	trss.trss_log(0, "Initted bgfx I hope?")
+	truss.truss_log(0, "Initted bgfx I hope?")
 
 	-- Init renderers
 	leftrenderer = simple_renderer.SimpleRenderer(width/2, viewheight)
