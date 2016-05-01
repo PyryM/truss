@@ -30,7 +30,7 @@ const std::string& NanoVGAddon::getHeader() {
 	return header_;
 }
 
-const std::string& NanoVGAddon::getVersionString() {
+const std::string& NanoVGAddon::getVersion() {
 	return version_;
 }
 

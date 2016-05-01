@@ -33,7 +33,7 @@ typedef struct {
 } truss_message;
 typedef struct Addon Addon;
 
-const char* truss_get_version_string();
+const char* truss_get_version();
 void truss_test();
 void truss_log(int log_level, const char* str);
 void truss_shutdown();
@@ -56,7 +56,7 @@ int truss_get_addon_count(truss_interpreter_id target_id);
 Addon* truss_get_addon(truss_interpreter_id target_id, int addon_idx);
 const char* truss_get_addon_name(truss_interpreter_id target_id, int addon_idx);
 const char* truss_get_addon_header(truss_interpreter_id target_id, int addon_idx);
-const char* truss_get_addon_version_string(truss_interpreter_id target_id, int addon_idx);
+const char* truss_get_addon_version(truss_interpreter_id target_id, int addon_idx);
 void truss_send_message(truss_interpreter_id dest, truss_message* message);
 int truss_fetch_messages(truss_interpreter_id interpreter);
 truss_message* truss_get_message(truss_interpreter_id interpreter, int message_index);
@@ -220,7 +220,7 @@ for addonIdx = 1,numAddons do
 	local addonHeader = ffi.string(truss.truss_get_addon_header(TRUSS_ID, addonIdx-1))
 	local addonPointer = truss.truss_get_addon(TRUSS_ID, addonIdx-1)
 	local addonName = ffi.string(truss.truss_get_addon_name(TRUSS_ID, addonIdx-1))
-	local addonVersion = ffi.string(truss.truss_get_addon_version_string(TRUSS_ID, addonIdx-1))
+	local addonVersion = ffi.string(truss.truss_get_addon_version(TRUSS_ID, addonIdx-1))
 	log.info("Loading addon [" .. addonName .. "]")
 	local addonwrapper = truss_import("addons/" .. addonName .. ".t")
 	local addonTable = terralib.includecstring(addonHeader)
@@ -236,7 +236,7 @@ for addonIdx = 1,numAddons do
 	addons[addonName] = addonTable
 end
 
-local vstr = ffi.string(truss.truss_get_version_string())
+local vstr = ffi.string(truss.truss_get_version())
 
 -- these are important enough to just be dumped into the global namespace
 bgfx = terralib.includec("include/bgfx_truss.c99.h")

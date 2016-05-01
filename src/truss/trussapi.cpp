@@ -12,7 +12,7 @@
 
 using namespace truss;
 
-const char* truss_get_version_string() {
+const char* truss_get_version() {
     return TRUSS_VERSION_STRING;
 }
 
@@ -163,10 +163,10 @@ const char* truss_get_addon_header(truss_interpreter_id target_id, int addon_idx
     }
 }
 
-const char* truss_get_addon_version_string(truss_interpreter_id target_id, int addon_idx){
+const char* truss_get_addon_version(truss_interpreter_id target_id, int addon_idx){
     Addon* addon = truss_get_addon(target_id, addon_idx);
     if (addon) {
-        return addon->getVersionString().c_str();
+        return addon->getVersion().c_str();
     }
     else {
         return "";

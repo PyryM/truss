@@ -65,7 +65,7 @@ public:
 	SDLAddon();
 	const std::string& getName();
 	const std::string& getHeader();
-	const std::string& getVersionString();
+	const std::string& getVersion();
 	void init(truss::Interpreter* owner);
 	void shutdown();
 	void update(double dt);

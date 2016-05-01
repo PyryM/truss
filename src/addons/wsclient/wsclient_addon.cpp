@@ -62,7 +62,7 @@ const std::string& WSClientAddon::getHeader() {
 	return header_;
 }
 
-const std::string& WSClientAddon::getVersionString() {
+const std::string& WSClientAddon::getVersion() {
 	return version_;
 }
 

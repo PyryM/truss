@@ -98,7 +98,7 @@ const std::string& SDLAddon::getHeader(){
 	return header_;
 }
 
-const std::string& SDLAddon::getVersionString(){
+const std::string& SDLAddon::getVersion(){
 	return version_;
 }
 
