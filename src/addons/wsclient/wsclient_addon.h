@@ -20,7 +20,7 @@ class WSClientAddon : public truss::Addon {
 public:
 	WSClientAddon();
 	const std::string& getName();
-	const std::string& getCHeader();
+	const std::string& getHeader();
 	const std::string& getVersionString();
 	void init(truss::Interpreter* owner);
 	void shutdown();

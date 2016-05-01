@@ -157,7 +157,7 @@ const char* truss_get_addon_name(truss_interpreter_id target_id, int addon_idx) 
 const char* truss_get_addon_header(truss_interpreter_id target_id, int addon_idx) {
     Addon* addon = truss_get_addon(target_id, addon_idx);
     if(addon) {
-        return addon->getCHeader().c_str();
+        return addon->getHeader().c_str();
     } else {
         return "";
     }

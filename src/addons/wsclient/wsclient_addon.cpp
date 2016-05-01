@@ -53,7 +53,7 @@ const std::string& WSClientAddon::getName() {
 	return name_;
 }
 
-const std::string& WSClientAddon::getCHeader() {
+const std::string& WSClientAddon::getHeader() {
 	return header_;
 }
 

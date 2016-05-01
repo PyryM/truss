@@ -22,7 +22,7 @@ const std::string& NanoVGAddon::getName() {
 	return name_;
 }
 
-const std::string& NanoVGAddon::getCHeader() {
+const std::string& NanoVGAddon::getHeader() {
 	return header_;
 }
 

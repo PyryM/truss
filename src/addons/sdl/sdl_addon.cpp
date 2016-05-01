@@ -88,7 +88,7 @@ const std::string& SDLAddon::getName(){
 	return name_;
 }
 
-const std::string& SDLAddon::getCHeader(){
+const std::string& SDLAddon::getHeader(){
 	return header_;
 }
 

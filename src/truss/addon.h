@@ -18,7 +18,7 @@ public:
     // Note: the header should use Addon* rather than
     // SubclassAddon* as "this" so that terra doesn't
     // have to deal with casts
-    virtual const std::string& getCHeader() = 0;
+    virtual const std::string& getHeader() = 0;
     virtual const std::string& getVersionString() = 0;
 
     virtual void init(Interpreter* owner) = 0;

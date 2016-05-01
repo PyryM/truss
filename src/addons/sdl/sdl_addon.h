@@ -64,7 +64,7 @@ class SDLAddon : public truss::Addon {
 public:
 	SDLAddon();
 	const std::string& getName();
-	const std::string& getCHeader();
+	const std::string& getHeader();
 	const std::string& getVersionString();
 	void init(truss::Interpreter* owner);
 	void shutdown();
