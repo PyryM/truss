@@ -156,32 +156,32 @@ const std::string& WSClientAddon::getMessage(int index) {
 	}
 }
 
-WSClientAddon::~WSClientAddon(){
+WSClientAddon::~WSClientAddon() {
 	cleanupWSA();
 }
 
-bool truss_wsclient_open(WSClientAddon* addon, const char* url){
+bool truss_wsclient_open(WSClientAddon* addon, const char* url) {
 	std::string temp(url);
 	return addon->open(temp);
 }
 
-void truss_wsclient_close(WSClientAddon* addon){
+void truss_wsclient_close(WSClientAddon* addon) {
 	addon->close();
 }
 
-void truss_wsclient_send(WSClientAddon* addon, const char* msg){
+void truss_wsclient_send(WSClientAddon* addon, const char* msg) {
 	std::string temp(msg);
 	addon->send(temp);
 }
 
-void truss_wsclient_receive_callback(WSClientAddon* addon, messageCallback callback){
+void truss_wsclient_receive_callback(WSClientAddon* addon, messageCallback callback) {
 	addon->receiveCallback(callback);
 }
 
-int truss_wsclient_receive(WSClientAddon* addon){
+int truss_wsclient_receive(WSClientAddon* addon) {
 	return addon->receive();
 }
 
-const char* truss_wsclient_getmessage(WSClientAddon* addon, int msgindex){
+const char* truss_wsclient_getmessage(WSClientAddon* addon, int msgindex) {
 	return addon->getMessage(msgindex).c_str();
 }

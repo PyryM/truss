@@ -67,7 +67,7 @@ void Core::logMessage(int log_level, const char* msg) {
     logfile_ << "[" << log_level << "] " << msg << std::endl;
 }
 
-Interpreter* Core::getInterpreter(int idx){
+Interpreter* Core::getInterpreter(int idx) {
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 
     if(idx < 0)
@@ -77,7 +77,7 @@ Interpreter* Core::getInterpreter(int idx){
     return interpreters_[idx];
 }
 
-Interpreter* Core::getNamedInterpreter(const char* name){
+Interpreter* Core::getNamedInterpreter(const char* name) {
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 
     std::string sname(name);
@@ -89,7 +89,7 @@ Interpreter* Core::getNamedInterpreter(const char* name){
     return NULL;
 }
 
-Interpreter* Core::spawnInterpreter(const char* name){
+Interpreter* Core::spawnInterpreter(const char* name) {
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
     Interpreter* interpreter = new Interpreter((int)(interpreters_.size()), name);
     interpreters_.push_back(interpreter);
@@ -108,19 +108,19 @@ int Core::numInterpreters() {
     return interpreters_.size();
 }
 
-void Core::dispatchMessage(int targetIdx, truss_message* msg){
+void Core::dispatchMessage(int targetIdx, truss_message* msg) {
     Interpreter* interpreter = getInterpreter(targetIdx);
     if(interpreter) {
         interpreter->sendMessage(msg);
     }
 }
 
-void Core::acquireMessage(truss_message* msg){
+void Core::acquireMessage(truss_message* msg) {
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
     ++(msg->refcount);
 }
 
-void Core::releaseMessage(truss_message* msg){
+void Core::releaseMessage(truss_message* msg) {
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
     --(msg->refcount);
     if(msg->refcount <= 0) {
@@ -128,7 +128,7 @@ void Core::releaseMessage(truss_message* msg){
     }
 }
 
-truss_message* Core::copyMessage(truss_message* src){
+truss_message* Core::copyMessage(truss_message* src) {
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
     truss_message* newmsg = allocateMessage(src->data_length);
     newmsg->message_type = src->message_type;
@@ -136,7 +136,7 @@ truss_message* Core::copyMessage(truss_message* src){
     return newmsg;
 }
 
-truss_message* Core::allocateMessage(size_t dataLength){
+truss_message* Core::allocateMessage(size_t dataLength) {
     truss_message* ret = new truss_message;
     ret->data = new unsigned char[dataLength];
     ret->data_length = dataLength;
@@ -144,7 +144,7 @@ truss_message* Core::allocateMessage(size_t dataLength){
     return ret;
 }
 
-void Core::deallocateMessage(truss_message* msg){
+void Core::deallocateMessage(truss_message* msg) {
     delete[] msg->data;
     delete msg;
 }
@@ -258,7 +258,7 @@ int Core::setStoreValue(const std::string& key, const std::string& val) {
     return result;
 }
 
-Core::~Core(){
+Core::~Core() {
     // destroy physfs
     if (physFSInitted_) {
         PHYSFS_deinit();
@@ -266,7 +266,7 @@ Core::~Core(){
     logfile_.close();
 }
 
-Core::Core(){
+Core::Core() {
     physFSInitted_ = false;
 
     // open log file

@@ -45,7 +45,7 @@ bool sdlSetWindow(SDL_Window* window_)
 	return true;
 }
 
-SDLAddon::SDLAddon(){
+SDLAddon::SDLAddon() {
 	window_ = NULL;
 	owner_ = NULL;
 	name_ = "sdl";
@@ -90,31 +90,31 @@ SDLAddon::SDLAddon(){
 	errorEvent_.event_type = TRUSS_SDL_EVENT_OUTOFBOUNDS;
 }
 
-const std::string& SDLAddon::getName(){
+const std::string& SDLAddon::getName() {
 	return name_;
 }
 
-const std::string& SDLAddon::getHeader(){
+const std::string& SDLAddon::getHeader() {
 	return header_;
 }
 
-const std::string& SDLAddon::getVersion(){
+const std::string& SDLAddon::getVersion() {
 	return version_;
 }
 
-void SDLAddon::init(truss::Interpreter* owner){
+void SDLAddon::init(truss::Interpreter* owner) {
 	owner_ = owner;
 
 	// Init SDL
 	std::cout << "Going to create window; if you get an LLVM crash on linux" <<
 		" at this point, the mostly likely reason is that you are using" <<
 		" the mesa software renderer.\n";
-	if (SDL_Init(SDL_INIT_VIDEO) != 0){
+	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
 	}
 }
 
-void SDLAddon::shutdown(){
+void SDLAddon::shutdown() {
 	destroyWindow();
 	SDL_Quit();
 }
@@ -192,7 +192,7 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	eventBuffer_.push_back(newEvent);
 }
 
-void SDLAddon::update(double dt){
+void SDLAddon::update(double dt) {
 	if (window_ == NULL) {
 		return;
 	}
@@ -206,7 +206,7 @@ void SDLAddon::update(double dt){
 	}
 }
 
-void SDLAddon::createWindow(int width, int height, const char* name){
+void SDLAddon::createWindow(int width, int height, const char* name) {
 	window_ = SDL_CreateWindow(name
 			, SDL_WINDOWPOS_UNDEFINED
 			, SDL_WINDOWPOS_UNDEFINED
@@ -218,11 +218,11 @@ void SDLAddon::createWindow(int width, int height, const char* name){
 	registerBGFX();
 }
 
-void SDLAddon::registerBGFX(){
+void SDLAddon::registerBGFX() {
 	sdlSetWindow(window_);
 }
 
-void SDLAddon::destroyWindow(){
+void SDLAddon::destroyWindow() {
 	std::cout << "SDLAddon::destroyWindow not implemented yet.\n";
 }
 
@@ -233,7 +233,7 @@ const char* SDLAddon::getClipboardText() {
 	return clipboard_.c_str();
 }
 
-SDLAddon::~SDLAddon(){
+SDLAddon::~SDLAddon() {
 	shutdown();
 }
 
@@ -250,11 +250,11 @@ truss_sdl_event& SDLAddon::getEvent(int index) {
 	}
 }
 
-void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name){
+void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name) {
 	addon->createWindow(width, height, name);
 }
 
-void truss_sdl_destroy_window(SDLAddon* addon){
+void truss_sdl_destroy_window(SDLAddon* addon) {
 	addon->destroyWindow();
 }
 
