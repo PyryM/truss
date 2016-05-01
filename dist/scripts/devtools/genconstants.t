@@ -355,5 +355,5 @@ end
 
 function update()
 	-- just quit immediately
-	core.trss.trss_stop_interpreter(core.TRSS_ID)
+	core.truss.truss_stop_interpreter(core.TRUSS_ID)
 end

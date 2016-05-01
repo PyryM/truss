@@ -6,7 +6,7 @@
 NanoVGAddon::NanoVGAddon() {
 	name_ = "nanovg";
 	version_ = "0.0.1";
-	// TODO: have bootstrap.t prepend the standard trss_message struct onto all addon headers?
+	// TODO: have bootstrap.t prepend the standard truss_message struct onto all addon headers?
 	header_ = "/*NanoVGAddon Embedded Header*/\n"
 		"typedef struct Addon Addon;\n"
 		"typedef struct {\n"
@@ -14,8 +14,8 @@ NanoVGAddon::NanoVGAddon() {
 		"unsigned int data_length;\n"
 		"unsigned char* data;\n"
 		"unsigned int refcount;\n"
-		"} trss_message;\n"
-		"trss_message* trss_nanovg_load_image(Addon* addon, const char* filename, int* w, int* h, int* n);\n";
+		"} truss_message;\n"
+		"truss_message* truss_nanovg_load_image(Addon* addon, const char* filename, int* w, int* h, int* n);\n";
 }
 
 const std::string& NanoVGAddon::getName() {
@@ -30,7 +30,7 @@ const std::string& NanoVGAddon::getVersionString() {
 	return version_;
 }
 
-void NanoVGAddon::init(trss::Interpreter* owner) {
+void NanoVGAddon::init(truss::Interpreter* owner) {
 	// nothing special to do
 }
 
@@ -43,7 +43,7 @@ void NanoVGAddon::update(double dt) {
 }
 
 // loads an image
-trss_message* NanoVGAddon::loadImage(const char* filename, int& width, int& height, int& numChannels) {
+truss_message* NanoVGAddon::loadImage(const char* filename, int& width, int& height, int& numChannels) {
 	std::cout << "Loading " << filename << std::endl;
 	unsigned char* img;
 	stbi_set_unpremultiply_on_load(1);
@@ -63,7 +63,7 @@ trss_message* NanoVGAddon::loadImage(const char* filename, int& width, int& heig
 	}
 	std::cout << "w: " << width << ", h: " << height << ", n: " << numChannels << std::endl;
 	unsigned int datalength = width * height * numChannels;
-	trss_message* ret = trss_create_message(datalength);
+	truss_message* ret = truss_create_message(datalength);
 	std::memcpy(ret->data, img, datalength);
 	stbi_image_free(img);
 
@@ -75,6 +75,6 @@ NanoVGAddon::~NanoVGAddon() {
 }
 
 
-TRSS_C_API trss_message* trss_nanovg_load_image(NanoVGAddon* addon, const char* filename, int* w, int* h, int* n) {
+TRUSS_C_API truss_message* truss_nanovg_load_image(NanoVGAddon* addon, const char* filename, int* w, int* h, int* n) {
 	return addon->loadImage(filename, *w, *h, *n);
 }

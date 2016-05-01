@@ -11,7 +11,7 @@
 #include <terra/terra.h>
 #include <trussapi.h>
 
-namespace trss {
+namespace truss {
 
 class Interpreter {
 public:
@@ -44,9 +44,9 @@ public:
     void execute();
 
     // Send a message
-    void sendMessage(trss_message* message);
+    void sendMessage(truss_message* message);
     int fetchMessages();
-    trss_message* getMessage(int index);
+    truss_message* getMessage(int index);
 
     // Inner thread
     void threadEntry();
@@ -77,8 +77,8 @@ private:
     tthread::mutex messageLock_;
 
     // Messages
-    std::vector<trss_message*>* curMessages_;
-    std::vector<trss_message*>* fetchedMessages_;
+    std::vector<truss_message*>* curMessages_;
+    std::vector<truss_message*>* fetchedMessages_;
 
     // Terra state
     lua_State* terraState_;
@@ -87,6 +87,6 @@ private:
     bool running_;
 };
 
-} // namespace trss
+} // namespace truss
 
 #endif // TRUSS_INTERPRETER_H_

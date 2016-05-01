@@ -5,7 +5,7 @@
 bgfx = core.bgfx
 bgfx_const = core.bgfx_const
 terralib = core.terralib
-trss = core.trss
+truss = core.truss
 sdl = addons.sdl
 
 -- start at very beginning to get most log messages
@@ -33,7 +33,7 @@ function updateEvents()
     for evt in sdl:events() do
         if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
             log.info("Received window close, stopping interpreter...")
-            trss.trss_stop_interpreter(core.TRSS_ID)
+            truss.truss_stop_interpreter(core.TRUSS_ID)
         end
     end
 end

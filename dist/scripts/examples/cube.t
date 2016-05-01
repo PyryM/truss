@@ -6,10 +6,10 @@
 bgfx = core.bgfx
 bgfx_const = core.bgfx_const
 terralib = core.terralib
-trss = core.trss
+truss = core.truss
 sdl = raw_addons.sdl.functions
 sdlPointer = raw_addons.sdl.pointer
-TRSS_ID = core.TRSS_ID
+TRUSS_ID = core.TRUSS_ID
 
 struct BGRAColor {
 	b: uint8;
@@ -80,7 +80,7 @@ end
 
 function init()
 	log.info("cube.t init")
-	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
+	sdl.truss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
@@ -114,12 +114,12 @@ function setViewMatrices()
 end
 
 function updateEvents()
-	local nevents = sdl.trss_sdl_num_events(sdlPointer)
+	local nevents = sdl.truss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
-		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
-		if evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
+		local evt = sdl.truss_sdl_get_event(sdlPointer, i-1)
+		if evt.event_type == sdl.TRUSS_SDL_EVENT_WINDOW and evt.flags == 14 then
 			log.info("Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(TRSS_ID)
+			truss.truss_stop_interpreter(TRUSS_ID)
 		end
 	end
 end
@@ -191,8 +191,8 @@ function drawCube()
 end
 
 terra calcDeltaTime(startTime: uint64)
-	var curtime = trss.trss_get_hp_time()
-	var freq = trss.trss_get_hp_freq()
+	var curtime = truss.truss_get_hp_time()
+	var freq = truss.truss_get_hp_freq()
 	var deltaF : float = curtime - startTime
 	return deltaF / [float](freq)
 end
@@ -203,7 +203,7 @@ function update()
 	frame = frame + 1
 	time = time + 1.0 / 60.0
 
-	local startTime = trss.trss_get_hp_time()
+	local startTime = truss.truss_get_hp_time()
 
 	-- Deal with input events
 	updateEvents()

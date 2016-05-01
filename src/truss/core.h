@@ -11,7 +11,7 @@
 #include <terra/terra.h>
 #include <trussapi.h>
 
-namespace trss {
+namespace truss {
     
 class Core {
 public:
@@ -36,22 +36,22 @@ public:
     void stopAllInterpreters();
 
     int numInterpreters();
-    void dispatchMessage(int targetIdx, trss_message* msg);
+    void dispatchMessage(int targetIdx, truss_message* msg);
 
-    void acquireMessage(trss_message* msg);
-    void releaseMessage(trss_message* msg);
-    trss_message* copyMessage(trss_message* src);
-    trss_message* allocateMessage(size_t dataLength);
-    void deallocateMessage(trss_message* msg);
+    void acquireMessage(truss_message* msg);
+    void releaseMessage(truss_message* msg);
+    truss_message* copyMessage(truss_message* src);
+    truss_message* allocateMessage(size_t dataLength);
+    void deallocateMessage(truss_message* msg);
 
     int checkFile(const char* filename);
-    trss_message* loadFile(const char* filename);
-    trss_message* loadFileRaw(const char* filename);
-    void saveFile(const char* filename, trss_message* data);
-    void saveFileRaw(const char* filename, trss_message* data);
+    truss_message* loadFile(const char* filename);
+    truss_message* loadFileRaw(const char* filename);
+    void saveFile(const char* filename, truss_message* data);
+    void saveFileRaw(const char* filename, truss_message* data);
 
-    trss_message* getStoreValue(const std::string& key);
-    int setStoreValue(const std::string& key, trss_message* val);
+    truss_message* getStoreValue(const std::string& key);
+    int setStoreValue(const std::string& key, truss_message* val);
     int setStoreValue(const std::string& key, const std::string& val);
 
     ~Core();
@@ -62,16 +62,16 @@ private:
     tthread::mutex coreLock_;
     bool physFSInitted_;
     std::vector<Interpreter*> interpreters_;
-    std::map<std::string, trss_message*> store_;
+    std::map<std::string, truss_message*> store_;
     std::ofstream logfile_;
 };
 
 // syntax sugar to avoid the verbose
-// trss::Core::getCore()
+// truss::Core::getCore()
 inline Core* core() {
     return Core::getCore();
 }
 
-} // namespace trss
+} // namespace truss
 
 #endif // TRUSS_CORE_H_

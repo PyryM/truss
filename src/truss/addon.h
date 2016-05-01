@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace trss {
+namespace truss {
 
 class Interpreter;
 
@@ -28,6 +28,6 @@ public:
     virtual ~Addon() = default;
 };
 
-} // namespace trss
+} // namespace truss
 
 #endif // TRUSS_ADDON_H_

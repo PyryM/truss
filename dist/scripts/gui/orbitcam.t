@@ -84,11 +84,11 @@ function OrbitCameraRig:updateSDLZoom(evt)
 end
 
 function OrbitCameraRig:updateFromSDL(evt)
-    if evt.event_type == sdl.TRSS_SDL_EVENT_MOUSEWHEEL then
+    if evt.event_type == sdl.TRUSS_SDL_EVENT_MOUSEWHEEL then
         self:updateSDLZoom(evt)
         return
     end
-    if evt.event_type ~= sdl.TRSS_SDL_EVENT_MOUSEMOVE then return end
+    if evt.event_type ~= sdl.TRUSS_SDL_EVENT_MOUSEMOVE then return end
 
     local x, y = evt.x, evt.y
     local buttons = evt.flags

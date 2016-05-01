@@ -10,7 +10,7 @@
 #include <trussapi.h>
 #include <physfs.h>
 
-using namespace trss;
+using namespace truss;
 
 void run_interpreter_thread(void* interpreter) {
     Interpreter* target = (Interpreter*)interpreter;
@@ -25,8 +25,8 @@ Interpreter::Interpreter(int id, const char* name)
     , id_(id)
 {
     // TODO: Is any of this necessary?
-    curMessages_ = new std::vector < trss_message* > ;
-    fetchedMessages_ = new std::vector < trss_message* >;
+    curMessages_ = new std::vector < truss_message* > ;
+    fetchedMessages_ = new std::vector < truss_message* >;
     arg_ = "";
 }
 
@@ -46,7 +46,7 @@ void Interpreter::attachAddon(Addon* addon) {
     if(!running_) {
         addons_.push_back(addon);
     } else {
-        core()->logMessage(TRSS_LOG_ERROR, "Cannot attach addon to running interpreter.");
+        core()->logMessage(TRUSS_LOG_ERROR, "Cannot attach addon to running interpreter.");
         delete addon;
     }
 }
@@ -65,7 +65,7 @@ Addon* Interpreter::getAddon(int idx) {
 
 void Interpreter::setDebug(int debugLevel) {
     if (running_) {
-        core()->logMessage(TRSS_LOG_WARNING, "Warning: Changing debug level on a running interpreter has no effect!");
+        core()->logMessage(TRUSS_LOG_WARNING, "Warning: Changing debug level on a running interpreter has no effect!");
     }
 
     if (debugLevel > 0) {
@@ -79,7 +79,7 @@ void Interpreter::setDebug(int debugLevel) {
 
 void Interpreter::start(const char* arg) {
     if(running_ || thread_ != NULL) {
-        core()->logMessage(TRSS_LOG_ERROR, "Can't start interpreter twice: already running");
+        core()->logMessage(TRUSS_LOG_ERROR, "Can't start interpreter twice: already running");
         return;
     }
 
@@ -91,7 +91,7 @@ void Interpreter::start(const char* arg) {
 
 void Interpreter::startUnthreaded(const char* arg) {
     if(running_ || thread_ != NULL) {
-        core()->logMessage(TRSS_LOG_ERROR, "Can't start interpreter twice: already running");
+        core()->logMessage(TRUSS_LOG_ERROR, "Can't start interpreter twice: already running");
         return;
     }
 
@@ -110,14 +110,14 @@ void Interpreter::stop() {
 }
 
 void Interpreter::execute() {
-    core()->logMessage(TRSS_LOG_ERROR, "Interpreter::execute not implemented!");
+    core()->logMessage(TRUSS_LOG_ERROR, "Interpreter::execute not implemented!");
     // TODO: make this do something
 }
 
 void Interpreter::threadEntry() {
     terraState_ = luaL_newstate();
     if (!terraState_) {
-        core()->logMessage(TRSS_LOG_ERROR, "Error creating a new Lua state.");
+        core()->logMessage(TRUSS_LOG_ERROR, "Error creating a new Lua state.");
         running_ = false;
         return;
     }
@@ -131,12 +131,12 @@ void Interpreter::threadEntry() {
 
     // Set some globals
     lua_pushnumber(terraState_, id_);
-    lua_setglobal(terraState_, "TRSS_INTERPRETER_ID");
+    lua_setglobal(terraState_, "TRUSS_INTERPRETER_ID");
 
     // load and execute the bootstrap script
-    trss_message* bootstrap = core()->loadFile("scripts/core/bootstrap.t");
+    truss_message* bootstrap = core()->loadFile("scripts/core/bootstrap.t");
     if (!bootstrap) {
-        core()->logMessage(TRSS_LOG_ERROR, "Error loading bootstrap script.");
+        core()->logMessage(TRUSS_LOG_ERROR, "Error loading bootstrap script.");
         running_ = false;
         return;
     }
@@ -144,10 +144,10 @@ void Interpreter::threadEntry() {
                      (char*)bootstrap->data,
                      bootstrap->data_length,
                      "bootstrap.t");
-    trss_release_message(bootstrap);
+    truss_release_message(bootstrap);
     int res = lua_pcall(terraState_, 0, 0, 0);
     if(res != 0) {
-        core()->logStream(TRSS_LOG_ERROR) << "Error bootstrapping interpreter: "
+        core()->logStream(TRUSS_LOG_ERROR) << "Error bootstrapping interpreter: "
                   << lua_tostring(terraState_, -1) << std::endl;
         running_ = false;
         return;
@@ -160,7 +160,7 @@ void Interpreter::threadEntry() {
 
     // Call init
     if (!safeLuaCall("_coreInit", arg_.c_str())) {
-        core()->logStream(TRSS_LOG_ERROR) << "Error in coreInit, stopping interpreter [" << id_ << "]\n";
+        core()->logStream(TRUSS_LOG_ERROR) << "Error in coreInit, stopping interpreter [" << id_ << "]\n";
         running_ = false;
     }
 
@@ -178,13 +178,13 @@ void Interpreter::threadEntry() {
     }
 
     // Shutdown
-    core()->logMessage(TRSS_LOG_INFO, "Shutting down.");
+    core()->logMessage(TRUSS_LOG_INFO, "Shutting down.");
     // TODO: actually shutdown stuff here
 }
 
-void Interpreter::sendMessage(trss_message* message) {
+void Interpreter::sendMessage(truss_message* message) {
     tthread::lock_guard<tthread::mutex> Lock(messageLock_);
-    trss_acquire_message(message);
+    truss_acquire_message(message);
     curMessages_->push_back(message);
 }
 
@@ -192,19 +192,19 @@ int Interpreter::fetchMessages() {
     tthread::lock_guard<tthread::mutex> Lock(messageLock_);
 
     // swap messages
-    std::vector<trss_message*>* temp = curMessages_;
+    std::vector<truss_message*>* temp = curMessages_;
     curMessages_ = fetchedMessages_;
     fetchedMessages_ = temp;
 
     // clear the 'current' messages (i.e., the old fetched messages)
     for(unsigned int i = 0; i < curMessages_->size(); ++i) {
-        trss_release_message((*curMessages_)[i]);
+        truss_release_message((*curMessages_)[i]);
     }
     curMessages_->clear();
     return fetchedMessages_->size();
 }
 
-trss_message* Interpreter::getMessage(int index) {
+truss_message* Interpreter::getMessage(int index) {
     // Note: don't need to lock because only 'our' thread
     // should call fetchMessages (which is the only other function
     // that touches fetchedMessages_)
@@ -220,7 +220,7 @@ bool Interpreter::safeLuaCall(const char* funcname, const char* argstr) {
     }
     int res = lua_pcall(terraState_, nargs, 0, 0);
     if(res != 0) {
-        core()->logMessage(TRSS_LOG_ERROR, lua_tostring(terraState_, -1));
+        core()->logMessage(TRUSS_LOG_ERROR, lua_tostring(terraState_, -1));
     }
     return res == 0; // return true is no errors
 }

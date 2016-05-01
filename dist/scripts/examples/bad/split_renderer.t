@@ -6,21 +6,21 @@
 bgfx = libs.bgfx
 bgfx_const = libs.bgfx_const
 terralib = libs.terralib
-trss = libs.trss
+truss = libs.truss
 sdl = libs.sdl
 sdlPointer = libs.sdlPointer
 nvgAddonPointer = libs.nvgAddonPointer
 nvgUtils = libs.nvgUtils
-TRSS_ID = libs.TRSS_ID
+TRUSS_ID = libs.TRUSS_ID
 nanovg = libs.nanovg
 
 function init()
-	trss.trss_log(TRSS_ID, "split_renderer.t init")
-	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
+	truss.truss_log(TRUSS_ID, "split_renderer.t init")
+	sdl.truss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
+	truss.truss_log(TRUSS_ID, "Renderer type: " .. rendererName)
 end
 
 width = 1024
@@ -40,30 +40,30 @@ simple_renderer = truss_import("renderers/simple_renderer.t")
 screenshotid = 0
 
 function updateEvents()
-	local nevents = sdl.trss_sdl_num_events(sdlPointer)
+	local nevents = sdl.truss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
-		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
-		if evt.event_type == sdl.TRSS_SDL_EVENT_MOUSEMOVE then
+		local evt = sdl.truss_sdl_get_event(sdlPointer, i-1)
+		if evt.event_type == sdl.TRUSS_SDL_EVENT_MOUSEMOVE then
 			mousex = evt.x
 			mousey = evt.y
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRSS_SDL_EVENT_KEYUP then
+		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRUSS_SDL_EVENT_KEYUP then
 			local sname = "up"
-			if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN then
+			if evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN then
 				bgfx.bgfx_save_screen_shot("screenshot_" .. screenshotid .. ".png")
 				screenshotid = screenshotid + 1
 				sname = "down" 
 			end
-			trss.trss_log(0, "Key event: " .. sname .. " " .. ffi.string(evt.keycode))
-			trss.trss_log(0, "x: " .. evt.x .. ", y: " .. evt.y .. ", flags: " .. evt.flags)
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
-			trss.trss_log(TRSS_ID, "Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(TRSS_ID)
+			truss.truss_log(0, "Key event: " .. sname .. " " .. ffi.string(evt.keycode))
+			truss.truss_log(0, "x: " .. evt.x .. ", y: " .. evt.y .. ", flags: " .. evt.flags)
+		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_WINDOW and evt.flags == 14 then
+			truss.truss_log(TRUSS_ID, "Received window close, stopping interpreter...")
+			truss.truss_stop_interpreter(TRUSS_ID)
 		end
 	end
 end
 
 function log(msg)
-	trss.trss_log(0, msg)
+	truss.truss_log(0, msg)
 end
 
 function initBGFX()
@@ -74,7 +74,7 @@ function initBGFX()
 	--local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
 	--local reset = bgfx_const.BGFX_RESET_MSAA_X8
 
-	local cbInterfacePtr = sdl.trss_sdl_get_bgfx_cb(sdlPointer)
+	local cbInterfacePtr = sdl.truss_sdl_get_bgfx_cb(sdlPointer)
 
 	bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
 	bgfx.bgfx_reset(width, height, reset)
@@ -94,7 +94,7 @@ function initBGFX()
 	1.0,
 	0)
 
-	trss.trss_log(0, "Initted bgfx I hope?")
+	truss.truss_log(0, "Initted bgfx I hope?")
 
 	-- Init renderers
 	leftrenderer = simple_renderer.SimpleRenderer(width/2, height)
@@ -118,7 +118,7 @@ function initBGFX()
 	--modeldata = objloader.loadOBJ("models/arm_fixed.obj", false)
 
 	modeltex = textureutils.loadTexture("temp/herb_base.jpg")
-	trss.trss_log(0, "Texture handle idx: " .. modeltex.idx)
+	truss.truss_log(0, "Texture handle idx: " .. modeltex.idx)
 
 	wheelgeo = meshutils.Geometry():fromData(leftrenderer.vertexInfo, modeldata)
 	wheelmat = {texture = modeltex} -- nothing in materials at the moment

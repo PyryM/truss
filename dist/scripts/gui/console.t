@@ -309,8 +309,8 @@ function m.getCharacterSize_(nvg)
 	m.charHeight = m.bounds_struct[3] - m.bounds_struct[1]
 	m.charTopOffset = m.bounds_struct[1] - ypos
 	m.lineheight = m.charHeight + m.linemargin
-	--trss.trss_log(0, "Char height: " .. m.charHeight)
-	--trss.trss_log(0, "charTopOffset: " .. m.charTopOffset)
+	--truss.truss_log(0, "Char height: " .. m.charHeight)
+	--truss.truss_log(0, "charTopOffset: " .. m.charTopOffset)
 end
 
 function m.init(width, height, nvg)

@@ -36,27 +36,27 @@ void storeArgs(int argc, char** argv) {
 		std::stringstream ss;
 		ss << "arg" << i;
 		std::string val(argv[i]);
-		trss::core()->setStoreValue(ss.str(), val);
+		truss::core()->setStoreValue(ss.str(), val);
 	}
 }
 
 int main(int argc, char** argv) {
 	setupRPath();
 
-	trss_test();
-	trss_log(0, "Entered main!");
+	truss_test();
+	truss_log(0, "Entered main!");
 	storeArgs(argc, argv);
 		
 	// set up physFS filesystem
-	trss::core()->initFS(argv[0], true); // mount the base directory
-	trss::core()->setWriteDir("save");   // write into basedir/save/
+	truss::core()->initFS(argv[0], true); // mount the base directory
+	truss::core()->setWriteDir("save");   // write into basedir/save/
 
-	trss::Interpreter* interpreter = trss::core()->spawnInterpreter("interpreter_0");
+	truss::Interpreter* interpreter = truss::core()->spawnInterpreter("interpreter_0");
 	interpreter->setDebug(0); // want most verbose debugging output
 	interpreter->attachAddon(new SDLAddon);
 	interpreter->attachAddon(new NanoVGAddon);
 	interpreter->attachAddon(new WSClientAddon);
-	trss_log(0, "Starting interpreter!");
+	truss_log(0, "Starting interpreter!");
 	// startUnthreaded starts the interpreter in the current thread,
 	// which means the call will block until the interpreter is stopped
 	//interpreter->startUnthreaded("examples/dart_gui_test.t");

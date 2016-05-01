@@ -6,15 +6,15 @@
 bgfx = core.bgfx
 bgfx_const = core.bgfx_const
 terralib = core.terralib
-trss = core.trss
+truss = core.truss
 sdl = raw_addons.sdl.functions
 sdlPointer = raw_addons.sdl.pointer
-TRSS_ID = core.TRSS_ID
+TRUSS_ID = core.TRUSS_ID
 nanovg = core.nanovg
 
 function init()
 	log.info("dart_simple_renderer.t init")
-	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
+	sdl.truss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	initNVG()
 	local rendererType = bgfx.bgfx_get_renderer_type()
@@ -143,7 +143,7 @@ function load_obj_mesh(meshname, texname)
 	local modeltex = nil
 	if texname ~= nil and texname ~= "" then
 		modeltex = textureutils.loadTexture("temp/kitchen.jpg")
-		trss.trss_log(0, "Texture handle idx: " .. modeltex.idx)
+		truss.truss_log(0, "Texture handle idx: " .. modeltex.idx)
 	end
 
 	local newgeo = meshutils.Geometry():fromData(renderer.vertexInfo, modeldata)
@@ -220,12 +220,12 @@ function consoleExecute(str)
 end
 
 function updateEvents()
-	local nevents = sdl.trss_sdl_num_events(sdlPointer)
+	local nevents = sdl.truss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
-		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
-		if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRSS_SDL_EVENT_KEYUP then
+		local evt = sdl.truss_sdl_get_event(sdlPointer, i-1)
+		if evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRUSS_SDL_EVENT_KEYUP then
 			local keyname = ffi.string(evt.keycode)
-			if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN then
+			if evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN then
 				if not downkeys[keyname] then
 					downkeys[keyname] = true
 					onKeyDown(keyname, evt.flags)
@@ -234,11 +234,11 @@ function updateEvents()
 				downkeys[keyname] = false
 				onKeyUp(keyname)
 			end
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_TEXTINPUT then
+		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_TEXTINPUT then
 			onTextInput(ffi.string(evt.keycode))
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
+		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_WINDOW and evt.flags == 14 then
 			log.info("Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(TRSS_ID)
+			truss.truss_stop_interpreter(TRUSS_ID)
 		end
 		orbitcam:updateFromSDL(evt)
 	end
@@ -357,7 +357,7 @@ function initBGFX()
 	local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
 	--local reset = bgfx_const.BGFX_RESET_MSAA_X8
 
-	local cbInterfacePtr = sdl.trss_sdl_get_bgfx_cb(sdlPointer)
+	local cbInterfacePtr = sdl.truss_sdl_get_bgfx_cb(sdlPointer)
 
 	bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
 	bgfx.bgfx_reset(width, height, reset)

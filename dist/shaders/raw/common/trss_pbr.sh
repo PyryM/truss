@@ -6,8 +6,8 @@
  * http://www.codinglabs.net/article_physically_based_rendering_cook_torrance.aspx
  */
 
-#ifndef TRSS_PBR_SHADER
-#define TRSS_PBR_SHADER
+#ifndef TRUSS_PBR_SHADER
+#define TRUSS_PBR_SHADER
 
 #include "bgfx_shader.sh"
 

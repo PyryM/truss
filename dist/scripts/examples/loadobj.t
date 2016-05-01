@@ -9,24 +9,24 @@
 bgfx = libs.bgfx
 bgfx_const = libs.bgfx_const
 terralib = libs.terralib
-trss = libs.trss
+truss = libs.truss
 sdl = libs.sdl
 sdlPointer = libs.sdlPointer
-TRSS_ID = libs.TRSS_ID
+TRUSS_ID = libs.TRUSS_ID
 nanovg = libs.nanovg
 
 function init()
-	trss.trss_log(TRSS_ID, "loadstl.t init")
-	sdl.trss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
+	truss.truss_log(TRUSS_ID, "loadstl.t init")
+	sdl.truss_sdl_create_window(sdlPointer, width, height, 'TRUSS TEST')
 	initBGFX()
 	--initNVG()
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
+	truss.truss_log(TRUSS_ID, "Renderer type: " .. rendererName)
 
 	local rendererType = bgfx.bgfx_get_renderer_type()
 	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-	trss.trss_log(TRSS_ID, "Renderer type: " .. rendererName)
+	truss.truss_log(TRUSS_ID, "Renderer type: " .. rendererName)
 end
 
 width = 800
@@ -36,14 +36,14 @@ time = 0.0
 mousex, mousey = 0, 0
 
 terra loadFileToBGFX(filename: &int8)
-	var msg: &trss.trss_message = trss.trss_load_file(filename, 0)
+	var msg: &truss.truss_message = truss.truss_load_file(filename, 0)
 	var ret: &bgfx.bgfx_memory = bgfx.bgfx_copy(msg.data, msg.data_length)
-	trss.trss_release_message(msg)
+	truss.truss_release_message(msg)
 	return ret
 end
 
 function loadProgram(vshadername, fshadername)
-	trss.trss_log(0, "Warning: loadProgram in cube.t only works with dx11 at the moment!")
+	truss.truss_log(0, "Warning: loadProgram in cube.t only works with dx11 at the moment!")
 
 	local vspath = "shaders/dx11/" .. vshadername .. ".bin"
 	local fspath = "shaders/dx11/" .. fshadername .. ".bin"
@@ -73,11 +73,11 @@ lines = {"this is a set of text lines",
 		 "here is the next one",
 		 "woo yay",
 		 "/* Begin some code to see how it aligns */",
-		 "#define TRSS_LOG_CRITICAL 0",
-		 "#define TRSS_LOG_ERROR    1",
-		 "#define TRSS_LOG_WARNING  2",
-		 "#define TRSS_LOG_INFO     3",
-		 "#define TRSS_LOG_DEBUG    4",
+		 "#define TRUSS_LOG_CRITICAL 0",
+		 "#define TRUSS_LOG_ERROR    1",
+		 "#define TRUSS_LOG_WARNING  2",
+		 "#define TRUSS_LOG_INFO     3",
+		 "#define TRUSS_LOG_DEBUG    4",
 		 "All random numbers changing every frame:"}
 
 function makeRandomLines(startpos, endpos)
@@ -123,26 +123,26 @@ function setViewMatrices()
 end
 
 function updateEvents()
-	local nevents = sdl.trss_sdl_num_events(sdlPointer)
+	local nevents = sdl.truss_sdl_num_events(sdlPointer)
 	for i = 1,nevents do
-		local evt = sdl.trss_sdl_get_event(sdlPointer, i-1)
-		if evt.event_type == sdl.TRSS_SDL_EVENT_MOUSEMOVE then
+		local evt = sdl.truss_sdl_get_event(sdlPointer, i-1)
+		if evt.event_type == sdl.TRUSS_SDL_EVENT_MOUSEMOVE then
 			mousex = evt.x
 			mousey = evt.y
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRSS_SDL_EVENT_KEYUP then
+		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN or evt.event_type == sdl.TRUSS_SDL_EVENT_KEYUP then
 			local sname = "up"
-			if evt.event_type == sdl.TRSS_SDL_EVENT_KEYDOWN then sname = "down" end
-			trss.trss_log(0, "Key event: " .. sname .. " " .. ffi.string(evt.keycode))
-			trss.trss_log(0, "x: " .. evt.x .. ", y: " .. evt.y .. ", flags: " .. evt.flags)
-		elseif evt.event_type == sdl.TRSS_SDL_EVENT_WINDOW and evt.flags == 14 then
-			trss.trss_log(TRSS_ID, "Received window close, stopping interpreter...")
-			trss.trss_stop_interpreter(TRSS_ID)
+			if evt.event_type == sdl.TRUSS_SDL_EVENT_KEYDOWN then sname = "down" end
+			truss.truss_log(0, "Key event: " .. sname .. " " .. ffi.string(evt.keycode))
+			truss.truss_log(0, "x: " .. evt.x .. ", y: " .. evt.y .. ", flags: " .. evt.flags)
+		elseif evt.event_type == sdl.TRUSS_SDL_EVENT_WINDOW and evt.flags == 14 then
+			truss.truss_log(TRUSS_ID, "Received window close, stopping interpreter...")
+			truss.truss_stop_interpreter(TRUSS_ID)
 		end
 	end
 end
 
 function log(msg)
-	trss.trss_log(TRSS_ID, msg)
+	truss.truss_log(TRUSS_ID, msg)
 end
 
 function initBGFX()
@@ -170,7 +170,7 @@ function initBGFX()
 	1.0,
 	0)
 
-	trss.trss_log(0, "Initted bgfx I hope?")
+	truss.truss_log(0, "Initted bgfx I hope?")
 
 	-- Create vertex defs
 	vertexInfo = vertexdefs.createPosNormalVertexInfo()
@@ -302,8 +302,8 @@ function drawCube()
 end
 
 terra calcDeltaTime(startTime: uint64)
-	var curtime = trss.trss_get_hp_time()
-	var freq = trss.trss_get_hp_freq()
+	var curtime = truss.truss_get_hp_time()
+	var freq = truss.truss_get_hp_freq()
 	var deltaF : float = curtime - startTime
 	return deltaF / [float](freq)
 end
@@ -314,7 +314,7 @@ function update()
 	frame = frame + 1
 	time = time + 1.0 / 60.0
 
-	local startTime = trss.trss_get_hp_time()
+	local startTime = truss.truss_get_hp_time()
 
 	-- Deal with input events
 	updateEvents()

@@ -11,7 +11,7 @@
  $input v_wpos, v_wnormal, v_viewdir, v_shadowcoord
 
 #include "../common/common.sh"
-#include "../common/trss_pbr.sh"
+#include "../common/truss_pbr.sh"
 #include "../common/shadowcommon.sh"
 
 uniform vec4 u_lightDir[4];

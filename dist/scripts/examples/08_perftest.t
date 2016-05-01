@@ -3,7 +3,7 @@
 -- testing raw bgfx drawcall performance
 
 terralib = core.terralib
-trss = core.trss
+truss = core.truss
 sdl = addons.sdl
 
 local AppScaffold = require("utils/appscaffold.t").AppScaffold
