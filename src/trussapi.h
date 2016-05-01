@@ -29,8 +29,15 @@ typedef struct Addon Addon;
 
 /* Message types */
 #define TRUSS_MESSAGE_UNKNOWN 0
-#define TRUSS_MESSAGE_CSTR 1
-#define TRUSS_MESSAGE_BLOB 2
+#define TRUSS_MESSAGE_CSTR    1
+#define TRUSS_MESSAGE_BLOB    2
+
+/* Logging */
+#define TRUSS_LOG_CRITICAL 0
+#define TRUSS_LOG_ERROR    1
+#define TRUSS_LOG_WARNING  2
+#define TRUSS_LOG_INFO     3
+#define TRUSS_LOG_DEBUG    4
 
 /* Message struct */
 typedef struct {
@@ -42,13 +49,6 @@ typedef struct {
 
 /* Info */
 TRUSS_C_API const char* truss_get_version_string();
-
-/* Logging */
-#define TRUSS_LOG_CRITICAL 0
-#define TRUSS_LOG_ERROR 1
-#define TRUSS_LOG_WARNING 2
-#define TRUSS_LOG_INFO 3
-#define TRUSS_LOG_DEBUG 4
 
 TRUSS_C_API void truss_test();
 TRUSS_C_API void truss_log(int log_level, const char* str);
