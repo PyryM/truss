@@ -148,8 +148,7 @@ const char* truss_get_addon_name(truss_interpreter_id target_id, int addon_idx) 
     Addon* addon = truss_get_addon(target_id, addon_idx);
     if (addon) {
         return addon->getName().c_str();
-    }
-    else {
+    } else {
         return "";
     }
 }
@@ -167,8 +166,7 @@ const char* truss_get_addon_version(truss_interpreter_id target_id, int addon_id
     Addon* addon = truss_get_addon(target_id, addon_idx);
     if (addon) {
         return addon->getVersion().c_str();
-    }
-    else {
+    } else {
         return "";
     }
 }
