@@ -37,16 +37,21 @@ WSClientAddon::WSClientAddon() {
 	initWSA();
 	name_ = "wsclient";
 	version_ = "0.0.1";
-	header_ = "/*WSClientAddon Embedded Header*/\n"
-		"#include <stdbool.h>\n"
-		"typedef struct Addon Addon;\n"
-		"typedef void(*messageCallback)(const char*);\n"
-		"bool truss_wsclient_open(Addon* addon, const char* url);\n"
-		"void truss_wsclient_close(Addon* addon);\n"
-		"void truss_wsclient_send(Addon* addon, const char* msg);\n"
-		"void truss_wsclient_receive_callback(Addon* addon, messageCallback callback);\n"
-		"int truss_wsclient_receive(Addon* addon);\n"
-		"const char* truss_wsclient_getmessage(Addon* addon, int msgindex);\n";
+	header_ = R"(
+		/* WSClient Addon Embedded Header */
+
+		#include <stdbool.h>
+
+		typedef struct Addon Addon;
+		typedef void(*messageCallback)(const char*);
+
+		bool truss_wsclient_open(Addon* addon, const char* url);
+		void truss_wsclient_close(Addon* addon);
+		void truss_wsclient_send(Addon* addon, const char* msg);
+		void truss_wsclient_receive_callback(Addon* addon, messageCallback callback);
+		int truss_wsclient_receive(Addon* addon);
+		const char* truss_wsclient_getmessage(Addon* addon, int msgindex);
+	)";
 }
 
 const std::string& WSClientAddon::getName() {
