@@ -159,7 +159,7 @@ void Interpreter::threadEntry() {
     }
 
     // Call init
-    if (!safeLuaCall("_coreInit", arg_.c_str())) {
+    if (!call("_coreInit", arg_.c_str())) {
         core()->logStream(TRUSS_LOG_ERROR) << "Error in coreInit, stopping interpreter [" << id_ << "]\n";
         running_ = false;
     }
@@ -174,7 +174,7 @@ void Interpreter::threadEntry() {
         }
 
         // update lua
-        safeLuaCall("_coreUpdate");
+        call("_coreUpdate");
     }
 
     // Shutdown
@@ -211,7 +211,7 @@ truss_message* Interpreter::getMessage(int index) {
     return (*fetchedMessages_)[index];
 }
 
-bool Interpreter::safeLuaCall(const char* funcname, const char* argstr) {
+bool Interpreter::call(const char* funcname, const char* argstr) {
     int nargs = 0;
     lua_getglobal(terraState_, funcname);
     if(argstr != NULL) {
