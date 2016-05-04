@@ -31,6 +31,8 @@
         typedef long long unsigned int size_t;
 #elif defined(_WIN32)
         typedef unsigned int size_t;
+#elif defined (__APPLE__) && defined(__SIZE_TYPE__)
+        typedef __SIZE_TYPE__ size_t;
 #elif defined (__linux__) && defined(__SIZE_TYPE__)
         typedef __SIZE_TYPE__ size_t;
 #else
