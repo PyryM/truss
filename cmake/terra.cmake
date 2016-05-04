@@ -61,7 +61,7 @@ set_target_properties(terra PROPERTIES
 )
 
 # Create an install command to install the shared libs.
-copy_truss_libraries(terra_EXTERNAL "${terra_LIBRARY}")
+truss_copy_libraries(terra_EXTERNAL "${terra_LIBRARY}")
 
 # On Windows, Terra uses a separate Lua library for some reason.
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
@@ -70,5 +70,5 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
     
     set_target_properties(terra PROPERTIES
         INTERFACE_LINK_LIBRARIES "${lua51_IMPLIB}")
-    copy_truss_libraries(terra_EXTERNAL "${lua51_LIBRARY}")
+    truss_copy_libraries(terra_EXTERNAL "${lua51_LIBRARY}")
 endif()
