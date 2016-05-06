@@ -23,7 +23,7 @@ Core* Core::getCore() {
 
 void Core::initFS(char* argv0, bool mountBaseDir) {
     if (physFSInitted_) {
-        logMessage(TRUSS_LOG_WARNING, "PhysFS already initted.");
+        log(TRUSS_LOG_WARNING, "PhysFS already initted.");
         return;
     }
 
@@ -38,8 +38,8 @@ void Core::initFS(char* argv0, bool mountBaseDir) {
 void Core::addFSPath(const char* pathname, const char* mountname, int append) {
     std::stringstream ss;
     ss << PHYSFS_getBaseDir() << PHYSFS_getDirSeparator() << pathname;
-    logMessage(TRUSS_LOG_DEBUG, "Adding physFS path: ");
-    logMessage(TRUSS_LOG_DEBUG, ss.str().c_str());
+    log(TRUSS_LOG_DEBUG, "Adding physFS path: ");
+    log(TRUSS_LOG_DEBUG, ss.str().c_str());
 
     int retval = PHYSFS_mount(ss.str().c_str(), mountname, append);
     // TODO: do something with the return value (e.g., if it's an error)
@@ -48,20 +48,20 @@ void Core::addFSPath(const char* pathname, const char* mountname, int append) {
 void Core::setWriteDir(const char* writepath) {
     std::stringstream ss;
     ss << PHYSFS_getBaseDir() << PHYSFS_getDirSeparator() << writepath;
-    logMessage(TRUSS_LOG_DEBUG, "Setting physFS write path: ");
-    logMessage(TRUSS_LOG_DEBUG, ss.str().c_str());
+    log(TRUSS_LOG_DEBUG, "Setting physFS write path: ");
+    log(TRUSS_LOG_DEBUG, ss.str().c_str());
 
     int retval = PHYSFS_setWriteDir(ss.str().c_str());
     // TODO: do something with the return value (e.g., if it's an error)
 }
 
 // NOT THREAD SAFE!!!
-std::ostream& Core::logStream(int log_level) {
+std::ostream& Core::log(int log_level) {
     logfile_ << "[" << log_level << "] ";
     return logfile_;
 }
 
-void Core::logMessage(int log_level, const char* msg) {
+void Core::log(int log_level, const char* msg) {
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
     // dump to logfile
     logfile_ << "[" << log_level << "] " << msg << std::endl;
@@ -151,7 +151,7 @@ void Core::deallocateMessage(truss_message* msg) {
 
 int Core::checkFile(const char* filename) {
     if (!physFSInitted_) {
-        logMessage(TRUSS_LOG_WARNING, "PhysFS not initted: checkFile always returns 0.");
+        log(TRUSS_LOG_WARNING, "PhysFS not initted: checkFile always returns 0.");
         return false;
     }
 
@@ -176,27 +176,27 @@ truss_message* Core::loadFileRaw(const char* filename) {
 
         return ret;
     } else {
-        logStream(TRUSS_LOG_ERROR) << "Unable to open file " << filename << "\n";
+        log(TRUSS_LOG_ERROR) << "Unable to open file " << filename << "\n";
         return NULL;
     }
 }
 
 truss_message* Core::loadFile(const char* filename) {
     if (!physFSInitted_) {
-        logMessage(TRUSS_LOG_ERROR, "Cannot load file: PhysFS not initted.");
-        logMessage(TRUSS_LOG_ERROR, filename);
+        log(TRUSS_LOG_ERROR, "Cannot load file: PhysFS not initted.");
+        log(TRUSS_LOG_ERROR, filename);
         return NULL;
     }
 
     if (PHYSFS_exists(filename) == 0) {
-        logMessage(TRUSS_LOG_ERROR, "Error opening file: does not exist.");
-        logMessage(TRUSS_LOG_ERROR, filename);
+        log(TRUSS_LOG_ERROR, "Error opening file: does not exist.");
+        log(TRUSS_LOG_ERROR, filename);
         return NULL;
     }
 
     if (PHYSFS_isDirectory(filename) != 0) {
-        logMessage(TRUSS_LOG_ERROR, "Attempted to read directory as a file.");
-        logMessage(TRUSS_LOG_ERROR, filename);
+        log(TRUSS_LOG_ERROR, "Attempted to read directory as a file.");
+        log(TRUSS_LOG_ERROR, filename);
         return NULL;
     }
 
@@ -211,8 +211,8 @@ truss_message* Core::loadFile(const char* filename) {
 
 void Core::saveFile(const char* filename, truss_message* data) {
     if (!physFSInitted_) {
-        logMessage(TRUSS_LOG_ERROR, "Cannot save file; PhysFS not initted.");
-        logMessage(TRUSS_LOG_ERROR, filename);
+        log(TRUSS_LOG_ERROR, "Cannot save file; PhysFS not initted.");
+        log(TRUSS_LOG_ERROR, filename);
         return;
     }
 

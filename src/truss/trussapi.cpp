@@ -18,11 +18,11 @@ const char* truss_get_version() {
 
 void truss_test() {
     std::cout << ">>>>>>>>>>>>>> TRUSS_TEST CALLED <<<<<<<<<<<<<\n";
-    core()->logMessage(TRUSS_LOG_CRITICAL, ">>>>>>>>>>>>>> TRUSS_TEST CALLED <<<<<<<<<<<<<");
+    core()->log(TRUSS_LOG_CRITICAL, ">>>>>>>>>>>>>> TRUSS_TEST CALLED <<<<<<<<<<<<<");
 }
 
 void truss_log(int log_level, const char* str) {
-    Core::getCore()->logMessage(log_level, str);
+    Core::getCore()->log(log_level, str);
 }
 
 void truss_shutddown() {
