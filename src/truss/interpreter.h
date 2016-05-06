@@ -37,8 +37,10 @@ public:
 
     // Starting and stopping
     void start(const char* arg);
-    void startUnthreaded(const char* arg);
     void stop();
+
+    // Run in the current thread
+    void run(const char* arg);
 
     // Request an execution
     void execute();

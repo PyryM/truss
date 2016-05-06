@@ -89,7 +89,7 @@ void Interpreter::start(const char* arg) {
     thread_ = new tthread::thread(run_interpreter_thread, this);
 }
 
-void Interpreter::startUnthreaded(const char* arg) {
+void Interpreter::run(const char* arg) {
     if(running_ || thread_ != NULL) {
         core()->log(TRUSS_LOG_ERROR, "Can't start interpreter twice: already running");
         return;
