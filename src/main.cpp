@@ -57,14 +57,9 @@ int main(int argc, char** argv) {
 	interpreter->attachAddon(new NanoVGAddon);
 	interpreter->attachAddon(new WSClientAddon);
 	truss_log(0, "Starting interpreter!");
+
 	// `run` starts the interpreter in the current thread,
 	// which means the call will block until the interpreter is stopped
-	//interpreter->run("examples/dart_gui_test.t");
-	if (argc > 1) {
-		interpreter->run(argv[1]);
-	}
-	else {
-		interpreter->run("examples/dart_gui_test.t");
-	}
+	interpreter->run((argc > 1) ? argv[1], "");
 	return 0;
 }
