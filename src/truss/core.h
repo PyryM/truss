@@ -27,7 +27,7 @@ public:
     void log(int log_level, const char* msg);
 
     Interpreter* getInterpreter(int idx);
-    Interpreter* getNamedInterpreter(const char* name);
+    Interpreter* getInterpreter(const char* name);
     Interpreter* spawnInterpreter(const char* name);
 
     // block until all interpreters have finished

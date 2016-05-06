@@ -101,7 +101,7 @@ void truss_execute_interpreter(truss_interpreter_id target_id) {
 }
 
 int truss_find_interpreter(const char* name) {
-    return Core::getCore()->getNamedInterpreter(name)->getID();
+    return Core::getCore()->getInterpreter(name)->getID();
 }
 
 void truss_send_message(truss_interpreter_id dest, truss_message* message) {

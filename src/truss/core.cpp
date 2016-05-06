@@ -77,7 +77,7 @@ Interpreter* Core::getInterpreter(int idx) {
     return interpreters_[idx];
 }
 
-Interpreter* Core::getNamedInterpreter(const char* name) {
+Interpreter* Core::getInterpreter(const char* name) {
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 
     std::string sname(name);
