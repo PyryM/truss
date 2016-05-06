@@ -7,12 +7,16 @@ set(terra_RELEASE_HASH "332a506")
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
     set(terra_SYSTEM_NAME "Windows")
     set(terra_SHARED_LIBS_DIR "bin")
+    set(terra_LIBRARY_NAME "terra.dll")
+    set(terra_IMPLIB_NAME "terra.lib")
 elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
     set(terra_SYSTEM_NAME "OSX")
     set(terra_SHARED_LIBS_DIR "lib")
+    set(terra_LIBRARY_NAME "terra.so")
 elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
     set(terra_SYSTEM_NAME "Linux")
     set(terra_SHARED_LIBS_DIR "lib")
+    set(terra_LIBRARY_NAME "libterra.so")
 else()
     message(FATAL_ERROR "Terra does not have precompiled binaries for '${CMAKE_SYSTEM_NAME}'.")
 endif()
@@ -33,15 +37,14 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
     add_custom_command(TARGET terra_EXTERNAL
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-                "${SOURCE_DIR}/${terra_SHARED_LIBS_DIR}/terra${CMAKE_SHARED_LIBRARY_SUFFIX}"
-                "${SOURCE_DIR}/${terra_SHARED_LIBS_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}terra${CMAKE_SHARED_LIBRARY_SUFFIX}"
+                "${SOURCE_DIR}/${terra_SHARED_LIBS_DIR}/terra.so"
+                "${SOURCE_DIR}/${terra_SHARED_LIBS_DIR}/${terra_LIBRARY_NAME}"
     )
 endif()
 
 set(terra_INCLUDE_DIR "${SOURCE_DIR}/include")
-set(terra_LIBRARIES_DIR "${SOURCE_DIR}/${terra_SHARED_LIBS_DIR}")
-set(terra_LIBRARY "${terra_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}terra${CMAKE_SHARED_LIBRARY_SUFFIX}")
-set(terra_IMPLIB "${SOURCE_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}terra${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(terra_LIBRARY "${SOURCE_DIR}/${terra_SHARED_LIBS_DIR}/${terra_LIBRARY_NAME}")
+set(terra_IMPLIB "${SOURCE_DIR}/lib/${terra_IMPLIB_NAME}")
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
 file(MAKE_DIRECTORY "${terra_INCLUDE_DIR}")
@@ -58,7 +61,7 @@ set_target_properties(terra PROPERTIES
 )
 
 # Create an install command to install the shared libs.
-copy_truss_libraries(terra_EXTERNAL "${terra_LIBRARY}")
+truss_copy_libraries(terra_EXTERNAL "${terra_LIBRARY}")
 
 # On Windows, Terra uses a separate Lua library for some reason.
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
@@ -67,5 +70,5 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
     
     set_target_properties(terra PROPERTIES
         INTERFACE_LINK_LIBRARIES "${lua51_IMPLIB}")
-    copy_truss_libraries(terra_EXTERNAL "${lua51_LIBRARY}")
+    truss_copy_libraries(terra_EXTERNAL "${lua51_LIBRARY}")
 endif()
