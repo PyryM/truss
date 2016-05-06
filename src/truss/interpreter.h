@@ -65,7 +65,7 @@ private:
     int debugEnabled_;
 
     // Call into the actual lua/terra interpreter
-    bool safeLuaCall(const char* funcname, const char* argstr = NULL);
+    bool call(const char* funcname, const char* argstr = NULL);
 
     // List of addons
     std::vector<Addon*> addons_;

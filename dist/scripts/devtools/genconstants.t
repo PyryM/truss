@@ -5,7 +5,7 @@
 
 local function makeCReturnFunc(funcname, defname)
 	local ret = ""
-	ret = ret .. "uint64_t " .. funcname .. "(){\n"
+	ret = ret .. "uint64_t " .. funcname .. "() {\n"
 	ret = ret .. "    return " .. defname .. ";\n"
 	ret = ret .. "}\n"
 	return ret

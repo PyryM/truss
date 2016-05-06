@@ -5,10 +5,9 @@
  * vim: set tabstop=4 expandtab:
  */
 
-#ifndef BGFX_C99_H_HEADER_GUARD
-#define BGFX_C99_H_HEADER_GUARD
+#ifndef BGFX_TRUSS_C99_H_
+#define BGFX_TRUSS_C99_H_
 
-//#include <stdarg.h>  // va_list
 #include <stdbool.h> // bool
 #include <stdint.h>  // uint32_t
 #include <stdlib.h>  // size_t
@@ -825,4 +824,4 @@ BGFX_C_API void bgfx_blit_frame_buffer(uint8_t _id, bgfx_texture_handle_t _dst, 
 /**/
 BGFX_C_API void bgfx_save_screen_shot(const char* _filePath);
 
-#endif // BGFX_C99_H_HEADER_GUARD
+#endif // BGFX_TRUSS_C99_H_

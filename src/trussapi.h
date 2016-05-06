@@ -29,8 +29,15 @@ typedef struct Addon Addon;
 
 /* Message types */
 #define TRUSS_MESSAGE_UNKNOWN 0
-#define TRUSS_MESSAGE_CSTR 1
-#define TRUSS_MESSAGE_BLOB 2
+#define TRUSS_MESSAGE_CSTR    1
+#define TRUSS_MESSAGE_BLOB    2
+
+/* Logging */
+#define TRUSS_LOG_CRITICAL 0
+#define TRUSS_LOG_ERROR    1
+#define TRUSS_LOG_WARNING  2
+#define TRUSS_LOG_INFO     3
+#define TRUSS_LOG_DEBUG    4
 
 /* Message struct */
 typedef struct {
@@ -41,14 +48,7 @@ typedef struct {
 } truss_message;
 
 /* Info */
-TRUSS_C_API const char* truss_get_version_string();
-
-/* Logging */
-#define TRUSS_LOG_CRITICAL 0
-#define TRUSS_LOG_ERROR 1
-#define TRUSS_LOG_WARNING 2
-#define TRUSS_LOG_INFO 3
-#define TRUSS_LOG_DEBUG 4
+TRUSS_C_API const char* truss_get_version();
 
 TRUSS_C_API void truss_test();
 TRUSS_C_API void truss_log(int log_level, const char* str);
@@ -89,7 +89,7 @@ TRUSS_C_API int truss_get_addon_count(truss_interpreter_id target_id);
 TRUSS_C_API truss::Addon* truss_get_addon(truss_interpreter_id target_id, int addon_idx);
 TRUSS_C_API const char* truss_get_addon_name(truss_interpreter_id target_id, int addon_idx);
 TRUSS_C_API const char* truss_get_addon_header(truss_interpreter_id target_id, int addon_idx);
-TRUSS_C_API const char* truss_get_addon_version_string(truss_interpreter_id target_id, int addon_idx);
+TRUSS_C_API const char* truss_get_addon_version(truss_interpreter_id target_id, int addon_idx);
 
 /* Message transport */
 TRUSS_C_API void truss_send_message(truss_interpreter_id dest, truss_message* message);

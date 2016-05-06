@@ -12,7 +12,7 @@
 
 using namespace truss;
 
-const char* truss_get_version_string() {
+const char* truss_get_version() {
     return TRUSS_VERSION_STRING;
 }
 
@@ -21,7 +21,7 @@ void truss_test() {
     core()->logMessage(TRUSS_LOG_CRITICAL, ">>>>>>>>>>>>>> TRUSS_TEST CALLED <<<<<<<<<<<<<");
 }
 
-void truss_log(int log_level, const char* str){
+void truss_log(int log_level, const char* str) {
     Core::getCore()->logMessage(log_level, str);
 }
 
@@ -41,12 +41,12 @@ int truss_check_file(const char* filename) {
     return Core::getCore()->checkFile(filename);
 }
 
-truss_message* truss_load_file(const char* filename){
+truss_message* truss_load_file(const char* filename) {
     return Core::getCore()->loadFile(filename);
 }
 
 /* Note that when saving the message_type field is not saved */
-int truss_save_file(const char* filename, truss_message* data){
+int truss_save_file(const char* filename, truss_message* data) {
     Core::getCore()->saveFile(filename, data);
     return 0; // TODO: actually check for errors
 }
@@ -79,7 +79,7 @@ int truss_set_store_value_str(const char* key, const char* msg) {
 }
 
 /* Interpreter management functions */
-int truss_spawn_interpreter(const char* name){
+int truss_spawn_interpreter(const char* name) {
     Interpreter* spawned = Core::getCore()->spawnInterpreter(name);
     return spawned->getID();
 }
@@ -92,23 +92,23 @@ void truss_start_interpreter(truss_interpreter_id target_id, const char* msgstr)
     Core::getCore()->getInterpreter(target_id)->start(msgstr);
 }
 
-void truss_stop_interpreter(truss_interpreter_id target_id){
+void truss_stop_interpreter(truss_interpreter_id target_id) {
     Core::getCore()->getInterpreter(target_id)->stop();
 }
 
-void truss_execute_interpreter(truss_interpreter_id target_id){
+void truss_execute_interpreter(truss_interpreter_id target_id) {
     return Core::getCore()->getInterpreter(target_id)->execute();
 }
 
-int truss_find_interpreter(const char* name){
+int truss_find_interpreter(const char* name) {
     return Core::getCore()->getNamedInterpreter(name)->getID();
 }
 
-void truss_send_message(truss_interpreter_id dest, truss_message* message){
+void truss_send_message(truss_interpreter_id dest, truss_message* message) {
     Core::getCore()->dispatchMessage(dest, message);
 }
 
-int truss_fetch_messages(truss_interpreter_id idx){
+int truss_fetch_messages(truss_interpreter_id idx) {
     Interpreter* interpreter = Core::getCore()->getInterpreter(idx);
     if(interpreter) {
         return interpreter->fetchMessages();
@@ -117,7 +117,7 @@ int truss_fetch_messages(truss_interpreter_id idx){
     }
 }
 
-truss_message* truss_get_message(truss_interpreter_id idx, int message_index){
+truss_message* truss_get_message(truss_interpreter_id idx, int message_index) {
     Interpreter* interpreter = Core::getCore()->getInterpreter(idx);
     if(interpreter) {
         return interpreter->getMessage(message_index);
@@ -148,8 +148,7 @@ const char* truss_get_addon_name(truss_interpreter_id target_id, int addon_idx) 
     Addon* addon = truss_get_addon(target_id, addon_idx);
     if (addon) {
         return addon->getName().c_str();
-    }
-    else {
+    } else {
         return "";
     }
 }
@@ -157,34 +156,33 @@ const char* truss_get_addon_name(truss_interpreter_id target_id, int addon_idx) 
 const char* truss_get_addon_header(truss_interpreter_id target_id, int addon_idx) {
     Addon* addon = truss_get_addon(target_id, addon_idx);
     if(addon) {
-        return addon->getCHeader().c_str();
+        return addon->getHeader().c_str();
     } else {
         return "";
     }
 }
 
-const char* truss_get_addon_version_string(truss_interpreter_id target_id, int addon_idx){
+const char* truss_get_addon_version(truss_interpreter_id target_id, int addon_idx) {
     Addon* addon = truss_get_addon(target_id, addon_idx);
     if (addon) {
-        return addon->getVersionString().c_str();
-    }
-    else {
+        return addon->getVersion().c_str();
+    } else {
         return "";
     }
 }
 
 /* Message management functions */
-truss_message* truss_create_message(size_t data_length){
+truss_message* truss_create_message(size_t data_length) {
     return Core::getCore()->allocateMessage(data_length);
 }
 
-void truss_acquire_message(truss_message* msg){
+void truss_acquire_message(truss_message* msg) {
     if (msg != NULL) {
         ++(msg->refcount);
     }
 }
 
-void truss_release_message(truss_message* msg){
+void truss_release_message(truss_message* msg) {
     if (msg != NULL) {
         --(msg->refcount);
         if (msg->refcount <= 0) {
@@ -193,7 +191,7 @@ void truss_release_message(truss_message* msg){
     }
 }
 
-truss_message* truss_copy_message(truss_message* src){
+truss_message* truss_copy_message(truss_message* src) {
     if (src == NULL) {
         return NULL;
     }
