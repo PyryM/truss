@@ -7,26 +7,30 @@ NanoVGAddon::NanoVGAddon() {
 	name_ = "nanovg";
 	version_ = "0.0.1";
 	// TODO: have bootstrap.t prepend the standard truss_message struct onto all addon headers?
-	header_ = "/*NanoVGAddon Embedded Header*/\n"
-		"typedef struct Addon Addon;\n"
-		"typedef struct {\n"
-		"unsigned int message_type;\n"
-		"unsigned int data_length;\n"
-		"unsigned char* data;\n"
-		"unsigned int refcount;\n"
-		"} truss_message;\n"
-		"truss_message* truss_nanovg_load_image(Addon* addon, const char* filename, int* w, int* h, int* n);\n";
+	header_ = R"(
+		/* NanoVG Addon Embedded Header */
+
+		typedef struct Addon Addon;
+		typedef struct {
+			unsigned int message_type;
+			unsigned int data_length;
+			unsigned char* data;
+			unsigned int refcount;
+		} truss_message;
+
+		truss_message* truss_nanovg_load_image(Addon* addon, const char* filename, int* w, int* h, int* n);
+	)";
 }
 
 const std::string& NanoVGAddon::getName() {
 	return name_;
 }
 
-const std::string& NanoVGAddon::getCHeader() {
+const std::string& NanoVGAddon::getHeader() {
 	return header_;
 }
 
-const std::string& NanoVGAddon::getVersionString() {
+const std::string& NanoVGAddon::getVersion() {
 	return version_;
 }
 

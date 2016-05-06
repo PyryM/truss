@@ -45,70 +45,76 @@ bool sdlSetWindow(SDL_Window* window_)
 	return true;
 }
 
-SDLAddon::SDLAddon(){
+SDLAddon::SDLAddon() {
 	window_ = NULL;
 	owner_ = NULL;
 	name_ = "sdl";
 	version_ = "0.0.1";
-	header_ = "/*SDLAddon Embedded Header*/\n"
-		"typedef struct Addon Addon;\n"
-		"typedef struct bgfx_callback_interface bgfx_callback_interface_t;\n"
-		"#define TRUSS_SDL_EVENT_OUTOFBOUNDS 0\n"
-		"#define TRUSS_SDL_EVENT_KEYDOWN 1\n"
-		"#define TRUSS_SDL_EVENT_KEYUP		2\n"
-		"#define TRUSS_SDL_EVENT_MOUSEDOWN 	3\n"
-		"#define TRUSS_SDL_EVENT_MOUSEUP	 	4\n"
-		"#define TRUSS_SDL_EVENT_MOUSEMOVE 	5\n"
-		"#define TRUSS_SDL_EVENT_MOUSEWHEEL  6\n"
-		"#define TRUSS_SDL_EVENT_WINDOW      7\n"
-		"#define TRUSS_SDL_EVENT_TEXTINPUT   8\n"
-		"typedef struct {\n"
-		"    unsigned int event_type;\n"
-		"    char keycode[16];\n"
-		"    double x;\n"
-		"    double y;\n"
-		"    double dx;\n"
-		"    double dy;\n"
-		"    int flags;\n"
-		"} truss_sdl_event;\n"
-		"void truss_sdl_create_window(Addon* addon, int width, int height, const char* name);\n"
-		"void truss_sdl_destroy_window(Addon* addon);\n"
-		"int  truss_sdl_num_events(Addon* addon);\n"
-		"truss_sdl_event truss_sdl_get_event(Addon* addon, int index);\n"
-		"void truss_sdl_start_textinput(Addon* addon);\n"
-		"void truss_sdl_stop_textinput(Addon* addon);\n"
-		"void truss_sdl_set_clipboard(Addon* addon, const char* data);\n"
-		"const char* truss_sdl_get_clipboard(Addon* addon);\n"
-		"bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(Addon* addon);\n"
-		"void truss_sdl_set_relative_mouse_mode(Addon* addon, int mode);";
+	header_ = R"(
+		/* SDL Addon Embedded Header */
+
+		#define TRUSS_SDL_EVENT_OUTOFBOUNDS 0
+		#define TRUSS_SDL_EVENT_KEYDOWN     1
+		#define TRUSS_SDL_EVENT_KEYUP       2
+		#define TRUSS_SDL_EVENT_MOUSEDOWN   3
+		#define TRUSS_SDL_EVENT_MOUSEUP     4
+		#define TRUSS_SDL_EVENT_MOUSEMOVE   5
+		#define TRUSS_SDL_EVENT_MOUSEWHEEL  6
+		#define TRUSS_SDL_EVENT_WINDOW      7
+		#define TRUSS_SDL_EVENT_TEXTINPUT   8
+
+		typedef struct Addon Addon;
+		typedef struct bgfx_callback_interface bgfx_callback_interface_t;
+
+		typedef struct {
+		    unsigned int event_type;
+		    char keycode[16];
+		    double x;
+		    double y;
+		    double dx;
+		    double dy;
+		    int flags;
+		} truss_sdl_event;
+
+		void truss_sdl_create_window(Addon* addon, int width, int height, const char* name);
+		void truss_sdl_destroy_window(Addon* addon);
+		int  truss_sdl_num_events(Addon* addon);
+		truss_sdl_event truss_sdl_get_event(Addon* addon, int index);
+		void truss_sdl_start_textinput(Addon* addon);
+		void truss_sdl_stop_textinput(Addon* addon);
+		void truss_sdl_set_clipboard(Addon* addon, const char* data);
+		const char* truss_sdl_get_clipboard(Addon* addon);
+		bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(Addon* addon);
+		void truss_sdl_set_relative_mouse_mode(Addon* addon, int mod);
+	)";
 	errorEvent_.event_type = TRUSS_SDL_EVENT_OUTOFBOUNDS;
 }
 
-const std::string& SDLAddon::getName(){
+const std::string& SDLAddon::getName() {
 	return name_;
 }
 
-const std::string& SDLAddon::getCHeader(){
+const std::string& SDLAddon::getHeader() {
 	return header_;
 }
 
-const std::string& SDLAddon::getVersionString(){
+const std::string& SDLAddon::getVersion() {
 	return version_;
 }
 
-void SDLAddon::init(truss::Interpreter* owner){
+void SDLAddon::init(truss::Interpreter* owner) {
 	owner_ = owner;
 
 	// Init SDL
 	std::cout << "Going to create window; if you get an LLVM crash on linux" <<
 		" at this point, the mostly likely reason is that you are using" <<
 		" the mesa software renderer.\n";
-	if (SDL_Init(SDL_INIT_VIDEO) != 0){
+	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
 	}
 }
 
-void SDLAddon::shutdown(){
+void SDLAddon::shutdown() {
 	destroyWindow();
 	SDL_Quit();
 }
@@ -186,7 +192,7 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	eventBuffer_.push_back(newEvent);
 }
 
-void SDLAddon::update(double dt){
+void SDLAddon::update(double dt) {
 	if (window_ == NULL) {
 		return;
 	}
@@ -200,7 +206,7 @@ void SDLAddon::update(double dt){
 	}
 }
 
-void SDLAddon::createWindow(int width, int height, const char* name){
+void SDLAddon::createWindow(int width, int height, const char* name) {
 	window_ = SDL_CreateWindow(name
 			, SDL_WINDOWPOS_UNDEFINED
 			, SDL_WINDOWPOS_UNDEFINED
@@ -212,11 +218,11 @@ void SDLAddon::createWindow(int width, int height, const char* name){
 	registerBGFX();
 }
 
-void SDLAddon::registerBGFX(){
+void SDLAddon::registerBGFX() {
 	sdlSetWindow(window_);
 }
 
-void SDLAddon::destroyWindow(){
+void SDLAddon::destroyWindow() {
 	std::cout << "SDLAddon::destroyWindow not implemented yet.\n";
 }
 
@@ -227,7 +233,7 @@ const char* SDLAddon::getClipboardText() {
 	return clipboard_.c_str();
 }
 
-SDLAddon::~SDLAddon(){
+SDLAddon::~SDLAddon() {
 	shutdown();
 }
 
@@ -244,11 +250,11 @@ truss_sdl_event& SDLAddon::getEvent(int index) {
 	}
 }
 
-void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name){
+void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name) {
 	addon->createWindow(width, height, name);
 }
 
-void truss_sdl_destroy_window(SDLAddon* addon){
+void truss_sdl_destroy_window(SDLAddon* addon) {
 	addon->destroyWindow();
 }
 
