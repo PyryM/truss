@@ -27,16 +27,32 @@ function OrbitCameraRig:init(target)
     self.radRate = 0.4
     self.panRate = 0.01
 
-    self.lastMouseX = 0 
+    self.lastMouseX = 0
     self.lastMouseY = 0
-    
+
     -- mouse buttons: 1 = left, 2 = middle, 4 = right
-    self.rotateMouseButton = 1                               
+    self.rotateMouseButton = 1
     self.panMouseButton = 2
 
     self.minrad = 0.1
     self.maxrad = 10.0
     self.orbitpoint = math.Vector(0, 0, 0)
+end
+
+function OrbitCameraRig:setZoomLimits(minrad, maxrad)
+    self.minrad = minrad
+    self.maxrad = maxrad
+    return self
+end
+
+function OrbitCameraRig:set(theta, phi, rad)
+    self.phi = phi
+    self.theta = theta
+    self.rad = rad
+    self.phiTarget = phi
+    self.thetaTarget = theta
+    self.radTarget = rad
+    return self
 end
 
 -- currently just uses a simple exponential approach
@@ -84,11 +100,11 @@ function OrbitCameraRig:updateSDLZoom(evt)
 end
 
 function OrbitCameraRig:updateFromSDL(evt)
-    if evt.event_type == sdl.TRUSS_SDL_EVENT_MOUSEWHEEL then
+    if evt.event_type == sdl.EVENT_MOUSEWHEEL then
         self:updateSDLZoom(evt)
         return
     end
-    if evt.event_type ~= sdl.TRUSS_SDL_EVENT_MOUSEMOVE then return end
+    if evt.event_type ~= sdl.EVENT_MOUSEMOVE then return end
 
     local x, y = evt.x, evt.y
     local buttons = evt.flags
@@ -123,8 +139,9 @@ function OrbitCameraRig:updateMatrix_()
     local x = rr * math.cos(self.theta)
     local z = rr * math.sin(self.theta)
     local scale = self.scale
+    local target = self.target
 
-    local pos = target.pos
+    local pos = target.position
     local quat = target.quaternion
 
     pos:set(x, y, z)
