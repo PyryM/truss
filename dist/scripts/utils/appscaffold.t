@@ -117,7 +117,7 @@ function AppScaffold:initNVG()
     self.nvgfont = nanovg.nvgCreateFont(self.nvg, "sans", "font/VeraMono.ttf")
 end
 
-function AppScaffold:onKeyDown(keyname, modifiers)
+function AppScaffold:onKeyDown_(keyname, modifiers)
     log.info("Keydown: " .. keyname)
     if self.keybindings[keyname] ~= nil then
         self.keybindings[keyname](keyname, modifiers)
@@ -128,6 +128,14 @@ function AppScaffold:setKeyBinding(keyname, func)
     self.keybindings[keyname] = func
 end
 
+function AppScaffold:onKey(keyname, func)
+    self:setKeyBinding(keyname, func)
+end
+
+function AppScaffold:onMouseMove(func)
+    self.mousemove = func
+end
+
 function AppScaffold:updateEvents()
     for evt in sdl:events() do
         if evt.event_type == sdl.EVENT_KEYDOWN or evt.event_type == sdl.EVENT_KEYUP then
@@ -135,7 +143,7 @@ function AppScaffold:updateEvents()
             if evt.event_type == sdl.EVENT_KEYDOWN then
                 if not self.downkeys[keyname] then
                     self.downkeys[keyname] = true
-                    self:onKeyDown(keyname, evt.flags)
+                    self:onKeyDown_(keyname, evt.flags)
                 end
             else -- keyup
                 self.downkeys[keyname] = false

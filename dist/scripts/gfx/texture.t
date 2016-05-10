@@ -14,10 +14,10 @@ function MemTexture:init(w,h)
     self.datasize = w*h*4
 
     local bc = bgfx_const
-    local flags = 0
-    -- local flags = bc.BGFX_TEXTURE_MIN_POINT +
-    --               bc.BGFX_TEXTURE_MAG_POINT +
-    --               bc.BGFX_TEXTURE_MIP_POINT
+    --local flags = 0
+    local flags = bc.BGFX_TEXTURE_MIN_POINT +
+                  bc.BGFX_TEXTURE_MAG_POINT +
+                  bc.BGFX_TEXTURE_MIP_POINT
 
     -- Note that we pass in nil as the data to allow us to update this texture
     -- later

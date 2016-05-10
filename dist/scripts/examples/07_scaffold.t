@@ -6,6 +6,7 @@ local AppScaffold = require("utils/appscaffold.t").AppScaffold
 local icosphere = require("geometry/icosphere.t")
 local pbr = require("shaders/pbr.t")
 local Object3D = require('gfx/object3d.t').Object3D
+local orbitcam = require('gui/orbitcam.t')
 
 function randu(magnitude)
     return (math.random() * 2.0 - 1.0)*(magnitude or 1.0)
@@ -24,27 +25,23 @@ function createGeometry()
     end
 end
 
-function preRender(appSelf)
-    rotator.quaternion:fromEuler({x=0,y=app.time*0.25,z=0})
-    rotator:updateMatrix()
-end
-
 function init()
     app = AppScaffold({title = "07_scaffold",
                        width = 1280,
                        height = 720,
                        usenvg = false})
-    app.preRender = preRender
-
-    rotator = Object3D()
-    app.scene:add(rotator)
-    rotator:add(app.camera)
-
-    app.camera.position:set(0.0, 0.0, 10.0)
-    app.camera:updateMatrix()
+    app.userEventHandler = onSdlEvent
+    camerarig = orbitcam.OrbitCameraRig(app.camera)
+    camerarig:setZoomLimits(1.0, 30.0)
+    camerarig:set(0, 0, 15.0)
     createGeometry()
 end
 
+function onSdlEvent(selfapp, evt)
+    camerarig:updateFromSDL(evt)
+end
+
 function update()
+    camerarig:update(1.0 / 60.0)
     app:update()
 end
