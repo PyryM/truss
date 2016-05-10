@@ -1,14 +1,16 @@
 import sys
 import json
 
-TRUSS_PREFIX = "truss_openvr_"
-TRUSS_API_PREFIX = "TRUSS_OPENVR_API"
+TRUSS_PREFIX = "tr_ovw_"
+#TRUSS_API_PREFIX = "TRUSS_C_API "
+TRUSS_API_PREFIX = ""
 
 def get_substituted_type(subtable, rawtype):
     if rawtype.strip() in subtable:
         return subtable[rawtype.strip()]
     else:
         return rawtype.strip().replace("vr::", "").replace("const","").replace("struct","").strip()
+        #return rawtype.strip().replace("const","").replace("struct","").strip()
 
 def get_substituted_self(subtable, selftype):
     return get_substituted_type(subtable, selftype) + "*"
@@ -29,7 +31,7 @@ def create_declaration(method, type_sub_table):
     return declaration
 
 def emit_declarations(methods, type_sub_table):
-    return [TRUSS_API_PREFIX + " " + create_declaration(method, type_sub_table) + ";"
+    return [TRUSS_API_PREFIX + create_declaration(method, type_sub_table) + ";"
             for method in methods]
 
 def emit_definitions(methods, type_sub_table):
@@ -52,7 +54,7 @@ def emit_definitions(methods, type_sub_table):
 
 
 if __name__ == '__main__':
-    subtable = {"vr::IVRSystem": "IVRSystem"}
+    subtable = {} #{"vr::IVRSystem": "IVRSystem"}
 
     with open(sys.argv[1], "rt") as src:
         data = json.load(src)
