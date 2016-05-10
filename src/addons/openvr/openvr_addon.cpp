@@ -1,7 +1,6 @@
 #include "openvr_addon.h"
 
 OpenVRAddon::OpenVRAddon() {
-    window_ = NULL;
     owner_ = NULL;
     name_ = "openvr";
     version_ = "0.9.20";
@@ -74,8 +73,7 @@ bool OpenVRAddon::initVR(int graphicsApiMode) {
 
     if ( eError != vr::VRInitError_None ) {
         ivrsystem_ = NULL;
-        char buf[1024];
-        lastError = vr::VR_GetVRInitErrorAsEnglishDescription( eError );
+        lastError_ = vr::VR_GetVRInitErrorAsEnglishDescription( eError );
         return false;
     } else {
         return true;

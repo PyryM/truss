@@ -7,19 +7,6 @@
 #define TRUSS_OPENVR_DX11 0
 #define TRUSS_OPENVR_GL   1
 
-TRUSS_C_API bool truss_openvr_init(OpenVRAddon* addon, int graphicsApiMode);
-TRUSS_C_API bool truss_openvr_shutdown(OpenVRAddon* addon);
-TRUSS_C_API const char* truss_openvr_get_last_error(OpenVRAddon* addon);
-TRUSS_C_API void* truss_openvr_get_system(OpenVRAddon* addon);
-TRUSS_C_API void* truss_openvr_get_chaperone(OpenVRAddon* addon);
-TRUSS_C_API void* truss_openvr_get_chaperonesetup(OpenVRAddon* addon);
-TRUSS_C_API void* truss_openvr_get_compositor(OpenVRAddon* addon);
-TRUSS_C_API void* truss_openvr_get_overlay(OpenVRAddon* addon);
-TRUSS_C_API void* truss_openvr_get_rendermodels(OpenVRAddon* addon);
-TRUSS_C_API void* truss_openvr_get_extendeddisplay(OpenVRAddon* addon);
-TRUSS_C_API void* truss_openvr_get_settings(OpenVRAddon* addon);
-TRUSS_C_API void* truss_openvr_get_applications(OpenVRAddon* addon);
-
 class OpenVRAddon : public truss::Addon {
 public:
     OpenVRAddon();
@@ -43,6 +30,21 @@ public:
     std::string lastError_;
     truss::Interpreter* owner_;
 };
+
+// Addon api: mainly for creating and getting the individual openvr systems
+TRUSS_C_API bool truss_openvr_init(OpenVRAddon* addon, int graphicsApiMode);
+TRUSS_C_API bool truss_openvr_shutdown(OpenVRAddon* addon);
+TRUSS_C_API const char* truss_openvr_get_last_error(OpenVRAddon* addon);
+TRUSS_C_API void* truss_openvr_get_system(OpenVRAddon* addon);
+TRUSS_C_API void* truss_openvr_get_chaperone(OpenVRAddon* addon);
+TRUSS_C_API void* truss_openvr_get_chaperonesetup(OpenVRAddon* addon);
+TRUSS_C_API void* truss_openvr_get_compositor(OpenVRAddon* addon);
+TRUSS_C_API void* truss_openvr_get_overlay(OpenVRAddon* addon);
+TRUSS_C_API void* truss_openvr_get_rendermodels(OpenVRAddon* addon);
+TRUSS_C_API void* truss_openvr_get_extendeddisplay(OpenVRAddon* addon);
+TRUSS_C_API void* truss_openvr_get_settings(OpenVRAddon* addon);
+TRUSS_C_API void* truss_openvr_get_applications(OpenVRAddon* addon);
+
 
 // Direct C-api to openvr:
 //
@@ -73,16 +75,16 @@ TRUSS_C_API int32_t tr_ovw_GetInt32TrackedDeviceProperty(vr::IVRSystem* self, vr
 TRUSS_C_API uint64_t tr_ovw_GetUint64TrackedDeviceProperty(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unDeviceIndex, vr::ETrackedDeviceProperty prop, vr::ETrackedPropertyError * pError);
 TRUSS_C_API vr::HmdMatrix34_t tr_ovw_GetMatrix34TrackedDeviceProperty(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unDeviceIndex, vr::ETrackedDeviceProperty prop, vr::ETrackedPropertyError * pError);
 TRUSS_C_API uint32_t tr_ovw_GetStringTrackedDeviceProperty(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unDeviceIndex, vr::ETrackedDeviceProperty prop, char * pchValue, uint32_t unBufferSize, vr::ETrackedPropertyError * pError);
-TRUSS_C_API char * tr_ovw_GetPropErrorNameFromEnum(vr::IVRSystem* self, vr::ETrackedPropertyError error);
+TRUSS_C_API const char * tr_ovw_GetPropErrorNameFromEnum(vr::IVRSystem* self, vr::ETrackedPropertyError error);
 TRUSS_C_API bool tr_ovw_PollNextEvent(vr::IVRSystem* self, vr::VREvent_t * pEvent, uint32_t uncbVREvent);
 TRUSS_C_API bool tr_ovw_PollNextEventWithPose(vr::IVRSystem* self, vr::ETrackingUniverseOrigin eOrigin, vr::VREvent_t * pEvent, uint32_t uncbVREvent, vr::TrackedDevicePose_t * pTrackedDevicePose);
-TRUSS_C_API char * tr_ovw_GetEventTypeNameFromEnum(vr::IVRSystem* self, vr::EVREventType eType);
+TRUSS_C_API const char * tr_ovw_GetEventTypeNameFromEnum(vr::IVRSystem* self, vr::EVREventType eType);
 TRUSS_C_API vr::HiddenAreaMesh_t tr_ovw_GetHiddenAreaMesh(vr::IVRSystem* self, vr::EVREye eEye);
 TRUSS_C_API bool tr_ovw_GetControllerState(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unControllerDeviceIndex, vr::VRControllerState_t * pControllerState);
 TRUSS_C_API bool tr_ovw_GetControllerStateWithPose(vr::IVRSystem* self, vr::ETrackingUniverseOrigin eOrigin, vr::TrackedDeviceIndex_t unControllerDeviceIndex, vr::VRControllerState_t * pControllerState, vr::TrackedDevicePose_t * pTrackedDevicePose);
 TRUSS_C_API void tr_ovw_TriggerHapticPulse(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unControllerDeviceIndex, uint32_t unAxisId, unsigned short usDurationMicroSec);
-TRUSS_C_API char * tr_ovw_GetButtonIdNameFromEnum(vr::IVRSystem* self, vr::EVRButtonId eButtonId);
-TRUSS_C_API char * tr_ovw_GetControllerAxisTypeNameFromEnum(vr::IVRSystem* self, vr::EVRControllerAxisType eAxisType);
+TRUSS_C_API const char * tr_ovw_GetButtonIdNameFromEnum(vr::IVRSystem* self, vr::EVRButtonId eButtonId);
+TRUSS_C_API const char * tr_ovw_GetControllerAxisTypeNameFromEnum(vr::IVRSystem* self, vr::EVRControllerAxisType eAxisType);
 TRUSS_C_API bool tr_ovw_CaptureInputFocus(vr::IVRSystem* self);
 TRUSS_C_API void tr_ovw_ReleaseInputFocus(vr::IVRSystem* self);
 TRUSS_C_API bool tr_ovw_IsInputFocusCapturedByAnotherProcess(vr::IVRSystem* self);
@@ -92,7 +94,7 @@ TRUSS_C_API void tr_ovw_AcknowledgeQuit_Exiting(vr::IVRSystem* self);
 TRUSS_C_API void tr_ovw_AcknowledgeQuit_UserPrompt(vr::IVRSystem* self);
 TRUSS_C_API void tr_ovw_GetWindowBounds(vr::IVRExtendedDisplay* self, int32_t * pnX, int32_t * pnY, uint32_t * pnWidth, uint32_t * pnHeight);
 TRUSS_C_API void tr_ovw_GetEyeOutputViewport(vr::IVRExtendedDisplay* self, vr::EVREye eEye, uint32_t * pnX, uint32_t * pnY, uint32_t * pnWidth, uint32_t * pnHeight);
-TRUSS_C_API void tr_ovw_GetDXGIOutputInfo(vr::IVRExtendedDisplay* self, int32_t * pnAdapterIndex, int32_t * pnAdapterOutputIndex);
+//TRUSS_C_API void tr_ovw_GetDXGIOutputInfo(vr::IVRExtendedDisplay* self, int32_t * pnAdapterIndex, int32_t * pnAdapterOutputIndex);
 TRUSS_C_API vr::EVRApplicationError tr_ovw_AddApplicationManifest(vr::IVRApplications* self, char * pchApplicationManifestFullPath, bool bTemporary);
 TRUSS_C_API vr::EVRApplicationError tr_ovw_RemoveApplicationManifest(vr::IVRApplications* self, char * pchApplicationManifestFullPath);
 TRUSS_C_API bool tr_ovw_IsApplicationInstalled(vr::IVRApplications* self, char * pchAppKey);
@@ -105,7 +107,7 @@ TRUSS_C_API vr::EVRApplicationError tr_ovw_LaunchDashboardOverlay(vr::IVRApplica
 TRUSS_C_API bool tr_ovw_CancelApplicationLaunch(vr::IVRApplications* self, char * pchAppKey);
 TRUSS_C_API vr::EVRApplicationError tr_ovw_IdentifyApplication(vr::IVRApplications* self, uint32_t unProcessId, char * pchAppKey);
 TRUSS_C_API uint32_t tr_ovw_GetApplicationProcessId(vr::IVRApplications* self, char * pchAppKey);
-TRUSS_C_API char * tr_ovw_GetApplicationsErrorNameFromEnum(vr::IVRApplications* self, vr::EVRApplicationError error);
+TRUSS_C_API const char * tr_ovw_GetApplicationsErrorNameFromEnum(vr::IVRApplications* self, vr::EVRApplicationError error);
 TRUSS_C_API uint32_t tr_ovw_GetApplicationPropertyString(vr::IVRApplications* self, char * pchAppKey, vr::EVRApplicationProperty eProperty, char * pchPropertyValueBuffer, uint32_t unPropertyValueBufferLen, vr::EVRApplicationError * peError);
 TRUSS_C_API bool tr_ovw_GetApplicationPropertyBool(vr::IVRApplications* self, char * pchAppKey, vr::EVRApplicationProperty eProperty, vr::EVRApplicationError * peError);
 TRUSS_C_API uint64_t tr_ovw_GetApplicationPropertyUint64(vr::IVRApplications* self, char * pchAppKey, vr::EVRApplicationProperty eProperty, vr::EVRApplicationError * peError);
@@ -114,7 +116,7 @@ TRUSS_C_API bool tr_ovw_GetApplicationAutoLaunch(vr::IVRApplications* self, char
 TRUSS_C_API vr::EVRApplicationError tr_ovw_GetStartingApplication(vr::IVRApplications* self, char * pchAppKeyBuffer, uint32_t unAppKeyBufferLen);
 TRUSS_C_API vr::EVRApplicationTransitionState tr_ovw_GetTransitionState(vr::IVRApplications* self);
 TRUSS_C_API vr::EVRApplicationError tr_ovw_PerformApplicationPrelaunchCheck(vr::IVRApplications* self, char * pchAppKey);
-TRUSS_C_API char * tr_ovw_GetApplicationsTransitionStateNameFromEnum(vr::IVRApplications* self, vr::EVRApplicationTransitionState state);
+TRUSS_C_API const char * tr_ovw_GetApplicationsTransitionStateNameFromEnum(vr::IVRApplications* self, vr::EVRApplicationTransitionState state);
 TRUSS_C_API bool tr_ovw_IsQuitUserPromptRequested(vr::IVRApplications* self);
 TRUSS_C_API vr::EVRApplicationError tr_ovw_LaunchInternalProcess(vr::IVRApplications* self, char * pchBinaryPath, char * pchArguments, char * pchWorkingDirectory);
 TRUSS_C_API vr::ChaperoneCalibrationState tr_ovw_GetCalibrationState(vr::IVRChaperone* self);
@@ -182,7 +184,7 @@ TRUSS_C_API vr::VROverlayHandle_t tr_ovw_GetHighQualityOverlay(vr::IVROverlay* s
 TRUSS_C_API uint32_t tr_ovw_GetOverlayKey(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, char * pchValue, uint32_t unBufferSize, vr::EVROverlayError * pError);
 TRUSS_C_API uint32_t tr_ovw_GetOverlayName(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, char * pchValue, uint32_t unBufferSize, vr::EVROverlayError * pError);
 TRUSS_C_API vr::EVROverlayError tr_ovw_GetOverlayImageData(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, void * pvBuffer, uint32_t unBufferSize, uint32_t * punWidth, uint32_t * punHeight);
-TRUSS_C_API char * tr_ovw_GetOverlayErrorNameFromEnum(vr::IVROverlay* self, vr::EVROverlayError error);
+TRUSS_C_API const char * tr_ovw_GetOverlayErrorNameFromEnum(vr::IVROverlay* self, vr::EVROverlayError error);
 TRUSS_C_API vr::EVROverlayError tr_ovw_SetOverlayRenderingPid(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, uint32_t unPID);
 TRUSS_C_API uint32_t tr_ovw_GetOverlayRenderingPid(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle);
 TRUSS_C_API vr::EVROverlayError tr_ovw_SetOverlayFlag(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, vr::VROverlayFlags eOverlayFlag, bool bEnabled);
@@ -258,7 +260,7 @@ TRUSS_C_API bool tr_ovw_GetComponentState(vr::IVRRenderModels* self, char * pchR
 TRUSS_C_API bool tr_ovw_RenderModelHasComponent(vr::IVRRenderModels* self, char * pchRenderModelName, char * pchComponentName);
 TRUSS_C_API vr::EVRNotificationError tr_ovw_CreateNotification(vr::IVRNotifications* self, vr::VROverlayHandle_t ulOverlayHandle, uint64_t ulUserValue, vr::EVRNotificationType type, char * pchText, vr::EVRNotificationStyle style, vr::NotificationBitmap_t * pImage, vr::VRNotificationId * pNotificationId);
 TRUSS_C_API vr::EVRNotificationError tr_ovw_RemoveNotification(vr::IVRNotifications* self, vr::VRNotificationId notificationId);
-TRUSS_C_API char * tr_ovw_GetSettingsErrorNameFromEnum(vr::IVRSettings* self, vr::EVRSettingsError eError);
+TRUSS_C_API const char * tr_ovw_GetSettingsErrorNameFromEnum(vr::IVRSettings* self, vr::EVRSettingsError eError);
 TRUSS_C_API bool tr_ovw_Sync(vr::IVRSettings* self, bool bForce, vr::EVRSettingsError * peError);
 TRUSS_C_API bool tr_ovw_GetBool(vr::IVRSettings* self, char * pchSection, char * pchSettingsKey, bool bDefaultValue, vr::EVRSettingsError * peError);
 TRUSS_C_API void tr_ovw_SetBool(vr::IVRSettings* self, char * pchSection, char * pchSettingsKey, bool bValue, vr::EVRSettingsError * peError);

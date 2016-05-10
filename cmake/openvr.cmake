@@ -21,7 +21,7 @@ endif()
 
 # Download `openvr` and unzip its binaries.
 ExternalProject_Add(openvr_EXTERNAL
-    URL "https://github.com/ValveSoftware/openvr/archive/$v{openvr_RELEASE_VERSION}.zip"
+    URL "https://github.com/ValveSoftware/openvr/archive/v${openvr_RELEASE_VERSION}.zip"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""

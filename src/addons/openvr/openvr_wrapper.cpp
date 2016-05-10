@@ -108,7 +108,7 @@ uint32_t tr_ovw_GetStringTrackedDeviceProperty(vr::IVRSystem* self, vr::TrackedD
     return self->GetStringTrackedDeviceProperty(unDeviceIndex, prop, pchValue, unBufferSize, pError);
 }
 
-char * tr_ovw_GetPropErrorNameFromEnum(vr::IVRSystem* self, vr::ETrackedPropertyError error){
+const char * tr_ovw_GetPropErrorNameFromEnum(vr::IVRSystem* self, vr::ETrackedPropertyError error){
     return self->GetPropErrorNameFromEnum(error);
 }
 
@@ -120,7 +120,7 @@ bool tr_ovw_PollNextEventWithPose(vr::IVRSystem* self, vr::ETrackingUniverseOrig
     return self->PollNextEventWithPose(eOrigin, pEvent, uncbVREvent, pTrackedDevicePose);
 }
 
-char * tr_ovw_GetEventTypeNameFromEnum(vr::IVRSystem* self, vr::EVREventType eType){
+const char * tr_ovw_GetEventTypeNameFromEnum(vr::IVRSystem* self, vr::EVREventType eType){
     return self->GetEventTypeNameFromEnum(eType);
 }
 
@@ -140,11 +140,11 @@ void tr_ovw_TriggerHapticPulse(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unC
     self->TriggerHapticPulse(unControllerDeviceIndex, unAxisId, usDurationMicroSec);
 }
 
-char * tr_ovw_GetButtonIdNameFromEnum(vr::IVRSystem* self, vr::EVRButtonId eButtonId){
+const char * tr_ovw_GetButtonIdNameFromEnum(vr::IVRSystem* self, vr::EVRButtonId eButtonId){
     return self->GetButtonIdNameFromEnum(eButtonId);
 }
 
-char * tr_ovw_GetControllerAxisTypeNameFromEnum(vr::IVRSystem* self, vr::EVRControllerAxisType eAxisType){
+const char * tr_ovw_GetControllerAxisTypeNameFromEnum(vr::IVRSystem* self, vr::EVRControllerAxisType eAxisType){
     return self->GetControllerAxisTypeNameFromEnum(eAxisType);
 }
 
@@ -184,9 +184,9 @@ void tr_ovw_GetEyeOutputViewport(vr::IVRExtendedDisplay* self, vr::EVREye eEye, 
     self->GetEyeOutputViewport(eEye, pnX, pnY, pnWidth, pnHeight);
 }
 
-void tr_ovw_GetDXGIOutputInfo(vr::IVRExtendedDisplay* self, int32_t * pnAdapterIndex, int32_t * pnAdapterOutputIndex){
-    self->GetDXGIOutputInfo(pnAdapterIndex, pnAdapterOutputIndex);
-}
+//void tr_ovw_GetDXGIOutputInfo(vr::IVRExtendedDisplay* self, int32_t * pnAdapterIndex, int32_t * pnAdapterOutputIndex){
+//    self->GetDXGIOutputInfo(pnAdapterIndex, pnAdapterOutputIndex);
+//}
 
 vr::EVRApplicationError tr_ovw_AddApplicationManifest(vr::IVRApplications* self, char * pchApplicationManifestFullPath, bool bTemporary){
     return self->AddApplicationManifest(pchApplicationManifestFullPath, bTemporary);
@@ -236,7 +236,7 @@ uint32_t tr_ovw_GetApplicationProcessId(vr::IVRApplications* self, char * pchApp
     return self->GetApplicationProcessId(pchAppKey);
 }
 
-char * tr_ovw_GetApplicationsErrorNameFromEnum(vr::IVRApplications* self, vr::EVRApplicationError error){
+const char * tr_ovw_GetApplicationsErrorNameFromEnum(vr::IVRApplications* self, vr::EVRApplicationError error){
     return self->GetApplicationsErrorNameFromEnum(error);
 }
 
@@ -272,7 +272,7 @@ vr::EVRApplicationError tr_ovw_PerformApplicationPrelaunchCheck(vr::IVRApplicati
     return self->PerformApplicationPrelaunchCheck(pchAppKey);
 }
 
-char * tr_ovw_GetApplicationsTransitionStateNameFromEnum(vr::IVRApplications* self, vr::EVRApplicationTransitionState state){
+const char * tr_ovw_GetApplicationsTransitionStateNameFromEnum(vr::IVRApplications* self, vr::EVRApplicationTransitionState state){
     return self->GetApplicationsTransitionStateNameFromEnum(state);
 }
 
@@ -544,7 +544,7 @@ vr::EVROverlayError tr_ovw_GetOverlayImageData(vr::IVROverlay* self, vr::VROverl
     return self->GetOverlayImageData(ulOverlayHandle, pvBuffer, unBufferSize, punWidth, punHeight);
 }
 
-char * tr_ovw_GetOverlayErrorNameFromEnum(vr::IVROverlay* self, vr::EVROverlayError error){
+const char * tr_ovw_GetOverlayErrorNameFromEnum(vr::IVROverlay* self, vr::EVROverlayError error){
     return self->GetOverlayErrorNameFromEnum(error);
 }
 
@@ -848,7 +848,7 @@ vr::EVRNotificationError tr_ovw_RemoveNotification(vr::IVRNotifications* self, v
     return self->RemoveNotification(notificationId);
 }
 
-char * tr_ovw_GetSettingsErrorNameFromEnum(vr::IVRSettings* self, vr::EVRSettingsError eError){
+const char * tr_ovw_GetSettingsErrorNameFromEnum(vr::IVRSettings* self, vr::EVRSettingsError eError){
     return self->GetSettingsErrorNameFromEnum(eError);
 }
 
