@@ -31,6 +31,15 @@ function PointCloudObject:init(hres, vres)
     self.mat = self.material
 end
 
+function PointCloudObject:setDepthLimits(near, far)
+    local params = self.mat.depthParams
+    local a =  (far*near) / (far-near)
+    local b = -near / (far-near)
+    params.elem.x = a
+    params.elem.y = b
+    log.debug("a: " .. a .. ", b: " .. b)
+end
+
 function PointCloudObject:setPlaneSize(w,h)
     local params = self.mat.pointParams
     params.elem.z = w

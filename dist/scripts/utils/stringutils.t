@@ -41,7 +41,10 @@ function m.splitLines(str)
 end
 
 -- base64 conversion
+local b64lut_ = nil
 function m.createB64LUT_()
+    if b64lut_ ~= nil then return b64lut_ end
+
     local letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
     local ret = terralib.new(uint8[128])
     for i = 0,127 do
@@ -52,9 +55,8 @@ function m.createB64LUT_()
     end
     return ret
 end
-local b64lut_ = nil
 
-terra m.b64decode_terra(src: &int8, srclen: uint32,
+terra m.b64decode_terra(src: &uint8, srclen: uint32,
                         dest: &uint8, destlen: uint32,
                         lut: &uint8) : uint32
     var i: uint32 = 0
