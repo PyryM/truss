@@ -1121,6 +1121,15 @@ struct VREvent_t
 	VREvent_Data_t data;
 };
 
+typedef struct IVRSystem IVRSystem;
+typedef struct IVRChaperone IVRChaperone;
+typedef struct IVROverlay IVROverlay;
+typedef struct IVRApplications IVRApplications;
+typedef struct IVRCompositor IVRCompositor;
+typedef struct IVRExtendedDisplay IVRExtendedDisplay;
+typedef struct IVRSettings IVRSettings;
+typedef struct IVRRenderModels IVRRenderModels;
+
 void tr_ovw_GetRecommendedRenderTargetSize(IVRSystem* self, uint32_t * pnWidth, uint32_t * pnHeight);
 HmdMatrix44_t tr_ovw_GetProjectionMatrix(IVRSystem* self, EVREye eEye, float fNearZ, float fFarZ, EGraphicsAPIConvention eProjType);
 void tr_ovw_GetProjectionRaw(IVRSystem* self, EVREye eEye, float * pfLeft, float * pfRight, float * pfTop, float * pfBottom);
