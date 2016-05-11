@@ -4,6 +4,7 @@
 #include "addons/sdl/sdl_addon.h"
 #include "addons/nanovg/nanovg_addon.h"
 #include "addons/wsclient/wsclient_addon.h"
+#include "addons/openvr/openvr_addon.h"
 #include <iostream>
 #include <sstream>
 
@@ -56,6 +57,7 @@ int main(int argc, char** argv) {
 	interpreter->attachAddon(new SDLAddon);
 	interpreter->attachAddon(new NanoVGAddon);
 	interpreter->attachAddon(new WSClientAddon);
+	interpreter->attachAddon(new OpenVRAddon);
 	truss_log(0, "Starting interpreter!");
 	// startUnthreaded starts the interpreter in the current thread,
 	// which means the call will block until the interpreter is stopped

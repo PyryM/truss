@@ -14,8 +14,8 @@ OpenVRAddon::OpenVRAddon() {
             #define TRUSS_OPENVR_DX11 0
             #define TRUSS_OPENVR_GL   1
 
-            bool truss_openvr_init(Addon* addon, int graphicsApiMode);
-            bool truss_openvr_shutdown(Addon* addon);
+            int truss_openvr_init(Addon* addon, int graphicsApiMode);
+            int truss_openvr_shutdown(Addon* addon);
             const char* truss_openvr_get_last_error(Addon* addon);
             void* truss_openvr_get_system(Addon* addon);
             void* truss_openvr_get_chaperone(Addon* addon);
@@ -54,15 +54,15 @@ void OpenVRAddon::update(double dt) {
     // Nothing to do
 }
 
-bool OpenVRAddon::shutdownVR() {
+int OpenVRAddon::shutdownVR() {
     if(NULL != ivrsystem_) {
         vr::VR_Shutdown();
         ivrsystem_ = NULL;
     }
-    return true;
+    return 1;
 }
 
-bool OpenVRAddon::initVR(int graphicsApiMode) {
+int OpenVRAddon::initVR(int graphicsApiMode) {
     if(NULL != ivrsystem_) {
         shutdownVR();
     }
@@ -74,9 +74,9 @@ bool OpenVRAddon::initVR(int graphicsApiMode) {
     if ( eError != vr::VRInitError_None ) {
         ivrsystem_ = NULL;
         lastError_ = vr::VR_GetVRInitErrorAsEnglishDescription( eError );
-        return false;
+        return 0;
     } else {
-        return true;
+        return 1;
     }
 }
 
@@ -84,11 +84,11 @@ OpenVRAddon::~OpenVRAddon() {
     shutdown();
 }
 
-bool truss_openvr_init(OpenVRAddon* addon, int graphicsApiMode) {
+int truss_openvr_init(OpenVRAddon* addon, int graphicsApiMode) {
     return addon->initVR(graphicsApiMode);
 }
 
-bool truss_openvr_shutdown(OpenVRAddon* addon) {
+int truss_openvr_shutdown(OpenVRAddon* addon) {
     return addon->shutdownVR();
 }
 

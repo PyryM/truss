@@ -17,8 +17,8 @@ public:
     void shutdown();
     void update(double dt);
 
-    bool initVR(int graphicsApiMode);
-    bool shutdownVR();
+    int initVR(int graphicsApiMode);
+    int shutdownVR();
 
     vr::IVRSystem* ivrsystem_;
 
@@ -32,8 +32,8 @@ public:
 };
 
 // Addon api: mainly for creating and getting the individual openvr systems
-TRUSS_C_API bool truss_openvr_init(OpenVRAddon* addon, int graphicsApiMode);
-TRUSS_C_API bool truss_openvr_shutdown(OpenVRAddon* addon);
+TRUSS_C_API int truss_openvr_init(OpenVRAddon* addon, int graphicsApiMode);
+TRUSS_C_API int truss_openvr_shutdown(OpenVRAddon* addon);
 TRUSS_C_API const char* truss_openvr_get_last_error(OpenVRAddon* addon);
 TRUSS_C_API void* truss_openvr_get_system(OpenVRAddon* addon);
 TRUSS_C_API void* truss_openvr_get_chaperone(OpenVRAddon* addon);
