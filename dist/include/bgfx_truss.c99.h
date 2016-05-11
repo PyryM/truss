@@ -263,7 +263,7 @@ typedef struct bgfx_vertex_decl_handle {
 typedef void (*bgfx_release_fn_t)(void* _ptr, void* _userData);
 
 /* Empty define */
-#define BGFX_C_API 
+#define BGFX_C_API
 
 /**/
 typedef struct bgfx_memory
@@ -402,6 +402,8 @@ typedef struct bgfx_caps
     uint16_t maxViews;
     uint8_t  maxFBAttachments;
     uint8_t  numGPUs;
+    bool     homogeneousDepth;
+    bool     originBottomLeft;
 
     uint16_t vendorId;
     uint16_t deviceId;
@@ -823,5 +825,18 @@ BGFX_C_API void bgfx_blit_frame_buffer(uint8_t _id, bgfx_texture_handle_t _dst, 
 
 /**/
 BGFX_C_API void bgfx_save_screen_shot(const char* _filePath);
+
+// From c99/bgfxplatform.h:
+/**/
+typedef struct bgfx_native_texture_info
+{
+	uint32_t glHandle;
+	void* d3d11Ptr;
+	void* d3d11Srv;
+
+} bgfx_native_texture_info_t;
+
+/**/
+BGFX_C_API void bgfx_get_native_texture_info(bgfx_texture_handle_t _handle, bgfx_native_texture_info_t* _info);
 
 #endif // BGFX_TRUSS_C99_H_

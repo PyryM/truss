@@ -43,11 +43,12 @@ else()
     message(FATAL_ERROR "BGFX does not support the generator '${CMAKE_GENERATOR}'.")
 endif()
 
-# Download `bgfx` and build it using `bx`.
+# Download `bgfx` (my fork that allows getting native texture handles)
+# and build it using `bx`.
 ExternalProject_Add(bgfx_EXTERNAL
     DEPENDS bx_EXTERNAL
-    GIT_REPOSITORY "https://github.com/bkaradzic/bgfx.git"
-    GIT_TAG "d6bf810fb09f73c559102a7ba88454ce4c5d571c"
+    GIT_REPOSITORY "https://github.com/PyryM/bgfx.git"
+    GIT_TAG "95392d30a386a45162e83c0d1aaff1cecf0d1bea"
     CONFIGURE_COMMAND ${bgfx_CONFIGURE_COMMAND}
     BUILD_COMMAND ${bgfx_BUILD_COMMAND}
     INSTALL_COMMAND ""
