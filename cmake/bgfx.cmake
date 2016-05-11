@@ -34,10 +34,10 @@ endif()
 # Configure platform-specific build commands.
 if("${CMAKE_GENERATOR}" MATCHES "Visual Studio 14 2015")
     set(bgfx_COMPILER "vs2015")
-    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-shared-lib "${bgfx_COMPILER}")
+    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-tools --with-single-threaded --with-shared-lib "${bgfx_COMPILER}")
     set(bgfx_BUILD_COMMAND "devenv" "<SOURCE_DIR>/.build/projects/${bgfx_COMPILER}/bgfx.sln" /Build Release|x64)
 elseif("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
-    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-shared-lib "--gcc=${bgfx_GENIE_GCC}" gmake)
+    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-single-threaded --with-shared-lib "--gcc=${bgfx_GENIE_GCC}" gmake)
     set(bgfx_BUILD_COMMAND "$(MAKE)" -C "<SOURCE_DIR>/.build/projects/gmake-${bgfx_SYSTEM_NAME}" config=release64)
 else()
     message(FATAL_ERROR "BGFX does not support the generator '${CMAKE_GENERATOR}'.")
@@ -48,7 +48,7 @@ endif()
 ExternalProject_Add(bgfx_EXTERNAL
     DEPENDS bx_EXTERNAL
     GIT_REPOSITORY "https://github.com/PyryM/bgfx.git"
-    GIT_TAG "95392d30a386a45162e83c0d1aaff1cecf0d1bea"
+    GIT_TAG "76342bf6227eb32d89344ea7d995c586c71e2af2"
     CONFIGURE_COMMAND ${bgfx_CONFIGURE_COMMAND}
     BUILD_COMMAND ${bgfx_BUILD_COMMAND}
     INSTALL_COMMAND ""
