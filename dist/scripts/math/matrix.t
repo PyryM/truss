@@ -22,7 +22,7 @@ terra m.rotateXY(mat: &float, ax: float, ay: float)
     var cy = CMath.cosf(ay)
 
     mat[ 0] = cy
-    mat[ 1] = 0.0f 
+    mat[ 1] = 0.0f
     mat[ 2] = sy
     mat[ 3] = 0.0f
     mat[ 4] = sx*sy
@@ -67,7 +67,7 @@ terra m.projFrustum(mat: &float,
 end
 
 terra m.setIdentity(mat: &float)
-    mat[ 0], mat[ 1], mat[ 2], mat[ 3] = 1.0f, 0.0f, 0.0f, 0.0f 
+    mat[ 0], mat[ 1], mat[ 2], mat[ 3] = 1.0f, 0.0f, 0.0f, 0.0f
     mat[ 4], mat[ 5], mat[ 6], mat[ 7] = 0.0f, 1.0f, 0.0f, 0.0f
     mat[ 8], mat[ 9], mat[10], mat[11] = 0.0f, 0.0f, 1.0f, 0.0f
     mat[12], mat[13], mat[14], mat[15] = 0.0f, 0.0f, 0.0f, 1.0f
@@ -134,7 +134,7 @@ terra m.zeroMatrix(dest: &float)
 end
 
 function m.toRad(deg)
-    return deg * math.pi / 180.0 
+    return deg * math.pi / 180.0
 end
 
 function m.makeProjMat(mat, fovy, aspect, near, far)
@@ -171,7 +171,7 @@ terra m.setMatrixFromQuat(mat: &float, quat: &vec4_)
     var z = quat.z
     var w = quat.w
 
-    var x2 = x + x 
+    var x2 = x + x
     var y2 = y + y
     var z2 = z + z
     var xx = x * x2
@@ -287,6 +287,18 @@ terra m.multiplyMatrixScalar(mat: &float, scale: float)
     end
 end
 
+-- transposes a matrix in place
+terra m.transposeMatrix(a: &float)
+    var      a12, a13, a14 =         a[ 4 ], a[ 8 ], a[ 12 ]
+    var a21,      a23, a24 = a[ 1 ],         a[ 9 ], a[ 13 ]
+    var a31, a32,      a34 = a[ 2 ], a[ 6 ],         a[ 14 ]
+    var a41, a42, a43      = a[ 3 ], a[ 7 ], a[ 11 ]
+            a[ 4 ], a[ 8 ], a[ 12 ] =      a21, a31, a41
+    a[ 1 ],         a[ 9 ], a[ 13 ] = a12,      a32, a42
+    a[ 2 ], a[ 6 ],         a[ 14 ] = a13, a23,      a43
+    a[ 3 ], a[ 7 ], a[ 11 ]         = a14, a24, a34
+end
+
 -- gets the inverse of a 4x4 matrix
 -- safe to use in place (src == dest)
 terra m.getMatrixInverse(dest: &float, src: &float)
@@ -392,11 +404,24 @@ function Matrix4:clone()
     return ret
 end
 
+function Matrix4:fromCArray(arr)
+    -- both arrays are zero indexed
+    for i = 0,15 do
+        self.data[i] = arr[i]
+    end
+    return self
+end
+
 function Matrix4:fromArray(arr)
     for i = 1,16 do
         -- self.data is zero indexed
-        self.data[i-1] = arr[i] 
+        self.data[i-1] = arr[i]
     end
+    return self
+end
+
+function Matrix4:transpose()
+    m.transposeMatrix(self.data)
     return self
 end
 
@@ -437,7 +462,7 @@ function Matrix4:setTranslation(posVec)
     return self
 end
 
--- takes a translation (vec3), rotation (quaternion), and scale (vec3) and 
+-- takes a translation (vec3), rotation (quaternion), and scale (vec3) and
 -- and composes them together into one 4x4 transformation
 function Matrix4:compose(posVec, rotationQuat, scaleVec)
     local destmat = self.data
@@ -464,9 +489,16 @@ function Matrix4:invert(src)
 end
 
 -- matrix multiplication:
--- self = self * b
-function Matrix4:multiply(b)
-    m.multiplyMatrices(self.data, self.data, b.data)
+-- if one argument is provided,
+-- self = self * a
+-- if two arguments are provided,
+-- self = a * b
+function Matrix4:multiply(a, b)
+    if b == nil then
+        m.multiplyMatrices(self.data, self.data, a.data)
+    else
+        m.multiplyMatrices(self.data, a.data, b.data)
+    end
     return self
 end
 
