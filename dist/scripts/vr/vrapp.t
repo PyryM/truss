@@ -7,6 +7,9 @@ local math = require("math")
 local class = require("class")
 local rendertarget = require("gfx/rendertarget.t")
 local Camera = require("gfx/camera.t").Camera
+local shaderutils = require("utils/shaderutils.t")
+local uniforms = require("gfx/uniforms.t")
+local geometry = require("gfx/geometry.t")
 
 local m = {}
 
@@ -17,22 +20,22 @@ function VRApp:init(options)
     self.vrHeight = options.vrHeight or 1280
     VRApp.super.init(self, options)
     self.stereoCameras = {
-        Camera():makeProjection(70, self.width/self.height, 0.1, 100.0),
-        Camera():makeProjection(70, self.width/self.height, 0.1, 100.0)
+        Camera():makeProjection(70, self.vrWidth/self.vrHeight, 0.1, 100.0),
+        Camera():makeProjection(70, self.vrWidth/self.vrHeight, 0.1, 100.0)
     }
 
     -- used to draw screen space quads to composite things
     self.orthocam = Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
     self.identitymat = math.Matrix4():identity()
-    self.quadgeo = require("gfx/geometry.t").TransientGeometry()
-    self.compositeSampler = require("gfx/uniforms.t").TexUniform("s_srcTex", 0)
+    self.quadgeo = geometry.TransientGeometry()
+    self.compositeSampler = uniforms.TexUniform("s_srcTex", 0)
     self.compositePgm = shaderutils.loadProgram("vs_fullscreen",
                                                 "fs_fullscreen_copy")
 
     -- disable debug text because it doesn't play nice with views other than 0
     bgfx.bgfx_set_debug(0)
 
-    local hipd = 0.064 / 2.0 -- half ipd
+    local hipd = 6.4 / 2.0 -- half ipd
     self.offsets = {
         math.Matrix4():makeTranslation(math.Vector(-hipd, 0.0, 0.0)),
         math.Matrix4():makeTranslation(math.Vector( hipd, 0.0, 0.0))
@@ -83,7 +86,7 @@ function VRApp:render()
     local cams = self.stereoCameras
     local offsets = self.offsets
     for i = 1,2 do
-        cams[i].matrix:multiply(offsets[i], self.camera.matrix)
+        cams[i].matrix:multiply(self.camera.matrix, offsets[i])
         self.pipeline:render({camera = cams[i],
                               scene = self.scene,
                               view = self.stereoViews[i],
@@ -116,6 +119,11 @@ function VRApp:update()
     bgfx.bgfx_frame()
 
     self.frametime = toc(self.startTime)
+
+    if self.frame % 60 == 0 then
+        log.info("ft: " .. self.frametime)
+    end
+
     self.startTime = tic()
 end
 

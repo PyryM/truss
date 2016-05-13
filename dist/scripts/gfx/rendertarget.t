@@ -62,11 +62,13 @@ end
 
 function RenderTarget:finalize()
     local attachments = self.attachments
-    local cattachments = terralib.new(bgfx.bgfx_texture_handle_t[#attachments])
+    local cattachments = terralib.new(bgfx.bgfx_attachment_t[#attachments])
     for i,v in ipairs(attachments) do
-        cattachments[i-1] = v -- ffi cstructs are zero indexed
+        cattachments[i-1].handle = v -- ffi cstructs are zero indexed
+        cattachments[i-1].mip = 0
+        cattachments[i-1].layer = 0
     end
-    self.frameBuffer = bgfx.bgfx_create_frame_buffer_from_handles(#attachments, cattachments, true)
+    self.frameBuffer = bgfx.bgfx_create_frame_buffer_from_attachment(#attachments, cattachments, true)
     self.cattachments = cattachments
     self.finalized = true
     return self
@@ -86,7 +88,7 @@ function RenderTarget:bindToView(viewid, setViewRect)
         self.viewid = viewid
         bgfx.bgfx_set_view_frame_buffer(viewid, self.frameBuffer)
         if setViewRect == nil or setViewRect then -- default to true
-            bgfx.bgfx_set_view_frame_rect(viewid, 0, 0, self.width, self.height)
+            bgfx.bgfx_set_view_rect(viewid, 0, 0, self.width, self.height)
         end
     else
         log.error("Cannot bind null framebuffer to view!")
