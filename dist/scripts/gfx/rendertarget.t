@@ -83,10 +83,11 @@ end
 
 function RenderTarget:bindToView(viewid, setViewRect)
     if self.frameBuffer then
+        self.viewid = viewid
+        bgfx.bgfx_set_view_frame_buffer(viewid, self.frameBuffer)
         if setViewRect == nil or setViewRect then -- default to true
             bgfx.bgfx_set_view_frame_rect(viewid, 0, 0, self.width, self.height)
         end
-        bgfx.bgfx_set_view_frame_buffer(viewid, self.frameBuffer)
     else
         log.error("Cannot bind null framebuffer to view!")
     end

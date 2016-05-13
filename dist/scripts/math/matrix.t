@@ -448,18 +448,19 @@ function Matrix4:toQuaternion()
     return qret
 end
 
-function Matrix4:scale(sx, sy, sz)
-    -- if sy or sz are not provided, assume uniform
-    -- scaling (sx == sy == sz)
-    sy = sy or sx
-    sz = sz or sx
-    m.scaleMatrix(self.data, sx, sy, sz)
+function Matrix4:scale(scaleVec)
+    m.scaleMatrix(self.data, scaleVec.elem)
     return self
 end
 
 function Matrix4:setTranslation(posVec)
     m.setMatrixPosition(self.data, posVec.elem)
     return self
+end
+
+function Matrix4:makeTranslation(v)
+    self:identity()
+    return self:setTranslation(v)
 end
 
 -- takes a translation (vec3), rotation (quaternion), and scale (vec3) and

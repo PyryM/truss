@@ -32,10 +32,15 @@ function m.init()
             }
             m.eyeIDs = {m.openvr_c.EVREye_Eye_Left, m.openvr_c.EVREye_Eye_Right}
 
-            m.controllers = {} -- todo?
-
             m.maxTrackables = m.openvr_c.k_unMaxTrackedDeviceCount
             m.trackables = terralib.new(m.openvr_c.TrackedDevicePose_t[m.maxTrackables])
+
+            m.controllers = {}
+            m.referencePoints = {}
+            for i = 1,m.maxTrackables do
+                m.controllers[i] = {}
+                m.referencePoints[i] = {}
+            end
 
             return true, ""
         else
@@ -50,15 +55,52 @@ function m.init()
     end
 end
 
+function m.trackableToTable(trackable, target)
+    if target.pose == nil then target.pose = math.Matrix4():identity() end
+    if target.velocity == nil then target.velocity = math.Vector():zero() end
+    m.openvrMatrix3x4ToMatrix(trackable.mDeviceToAbsoluteTracking,
+                              target.pose)
+    m.openvrV3ToVector(trackable.vVelocity, target.velocity)
+    target.connected = (trackable.bDeviceIsConnected > 0)
+    target.poseValid = (trackable.bPoseIsValid > 0)
+end
+
+function m.controllerIdxToTable(controlleridx, target)
+    if target.rawstate == nil then
+        target.rawstate = terralib.new(m.openvr_c.VRControllerState_t)
+    end
+    m.openvr_c.tr_ovw_GetControllerState(m.sysptr, controlleridx, target.rawstate)
+end
+
 function m.updateTrackables()
-    -- get hmd by special index (will probably always be zero, but better
-    -- to be safe)
-    local hmdindex = m.openvr_c.k_unTrackedDeviceIndex_Hmd
-    m.openvrMatrix3x4ToMatrix(m.trackables[hmdindex].mDeviceToAbsoluteTracking,
-                              m.hmd.pose)
-    m.openvrV3ToVector(m.trackables[hmdindex], m.hmd.velocity)
-    m.hmd.connected = (m.trackables[hmdindex].bDeviceIsConnected > 0)
-    m.hmd.poseValid = (m.trackables[hmdindex].bPoseIsValid > 0)
+    local controllerIdx = 0
+    local referenceIdx = 0
+    local hmdIdx = 0
+
+    for i = 0,m.maxTrackables do
+        local trackable = m.trackables[i]
+        if trackable.bPoseIsValid > 0 then
+            local ttype = m.openvr_c.tr_ovw_GetTrackedDeviceClass(m.sysptr, i)
+            local target = nil
+            if ttype == m.openvr_c.ETrackedDeviceClass_TrackedDeviceClass_Controller then
+                controllerIdx = controllerIdx + 1
+                target = m.controllers[controllerIdx]
+                m.controllerIdxToTable(i, target)
+            elseif ttype == m.openvr_c.ETrackedDeviceClass_TrackedDeviceClass_TrackingReference then
+                referenceIdx = referenceIdx + 1
+                target = m.referencePoints[referenceIdx]
+            elseif ttype == m.openvr_c.ETrackedDeviceClass_TrackedDeviceClass_HMD then
+                hmdIdx = hmdIdx + 1
+                target = m.hmd
+            end
+
+            if target then m.trackableToTable(trackable, target) end
+        end
+    end
+
+    m.nControllers = controllerIdx
+    m.nReferences = referenceIdx
+    m.nHMDs = hmdIdx
 end
 
 function m.openvrV3ToVector(v3, target)

@@ -168,8 +168,6 @@ function AppScaffold:update()
     self.frame = self.frame + 1
     self.time = self.time + 1.0 / 60.0
 
-
-
     -- Deal with input events
     self:updateEvents()
 
