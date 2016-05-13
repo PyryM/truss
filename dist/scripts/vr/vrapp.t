@@ -25,12 +25,12 @@ function VRApp:init(options)
     self.orthocam = Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
     self.identitymat = math.Matrix4():identity()
     self.quadgeo = require("gfx/geometry.t").TransientGeometry()
-    self.compositeSampler = require("gfx/uniforms.t").TexUniform("sSrcTex", 0)
-    self.compositePgm = shaderutils.loadProgram("vs_fullscreen", "fs_copy")
+    self.compositeSampler = require("gfx/uniforms.t").TexUniform("s_srcTex", 0)
+    self.compositePgm = shaderutils.loadProgram("vs_fullscreen",
+                                                "fs_fullscreen_copy")
 
     -- disable debug text because it doesn't play nice with views other than 0
     bgfx.bgfx_set_debug(0)
-
 
     local hipd = 0.064 / 2.0 -- half ipd
     self.offsets = {
@@ -47,7 +47,21 @@ function VRApp:createRenderTargets()
                     RT(w,h):makeRGB8(true)}
 
     self.stereoViews = {0,1}
+    self.clearColors = {0x303000ff, 0x003030ff}
     self.windowView = 2
+
+    bgfx.bgfx_set_view_clear(self.windowView,
+    0x0001 + 0x0002, -- clear color + clear depth
+    0x303030ff,
+    1.0,
+    0)
+
+    for i = 1,2 do
+        bgfx.bgfx_set_view_clear(self.stereoViews[i],
+                                 001 + 0x0002, -- clear color + clear depth
+                                 self.clearColors[i],
+                                 1.0, 0)
+    end
 end
 
 function VRApp:initPipeline()
