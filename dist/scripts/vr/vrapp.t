@@ -24,6 +24,18 @@ function VRApp:init(options)
         Camera():makeProjection(70, self.vrWidth/self.vrHeight, 0.1, 100.0)
     }
 
+    local testprojL = {{0.76, 0.00, -0.06, 0.00},
+                       {0.00, 0.68, -0.00, 0.00},
+                       {0.00, 0.00, -1.00, -0.05},
+                       {0.00, 0.00, -1.00, 0.00}}
+    local testprojR = {{0.76, 0.00, 0.06, 0.00},
+                       {0.00, 0.68, -0.00, 0.00},
+                       {0.00, 0.00, -1.00, -0.05},
+                       {0.00, 0.00, -1.00, 0.00}}
+    self.stereoCameras[1].projMat:fromPrettyArray(testprojL)
+    self.stereoCameras[2].projMat:fromPrettyArray(testprojR)
+    log.info("ProjL: " .. tostring(self.stereoCameras[1].projMat))
+
     -- used to draw screen space quads to composite things
     self.orthocam = Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
     self.identitymat = math.Matrix4():identity()

@@ -557,6 +557,16 @@ function Matrix4:prettystr()
     return ret
 end
 
+function Matrix4:fromPrettyArray(parr)
+    local data = self.data
+    -- column major
+    for row = 0,3 do
+        local p = row
+        local src = parr[p+1]
+        data[p], data[p+4], data[p+8], data[p+12] = src[1],src[2],src[3],src[4]
+    end
+end
+
 function Matrix4:__tostring()
     return self:prettystr()
 end

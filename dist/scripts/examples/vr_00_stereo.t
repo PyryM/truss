@@ -37,6 +37,8 @@ function init()
     camerarig:setZoomLimits(1.0, 30.0)
     camerarig:set(0, 0, 15.0)
     createGeometry()
+    log.info(app.stereoCameras[1])
+    log.info("Projection: " .. app.stereoCameras[1].projMat:prettystr())
 end
 
 function onSdlEvent(selfapp, evt)
