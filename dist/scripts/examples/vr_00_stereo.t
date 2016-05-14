@@ -1,6 +1,6 @@
--- 07_scaffold.t
+-- vr_00_stereo.t
 --
--- demonstration of how to use AppScaffold to simplify setup
+-- demonstration of using vrapp for a simple stereo pipeline
 
 local VRApp = require("vr/vrapp.t").VRApp
 local icosphere = require("geometry/icosphere.t")
