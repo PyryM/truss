@@ -10,14 +10,22 @@ local Camera = require("gfx/camera.t").Camera
 local shaderutils = require("utils/shaderutils.t")
 local uniforms = require("gfx/uniforms.t")
 local geometry = require("gfx/geometry.t")
+local openvr = require("vr/openvr.t")
 
 local m = {}
 
 local VRApp = appscaffold.AppScaffold:extend("VRApp")
 
 function VRApp:init(options)
-    self.vrWidth = options.vrWidth or 800
-    self.vrHeight = options.vrHeight or 1280
+    openvr.init()
+    local vw, vh = 800, 1280
+    if openvr.available then
+        vw, vh = openvr.getRecommendedTargetSize()
+    end
+    self.vrWidth = math.floor((options.vrWidth or 1.0) * vw)
+    self.vrHeight = math.floor((options.vrHeight or 1.0) * vh)
+    log.info("VRApp init: w= " .. self.vrWidth .. ", h= " .. self.vrHeight)
+
     VRApp.super.init(self, options)
     self.stereoCameras = {
         Camera():makeProjection(70, self.vrWidth/self.vrHeight, 0.1, 100.0),
@@ -44,14 +52,28 @@ function VRApp:init(options)
     self.compositePgm = shaderutils.loadProgram("vs_fullscreen",
                                                 "fs_fullscreen_copy")
 
-    -- disable debug text because it doesn't play nice with views other than 0
-    bgfx.bgfx_set_debug(0)
-
     local hipd = 6.4 / 2.0 -- half ipd
     self.offsets = {
         math.Matrix4():makeTranslation(math.Vector(-hipd, 0.0, 0.0)),
         math.Matrix4():makeTranslation(math.Vector( hipd, 0.0, 0.0))
     }
+end
+
+function VRApp:initBGFX()
+    -- Basic init
+    local reset = 0 -- no anti-aliasing or vsync in VR
+    --local cbInterfacePtr = sdl.truss_sdl_get_bgfx_cb(sdlPointer)
+    local cbInterfacePtr = nil
+    bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
+    bgfx.bgfx_reset(self.width, self.height, reset)
+
+    local debug = 0 -- debug text doesn't play nice with views other than 0
+    bgfx.bgfx_set_debug(debug)
+
+    log.info("VRApp: initted bgfx")
+    local rendererType = bgfx.bgfx_get_renderer_type()
+    local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
+    log.info("Renderer type: " .. rendererName)
 end
 
 function VRApp:createRenderTargets()
@@ -60,9 +82,10 @@ function VRApp:createRenderTargets()
     -- makeRGB8(hasDepth = true)
     self.targets = {RT(w,h):makeRGB8(true),
                     RT(w,h):makeRGB8(true)}
-
+    self.eyeTexes = {self.targets[1].attachments[1],
+                     self.targets[2].attachments[1]}
     self.stereoViews = {0,1}
-    self.clearColors = {0x303000ff, 0x003030ff}
+    self.clearColors = {0x303030ff, 0x303030ff}
     self.windowView = 2
 
     bgfx.bgfx_set_view_clear(self.windowView,
@@ -92,13 +115,27 @@ function VRApp:composite(rt, x0, y0, x1, y1)
     bgfx.bgfx_submit(self.windowView, self.compositePgm, 0, false)
 end
 
+function VRApp:updateCameras_()
+    local cams = self.stereoCameras
+    if openvr.available then
+        self.camera.matrix:copy(openvr.hmd.pose)
+        for i = 1,2 do
+            cams[i].projMat:copy(openvr.eyeProjections[i])
+            cams[i].matrix:copy(openvr.eyePoses[i])
+        end
+    else
+        local offsets = self.offsets
+        for i = 1,2 do
+            cams[i].matrix:multiply(self.camera.matrix, offsets[i])
+        end
+    end
+end
+
 function VRApp:render()
     self.scene:updateMatrices()
     self.orthocam:setViewMatrices(self.windowView)
     local cams = self.stereoCameras
-    local offsets = self.offsets
     for i = 1,2 do
-        cams[i].matrix:multiply(self.camera.matrix, offsets[i])
         self.pipeline:render({camera = cams[i],
                               scene = self.scene,
                               view = self.stereoViews[i],
@@ -113,6 +150,11 @@ function VRApp:update()
     self.frame = self.frame + 1
     self.time = self.time + 1.0 / 60.0
 
+    if openvr.available then
+        openvr.beginFrame()
+        self:updateCameras_()
+    end
+
     -- Deal with input events
     self:updateEvents()
 
@@ -126,9 +168,11 @@ function VRApp:update()
     self:render()
     self.scripttime = toc(self.startTime)
 
-    -- Advance to next frame. Rendering thread will be kicked to
-    -- process submitted rendering primitives.
+    -- Have bgfx do its rendering
     bgfx.bgfx_frame()
+
+    -- Submit eyes
+    openvr.submitFrame(self.eyeTexes)
 
     self.frametime = toc(self.startTime)
 

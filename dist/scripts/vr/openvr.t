@@ -47,6 +47,14 @@ function m.init()
         m.eyeProjections = {math.Matrix4():identity(), math.Matrix4():identity()}
 
         m.targetSize = terralib.new(m.TargetSize)
+        m.texPtrs = {
+            terralib.new(bgfx.bgfx_native_texture_info_t),
+            terralib.new(bgfx.bgfx_native_texture_info_t)
+        }
+        m.eyeSubmitTexes = {
+            terralib.new(openvr_c.Texture_t),
+            terralib.new(openvr_c.Texture_t)
+        }
 
         m.hmd = {
             pose = math.Matrix4():identity(),
@@ -71,6 +79,7 @@ function m.init()
     else
         local errorstr = "OpenVR init error: " .. ffi.string(addonfuncs.truss_openvr_get_last_error(addonptr))
         log.error(errorstr)
+        m.available = false
         return false, errorstr
     end
 end
@@ -90,6 +99,34 @@ function m.controllerIdxToTable(controlleridx, target)
         target.rawstate = terralib.new(openvr_c.VRControllerState_t)
     end
     openvr_c.tr_ovw_GetControllerState(m.sysptr, controlleridx, target.rawstate)
+end
+
+function m.beginFrame()
+    if not m.available then return false end
+
+    local err = openvr_c.tr_ovw_WaitGetPoses(m.compositorptr, m.trackables, m.maxTrackables, nil, 0)
+    if err ~= openvr_c.EVRCompositorError_VRCompositorError_None then
+        log.error("WaitGetPoses error: " .. tostring(err))
+        return false
+    end
+
+    m.updateTrackables()
+    m.updateProjections_()
+    m.updateEyePoses_()
+end
+
+function m.submitFrame(eyeTexes)
+    if not m.available then return false end
+
+    for eye = 1,2 do
+        bgfx.bgfx_get_native_texture_info(eyeTexes[eye], m.texPtrs[eye])
+        m.eyeSubmitTexes[eye].handle = m.texPtrs[eye].d3d11Ptr
+        m.eyeSubmitTexes[eye].eType = openvr_c.EGraphicsAPIConvention_API_DirectX
+        m.eyeSubmitTexes[eye].eColorSpace = openvr_c.EColorSpace_ColorSpace_Auto
+        openvr_c.tr_ovw_Submit(m.compositorptr,
+                               m.eyeIDs[eye], m.eyeSubmitTexes[eye],
+                               nil, 0)
+    end
 end
 
 function m.updateTrackables()
@@ -165,24 +202,16 @@ function m.updateProjections_()
     end
 end
 
-function m.updateOffsets_()
+function m.updateEyePoses_()
     for i, eyeID in ipairs(m.eyeIDs) do
         local m34 = openvr_c.tr_ovw_GetEyeToHeadTransform(m.sysptr, eyeID)
         m.openvrMatrix3x4ToMatrix(m34, m.eyeOffsets[i])
     end
-end
 
-function m.getEyePoses()
-    m.updateOffsets_()
     for i = 1,2 do
         m.eyePoses[i]:identity()
         m.eyePoses[i]:multiply(m.hmd.pose, m.eyeOffsets[i])
     end
-    return m.eyePoses
-end
-
-function m.getEyeProjectionMatrices()
-    -- todo
 end
 
 terra m.getTargetSize_(sysptr: &openvr_c.IVRSystem, target: &m.TargetSize)
@@ -196,7 +225,7 @@ end
 
 function m.printDebugInfo()
     m.updateProjections_()
-    m.updateOffsets_()
+    m.updateEyePoses_()
     local w,h = m.getRecommendedTargetSize()
     log.info("--------------openvr.printDebugInfo()--------------")
     log.info("Recommended target size: " .. w .. " x " .. h)
