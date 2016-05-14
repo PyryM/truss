@@ -26,7 +26,7 @@ function createGeometry()
 end
 
 function init()
-    app = VRApp({title = "vr_01_scaffold",
+    app = VRApp({title = "vr_00_stereo",
                        width = 1280,
                        height = 720,
                        vrWidth = math.floor(1.4 * 1280/2),

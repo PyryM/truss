@@ -6,20 +6,20 @@
 import sys, os
 from os.path import join, isfile
 
-dx11cmd_fs = "shaderc -f {} -o {} --type f -i common\ --platform windows -p ps_4_0 -O 3"
-dx11cmd_vs = "shaderc -f {} -o {} --type v -i common\ --platform windows -p vs_4_0 -O 3"
+dx11cmd_fs = "shadercRelease -f {} -o {} --type f -i common\ --platform windows -p ps_4_0 -O 3"
+dx11cmd_vs = "shadercRelease -f {} -o {} --type v -i common\ --platform windows -p vs_4_0 -O 3"
 
-dx9cmd_fs = "shaderc -f {} -o {} --type f -i common\ --platform windows -p ps_3_0 -O 3"
-dx9cmd_vs = "shaderc -f {} -o {} --type v -i common\ --platform windows -p vs_3_0 -O 3"
+dx9cmd_fs = "shadercRelease -f {} -o {} --type f -i common\ --platform windows -p ps_3_0 -O 3"
+dx9cmd_vs = "shadercRelease -f {} -o {} --type v -i common\ --platform windows -p vs_3_0 -O 3"
 
-glcmd_fs = "shaderc -f {} -o {} --type f -i common\ --platform linux -p 120"
-glcmd_vs = "shaderc -f {} -o {} --type v -i common\ --platform linux -p 120"
+glcmd_fs = "shadercRelease -f {} -o {} --type f -i common\ --platform linux -p 120"
+glcmd_vs = "shadercRelease -f {} -o {} --type v -i common\ --platform linux -p 120"
 
 cmds_vs = [(dx11cmd_vs, "dx11"), (dx9cmd_vs, "dx9"), (glcmd_vs, "glsl")]
 cmds_fs = [(dx11cmd_fs, "dx11"), (dx9cmd_fs, "dx9"), (glcmd_fs, "glsl")]
 
 def processFile(prefix, dirname, filename):
-    print("Prcoessing {}, {}, {}".format(prefix, dirname, filename))
+    print("Processing {}, {}, {}".format(prefix, dirname, filename))
 
     cmds = []
     if prefix == "vs":

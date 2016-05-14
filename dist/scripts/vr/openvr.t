@@ -5,53 +5,73 @@
 local m = {}
 local class = require("class")
 local math = require("math")
+local openvr_c = nil
+local const = require("vr/constants.t")
+
+if raw_addons.openvr ~= nil then
+    log.info("OpenVR support is available.")
+    openvr_c = terralib.includec("include/openvr_c.h")
+    m.c_api = openvr_c
+    m.available = true
+else
+    log.info("openvr.t: not built with openvr, or addon not attached.")
+    m.available = false
+    return m
+end
+
+struct m.TargetSize {
+    w: uint32;
+    h: uint32;
+}
 
 function m.init()
-    if raw_addons.openvr ~= nil then
-        m.openvr_c = terralib.includec("include/openvr_c.h")
-        local addonfuncs = raw_addons.openvr.functions
-        local addonptr   = raw_addons.openvr.pointer
-        local success = addonfuncs.truss_openvr_init(addonptr, 0)
-        if success > 0 then
-            m.sysptr = terralib.cast(addonfuncs.truss_openvr_get_system(addonptr),
-                                     &[m.openvr_c.IVRSystem])
-            m.compositorptr = terralib.cast(addonfuncs.truss_openvr_get_compositor(addonptr),
-                                            &[m.openvr_c.IVRCompositor])
-            m.addonfuncs = addonfuncs
-            m.addonptr = addonptr
+    if not m.available then
+        return false, "OpenVR support not built."
+    end
 
-            m.eyePoses = {math.Matrix4():identity(), math.Matrix4():identity()}
-            m.eyeOffsets = {math.Matrix4():identity(), math.Matrix4():identity()}
-            m.eyeProjections = {math.Matrix4():identity(), math.Matrix4():identity()}
+    local addonfuncs = raw_addons.openvr.functions
+    local addonptr   = raw_addons.openvr.pointer
+    log.info("Initting...")
+    local success = addonfuncs.truss_openvr_init(addonptr, 0)
+    if success > 0 then
+        log.info("VR Init succeeded...")
+        m.sysptr = addonfuncs.truss_openvr_get_system(addonptr)
+        m.compositorptr = addonfuncs.truss_openvr_get_compositor(addonptr)
+        log.info("sysptr: " .. tostring(m.sysptr))
+        log.info("compositor: " .. tostring(m.compositorptr))
+        m.addonfuncs = addonfuncs
+        m.addonptr = addonptr
 
-            m.hmd = {
-                pose = math.Matrix4():identity(),
-                velocity = math.Vector():zero(),
-                connected = false,
-                poseValid = false
-            }
-            m.eyeIDs = {m.openvr_c.EVREye_Eye_Left, m.openvr_c.EVREye_Eye_Right}
+        m.eyePoses = {math.Matrix4():identity(), math.Matrix4():identity()}
+        m.eyeOffsets = {math.Matrix4():identity(), math.Matrix4():identity()}
+        m.eyeProjections = {math.Matrix4():identity(), math.Matrix4():identity()}
 
-            m.maxTrackables = m.openvr_c.k_unMaxTrackedDeviceCount
-            m.trackables = terralib.new(m.openvr_c.TrackedDevicePose_t[m.maxTrackables])
+        m.targetSize = terralib.new(m.TargetSize)
 
-            m.controllers = {}
-            m.referencePoints = {}
-            for i = 1,m.maxTrackables do
-                m.controllers[i] = {}
-                m.referencePoints[i] = {}
-            end
+        m.hmd = {
+            pose = math.Matrix4():identity(),
+            velocity = math.Vector():zero(),
+            connected = false,
+            poseValid = false
+        }
+        m.eyeIDs = {openvr_c.EVREye_Eye_Left, openvr_c.EVREye_Eye_Right}
 
-            return true, ""
-        else
-            local errorstr = "OpenVR init error: " .. ffi.string(addonfuncs.truss_openvr_get_last_error(addonptr))
-            log.error(errorstr)
-            return false, errorstr
+        m.maxTrackables = const.k_unMaxTrackedDeviceCount
+        m.trackables = terralib.new(openvr_c.TrackedDevicePose_t[m.maxTrackables])
+
+        m.controllers = {}
+        m.referencePoints = {}
+        for i = 1,m.maxTrackables do
+            m.controllers[i] = {}
+            m.referencePoints[i] = {}
         end
+
+        log.info("Finished Vr init")
+        return true, ""
     else
-        local estr = "vr/openvr.t: interpreter does not have openvr attached!"
-        log.error(estr)
-        return false, estr
+        local errorstr = "OpenVR init error: " .. ffi.string(addonfuncs.truss_openvr_get_last_error(addonptr))
+        log.error(errorstr)
+        return false, errorstr
     end
 end
 
@@ -67,9 +87,9 @@ end
 
 function m.controllerIdxToTable(controlleridx, target)
     if target.rawstate == nil then
-        target.rawstate = terralib.new(m.openvr_c.VRControllerState_t)
+        target.rawstate = terralib.new(openvr_c.VRControllerState_t)
     end
-    m.openvr_c.tr_ovw_GetControllerState(m.sysptr, controlleridx, target.rawstate)
+    openvr_c.tr_ovw_GetControllerState(m.sysptr, controlleridx, target.rawstate)
 end
 
 function m.updateTrackables()
@@ -80,16 +100,16 @@ function m.updateTrackables()
     for i = 0,m.maxTrackables do
         local trackable = m.trackables[i]
         if trackable.bPoseIsValid > 0 then
-            local ttype = m.openvr_c.tr_ovw_GetTrackedDeviceClass(m.sysptr, i)
+            local ttype = openvr_c.tr_ovw_GetTrackedDeviceClass(m.sysptr, i)
             local target = nil
-            if ttype == m.openvr_c.ETrackedDeviceClass_TrackedDeviceClass_Controller then
+            if ttype == openvr_c.ETrackedDeviceClass_TrackedDeviceClass_Controller then
                 controllerIdx = controllerIdx + 1
                 target = m.controllers[controllerIdx]
                 m.controllerIdxToTable(i, target)
-            elseif ttype == m.openvr_c.ETrackedDeviceClass_TrackedDeviceClass_TrackingReference then
+            elseif ttype == openvr_c.ETrackedDeviceClass_TrackedDeviceClass_TrackingReference then
                 referenceIdx = referenceIdx + 1
                 target = m.referencePoints[referenceIdx]
-            elseif ttype == m.openvr_c.ETrackedDeviceClass_TrackedDeviceClass_HMD then
+            elseif ttype == openvr_c.ETrackedDeviceClass_TrackedDeviceClass_HMD then
                 hmdIdx = hmdIdx + 1
                 target = m.hmd
             end
@@ -138,16 +158,16 @@ end
 function m.updateProjections_()
     local near = m.nearClip or 0.05
     local far = m.farClip or 100.0
-    local api = m.openvr_c.EGraphicsAPIConvention_API_DirectX
-    for i, eyeID in ipairs(self.eyeIDs) do
-        local m44 = m.openvr_c.tr_ovw_GetProjectionMatrix(m.sysptr, eyeID, near, far, api)
+    local api = openvr_c.EGraphicsAPIConvention_API_DirectX
+    for i, eyeID in ipairs(m.eyeIDs) do
+        local m44 = openvr_c.tr_ovw_GetProjectionMatrix(m.sysptr, eyeID, near, far, api)
         m.openvrMatrix4x4ToMatrix(m44, m.eyeProjections[i])
     end
 end
 
 function m.updateOffsets_()
-    for i, eyeID in ipairs(self.eyeIDs) do
-        local m34 = m.openvr_c.tr_ovw_GetEyeToHeadTransform(m.sysptr, eyeID)
+    for i, eyeID in ipairs(m.eyeIDs) do
+        local m34 = openvr_c.tr_ovw_GetEyeToHeadTransform(m.sysptr, eyeID)
         m.openvrMatrix3x4ToMatrix(m34, m.eyeOffsets[i])
     end
 end
@@ -156,7 +176,7 @@ function m.getEyePoses()
     m.updateOffsets_()
     for i = 1,2 do
         m.eyePoses[i]:identity()
-        m.eyePoses[i]:multiply(m.eyeOffsets[i], m.hmd.pose)
+        m.eyePoses[i]:multiply(m.hmd.pose, m.eyeOffsets[i])
     end
     return m.eyePoses
 end
@@ -165,10 +185,26 @@ function m.getEyeProjectionMatrices()
     -- todo
 end
 
-function m.getRecommendedTargetSize()
-    local w = terralib.new(uint32)
-    local h = terralib.new(uint32)
-    m.openvr_c.tr_ovw_GetRecommendedRenderTargetSize(m.sysptr, w, h)
-    log.info("W: " .. w, "H: " .. h)
-    return tonumber(w), tonumber(h)
+terra m.getTargetSize_(sysptr: &openvr_c.IVRSystem, target: &m.TargetSize)
+    openvr_c.tr_ovw_GetRecommendedRenderTargetSize(sysptr, &target.w, &target.h)
 end
+
+function m.getRecommendedTargetSize()
+    m.getTargetSize_(m.sysptr, m.targetSize)
+    return m.targetSize.w, m.targetSize.h
+end
+
+function m.printDebugInfo()
+    m.updateProjections_()
+    m.updateOffsets_()
+    local w,h = m.getRecommendedTargetSize()
+    log.info("--------------openvr.printDebugInfo()--------------")
+    log.info("Recommended target size: " .. w .. " x " .. h)
+    log.info("ProjectionL: " .. m.eyeProjections[1]:prettystr())
+    log.info("ProjectionR: " .. m.eyeProjections[2]:prettystr())
+    log.info("OffsetL: " .. m.eyeOffsets[1]:prettystr())
+    log.info("OffsetR: " .. m.eyeOffsets[2]:prettystr())
+    log.info("---------------------------------------------------")
+end
+
+return m
