@@ -7,7 +7,7 @@ local vertexdefs = require("gfx/vertexdefs.t")
 
 local function check_index_size_(geo, nindices)
     if geo.nIndices ~= nindices then
-        log.error("Wrong number of indices, expected " 
+        log.error("Wrong number of indices, expected "
                 .. (geo.nIndices or "nil")
                 .. " got " .. (nindices or "nil"))
         return false
@@ -64,7 +64,7 @@ end
 
 -- makeLSetter
 --
--- makes a function to set an attribute name from a 
+-- makes a function to set an attribute name from a
 -- number of values
 function m.makeLSetter(attribname, nvals)
     if nvals > 1 then
@@ -75,7 +75,7 @@ function m.makeLSetter(attribname, nvals)
                 tgt[i-1] = attribVal[i]
             end
         end
-    else 
+    else
         return function(vdata, vindex, attribVal)
             vdata[vindex][attribname] = attribVal
         end
@@ -120,6 +120,7 @@ function m.findSetter(target, attribName, attribList)
     -- figure out how many elements the target has for the attribute
     -- (e.g., 3 element colors [rgb] vs. 4 element color [rgba])
     local datanum = target.vertInfo.attributes[attribName]
+    if datanum == nil then return end
 
     -- determine what setter to use based on the src list
     -- (assume list is homogeneous: probably unsafe but :effort:)
@@ -144,11 +145,11 @@ end
 
 function m.setAttribute(target, attribName, attribList, setter)
     local listSize = #attribList
-    if listSize == 0 then 
+    if listSize == 0 then
         log.warn("setAttribute with #attribList == 0 does nothing")
-        return 
+        return
     elseif listSize ~= target.nVertices then
-        log.error("setAttribute: wrong number of vertices, expected " 
+        log.error("setAttribute: wrong number of vertices, expected "
                 .. (data.nVertices or "nil")
                 .. " got " .. (listSize or "nil"))
         return
