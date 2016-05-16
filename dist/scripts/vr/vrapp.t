@@ -61,7 +61,12 @@ end
 
 function VRApp:initBGFX()
     -- Basic init
-    local reset = 0 -- no anti-aliasing or vsync in VR
+    -- no anti-aliasing or vsync in VR
+    local reset = 0
+    if self.extraFlags then
+        reset = bgfx_const.BGFX_RESET_FLIP_AFTER_RENDER +
+                  bgfx_const.BGFX_RESET_FLUSH_AFTER_RENDER
+    end
     --local cbInterfacePtr = sdl.truss_sdl_get_bgfx_cb(sdlPointer)
     local cbInterfacePtr = nil
     bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)

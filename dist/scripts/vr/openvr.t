@@ -223,6 +223,15 @@ function m.getRecommendedTargetSize()
     return m.targetSize.w, m.targetSize.h
 end
 
+function m.loadControllerModels(callback)
+    if m.controllerModels then
+        callback(m.controllerModels)
+    end
+end
+
+function m.openVRModelToData_(model)
+end
+
 function m.printDebugInfo()
     m.updateProjections_()
     m.updateEyePoses_()
