@@ -64,6 +64,8 @@ function m.init()
         }
         m.eyeIDs = {openvr_c.EVREye_Eye_Left, openvr_c.EVREye_Eye_Right}
 
+        m.vrEvent = terralib.new(openvr_c.VREvent_t)
+
         m.maxTrackables = const.k_unMaxTrackedDeviceCount
         m.trackables = terralib.new(openvr_c.TrackedDevicePose_t[m.maxTrackables])
 
@@ -97,8 +99,19 @@ end
 function m.controllerIdxToTable(controlleridx, target)
     if target.rawstate == nil then
         target.rawstate = terralib.new(openvr_c.VRControllerState_t)
+        target.pressed = {}
+        target.touched = {}
+        target.lastpacket = 0
     end
+    local lastpacket = target.rawstate.unPacketNum
     openvr_c.tr_ovw_GetControllerState(m.sysptr, controlleridx, target.rawstate)
+    if target.rawstate.unPacketNum == lastpacket then return end
+    local bpressed = target.rawstate.ulButtonPressed
+    local btouched = target.rawstate.ulButtonTouched
+    for bname, bmask in m.buttonMasks do
+        target.pressed[bname] = math.ulland(bpressed, bmask) > 0
+        target.touched[bname] = math.ulland(btouched, bmask) > 0
+    end
 end
 
 function m.beginFrame()
@@ -110,7 +123,7 @@ function m.beginFrame()
         return false
     end
 
-    m.updateTrackables()
+    m.updateTrackables_()
     m.updateProjections_()
     m.updateEyePoses_()
 end
@@ -129,7 +142,26 @@ function m.submitFrame(eyeTexes)
     end
 end
 
-function m.updateTrackables()
+function m.processVREvent_()
+    local evt = m.vrEvent
+    if evt.eventType == openvr_c.EVREventType_VREvent_Quit then
+        log.info("Openvr requested application quit!")
+        if m.onQuit then m.onQuit() end
+        openvr_c.tr_ovw_AcknowledgeQuit_Exiting(m.sysptr)
+        truss.truss_stop_interpreter(TRUSS_ID)
+    end
+end
+
+function m.updateVREvents_()
+    local evtsize = sizeof(openvr_c.VREvent_t)
+    while openvr_c.tr_ovw_PollNextEvent(m.sysptr, m.vrEvent, evtsize) > 0 do
+        m.processVREvent_()
+    end
+end
+
+function m.updateTrackables_()
+    m.hasInputFocus = openvr_c.tr_ovw_IsInputFocusCapturedByAnotherProcess(m.sysptr)
+
     local controllerIdx = 0
     local referenceIdx = 0
     local hmdIdx = 0
@@ -230,6 +262,7 @@ function m.loadControllerModels(callback)
 end
 
 function m.openVRModelToData_(model)
+    -- todo
 end
 
 function m.printDebugInfo()
