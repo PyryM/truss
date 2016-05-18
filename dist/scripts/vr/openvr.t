@@ -65,7 +65,9 @@ function m.init()
         m.eyeIDs = {openvr_c.EVREye_Eye_Left, openvr_c.EVREye_Eye_Right}
 
         m.vrEvent = terralib.new(openvr_c.VREvent_t)
-
+        m.stringBuff = terralib.new(int8[512])
+        m.stringBuffSize = 512
+        m.propError = terralib.new(openvr_c.ETrackedPropertyError[2])
         m.maxTrackables = const.k_unMaxTrackedDeviceCount
         m.trackables = terralib.new(openvr_c.TrackedDevicePose_t[m.maxTrackables])
 
@@ -86,6 +88,12 @@ function m.init()
     end
 end
 
+function m.getTrackableStringProp(deviceIdx, prop)
+    local retsize = openvr_c.tr_ovw_GetStringTrackedDeviceProperty(m.sysptr,
+        deviceIdx, prop, m.stringBuff, m.stringBuffSize, m.propError)
+    return ffi.string(m.stringBuff, retsize)
+end
+
 function m.trackableToTable(trackable, target)
     if target.pose == nil then target.pose = math.Matrix4():identity() end
     if target.velocity == nil then target.velocity = math.Vector():zero() end
@@ -96,6 +104,29 @@ function m.trackableToTable(trackable, target)
     target.poseValid = (trackable.bPoseIsValid > 0)
 end
 
+-- query openvr to turn its unlabeled list of five axes into named fields like
+-- "trigger1", "joystick1", etc.
+function m.parseAxes_(controller)
+    controller.axes = {}
+
+    local axislabels = {
+        [tonumber(openvr_c.k_eControllerAxis_TrackPad)] = {"trackpad", 0},
+        [tonumber(openvr_c.k_eControllerAxis_Joystick)] = {"joystick", 0},
+        [tonumber(openvr_c.k_eControllerAxis_Trigger)] = {"trigger", 0}
+    }
+
+    for i = 0, const.k_unControllerStateAxisCount - 1 do
+        local axisEnum = openvr_c.tr_ovw_GetInt32TrackedDeviceProperty(m.sysptr, controller.deviceIndex,
+            openvr_c.ETrackedDeviceProperty_Prop_Axis0Type_Int32 + i, m.propError)
+        local axisinfo = axislabels[tonumber(axisEnum)]
+        if axisinfo ~= nil then
+            axisinfo[2] = axisinfo[2] + 1
+            controller.axes[i] = axisinfo[1]
+            controller[axisinfo[1] .. axisinfo[2]] = {x = 0.0, y = 0.0}
+        end
+    end
+end
+
 function m.controllerIdxToTable(controlleridx, target)
     if target.rawstate == nil then
         target.rawstate = terralib.new(openvr_c.VRControllerState_t)
@@ -103,14 +134,23 @@ function m.controllerIdxToTable(controlleridx, target)
         target.touched = {}
         target.lastpacket = 0
     end
-    local lastpacket = target.rawstate.unPacketNum
-    openvr_c.tr_ovw_GetControllerState(m.sysptr, controlleridx, target.rawstate)
-    if target.rawstate.unPacketNum == lastpacket then return end
-    local bpressed = target.rawstate.ulButtonPressed
-    local btouched = target.rawstate.ulButtonTouched
+    local rawstate = target.rawstate
+    local lastpacket = rawstate.unPacketNum
+    openvr_c.tr_ovw_GetControllerState(m.sysptr, controlleridx, rawstate)
+    if rawstate.unPacketNum == lastpacket then return end
+    target.deviceIndex = controlleridx
+    local bpressed = rawstate.ulButtonPressed
+    local btouched = rawstate.ulButtonTouched
     for bname, bmask in m.buttonMasks do
         target.pressed[bname] = math.ulland(bpressed, bmask) > 0
         target.touched[bname] = math.ulland(btouched, bmask) > 0
+    end
+    if target.axes == nil then m.parseAxes_(target) end
+    for i = 0, const.k_unControllerStateAxisCount - 1 do
+        local axisName = target.axes[i]
+        if axisName ~= nil then
+            target[axisName] = {x = rawstate.rAxis[i].x, y = rawstate.rAxis[i].y}
+        end
     end
 end
 
@@ -253,16 +293,6 @@ end
 function m.getRecommendedTargetSize()
     m.getTargetSize_(m.sysptr, m.targetSize)
     return m.targetSize.w, m.targetSize.h
-end
-
-function m.loadControllerModels(callback)
-    if m.controllerModels then
-        callback(m.controllerModels)
-    end
-end
-
-function m.openVRModelToData_(model)
-    -- todo
 end
 
 function m.printDebugInfo()
