@@ -70,6 +70,7 @@ function m.init()
         m.propError = terralib.new(openvr_c.ETrackedPropertyError[2])
         m.maxTrackables = const.k_unMaxTrackedDeviceCount
         m.trackables = terralib.new(openvr_c.TrackedDevicePose_t[m.maxTrackables])
+        m.buttonMasks = {}
 
         m.controllers = {}
         m.referencePoints = {}
@@ -110,9 +111,9 @@ function m.parseAxes_(controller)
     controller.axes = {}
 
     local axislabels = {
-        [tonumber(openvr_c.k_eControllerAxis_TrackPad)] = {"trackpad", 0},
-        [tonumber(openvr_c.k_eControllerAxis_Joystick)] = {"joystick", 0},
-        [tonumber(openvr_c.k_eControllerAxis_Trigger)] = {"trigger", 0}
+        [tonumber(openvr_c.EVRControllerAxisType_k_eControllerAxis_TrackPad)] = {"trackpad", 0},
+        [tonumber(openvr_c.EVRControllerAxisType_k_eControllerAxis_Joystick)] = {"joystick", 0},
+        [tonumber(openvr_c.EVRControllerAxisType_k_eControllerAxis_Trigger)] = {"trigger", 0}
     }
 
     for i = 0, const.k_unControllerStateAxisCount - 1 do
@@ -141,7 +142,7 @@ function m.controllerIdxToTable(controlleridx, target)
     target.deviceIndex = controlleridx
     local bpressed = rawstate.ulButtonPressed
     local btouched = rawstate.ulButtonTouched
-    for bname, bmask in m.buttonMasks do
+    for bname, bmask in pairs(m.buttonMasks) do
         target.pressed[bname] = math.ulland(bpressed, bmask) > 0
         target.touched[bname] = math.ulland(btouched, bmask) > 0
     end
