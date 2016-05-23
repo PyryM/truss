@@ -95,7 +95,7 @@ end
 function m.getTrackableStringProp(deviceIdx, prop)
     local retsize = openvr_c.tr_ovw_GetStringTrackedDeviceProperty(m.sysptr,
         deviceIdx, prop, m.stringBuff, m.stringBuffSize, m.propError)
-    return ffi.string(m.stringBuff, retsize)
+    return ffi.string(m.stringBuff, retsize-1) -- strip null terminator
 end
 
 function m.trackableToTable(trackable, target)

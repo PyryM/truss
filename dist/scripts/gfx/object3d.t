@@ -31,7 +31,7 @@ function Object3D:init(geo, mat)
 end
 
 function Object3D:setGeometry(newgeo)
-    self.geo = geo
+    self.geo = newgeo
 end
 
 function Object3D:setMaterial(newmat)

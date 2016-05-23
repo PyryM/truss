@@ -179,11 +179,11 @@ function VRApp:updateControllers_()
             if self.controllerObjects[i] == nil then
                 self.controllerObjects[i] = self:createPlaceholderControllerObject(controller)
                 self.scene:add(self.controllerObjects[i])
-                -- local targetself = self
-                -- local targetobj = self.controllerObjects[i]
-                -- openvr.loadModel(controller, function(loadresult)
-                --     targetself:onControllerModelLoaded(loadresult, targetobj)
-                -- end)
+                local targetself = self
+                local targetobj = self.controllerObjects[i]
+                openvr.loadModel(controller, function(loadresult)
+                    targetself:onControllerModelLoaded(loadresult, targetobj)
+                end)
             end
             self.controllerObjects[i].matrix:copy(controller.pose)
         end

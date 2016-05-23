@@ -16,12 +16,25 @@ function m.init(parent_)
 
     m.rendermodelsptr = addonfuncs.truss_openvr_get_rendermodels(addonptr)
 
+    -- have to create these indirect functions because there is no syntax to
+    -- deal with double pointers from lua
+    m.TargetStuff = struct {
+        model: &openvr_c.RenderModel_t;
+        texture: &openvr_c.RenderModel_TextureMap_t;
+    }
+    m.targets = terralib.new(m.TargetStuff)
+
+    terra m.openVRLoadModel(ovrptr: &openvr_c.IVRRenderModels, fn: &int8, tgt: &m.TargetStuff) : openvr_c.EVRRenderModelError
+        return openvr_c.tr_ovw_LoadRenderModel_Async(ovrptr, fn, &(tgt.model))
+    end
+
+    terra m.openVRLoadTex(ovrptr: &openvr_c.IVRRenderModels, texid: int32, tgt: &m.TargetStuff) : openvr_c.EVRRenderModelError
+        return openvr_c.tr_ovw_LoadTexture_Async(ovrptr, texid, &(tgt.texture))
+    end
+
     -- if we need to pass a pointer to something, it's simpler to make an
     -- array and then index array[0] in lua
     m.loadTaskQueue = {}
-    m.modelTarget = terralib.new(&openvr_c.RenderModel_t[2])
-    m.textureTarget = terralib.new(&openvr_c.RenderModel_TextureMap_t[2])
-
     m.loadCache = {}
     m.loadOptions = {}
 end
@@ -31,7 +44,7 @@ function m.update()
     local loadTask = m.loadTaskQueue[1]
     local completed = loadTask:execute()
     if completed then
-        table.remove(m.modelLoadQueue, 1)
+        table.remove(m.loadTaskQueue, 1)
     end
 end
 
@@ -44,23 +57,23 @@ local function loadModelTask(task)
     local geoName = "geo_" .. task.renderModelName
     local cacheVal = m.loadCache[geoName]
     if cacheVal ~= nil then
-        log.debug("Fetched " .. task.renderModelName .. " from cache.")
+        log.debug("Cache Fetched " .. task.renderModelName .. " from cache.")
         task.model = cacheVal
         m.dispatchSuccess_(task)
         return true
     end
 
     -- try to load the geometry
-    local loaderr = openvr_c.tr_ovw_LoadRenderModel_Async(m.rendermodelsptr, task.renderModelName, m.modelTarget)
+    local loaderr = m.openVRLoadModel(m.rendermodelsptr, task.renderModelName, m.targets)
     if loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_None then
         -- loaded
         log.debug("Async load returned for model " .. task.renderModelName)
-        local geo = m.openVRModelToGeo_(task.renderModelName, m.modelTarget[0])
-        local texId = m.modelTarget[0].diffuseTextureId
+        local geo = m.openVRModelToGeo_(task.renderModelName, m.targets.model)
+        local texId = m.targets.model.diffuseTextureId
         task.model = {geo = geo, texId = texId}
         m.loadCache[geoName] = task.model
         m.dispatchSuccess_(task)
-        openvr_c.tr_ovw_FreeRenderModel(m.modelTarget[0])
+        openvr_c.tr_ovw_FreeRenderModel(m.rendermodelsptr, m.targets.model)
         return true
     elseif loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_Loading then
         -- still loading (nothing to do but wait)
@@ -90,15 +103,15 @@ local function loadTextureTask(task)
         return true
     end
 
-    local loaderr = openvr_c.LoadTexture_Async(m.rendermodelsptr, task.model.texId, m.textureTarget)
+    local loaderr = m.openVRLoadTex(m.rendermodelsptr, task.model.texId, m.targets)
     if loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_None then
         -- loaded
         log.debug("Async texture returned for model " .. task.renderModelName)
-        local tex = m.openVRTexToTex_(task.model.texId, m.textureTarget[0])
+        local tex = m.openVRTexToTex_(task.model.texId, m.targets.texture)
         task.texture = tex
         m.loadCache[texName] = tex
         m.dispatchSuccess_(task)
-        openvr_c.tr_ovw_FreeTexture(m.textureTarget[0])
+        openvr_c.tr_ovw_FreeTexture(m.rendermodelsptr, m.targets.texture)
         return true
     elseif loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_Loading then
         -- still loading (nothing to do but wait)
@@ -146,6 +159,7 @@ function m.openVRTexToTex_(texId, data)
     local texture = require("gfx/texture.t")
     local flags = 0 -- default texture flags
     local w, h = data.unWidth, data.unHeight
+    log.debug("modelloader got tex of size " .. w .. " x " .. h)
     local datalen = w * h * 4
     return texture.createTextureFromData(w, h, data.rubTextureMapData, datalen, flags)
 end
