@@ -11,6 +11,7 @@ local shaderutils = require("utils/shaderutils.t")
 local uniforms = require("gfx/uniforms.t")
 local geometry = require("gfx/geometry.t")
 local openvr = require("vr/openvr.t")
+local Object3D = require('gfx/object3d.t').Object3D
 
 local m = {}
 
@@ -43,6 +44,9 @@ function VRApp:init(options)
     self.stereoCameras[1].projMat:fromPrettyArray(testprojL)
     self.stereoCameras[2].projMat:fromPrettyArray(testprojR)
     log.info("ProjL: " .. tostring(self.stereoCameras[1].projMat))
+
+    -- controller objects
+    self.controllerObjects = {}
 
     -- used to draw screen space quads to composite things
     self.orthocam = Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
@@ -151,6 +155,41 @@ function VRApp:render()
     end
 end
 
+function VRApp:createPlaceholderControllerObject(controller)
+    log.debug("Creating placeholder controller!")
+    if self.controllerGeo == nil then
+        self.controllerGeo = require("geometry/icosphere.t").icosphereGeo(0.1, 3, "controller_sphere")
+    end
+    if self.controllerMat == nil then
+        self.controllerMat = require("shaders/pbr.t").PBRMaterial("solid"):roughness(0.8):tint(0.1,0.1,0.1)
+    end
+    return Object3D(self.controllerGeo, self.controllerMat)
+end
+
+function VRApp:onControllerModelLoaded(data, target)
+    log.debug("Controller model loaded!")
+    target:setGeometry(data.model.geo)
+    -- ignore texture for now
+end
+
+function VRApp:updateControllers_()
+    for i = 1,2 do
+        local controller = openvr.controllers[i]
+        if controller and controller.connected then
+            if self.controllerObjects[i] == nil then
+                self.controllerObjects[i] = self:createPlaceholderControllerObject(controller)
+                self.scene:add(self.controllerObjects[i])
+                -- local targetself = self
+                -- local targetobj = self.controllerObjects[i]
+                -- openvr.loadModel(controller, function(loadresult)
+                --     targetself:onControllerModelLoaded(loadresult, targetobj)
+                -- end)
+            end
+            self.controllerObjects[i].matrix:copy(controller.pose)
+        end
+    end
+end
+
 function VRApp:update()
     self.frame = self.frame + 1
     self.time = self.time + 1.0 / 60.0
@@ -158,6 +197,8 @@ function VRApp:update()
     if openvr.available then
         openvr.beginFrame()
         self:updateCameras_()
+        self:updateControllers_()
+        self.controllers = openvr.controllers
     end
 
     -- Deal with input events

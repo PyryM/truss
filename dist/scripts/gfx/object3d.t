@@ -30,6 +30,15 @@ function Object3D:init(geo, mat)
     self.active = true
 end
 
+function Object3D:setGeometry(newgeo)
+    self.geo = geo
+end
+
+function Object3D:setMaterial(newmat)
+    self.mat = newmat
+    self.material = newmat
+end
+
 function Object3D:updateMatrix()
     self.matrix:compose(self.position, self.quaternion, self.scale)
 end

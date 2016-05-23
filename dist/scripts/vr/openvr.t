@@ -7,6 +7,7 @@ local class = require("class")
 local math = require("math")
 local openvr_c = nil
 local const = require("vr/constants.t")
+local modelloader = require("vr/modelloader.t")
 
 if raw_addons.openvr ~= nil then
     log.info("OpenVR support is available.")
@@ -79,6 +80,8 @@ function m.init()
             m.referencePoints[i] = {}
         end
 
+        modelloader.init(m)
+
         log.info("Finished Vr init")
         return true, ""
     else
@@ -138,8 +141,12 @@ function m.controllerIdxToTable(controlleridx, target)
     local rawstate = target.rawstate
     local lastpacket = rawstate.unPacketNum
     openvr_c.tr_ovw_GetControllerState(m.sysptr, controlleridx, rawstate)
-    if rawstate.unPacketNum == lastpacket then return end
     target.deviceIndex = controlleridx
+    -- if rawstate.unPacketNum == lastpacket then
+    --     log.debug("Skipping " .. target.deviceIndex ..
+    --              " packet @ " .. lastpacket)
+    --     return
+    -- end
     local bpressed = rawstate.ulButtonPressed
     local btouched = rawstate.ulButtonTouched
     for bname, bmask in pairs(m.buttonMasks) do
@@ -167,6 +174,7 @@ function m.beginFrame()
     m.updateTrackables_()
     m.updateProjections_()
     m.updateEyePoses_()
+    modelloader.update()
 end
 
 function m.submitFrame(eyeTexes)
@@ -181,6 +189,10 @@ function m.submitFrame(eyeTexes)
                                m.eyeIDs[eye], m.eyeSubmitTexes[eye],
                                nil, 0)
     end
+end
+
+function m.loadModel(device, callbackSuccess, callbackFailure)
+    modelloader.loadDeviceModel(device, callbackSuccess, callbackFailure)
 end
 
 function m.processVREvent_()
@@ -207,7 +219,7 @@ function m.updateTrackables_()
     local referenceIdx = 0
     local hmdIdx = 0
 
-    for i = 0,m.maxTrackables do
+    for i = 0,m.maxTrackables-1 do
         local trackable = m.trackables[i]
         if trackable.bPoseIsValid > 0 then
             local ttype = openvr_c.tr_ovw_GetTrackedDeviceClass(m.sysptr, i)

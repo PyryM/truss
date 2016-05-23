@@ -44,6 +44,7 @@ local function loadModelTask(task)
     local geoName = "geo_" .. task.renderModelName
     local cacheVal = m.loadCache[geoName]
     if cacheVal ~= nil then
+        log.debug("Fetched " .. task.renderModelName .. " from cache.")
         task.model = cacheVal
         m.dispatchSuccess_(task)
         return true
@@ -53,6 +54,7 @@ local function loadModelTask(task)
     local loaderr = openvr_c.tr_ovw_LoadRenderModel_Async(m.rendermodelsptr, task.renderModelName, m.modelTarget)
     if loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_None then
         -- loaded
+        log.debug("Async load returned for model " .. task.renderModelName)
         local geo = m.openVRModelToGeo_(task.renderModelName, m.modelTarget[0])
         local texId = m.modelTarget[0].diffuseTextureId
         task.model = {geo = geo, texId = texId}
@@ -82,6 +84,7 @@ local function loadTextureTask(task)
     local texName = "tex_" .. task.model.texId
     local cacheVal = m.loadCache[texName]
     if cacheVal ~= nil then
+        log.debug("Fetched texture for " .. task.renderModelName .. " from cache.")
         task.texture = cacheVal
         m.dispatchSuccess_(task)
         return true
@@ -90,6 +93,7 @@ local function loadTextureTask(task)
     local loaderr = openvr_c.LoadTexture_Async(m.rendermodelsptr, task.model.texId, m.textureTarget)
     if loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_None then
         -- loaded
+        log.debug("Async texture returned for model " .. task.renderModelName)
         local tex = m.openVRTexToTex_(task.model.texId, m.textureTarget[0])
         task.texture = tex
         m.loadCache[texName] = tex
@@ -111,19 +115,28 @@ local function loadTextureTask(task)
 end
 
 function m.dispatchSuccess_(task)
-    if not m.loadOptions.loadTextures or task.model.tex ~= nil then
+    if not m.loadOptions.loadTextures or task.texture ~= nil then
+        task.modelLoaded = true
         if task.onModelLoad then task.onModelLoad(task) end
-    else -- loadTextures and task.model.tex == nil
+    else -- loadTextures and task.texture == nil
         task.execute = loadTextureTask
         m.addTask_(task)
     end
 end
 
 function m.loadDeviceModel(device, callbackSuccess, callbackFailure)
+    if device.modelLoaded then return end
+
     device.onModelLoad = callbackSuccess
     device.onModelLoadFail = callbackFailure
+    if device.deviceIndex == nil then
+        log.error("Nil device index???")
+        return
+    end
+    log.debug("Requesting model for " .. device.deviceIndex)
     device.renderModelName = parent.getTrackableStringProp(device.deviceIndex,
         openvr_c.ETrackedDeviceProperty_Prop_RenderModelName_String)
+    log.debug("Starting to load device model " .. device.renderModelName)
     local task = device
     task.execute = loadModelTask
     m.addTask_(task)
@@ -143,6 +156,8 @@ function m.openVRModelToGeo_(targetName, data)
     local vertInfo = m.loadOptions.vertInfo or
             vdefs.createStandardVertexType({"position", "normal", "texcoord0"})
     local nverts, nindices = data.unVertexCount, data.unTriangleCount*3
+    log.debug("modelloader got " .. nverts .. " vertices, and " ..
+              nindices .. " indices.")
     local geo = StaticGeometry(targetName)
     geo:allocate(vertInfo, nverts, nindices)
 
@@ -166,6 +181,8 @@ function m.openVRModelToGeo_(targetName, data)
     if m.loadOptions.build == nil or m.loadOptions.build == true then
         geo:build()
     end
+
+    return geo
 end
 
 
