@@ -18,11 +18,105 @@ function m.init(parent_)
 
     -- if we need to pass a pointer to something, it's simpler to make an
     -- array and then index array[0] in lua
-    m.modelLoadQueue = {}
+    m.loadTaskQueue = {}
     m.modelTarget = terralib.new(&openvr_c.RenderModel_t[2])
+    m.textureTarget = terralib.new(&openvr_c.RenderModel_TextureMap_t[2])
 
-    m.modelCache = {}
+    m.loadCache = {}
     m.loadOptions = {}
+end
+
+function m.update()
+    if #(m.loadTaskQueue) == 0 then return end
+    local loadTask = m.loadTaskQueue[1]
+    local completed = loadTask:execute()
+    if completed then
+        table.remove(m.modelLoadQueue, 1)
+    end
+end
+
+function m.addTask_(task)
+    table.insert(m.loadTaskQueue, task)
+end
+
+local function loadModelTask(task)
+    -- check if the model is already in the cache
+    local geoName = "geo_" .. task.renderModelName
+    local cacheVal = m.loadCache[geoName]
+    if cacheVal ~= nil then
+        task.model = cacheVal
+        m.dispatchSuccess_(task)
+        return true
+    end
+
+    -- try to load the geometry
+    local loaderr = openvr_c.tr_ovw_LoadRenderModel_Async(m.rendermodelsptr, task.renderModelName, m.modelTarget)
+    if loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_None then
+        -- loaded
+        local geo = m.openVRModelToGeo_(task.renderModelName, m.modelTarget[0])
+        local texId = m.modelTarget[0].diffuseTextureId
+        task.model = {geo = geo, texId = texId}
+        m.loadCache[geoName] = task.model
+        m.dispatchSuccess_(task)
+        openvr_c.tr_ovw_FreeRenderModel(m.modelTarget[0])
+        return true
+    elseif loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_Loading then
+        -- still loading (nothing to do but wait)
+        return false
+    else
+        -- an actual error
+        log.error("Error loading model " .. tostring(m.renderModelName) ..
+                  ": " .. tostring(loaderr))
+        if task.onModelLoadFail then
+            task.onModelLoadFail(task, loaderr)
+        end
+        return false
+    end
+end
+
+local function loadTextureTask(task)
+    if task.model == nil or task.model.texId == nil then
+        log.error("modelloader: Invalid texture id on task!")
+        return true
+    end
+    local texName = "tex_" .. task.model.texId
+    local cacheVal = m.loadCache[texName]
+    if cacheVal ~= nil then
+        task.texture = cacheVal
+        m.dispatchSuccess_(task)
+        return true
+    end
+
+    local loaderr = openvr_c.LoadTexture_Async(m.rendermodelsptr, task.model.texId, m.textureTarget)
+    if loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_None then
+        -- loaded
+        local tex = m.openVRTexToTex_(task.model.texId, m.textureTarget[0])
+        task.texture = tex
+        m.loadCache[texName] = tex
+        m.dispatchSuccess_(task)
+        openvr_c.tr_ovw_FreeTexture(m.textureTarget[0])
+        return true
+    elseif loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_Loading then
+        -- still loading (nothing to do but wait)
+        return false
+    else
+        -- an actual error
+        log.error("Error loading texture for " .. tostring(m.renderModelName) ..
+                  ": " .. tostring(loaderr))
+        if task.onModelLoadFail then
+            task.onModelLoadFail(task, loaderr)
+        end
+        return false
+    end
+end
+
+function m.dispatchSuccess_(task)
+    if not m.loadOptions.loadTextures or task.model.tex ~= nil then
+        if task.onModelLoad then task.onModelLoad(task) end
+    else -- loadTextures and task.model.tex == nil
+        task.execute = loadTextureTask
+        m.addTask_(task)
+    end
 end
 
 function m.loadDeviceModel(device, callbackSuccess, callbackFailure)
@@ -30,63 +124,26 @@ function m.loadDeviceModel(device, callbackSuccess, callbackFailure)
     device.onModelLoadFail = callbackFailure
     device.renderModelName = parent.getTrackableStringProp(device.deviceIndex,
         openvr_c.ETrackedDeviceProperty_Prop_RenderModelName_String)
-    table.insert(m.modelLoadQueue, device)
+    local task = device
+    task.execute = loadModelTask
+    m.addTask_(task)
 end
 
-function m.dispatchSuccess_(device)
-    device.renderModel = m.modelCache[device.renderModelName]
-    if device.onModelLoad then device.onModelLoad(device) end
+function m.openVRTexToTex_(texId, data)
+    local texture = require("gfx/texture.t")
+    local flags = 0 -- default texture flags
+    local w, h = data.unWidth, data.unHeight
+    local datalen = w * h * 4
+    return texture.createTextureFromData(w, h, data.rubTextureMapData, datalen, flags)
 end
 
-function m.update()
-    if #(m.modelLoadQueue) == 0 then return end
-    local loadingModel = m.modelLoadQueue[1]
-
-    -- check if the model is already in the cache
-    local cacheVal = m.modelCache[loadingModel.renderModelName]
-    if cacheVal ~= nil then
-        table.remove(m.modelLoadQueue, 1)
-        m.dispatchSuccess_(loadingModel)
-        return
-    end
-
-    -- try loading model
-    local loaderr = openvr_c.tr_ovw_LoadRenderModel_Async(m.rendermodelsptr,
-        loadingModel.renderModelName, m.modelTarget)
-    if loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_None then
-        -- loaded
-        table.remove(m.modelLoadQueue, 1)
-        m.openVRModelPostLoad_(loadingModel, m.modelTarget[0])
-    elseif loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_Loading then
-        -- still loading (nothing to do but wait)
-        return
-    else
-        -- an actual error
-        log.error("Error loading model " .. tostring(m.renderModelName) ..
-                  ": " .. tostring(loaderr))
-        table.remove(m.modelLoadQueue, 1)
-        if loadingModel.onModelLoadFail then
-            loadingModel.onModelLoadFail(loadingModel, loaderr)
-        end
-    end
-end
-
-function m.openVRModelPostLoad_(target, data)
-    if m.loadOptions.asData then
-        log.error("Loading as data not supported yet!")
-        if target.onModelLoadFail then target.onModelLoadFail(target, "") end
-    else
-        m.openVRModelToGeo_(target, data)
-    end
-end
-
-function m.openVRModelToGeo_(target, data)
+function m.openVRModelToGeo_(targetName, data)
     local StaticGeometry = require("gfx/geometry.t").StaticGeometry
     local vdefs = require("gfx/vertexdefs.t")
     local vertInfo = m.loadOptions.vertInfo or
             vdefs.createStandardVertexType({"position", "normal", "texcoord0"})
     local nverts, nindices = data.unVertexCount, data.unTriangleCount*3
-    local geo = StaticGeometry(target.renderModelName)
+    local geo = StaticGeometry(targetName)
     geo:allocate(vertInfo, nverts, nindices)
 
     -- copy over vertex and index data
@@ -109,10 +166,6 @@ function m.openVRModelToGeo_(target, data)
     if m.loadOptions.build == nil or m.loadOptions.build == true then
         geo:build()
     end
-
-    m.modelCache[target.renderModelName] = {geo = geo, rawdata = data,
-                                            textureId = tonumber(data.diffuseTextureId)}
-    m.dispatchSuccess_(target)
 end
 
 
