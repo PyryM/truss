@@ -8,6 +8,7 @@ local json = require("lib/json.lua")
 
 local Ros = class("Ros")
 local Topic = class("Topic")
+local Service = class("Service")
 
 function Ros:init()
     self.socket = websocket.WebSocketConnection()
@@ -36,10 +37,17 @@ function Ros:nextId()
     return self.idCounter
 end
 
+function Ros:addHandler_(topicname, handler)
+    if self.topicHandlers[topicname] == nil then
+        self.topicHandlers[topicname] = {}
+    end
+    self.topicHandlers[topicname][handler.subscribeId] = handler
+end
+
 function Ros:dispatchToTopic_(topicname, msg)
     local handlers = self.topicHandlers[topicname]
     if handlers then
-        for i,handlerfunc in handlers do handlerfunc(msg) end
+        for _,handler in pairs(handlers) do handler:callback(msg) end
     end
 end
 
@@ -76,7 +84,11 @@ function Topic:init(ros, options)
     self.queueSize = options.queueSize or 100
 end
 
-function Topic:subscribe()
+function Topic:callback(msg)
+    -- default callback does nothing
+end
+
+function Topic:subscribe(callback)
     local nextid = self.ros:nextId()
     self.subscribeId = "subscribe:" .. self.topicName .. ":" .. nextid
     local submsg = {
@@ -87,6 +99,8 @@ function Topic:subscribe()
         compression = "none",
         throttle_rate = self.throttleRate or 0
     }
+    self.callback = callback
+    self.ros:addHandler_(self.topicName, self)
     self.ros:sendRawJSON(submsg)
 end
 
@@ -139,5 +153,105 @@ function Topic:publish(msg)
     self.ros:sendRawJSON(callmsg)
 end
 
-local ret = {Ros = Ros, Topic = Topic}
+----
+-- A ROS service client.
+--
+-- @constructor
+-- @params options - possible keys include:
+--   -- ros - the ROSLIB.Ros connection handle
+--   -- name - the service name, like /add_two_ints
+--   -- serviceType - the service type, like 'rospy_tutorials/AddTwoInts'
+--
+function Service:init(ros, options)
+    local options = options or {}
+    self.ros = ros
+    self.serviceName = options.name
+    self.serviceType = options.serviceType
+    self.isAdvertised = false
+    self.serviceCallback = nil
+end
+
+----
+-- Calls the service. Returns the service response in the callback.
+--
+-- @param request - the ROSLIB.ServiceRequest to send
+-- @param callback - function with params:
+--   -- response - the response from the service request
+-- @param failedCallback - the callback function when the service call failed (optional). Params:
+--   -- error - the error message reported by ROS
+--/
+function Service:callService(request, callback, failedCallback)
+    if self.isAdvertised then return end
+
+    local nextId = self.ros:nextId()
+    local serviceCallId = 'call_service:' .. self.serviceName .. ':' .. nextId
+
+    local cb = callback
+    local failedcb = failedCallback
+    self.ros:addServiceCallback_(serviceCallId, function(msg)
+        if msg.result == false then
+            failedcb(msg.values)
+        else
+            cb(msg.values)
+        end
+    end)
+
+    local callmsg = {
+        op = 'call_service',
+        id = serviceCallId,
+        service = self.serviceName,
+        args = request
+    }
+    self.ros:sendRawJSON(callmsg)
+end
+
+--
+--  Every time a message is published for the given topic, the callback
+--  will be called with the message object.
+--
+--  @param callback - function with the following params:
+--     message - the published message
+--
+function Service:advertise(callback)
+    if self.isAdvertised then return end
+
+    self._serviceCallback = callback
+    self.ros:addServiceServer(self.serviceName, self)
+    self.ros:sendRawJSON({
+        op = 'advertise_service',
+        type = self.serviceType,
+        service = self.serviceName
+    })
+    self.isAdvertised = true
+end
+
+function Service:unadvertise()
+    if not self.isAdvertised then return end
+
+    self.ros:sendRawJSON({
+        op = 'unadvertise_service',
+        service = self.serviceName
+    })
+    self.isAdvertised = false
+end
+
+function Service:_serviceResponse(rosbridgeRequest)
+    local response = {}
+    local success = self._serviceCallback(rosbridgeRequest.args, response)
+
+    local call = {
+        op = 'service_response',
+        service = self.name,
+        values = response,
+        result = success
+    };
+
+    if rosbridgeRequest.id then
+        call.id = rosbridgeRequest.id
+    end
+
+    self.ros:sendRawJSON(call)
+end
+
+local ret = {Ros = Ros, Topic = Topic, Service = Service}
 return ret
