@@ -13,6 +13,8 @@ local Service = class("Service")
 function Ros:init()
     self.socket = websocket.WebSocketConnection()
     self.topicHandlers = {}
+    self.serviceReponseCallbacks = {}
+    self.serviceHandlers = {}
     self.idCounter = 0
     local this = self
     self.socket:onMessage(function(msg)
@@ -51,23 +53,42 @@ function Ros:dispatchToTopic_(topicname, msg)
     end
 end
 
-function Ros:dispatchServiceResponse_(id, msg)
-    -- todo
+function Ros:addServiceCallback_(id, cbfunc)
+    self.serviceReponseCallbacks[id] = cbfunc
 end
 
-function Ros:onMessage(msg)
-    local truemessage = json:decode(msg)
-    if truemessage.op == "png" then
+function Ros:dispatchServiceResponse_(id, msg)
+    local callback = self.serviceReponseCallbacks[id]
+    self.serviceReponseCallbacks[id] = nil
+    if callback then
+        callback(msg)
+    end
+end
+
+function Ros:addServiceHandler_(servicename, service)
+    self.serviceHandlers[servicename] = service
+end
+
+function Ros:dispatchServiceCall_(servicename, msg)
+    local service = self.serviceHandlers[servicename]
+    if service then service:serviceResponse_(msg) end
+end
+
+function Ros:onMessage(rawmsg)
+    local message = json:decode(rawmsg)
+    if message.op == "png" then
         if not self.pngwarning then
             log.warn("Warning: PNG ros messages not supported!")
             self.pngwarning = true
         end
-    elseif truemessage.op == "publish" then
-        self:dispatchToTopic_(truemessage.topic, truemessage.msg)
-    elseif truemessage.op == "service_response" then
-        self:dispatchServiceResponse_(truemessage.id, truemessage)
+    elseif message.op == "publish" then
+        self:dispatchToTopic_(message.topic, message.msg)
+    elseif message.op == "service_response" then
+        self:dispatchServiceResponse_(message.id, message)
+    elseif message.op == "call_service" then
+        self:dispatchServiceCall_(message.service, message)
     else
-        log.error("Unknown message op: " .. tostring(truemessage.op))
+        log.error("Unknown message op: " .. tostring(message.op))
     end
 end
 
@@ -215,8 +236,8 @@ end
 function Service:advertise(callback)
     if self.isAdvertised then return end
 
-    self._serviceCallback = callback
-    self.ros:addServiceServer(self.serviceName, self)
+    self.serviceCallback_ = callback
+    self.ros:addServiceHandler_(self.serviceName, self)
     self.ros:sendRawJSON({
         op = 'advertise_service',
         type = self.serviceType,
@@ -235,16 +256,16 @@ function Service:unadvertise()
     self.isAdvertised = false
 end
 
-function Service:_serviceResponse(rosbridgeRequest)
+function Service:serviceResponse_(rosbridgeRequest)
     local response = {}
-    local success = self._serviceCallback(rosbridgeRequest.args, response)
+    local success = self.serviceCallback_(rosbridgeRequest.args, response)
 
     local call = {
         op = 'service_response',
         service = self.name,
         values = response,
         result = success
-    };
+    }
 
     if rosbridgeRequest.id then
         call.id = rosbridgeRequest.id
