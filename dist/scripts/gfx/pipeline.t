@@ -33,9 +33,8 @@ end
 local Pipeline = class("Pipeline")
 m.Pipeline = Pipeline
 
-function Pipeline:init(globalContext)
+function Pipeline:init()
     self.stages = {}
-    self.globalContext = globalContext or {}
 end
 
 function Pipeline:add(stage, context)
@@ -58,7 +57,7 @@ end
 --  global context but not any stage-specific context
 function Pipeline:render(context)
     for _, stageData in ipairs(self.stages) do
-        stageData.stage:render(stageData.context or (context or self.globalContext))
+        stageData.stage:render(stageData.context or context)
     end
 end
 
