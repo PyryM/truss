@@ -45,6 +45,7 @@ function RenderTarget:addColorAttachment(width, height, colorformat)
                         colorformat or m.ColorFormats.default,
                         colorflags, nil)
     table.insert(self.attachments, color)
+    self.hasColor = true
     return self
 end
 
@@ -57,6 +58,7 @@ function RenderTarget:addDepthAttachment(width, height)
     local depth = bgfx.bgfx_create_texture_2d(width, height, 1,
                         bgfx.BGFX_TEXTURE_FORMAT_D16, depthflags, nil)
     table.insert(self.attachments, depth)
+    self.hasDepth = true
     return self
 end
 
@@ -81,6 +83,26 @@ function RenderTarget:destroy()
     self.frameBuffer = nil
     self.attachments = nil
     self.cattachments = nil
+end
+
+function RenderTarget:setViewClear(viewid, clearValues)
+    local clearColor = clearValues.color or 0x303030ff
+    local clearDepth = clearValues.depth or 1.0
+    local clearStencil = clearValues.stencil
+    local clearFlags = bgfx_const.BGFX_CLEAR_NONE
+
+    if clearValues.color ~= false and self.hasColor then
+        clearFlags = bit.bor(clearFlags, bgfx_const.BGFX_CLEAR_COLOR)
+    end
+    if clearValues.depth ~= false and self.hasDepth then
+        clearFlags = bit.bor(clearFlags, bgfx_const.BGFX_CLEAR_DEPTH)
+    end
+    if clearStencil then
+        clearFlags = bit.bor(clearFlags, bgfx_const.BGFX_CLEAR_STENCIL)
+    end
+
+    bgfx.bgfx_set_view_clear(viewid, clearFlags,
+                             clearColor, clearDepth, clearStencil or 0)
 end
 
 function RenderTarget:bindToView(viewid, setViewRect)

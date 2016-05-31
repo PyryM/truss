@@ -8,21 +8,36 @@ local math = require("math")
 local m = {}
 
 local MultiShaderStage = class("MultiShaderStage")
-function MultiShaderStage:init(context)
-    context = context or {}
-    if context.globals == nil then
-        log.warn("Provided context did not have any globals: is this what you want?")
-        context.globals = require("gfx/uniforms.t").UniformSet()
+function MultiShaderStage:init(options)
+    options = options or {}
+    if options.globals == nil then
+        log.warn("Provided options did not have any globals: is this what you want?")
+        options.globals = require("gfx/uniforms.t").UniformSet()
     end
-    self.context = context
+    self.options_ = options
+    self.globals = options.globals
     self.shaders_ = {}
-    for shaderName, shader in pairs(context.shaders or {}) do
+    self.target = options.renderTarget
+    for shaderName, shader in pairs(options.shaders or {}) do
         self:addShader(shaderName, shader)
     end
 end
 
-function MultiShaderStage:setup(options, startView)
+-- this creates a duplicate of the stage that shares the same shaders but
+-- can have a different viewid (e.g., for a stereo pipeline)
+function MultiShaderStage:duplicate()
+    local ret = MultiShaderStage()
+    ret.globals = self.globals
+    ret.shaders_ = self.shaders_
+    ret.options_ = self.options_
+    return ret
+end
+
+function MultiShaderStage:setupViews(startView)
     self.viewid_ = startView
+    if self.options_.clear ~= false and self.target then
+        self.target:setViewClear(self.viewid_, self.options_.clear or {})
+    end
     return startView + 1
 end
 
@@ -33,7 +48,7 @@ function MultiShaderStage:addShader(name, shader)
     end
     self.shaders_[name] = shader
     if shader.globals then
-        self.context.globals:merge(shader.globals)
+        self.globals:merge(shader.globals)
     end
 end
 
@@ -58,12 +73,11 @@ local function renderObject_(obj, mpass)
 end
 
 function MultiShaderStage:render(context)
-    local ctx = context or self.context
     local globals = context.globals or self.globals
     if globals then globals:bind() end
 
-    if context.renderTarget then
-        context.renderTarget:bindToView(self.viewid_)
+    if self.target then
+        self.target:bindToView(self.viewid_)
     end
 
     if context.camera then

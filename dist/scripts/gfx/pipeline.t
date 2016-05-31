@@ -4,59 +4,53 @@ local m = {}
 local Stage = class("Stage")
 m.Stage = Stage
 
-function Stage:init(context)
-    self.initContext = context
+-- initoptions should contain e.g. input render targets (for post-processing),
+-- output render targets, uniform values.
+function Stage:init(initoptions)
+    -- nothing to do
 end
 
--- default is to assume the stage will use up a single view
-function Stage:setup(options, startView)
+-- should return the next available view
+-- default implementation assumes a single view
+function Stage:setupViews(startView)
     self.viewId = startView
     return startView + 1
 end
 
--- should render, typically using the objects in context.scene
+-- should render, typically using the objects in context.scene and the camera
+-- in context.camera
 function Stage:render(context)
-    -- nothing to do
-end
-
--- called at the beginning of the frame (for example, if the stage needs to
---  find all the lights first in order to set uniforms)
-function Stage:beginFrame(context)
-    -- nothing to do
-end
-
--- called when the stage is requested to render a single object
-function Stage:renderObject(object, context)
     -- nothing to do
 end
 
 local Pipeline = class("Pipeline")
 m.Pipeline = Pipeline
 
-function Pipeline:init()
+function Pipeline:init(initoptions)
+    self.orderedStages = {}
     self.stages = {}
 end
 
-function Pipeline:add(stage, context)
-    table.insert(self.stages, {stage = stage, context = context})
+function Pipeline:add(stageName, stage, context)
+    table.insert(self.orderedStages, {stage = stage, context = context,
+                                      stageName = stageName})
+    self.stages[stagename] = stage
     return stage
 end
 
-function Pipeline:setup(options, startView)
+function Pipeline:setupViews(startView)
     local curView = startView or 0
     self.startView = curView
-    for _, stageData in ipairs(self.stages) do
-        curView = stageData.stage:setup(options, curView)
+    for _, stageData in ipairs(self.orderedStages) do
+        curView = stageData.stage:setupViews(curView)
     end
     return curView
 end
 
--- renders the pipeline; each stage uses a context in this precedence order:
---  stage_context > call_context > global_context
---  in other words, if a context is given in the call it will override the
---  global context but not any stage-specific context
+-- renders the pipeline; each stage uses the context it was added with in
+-- preference to the provided context
 function Pipeline:render(context)
-    for _, stageData in ipairs(self.stages) do
+    for _, stageData in ipairs(self.orderedStages) do
         stageData.stage:render(stageData.context or context)
     end
 end
