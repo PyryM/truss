@@ -20,11 +20,16 @@ local CMath = terralib.includec("math.h")
 
 local PerfApp = AppScaffold:extend("PerfApp")
 function PerfApp:initPipeline()
+    local RenderTarget = require("gfx/rendertarget.t").RenderTarget
+
     self.pgm = shaderutils.loadProgram("vs_cubes", "fs_cubes")
+    self.backbuffer = RenderTarget(self.width, self.height):makeBackbuffer()
+    self.backbuffer:setViewClear(0, {color = 0x303000ff})
+    self.backbuffer:bindToView(0)
 end
 
 function PerfApp:initScene()
-    self.camera = Camera():makeProjection(70, self.width/self.height, 
+    self.camera = Camera():makeProjection(70, self.width/self.height,
                                             1.0, 200.0)
     self.camera.position:set(0, 0, 150)
     self.camera:updateMatrix()
@@ -38,12 +43,12 @@ end
 function PerfApp:bindFFIBGFX()
     local ffi = require("ffi")
         -- typedef struct bgfx_vertex_buffer_handle { uint16_t idx; } bgfx_vertex_buffer_handle_t;
-        -- typedef struct bgfx_index_buffer_handle { uint16_t idx; } bgfx_index_buffer_handle_t;    
+        -- typedef struct bgfx_index_buffer_handle { uint16_t idx; } bgfx_index_buffer_handle_t;
         -- typedef struct bgfx_program_handle { uint16_t idx; } bgfx_program_handle_t;
 
     ffi.cdef[[
         typedef struct bbgfx_vertex_buffer_handle { uint16_t idx; } bbgfx_vertex_buffer_handle_t;
-        typedef struct bbgfx_index_buffer_handle { uint16_t idx; } bbgfx_index_buffer_handle_t;    
+        typedef struct bbgfx_index_buffer_handle { uint16_t idx; } bbgfx_index_buffer_handle_t;
         typedef struct bbgfx_program_handle { uint16_t idx; } bbgfx_program_handle_t;
         uint32_t bgfx_set_transform(const void* _mtx, uint16_t _num);
         void bgfx_set_index_buffer(bbgfx_index_buffer_handle_t _handle, uint32_t _firstIndex, uint32_t _numIndices);
@@ -95,7 +100,7 @@ function PerfApp:render()
     local bgfx = core.bgfx
     local bgfx_const = core.bgfx_const
     local umax = 4294967295
-    --bgfx.UINT32_MAX or 
+    --bgfx.UINT32_MAX or
 
     local nside = self.sidesize
     local vbuff = self.geo.vbh
