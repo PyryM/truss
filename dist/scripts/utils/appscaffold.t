@@ -80,7 +80,7 @@ function AppScaffold:initPipeline()
     local backbuffer = RenderTarget(self.width, self.height):makeBackbuffer()
     local forwardpass = MultiShaderStage({
         renderTarget = backbuffer,
-        clear = {color = 0x000030ff},
+        clear = {color = 0x303030ff},
         shaders = {solid = pbr.PBRShader()}
     })
     self.pipeline:add("forwardpass", forwardpass)
