@@ -13,8 +13,10 @@ local nanovg = core.nanovg
 local math = require("math")
 local Object3D = require('gfx/object3d.t').Object3D
 local Camera = require("gfx/camera.t").Camera
-local MultiPass = require("gfx/multipass.t").MultiPass
 local uniforms = require("gfx/uniforms.t")
+local MultiShaderStage = require("gfx/multishaderstage.t").MultiShaderStage
+local RenderTarget = require("gfx/rendertarget.t").RenderTarget
+local Pipeline = require("gfx/pipeline.t").Pipeline
 
 local AppScaffold = class('AppScaffold')
 
@@ -64,12 +66,6 @@ function AppScaffold:initBGFX()
     -- Enable debug text.
     bgfx.bgfx_set_debug(debug)
 
-    bgfx.bgfx_set_view_clear(0,
-    0x0001 + 0x0002, -- clear color + clear depth
-    0x303030ff,
-    1.0,
-    0)
-
     log.info("AppScaffold: initted bgfx")
     local rendererType = bgfx.bgfx_get_renderer_type()
     local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
@@ -77,27 +73,33 @@ function AppScaffold:initBGFX()
 end
 
 function AppScaffold:initPipeline()
-    local MultiPass = require("gfx/multipass.t").MultiPass
     local pbr = require("shaders/pbr.t")
 
-    local renderpass = MultiPass()
-    renderpass:addShader("solid", pbr.PBRShader())
+    self.pipeline = Pipeline()
+
+    local backbuffer = RenderTarget(self.width, self.height):makeBackbuffer()
+    local forwardpass = MultiShaderStage({
+        renderTarget = backbuffer,
+        clear = {color = 0x000030ff},
+        shaders = {solid = pbr.PBRShader()}
+    })
+    self.pipeline:add("forwardpass", forwardpass)
+    self.pipeline:setupViews(0)
 
     -- set default lights
     local Vector = math.Vector
-    renderpass.globals.lightDirs:setMultiple({
+    forwardpass.globals.lightDirs:setMultiple({
             Vector( 1.0,  1.0,  0.0),
             Vector(-1.0,  1.0,  0.0),
             Vector( 0.0, -1.0,  1.0),
             Vector( 0.0, -1.0, -1.0)})
 
-    renderpass.globals.lightColors:setMultiple({
+    forwardpass.globals.lightColors:setMultiple({
             Vector(0.8, 0.8, 0.8),
             Vector(1.0, 1.0, 1.0),
             Vector(0.1, 0.1, 0.1),
             Vector(0.1, 0.1, 0.1)})
 
-    self.pipeline = renderpass
 end
 
 function AppScaffold:initScene()
@@ -108,7 +110,7 @@ end
 
 function AppScaffold:initNVG()
     -- create context, indicate to bgfx that drawcalls to view
-    -- 0 should happen in the order that they were submitted
+    -- 1 should happen in the order that they were submitted
     self.nvg = nanovg.nvgCreate(1, 1) -- make sure to have antialiasing on
     bgfx.bgfx_set_view_seq(1, true)
 
@@ -177,7 +179,7 @@ function AppScaffold:update()
 
     -- Touch the view to make sure it is cleared even if no draw
     -- calls happen
-    bgfx.bgfx_touch(0)
+    -- bgfx.bgfx_touch(0)
 
     -- Use debug font to print information about this example.
     bgfx.bgfx_dbg_text_clear(0, false)

@@ -2,6 +2,7 @@
 --
 -- a class for abstracting the bgfx render buffers
 
+local math = require("math")
 local class = require("class")
 
 local m = {}
@@ -29,6 +30,19 @@ function RenderTarget:makeRGB8(hasDepth)
         self:addDepthAttachment(self.width, self.height)
     end
     self:finalize()
+    return self
+end
+
+function RenderTarget:makeBackbuffer()
+    if self.finalized then
+        log.error("Cannot convert finalized rendertarget to backbuffer!")
+        return
+    end
+    self.isBackbuffer = true
+    self.hasColor = true
+    self.hasDepth = true
+    self.frameBuffer = nil
+    self.finalized = true
     return self
 end
 
@@ -83,22 +97,23 @@ function RenderTarget:destroy()
     self.frameBuffer = nil
     self.attachments = nil
     self.cattachments = nil
+    self.finalized = false
 end
 
 function RenderTarget:setViewClear(viewid, clearValues)
-    local clearColor = clearValues.color or 0x303030ff
+    local clearColor = clearValues.color or 0x000000ff
     local clearDepth = clearValues.depth or 1.0
     local clearStencil = clearValues.stencil
     local clearFlags = bgfx_const.BGFX_CLEAR_NONE
 
     if clearValues.color ~= false and self.hasColor then
-        clearFlags = bit.bor(clearFlags, bgfx_const.BGFX_CLEAR_COLOR)
+        clearFlags = math.ullor(clearFlags, bgfx_const.BGFX_CLEAR_COLOR)
     end
     if clearValues.depth ~= false and self.hasDepth then
-        clearFlags = bit.bor(clearFlags, bgfx_const.BGFX_CLEAR_DEPTH)
+        clearFlags = math.ullor(clearFlags, bgfx_const.BGFX_CLEAR_DEPTH)
     end
     if clearStencil then
-        clearFlags = bit.bor(clearFlags, bgfx_const.BGFX_CLEAR_STENCIL)
+        clearFlags = math.ullor(clearFlags, bgfx_const.BGFX_CLEAR_STENCIL)
     end
 
     bgfx.bgfx_set_view_clear(viewid, clearFlags,
@@ -106,9 +121,11 @@ function RenderTarget:setViewClear(viewid, clearValues)
 end
 
 function RenderTarget:bindToView(viewid, setViewRect)
-    if self.frameBuffer then
+    if self.frameBuffer or self.isBackbuffer then
         self.viewid = viewid
-        bgfx.bgfx_set_view_frame_buffer(viewid, self.frameBuffer)
+        if self.frameBuffer then
+            bgfx.bgfx_set_view_frame_buffer(viewid, self.frameBuffer)
+        end
         if setViewRect == nil or setViewRect then -- default to true
             bgfx.bgfx_set_view_rect(viewid, 0, 0, self.width, self.height)
         end
