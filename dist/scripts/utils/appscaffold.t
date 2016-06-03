@@ -11,12 +11,13 @@ local sdl = addons.sdl
 local nanovg = core.nanovg
 
 local math = require("math")
-local Object3D = require('gfx/object3d.t').Object3D
-local Camera = require("gfx/camera.t").Camera
-local uniforms = require("gfx/uniforms.t")
-local MultiShaderStage = require("gfx/multishaderstage.t").MultiShaderStage
-local RenderTarget = require("gfx/rendertarget.t").RenderTarget
-local Pipeline = require("gfx/pipeline.t").Pipeline
+local gfx = require("gfx")
+-- local Object3D = require('gfx/object3d.t').Object3D
+-- local Camera = require("gfx/camera.t").Camera
+-- local uniforms = require("gfx/uniforms.t")
+-- local MultiShaderStage = require("gfx/multishaderstage.t").MultiShaderStage
+-- local RenderTarget = require("gfx/rendertarget.t").RenderTarget
+-- local Pipeline = require("gfx/pipeline.t").Pipeline
 
 local AppScaffold = class('AppScaffold')
 
@@ -75,10 +76,10 @@ end
 function AppScaffold:initPipeline()
     local pbr = require("shaders/pbr.t")
 
-    self.pipeline = Pipeline()
+    self.pipeline = gfx.Pipeline()
 
-    local backbuffer = RenderTarget(self.width, self.height):makeBackbuffer()
-    local forwardpass = MultiShaderStage({
+    local backbuffer = gfx.RenderTarget(self.width, self.height):makeBackbuffer()
+    local forwardpass = gfx.MultiShaderStage({
         renderTarget = backbuffer,
         clear = {color = 0x303030ff},
         shaders = {solid = pbr.PBRShader()}
@@ -103,8 +104,8 @@ function AppScaffold:initPipeline()
 end
 
 function AppScaffold:initScene()
-    self.scene = Object3D()
-    self.camera = Camera():makeProjection(70, self.width/self.height,
+    self.scene = gfx.Object3D()
+    self.camera = gfx.Camera():makeProjection(70, self.width/self.height,
                                             0.1, 100.0)
 end
 

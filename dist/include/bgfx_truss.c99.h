@@ -15,6 +15,8 @@
 #undef UINT32_MAX
 #define UINT32_MAX 4294967295
 
+#define BGFX_INVALID_HANDLE 0xffff
+
 //#include <bgfx/bgfxdefines.h>
 
 typedef enum bgfx_renderer_type
