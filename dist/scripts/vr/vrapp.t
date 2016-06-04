@@ -2,16 +2,12 @@
 --
 -- extension of AppScaffold to simplify vr
 
-local appscaffold = require("utils/appscaffold.t")
-local math = require("math")
 local class = require("class")
-local rendertarget = require("gfx/rendertarget.t")
-local Camera = require("gfx/camera.t").Camera
+local math = require("math")
+local gfx = require("gfx")
+local appscaffold = require("utils/appscaffold.t")
 local shaderutils = require("utils/shaderutils.t")
-local uniforms = require("gfx/uniforms.t")
-local geometry = require("gfx/geometry.t")
 local openvr = require("vr/openvr.t")
-local Object3D = require('gfx/object3d.t').Object3D
 
 local m = {}
 
@@ -29,8 +25,8 @@ function VRApp:init(options)
 
     VRApp.super.init(self, options)
     self.stereoCameras = {
-        Camera():makeProjection(70, self.vrWidth/self.vrHeight, 0.1, 100.0),
-        Camera():makeProjection(70, self.vrWidth/self.vrHeight, 0.1, 100.0)
+        gfx.Camera():makeProjection(70, self.vrWidth/self.vrHeight, 0.1, 100.0),
+        gfx.Camera():makeProjection(70, self.vrWidth/self.vrHeight, 0.1, 100.0)
     }
 
     local testprojL = {{0.76, 0.00, -0.06, 0.00},
@@ -49,10 +45,10 @@ function VRApp:init(options)
     self.controllerObjects = {}
 
     -- used to draw screen space quads to composite things
-    self.orthocam = Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
+    self.orthocam = gfx.Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
     self.identitymat = math.Matrix4():identity()
-    self.quadgeo = geometry.TransientGeometry()
-    self.compositeSampler = uniforms.TexUniform("s_srcTex", 0)
+    self.quadgeo = gfx.TransientGeometry()
+    self.compositeSampler = gfx.TexUniform("s_srcTex", 0)
     self.compositePgm = shaderutils.loadProgram("vs_fullscreen",
                                                 "fs_fullscreen_copy")
 
@@ -85,35 +81,58 @@ function VRApp:initBGFX()
     log.info("Renderer type: " .. rendererName)
 end
 
-function VRApp:createRenderTargets()
+function VRApp:initPipeline()
     local w,h = self.vrWidth, self.vrHeight
-    local RT = rendertarget.RenderTarget
-    -- makeRGB8(hasDepth = true)
-    self.targets = {RT(w,h):makeRGB8(true),
-                    RT(w,h):makeRGB8(true)}
+
+    self.targets = {gfx.RenderTarget(w,h):makeRGB8(true),
+                    gfx.RenderTarget(w,h):makeRGB8(true)}
+    self.backbuffer = gfx.RenderTarget(self.width, self.height):makeBackbuffer()
     self.eyeTexes = {self.targets[1].attachments[1],
                      self.targets[2].attachments[1]}
-    self.stereoViews = {0,1}
-    self.clearColors = {0x303030ff, 0x303030ff}
-    self.windowView = 2
+    self.eyeContexts = {{}, {}}
 
-    bgfx.bgfx_set_view_clear(self.windowView,
-    0x0001 + 0x0002, -- clear color + clear depth
-    0x303030ff,
-    1.0,
-    0)
+    self.pipeline = gfx.Pipeline()
+
+    -- set up shadow passes etc. here
+    -- (none at the moment)
+
+    -- set up individual eye passes by creating one forward pass and then
+    -- duplicating it twice
+    local pbr = require("shaders/pbr.t")
+    local forwardpass = gfx.MultiShaderStage({
+        renderTarget = nil,
+        clear = {color = 0x303030ff},
+        shaders = {solid = pbr.PBRShader()}
+    })
+    self.forwardpass = forwardpass
 
     for i = 1,2 do
-        bgfx.bgfx_set_view_clear(self.stereoViews[i],
-                                 001 + 0x0002, -- clear color + clear depth
-                                 self.clearColors[i],
-                                 1.0, 0)
+        local eyePass = forwardpass:duplicate(self.targets[i])
+        self.pipeline:add("forward_" .. i, eyePass, self.eyeContexts[i])
     end
-end
 
-function VRApp:initPipeline()
-    VRApp.super.initPipeline(self)
-    self:createRenderTargets()
+    -- set up composite stage
+    -- (manually handle compositing at the moment)
+
+    -- finalize pipeline
+    self.pipeline:setupViews(0)
+    self.windowView = self.pipeline.nextAvailableView
+    self.backbuffer:setViewClear(self.windowView, {color = 0x303030ff,
+                                                   depth = 1.0})
+
+    -- set default lights
+    local Vector = math.Vector
+    forwardpass.globals.lightDirs:setMultiple({
+            Vector( 1.0,  1.0,  0.0),
+            Vector(-1.0,  1.0,  0.0),
+            Vector( 0.0, -1.0,  1.0),
+            Vector( 0.0, -1.0, -1.0)})
+
+    forwardpass.globals.lightColors:setMultiple({
+            Vector(0.8, 0.8, 0.8),
+            Vector(1.0, 1.0, 1.0),
+            Vector(0.1, 0.1, 0.1),
+            Vector(0.1, 0.1, 0.1)})
 end
 
 function VRApp:composite(rt, x0, y0, x1, y1)
@@ -143,16 +162,17 @@ end
 function VRApp:render()
     self.scene:updateMatrices()
     self.orthocam:setViewMatrices(self.windowView)
-    local cams = self.stereoCameras
+    self.backbuffer:bindToView(self.windowView)
+    -- Note: here it looks like we're compositing before we render the eyes,
+    -- but bgfx renders views in order so we can submit them out of order
     for i = 1,2 do
-        self.pipeline:render({camera = cams[i],
-                              scene = self.scene,
-                              view = self.stereoViews[i],
-                              rendertarget = self.targets[i]})
+        self.eyeContexts[i].scene = self.scene
+        self.eyeContexts[i].camera = self.stereoCameras[i]
         local x0 = (i-1) * 0.5
         local x1 = x0 + 0.5
         self:composite(self.targets[i], x0, 0, x1, 1.0)
     end
+    self.pipeline:render({scene = self.scene})
 end
 
 function VRApp:createPlaceholderControllerObject(controller)
@@ -163,7 +183,7 @@ function VRApp:createPlaceholderControllerObject(controller)
     if self.controllerMat == nil then
         self.controllerMat = require("shaders/pbr.t").PBRMaterial("solid"):roughness(0.8):tint(0.1,0.1,0.1)
     end
-    return Object3D(self.controllerGeo, self.controllerMat)
+    return gfx.Object3D(self.controllerGeo, self.controllerMat)
 end
 
 function VRApp:onControllerModelLoaded(data, target)
@@ -205,7 +225,7 @@ function VRApp:update()
     self:updateEvents()
 
     -- Set the window view to take up the entire target
-    bgfx.bgfx_set_view_rect(self.windowView, 0, 0, self.width, self.height)
+    --bgfx.bgfx_set_view_rect(self.windowView, 0, 0, self.width, self.height)
 
     if self.preRender then
         self:preRender()

@@ -24,12 +24,13 @@ function MultiShaderStage:init(options)
 end
 
 -- this creates a duplicate of the stage that shares the same shaders but
--- can have a different viewid (e.g., for a stereo pipeline)
-function MultiShaderStage:duplicate()
-    local ret = MultiShaderStage()
+-- can have a different viewid and target (e.g., for a stereo pipeline)
+function MultiShaderStage:duplicate(target)
+    local ret = MultiShaderStage({globals = true})
     ret.globals = self.globals
     ret.shaders_ = self.shaders_
     ret.options_ = self.options_
+    ret.target = target
     return ret
 end
 

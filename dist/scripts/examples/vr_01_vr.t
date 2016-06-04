@@ -5,8 +5,7 @@
 local VRApp = require("vr/vrapp.t").VRApp
 local icosphere = require("geometry/icosphere.t")
 local pbr = require("shaders/pbr.t")
-local Object3D = require('gfx/object3d.t').Object3D
-local orbitcam = require('gui/orbitcam.t')
+local gfx = require("gfx")
 
 function randu(magnitude)
     return (math.random() * 2.0 - 1.0)*(magnitude or 1.0)
@@ -18,7 +17,7 @@ function createGeometry()
 
     local nspheres = 200
     for i = 1,nspheres do
-        local sphere = Object3D(geo, mat)
+        local sphere = gfx.Object3D(geo, mat)
         sphere.position:set(randu(5), randu(5), randu(5))
         sphere:updateMatrix()
         app.scene:add(sphere)
@@ -28,8 +27,7 @@ end
 function init()
     app = VRApp({title = "vr_01_vr",
                        width = 1280,
-                       height = 720,
-                       usenvg = false})
+                       height = 720})
     createGeometry()
 end
 
