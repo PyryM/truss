@@ -12,12 +12,6 @@ local nanovg = core.nanovg
 
 local math = require("math")
 local gfx = require("gfx")
--- local Object3D = require('gfx/object3d.t').Object3D
--- local Camera = require("gfx/camera.t").Camera
--- local uniforms = require("gfx/uniforms.t")
--- local MultiShaderStage = require("gfx/multishaderstage.t").MultiShaderStage
--- local RenderTarget = require("gfx/rendertarget.t").RenderTarget
--- local Pipeline = require("gfx/pipeline.t").Pipeline
 
 local AppScaffold = class('AppScaffold')
 
@@ -27,8 +21,6 @@ function AppScaffold:init(options)
     self.height = options.height or 720
     self.quality = options.quality or 1.0 -- highest quality by default
     self.title = options.title or 'truss'
-
-    local usenvg = (options.usenvg == nil) or options.usenvg
 
     self.frame = 0
     self.time = 0.0
@@ -44,9 +36,6 @@ function AppScaffold:init(options)
 
     self:initBGFX()
     self:initPipeline()
-    if usenvg then
-        self:initNVG()
-    end
     self:initScene()
 
     self.startTime = tic()
@@ -107,17 +96,6 @@ function AppScaffold:initScene()
     self.scene = gfx.Object3D()
     self.camera = gfx.Camera():makeProjection(70, self.width/self.height,
                                             0.1, 100.0)
-end
-
-function AppScaffold:initNVG()
-    -- create context, indicate to bgfx that drawcalls to view
-    -- 1 should happen in the order that they were submitted
-    self.nvg = nanovg.nvgCreate(1, 1) -- make sure to have antialiasing on
-    bgfx.bgfx_set_view_seq(1, true)
-
-    -- load font
-    --nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/roboto-regular.ttf")
-    self.nvgfont = nanovg.nvgCreateFont(self.nvg, "sans", "font/VeraMono.ttf")
 end
 
 function AppScaffold:onKeyDown_(keyname, modifiers)

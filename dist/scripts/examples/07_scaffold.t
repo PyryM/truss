@@ -4,6 +4,7 @@
 
 local AppScaffold = require("utils/appscaffold.t").AppScaffold
 local icosphere = require("geometry/icosphere.t")
+local cube = require("geometry/cube.t")
 local pbr = require("shaders/pbr.t")
 local Object3D = require('gfx/object3d.t').Object3D
 local orbitcam = require('gui/orbitcam.t')
@@ -13,7 +14,7 @@ function randu(magnitude)
 end
 
 function createGeometry()
-    local geo = icosphere.icosphereGeo(0.5, 3, "sphere")
+    local geo = cube.cubeGeo(1.0, 1.0, 1.0, "cube")
     local mat = pbr.PBRMaterial("solid"):roughness(0.8):tint(0.1,0.1,0.1)
 
     local nspheres = 5000
