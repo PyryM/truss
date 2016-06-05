@@ -74,7 +74,7 @@ function init()
     camerarig:setZoomLimits(1.0, 30.0)
     camerarig:set(0, 0, 15.0)
 
-    local cubegeo = require("geometry/cube.t").cubeGeo(1.0, 1.0, 1.0, "cube")
+    local cubegeo = require("geometry/cube.t").cubeGeo(10.0, 10.0, 3.0, "cube")
     local cubemat = require("shaders/flat.t").FlatMaterial({diffuseMap = app.nvgTexture})
 
     thecube = gfx.Object3D(cubegeo, cubemat)

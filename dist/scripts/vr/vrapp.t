@@ -81,20 +81,19 @@ function VRApp:initBGFX()
     log.info("Renderer type: " .. rendererName)
 end
 
-function VRApp:initPipeline()
+function VRApp:setupTargets()
     local w,h = self.vrWidth, self.vrHeight
-
     self.targets = {gfx.RenderTarget(w,h):makeRGB8(true),
                     gfx.RenderTarget(w,h):makeRGB8(true)}
     self.backbuffer = gfx.RenderTarget(self.width, self.height):makeBackbuffer()
     self.eyeTexes = {self.targets[1].attachments[1],
                      self.targets[2].attachments[1]}
     self.eyeContexts = {{}, {}}
+end
 
+function VRApp:initPipeline()
+    self:setupTargets()
     self.pipeline = gfx.Pipeline()
-
-    -- set up shadow passes etc. here
-    -- (none at the moment)
 
     -- set up individual eye passes by creating one forward pass and then
     -- duplicating it twice
@@ -111,17 +110,19 @@ function VRApp:initPipeline()
         self.pipeline:add("forward_" .. i, eyePass, self.eyeContexts[i])
     end
 
-    -- set up composite stage
-    -- (manually handle compositing at the moment)
-
     -- finalize pipeline
     self.pipeline:setupViews(0)
     self.windowView = self.pipeline.nextAvailableView
     self.backbuffer:setViewClear(self.windowView, {color = 0x303030ff,
                                                    depth = 1.0})
 
+    self:setDefaultLights()
+end
+
+function VRApp:setDefaultLights()
     -- set default lights
     local Vector = math.Vector
+    local forwardpass = self.forwardpass
     forwardpass.globals.lightDirs:setMultiple({
             Vector( 1.0,  1.0,  0.0),
             Vector(-1.0,  1.0,  0.0),
@@ -204,6 +205,9 @@ function VRApp:updateControllers_()
                 openvr.loadModel(controller, function(loadresult)
                     targetself:onControllerModelLoaded(loadresult, targetobj)
                 end)
+                if self.onControllerConnected then
+                    self:onControllerConnected(i, self.controllerObjects[i])
+                end
             end
             self.controllerObjects[i].matrix:copy(controller.pose)
         end
