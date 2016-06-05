@@ -25,6 +25,71 @@ struct m.TargetSize {
     h: uint32;
 }
 
+local Controller = class("Controller")
+function Controller:init()
+    -- nothing to do
+end
+
+function Controller:vibrate(strength)
+    -- todo
+end
+
+-- query openvr to turn its unlabeled list of five axes into named fields like
+-- "trigger1", "joystick1", etc.
+function Controller:parseAxes_()
+    self.axes = {}
+
+    local axislabels = {
+        [tonumber(openvr_c.EVRControllerAxisType_k_eControllerAxis_TrackPad)] = {"trackpad", 0},
+        [tonumber(openvr_c.EVRControllerAxisType_k_eControllerAxis_Joystick)] = {"joystick", 0},
+        [tonumber(openvr_c.EVRControllerAxisType_k_eControllerAxis_Trigger)] = {"trigger", 0}
+    }
+
+    for i = 0, const.k_unControllerStateAxisCount - 1 do
+        local axisEnum = openvr_c.tr_ovw_GetInt32TrackedDeviceProperty(m.sysptr, self.deviceIndex,
+            openvr_c.ETrackedDeviceProperty_Prop_Axis0Type_Int32 + i, m.propError)
+        local axisinfo = axislabels[tonumber(axisEnum)]
+        if axisinfo ~= nil then
+            axisinfo[2] = axisinfo[2] + 1
+            local axisName = axisinfo[1] .. axisinfo[2]
+            self.axes[i] = axisName
+            self[axisName] = {x = 0.0, y = 0.0}
+        end
+    end
+end
+
+function Controller:update_(deviceIndex)
+    if self.rawstate == nil then
+        self.rawstate = terralib.new(openvr_c.VRControllerState_t)
+        self.pressed = {}
+        self.touched = {}
+        self.lastpacket = 0
+    end
+    local rawstate = self.rawstate
+    local lastpacket = rawstate.unPacketNum
+    openvr_c.tr_ovw_GetControllerState(m.sysptr, deviceIndex, rawstate)
+    self.deviceIndex = deviceIndex
+    -- if rawstate.unPacketNum == lastpacket then
+    --     log.debug("Skipping " .. self.deviceIndex ..
+    --              " packet @ " .. lastpacket)
+    --     return
+    -- end
+    local bpressed = rawstate.ulButtonPressed
+    local btouched = rawstate.ulButtonTouched
+    for bname, bmask in pairs(m.buttonMasks) do
+        self.pressed[bname] = math.ulland(bpressed, bmask) > 0
+        self.touched[bname] = math.ulland(btouched, bmask) > 0
+    end
+    if self.axes == nil then self:parseAxes_() end
+    for i = 0, const.k_unControllerStateAxisCount - 1 do
+        local axisName = self.axes[i]
+        if axisName ~= nil then
+            self[axisName] = {x = rawstate.rAxis[i].x, y = rawstate.rAxis[i].y}
+        end
+    end
+end
+
+
 function m.init()
     if not m.available then
         return false, "OpenVR support not built."
@@ -76,7 +141,7 @@ function m.init()
         m.controllers = {}
         m.referencePoints = {}
         for i = 1,m.maxTrackables do
-            m.controllers[i] = {}
+            m.controllers[i] = Controller()
             m.referencePoints[i] = {}
         end
 
@@ -133,60 +198,6 @@ function m.trackableToTable(trackable, target)
     m.openvrV3ToVector(trackable.vVelocity, target.velocity)
     target.connected = (trackable.bDeviceIsConnected > 0)
     target.poseValid = (trackable.bPoseIsValid > 0)
-end
-
--- query openvr to turn its unlabeled list of five axes into named fields like
--- "trigger1", "joystick1", etc.
-function m.parseAxes_(controller)
-    controller.axes = {}
-
-    local axislabels = {
-        [tonumber(openvr_c.EVRControllerAxisType_k_eControllerAxis_TrackPad)] = {"trackpad", 0},
-        [tonumber(openvr_c.EVRControllerAxisType_k_eControllerAxis_Joystick)] = {"joystick", 0},
-        [tonumber(openvr_c.EVRControllerAxisType_k_eControllerAxis_Trigger)] = {"trigger", 0}
-    }
-
-    for i = 0, const.k_unControllerStateAxisCount - 1 do
-        local axisEnum = openvr_c.tr_ovw_GetInt32TrackedDeviceProperty(m.sysptr, controller.deviceIndex,
-            openvr_c.ETrackedDeviceProperty_Prop_Axis0Type_Int32 + i, m.propError)
-        local axisinfo = axislabels[tonumber(axisEnum)]
-        if axisinfo ~= nil then
-            axisinfo[2] = axisinfo[2] + 1
-            controller.axes[i] = axisinfo[1]
-            controller[axisinfo[1] .. axisinfo[2]] = {x = 0.0, y = 0.0}
-        end
-    end
-end
-
-function m.controllerIdxToTable(controlleridx, target)
-    if target.rawstate == nil then
-        target.rawstate = terralib.new(openvr_c.VRControllerState_t)
-        target.pressed = {}
-        target.touched = {}
-        target.lastpacket = 0
-    end
-    local rawstate = target.rawstate
-    local lastpacket = rawstate.unPacketNum
-    openvr_c.tr_ovw_GetControllerState(m.sysptr, controlleridx, rawstate)
-    target.deviceIndex = controlleridx
-    -- if rawstate.unPacketNum == lastpacket then
-    --     log.debug("Skipping " .. target.deviceIndex ..
-    --              " packet @ " .. lastpacket)
-    --     return
-    -- end
-    local bpressed = rawstate.ulButtonPressed
-    local btouched = rawstate.ulButtonTouched
-    for bname, bmask in pairs(m.buttonMasks) do
-        target.pressed[bname] = math.ulland(bpressed, bmask) > 0
-        target.touched[bname] = math.ulland(btouched, bmask) > 0
-    end
-    if target.axes == nil then m.parseAxes_(target) end
-    for i = 0, const.k_unControllerStateAxisCount - 1 do
-        local axisName = target.axes[i]
-        if axisName ~= nil then
-            target[axisName] = {x = rawstate.rAxis[i].x, y = rawstate.rAxis[i].y}
-        end
-    end
 end
 
 function m.beginFrame()
@@ -254,7 +265,7 @@ function m.updateTrackables_()
             if ttype == openvr_c.ETrackedDeviceClass_TrackedDeviceClass_Controller then
                 controllerIdx = controllerIdx + 1
                 target = m.controllers[controllerIdx]
-                m.controllerIdxToTable(i, target)
+                target:update_(i)
             elseif ttype == openvr_c.ETrackedDeviceClass_TrackedDeviceClass_TrackingReference then
                 referenceIdx = referenceIdx + 1
                 target = m.referencePoints[referenceIdx]

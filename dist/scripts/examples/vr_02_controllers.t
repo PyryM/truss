@@ -57,8 +57,8 @@ function uiDrawStuff(stage, nvg, width, height)
     for i = 1,2 do
         if controllers[i] and controllers[i].connected then
             local target = controllers[i]
-            guistuff.infos[i][1]:setText("pad: " .. axisToText(target.trackpad))
-            guistuff.infos[i][2]:setText("tri: " .. axisToText(target.trigger))
+            guistuff.infos[i][1]:setText("pad: " .. axisToText(target.trackpad1))
+            guistuff.infos[i][2]:setText("tri: " .. axisToText(target.trigger1))
             guistuff.infos[i][3]:setText("t: " .. buttonToText(target.touched))
             guistuff.infos[i][4]:setText("p: " .. buttonToText(target.pressed))
         else
@@ -131,7 +131,6 @@ function createGeometry()
     end
 
     local uiGeo = require("geometry/plane.t").planeGeo(1.0, 1.0, 2, 2, "uigeo")
-    --local uiGeo = require("geometry/cube.t").cubeGeo(1, 1, 1, "uigeo")
     local uiMat = require("shaders/flat.t").FlatMaterial({diffuseMap = app.nvgTexture})
     uiPlane = gfx.Object3D(uiGeo, uiMat)
     uiPlane.position:set(0, 1, 0)
