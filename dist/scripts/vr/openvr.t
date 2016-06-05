@@ -71,7 +71,7 @@ function m.init()
         m.propError = terralib.new(openvr_c.ETrackedPropertyError[2])
         m.maxTrackables = const.k_unMaxTrackedDeviceCount
         m.trackables = terralib.new(openvr_c.TrackedDevicePose_t[m.maxTrackables])
-        m.buttonMasks = {}
+        m.createButtonMasks_()
 
         m.controllers = {}
         m.referencePoints = {}
@@ -89,6 +89,33 @@ function m.init()
         log.error(errorstr)
         m.available = false
         return false, errorstr
+    end
+end
+
+function m.createButtonMasks_()
+    m.buttonMasks = {}
+    local bnames = {
+        "System",
+    	"ApplicationMenu",
+    	"Grip",
+    	"DPad_Left",
+    	"DPad_Up",
+    	"DPad_Right",
+    	"DPad_Down",
+    	"A",
+    	"Axis0",
+    	"Axis1",
+    	"Axis2",
+    	"Axis3",
+    	"Axis4",
+    	"SteamVR_Touchpad",
+    	"SteamVR_Trigger",
+    	"Dashboard_Back",
+    	"Max"
+    }
+    for _, bname in ipairs(bnames) do
+        local enumVal = openvr_c["EVRButtonId_k_EButton_" .. bname]
+        m.buttonMasks[bname] = math.ulllshift(1, enumVal)
     end
 end
 

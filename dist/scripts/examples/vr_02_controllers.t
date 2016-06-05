@@ -20,15 +20,16 @@ guistuff = {}
 function uiSetupStuff()
     local fp = futureplot.FuturePlot({gridrows = 4, gridcols = 4},
                                         uiwidth, uiheight)
-    guistuff.box1 = plotting.TextBox({title = "box1", fontsize = 40})
-    guistuff.box2 = plotting.TextBox({title = "box2", fontsize = 40})
-    guistuff.box3 = plotting.TextBox({title = "box3", fontsize = 40})
-    guistuff.box4 = plotting.TextBox({title = "box4", fontsize = 40})
-    guistuff.infos = {{guistuff.box1, guistuff.box2}, {guistuff.box3, guistuff.box4}}
-    fp:add(guistuff.box1, "box1", 1, 1, 1, 2)
-    fp:add(guistuff.box2, "box2", 2, 1, 1, 2)
-    fp:add(guistuff.box3, "box3", 1, 3, 1, 2)
-    fp:add(guistuff.box4, "box4", 2, 3, 1, 2)
+
+    guistuff.infos = {{}, {}}
+    for i = 1,2 do
+        for j = 1,4 do
+            local k = "box_" .. i .. "_" .. j
+            local b = plotting.TextBox({title = k, fontsize = 20})
+            fp:add(b, k, j, 1 + (i-1)*2, 1, 2)
+            guistuff.infos[i][j] = b
+        end
+    end
     guistuff.fp = fp
 end
 
@@ -42,6 +43,14 @@ function axisToText(axis)
     return "(" .. format2digit(axis.x) .. ", " .. format2digit(axis.y) .. ")"
 end
 
+function buttonToText(buttonstate)
+    local ret = ""
+    for k,v in pairs(buttonstate) do
+        if v then ret = ret .. k .. "," end
+    end
+    return ret
+end
+
 function uiDrawStuff(stage, nvg, width, height)
     guistuff.fp:draw(nvg)
     local controllers = openvr.controllers
@@ -50,9 +59,10 @@ function uiDrawStuff(stage, nvg, width, height)
             local target = controllers[i]
             guistuff.infos[i][1]:setText("pad: " .. axisToText(target.trackpad))
             guistuff.infos[i][2]:setText("tri: " .. axisToText(target.trigger))
+            guistuff.infos[i][3]:setText("t: " .. buttonToText(target.touched))
+            guistuff.infos[i][4]:setText("p: " .. buttonToText(target.pressed))
         else
-            guistuff.infos[i][1]:setText("...")
-            guistuff.infos[i][2]:setText("...")
+            for j = 1,4 do guistuff.infos[i][j]:setText("...") end
         end
     end
 end
