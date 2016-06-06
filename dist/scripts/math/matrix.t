@@ -540,6 +540,25 @@ function Matrix4:getColumn(idx, dest)
     return dest
 end
 
+function Matrix4:setColumn(idx, src)
+    if idx <= 0 or idx > 4 then
+        log.error("Error: Matrix4:getColumn expects index in range [1,4], got " .. idx)
+        return nil
+    end
+    local s = (idx-1)*4
+    local d = self.data
+    local e = src.elem
+    d[s], d[s+1], d[s+2], d[s+3] = e.x, e.y, e.z, e.w
+    return self
+end
+
+function Matrix4:fromBasis(basisVecList)
+    for columnIdx, basisVec in ipairs(basisVecList) do
+        self:setColumn(columnIdx, basisVec)
+    end
+    return self
+end
+
 function Matrix4:prettystr()
     local ret = "Matrix4 {"
     local data = self.data

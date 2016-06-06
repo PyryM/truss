@@ -12,7 +12,9 @@ local orbitcam = require("gui/orbitcam.t")
 function randu(mag) return (math.random() * 2.0 - 1.0)*(mag or 1.0) end
 
 function createGeometry()
-    local geo = cube.cubeGeo(1.0, 1.0, 1.0, "cube")
+    local cylinder = require("geometry/cylinder.t")
+    --local geo = cube.cubeGeo(1.0, 1.0, 1.0, "cube")
+    local geo = cylinder.cylinderGeo(0.5, 2.0, 20, true, "cylinder")
     local mat = pbr.PBRMaterial("solid"):roughness(0.8):tint(0.1,0.1,0.1)
 
     for i = 1,5000 do
