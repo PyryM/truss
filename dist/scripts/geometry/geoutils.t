@@ -90,8 +90,8 @@ end
 local function remapVertex(srcPositions, idx, newpositions, nextidx, vtable)
     local strid = tostring(idx)
     local remappedIdx = vtable[strid]
-    if remappedIdx then 
-        return remappedIdx, nextidx 
+    if remappedIdx then
+        return remappedIdx, nextidx
     end
     newpositions[nextidx+1] = srcPositions[idx+1]
     vtable[strid] = nextidx
@@ -105,8 +105,8 @@ local function remapMidpoint(srcPositions, idx1, idx2, newpositions, nextidx, vt
     end
     local strid = idx1 .. "|" .. idx2
     local remappedIdx = vtable[strid]
-    if remappedIdx then 
-        return remappedIdx, nextidx 
+    if remappedIdx then
+        return remappedIdx, nextidx
     end
     local newvert = Vector()
     newvert:addVecs(srcPositions[idx1+1], srcPositions[idx2+1])
@@ -124,7 +124,7 @@ function m.subdivide(srcdata)
 
     local newindices = {}
     local newpositions = {}
-    
+
     local srcindices = srcdata.indices
     local positions = srcdata.attributes.position
 
@@ -165,7 +165,7 @@ end
 function m.computeNormals(srcdata)
     local tempV0 = Vector()
     local tempV1 = Vector()
-    local tempN  = Vector() 
+    local tempN  = Vector()
 
     local normals = {}
     -- prepopulate normals
@@ -199,6 +199,42 @@ function m.computeNormals(srcdata)
     end
 
     srcdata.attributes.normal = normals
+end
+
+-- merge geometry data together into a single data block
+-- input: a list of {geometryData, mat4 pose} lists
+function m.mergeData(datalist, attributes)
+    local ret = {indices = {}, attributes = {}}
+    for _,v in ipairs(attributes) do ret.attributes[v] = {} end
+
+    local idxOffset = 0
+    for _,v in ipairs(datalist) do
+        local data, pose = v[1], v[2]
+        local nverts = #(data.attributes.position)
+        -- copy attributes (assume vector attributes)
+        for attrName,vertexList in pairs(ret.attributes) do
+            local srcAttr = data.attributes[attrName]
+            local ntarget = (srcAttr ~= nil) and #(srcAttr)
+            if ntarget ~= nverts then
+                log.error("geometryutils.mergeData: attribute " .. attrName ..
+                          " expected " .. nverts .. ", had " .. tostring(ntarget))
+                return nil
+            end
+            for _,attrVal in ipairs(srcAttr) do
+                local newVal = Vector():copy(attrVal)
+                if pose then pose:multiplyVector(newVal) end
+                table.insert(vertexList, newVal)
+            end
+        end
+        -- copy indices (assume list-of-lists format)
+        for _,triangle in ipairs(data.indices) do
+            local s0,s1,s2 = triangle[1], triangle[2], triangle[3]
+            local i0,i1,i2 = s0+idxOffset, s1+idxOffset, s2+idxOffset
+            table.insert(ret.indices, {i0, i1, i2})
+        end
+        idxOffset = idxOffset + nverts
+    end
+    return ret
 end
 
 return m
