@@ -53,6 +53,13 @@ end
 
 function uiDrawStuff(stage, nvg, width, height)
     guistuff.fp:draw(nvg)
+end
+
+function ControllerApp:onControllerConnected(idx, controllerobj)
+    -- todo
+end
+
+function ControllerApp:preRender()
     local controllers = openvr.controllers
     for i = 1,2 do
         if controllers[i] and controllers[i].connected then
@@ -61,14 +68,11 @@ function uiDrawStuff(stage, nvg, width, height)
             guistuff.infos[i][2]:setText("tri: " .. axisToText(target.trigger1))
             guistuff.infos[i][3]:setText("t: " .. buttonToText(target.touched))
             guistuff.infos[i][4]:setText("p: " .. buttonToText(target.pressed))
+            target:vibrate(target.trigger1.x)
         else
             for j = 1,4 do guistuff.infos[i][j]:setText("...") end
         end
     end
-end
-
-function ControllerApp:onControllerConnected(idx, controllerobj)
-    -- todo
 end
 
 function ControllerApp:initPipeline()

@@ -28,10 +28,16 @@ struct m.TargetSize {
 local Controller = class("Controller")
 function Controller:init()
     -- nothing to do
+    self.hasVibrated_ = false
 end
 
 function Controller:vibrate(strength)
-    -- todo
+    if self.deviceIndex == nil or not self.connected then return end
+    if self.hasVibrated_ then return end
+    local usDuration = math.min(math.floor(strength * 3500), 3500)
+    if usDuration < 100 then return end
+    openvr_c.tr_ovw_TriggerHapticPulse(m.sysptr, self.deviceIndex, 0, usDuration)
+    self.hasVibrated_ = true
 end
 
 -- query openvr to turn its unlabeled list of five axes into named fields like
@@ -87,6 +93,7 @@ function Controller:update_(deviceIndex)
             self[axisName] = {x = rawstate.rAxis[i].x, y = rawstate.rAxis[i].y}
         end
     end
+    self.hasVibrated_ = false
 end
 
 
