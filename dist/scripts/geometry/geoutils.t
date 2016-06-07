@@ -222,7 +222,10 @@ function m.mergeData(datalist, attributes)
             end
             for _,attrVal in ipairs(srcAttr) do
                 local newVal = Vector():copy(attrVal)
-                if pose then pose:multiplyVector(newVal) end
+                if pose then
+                    if attrName == "position" then newVal.elem.w = 1.0 end
+                    pose:multiplyVector(newVal)
+                end
                 table.insert(vertexList, newVal)
             end
         end
