@@ -21,7 +21,7 @@ end
 
 function m.axisWidgetData(scale, length, segments)
     scale = scale or 1.0
-    segments = segments or 6
+    segments = segments or 12
     local radius = scale * 0.02
     length = length or scale
 
