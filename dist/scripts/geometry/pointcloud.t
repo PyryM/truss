@@ -106,7 +106,7 @@ function m.createParticleArrayData(width, height, z, wdivs, hdivs)
             -- all four vertices share the same position and texcoord0
             -- but have different normals (shader will expand based on normal)
             local p = {x, y, z}
-            local uv = {(ix+0.5)/wdivs, (iy+0.5)/hdivs}
+            local uv = {(ix+0.5)/wdivs, 1.0 - (iy+0.5)/hdivs}
             for ii = 1,4 do
                 table.insert(position, p)
                 table.insert(texcoord0, uv)
