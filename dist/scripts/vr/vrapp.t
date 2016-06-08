@@ -182,7 +182,7 @@ function VRApp:createPlaceholderControllerObject(controller)
         self.controllerGeo = require("geometry/icosphere.t").icosphereGeo(0.1, 3, "controller_sphere")
     end
     if self.controllerMat == nil then
-        self.controllerMat = require("shaders/pbr.t").PBRMaterial("solid"):roughness(0.8):tint(0.1,0.1,0.1)
+        self.controllerMat = require("shaders/pbr.t").PBRMaterial("solid"):roughness(0.8):tint(0.05,0.05,0.05):diffuse(0.005,0.005,0.005)
     end
     return gfx.Object3D(self.controllerGeo, self.controllerMat)
 end

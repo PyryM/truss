@@ -49,4 +49,8 @@ function m.axisWidgetData(scale, length, segments)
     return geoutils.mergeData(components, {"position", "normal"})
 end
 
+function m.axisWidgetGeo(geoName, scale, length, segments)
+    return geoutils.toBasicGeo(geoName, m.axisWidgetData(scale, length, segments))
+end
+
 return m

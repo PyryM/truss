@@ -56,7 +56,9 @@ function uiDrawStuff(stage, nvg, width, height)
 end
 
 function ControllerApp:onControllerConnected(idx, controllerobj)
-    -- todo
+    local axisObj = gfx.Object3D(axisGeo, axisMat)
+    controllerobj:add(axisObj)
+    log.info("Added axis?")
 end
 
 function ControllerApp:preRender()
@@ -140,6 +142,12 @@ function createGeometry()
     uiPlane.position:set(0, 1, 0)
     uiPlane:updateMatrix()
     app.scene:add(uiPlane)
+
+    log.info("Created axis stuff")
+    axisGeo = require("geometry/widgets.t").axisWidgetGeo("axis_widget_geo", 0.1)
+    axisMat = pbr.PBRMaterial("solid"):roughness(0.8):diffuse(0.2,0.2,0.2)
+
+    app.scene:add(gfx.Object3D(axisGeo, axisMat))
 end
 
 function init()

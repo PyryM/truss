@@ -201,6 +201,16 @@ function m.computeNormals(srcdata)
     srcdata.attributes.normal = normals
 end
 
+-- creates a geometry from a geometry data using the default vertex type
+function m.toBasicGeo(geoName, data)
+    local gfx = require("gfx")
+    local attrNames = {"position", "normal"}
+    if not data.attributes.normal then m.computeNormals(data) end
+    if data.attributes.texcoord0 then table.insert(attrNames, "texcoord0") end
+    local vertexInfo = gfx.createStandardVertexType(attrNames)
+    return gfx.StaticGeometry(geoName):fromData(vertexInfo, data)
+end
+
 -- merge geometry data together into a single data block
 -- input: a list of {geometryData, mat4 pose} lists
 function m.mergeData(datalist, attributes)
