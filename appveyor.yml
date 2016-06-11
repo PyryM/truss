@@ -5,10 +5,10 @@ build:
 
 environment:
   matrix:
-    - GENERATOR: "Visual Studio 15 Win64"
+    - GENERATOR: "Visual Studio 14 2015 Win64"
       CONFIG: Debug
 
-    - GENERATOR: "Visual Studio 15 Win64"
+    - GENERATOR: "Visual Studio 14 2015 Win64"
       CONFIG: Release
 
 build_script:
