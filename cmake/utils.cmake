@@ -1,6 +1,10 @@
 # Utility functions for building truss.
 # Copies every library in the given path to the `dist` lib directory.
 function(truss_copy_libraries target target_libraries)
+    # Create the `dist/lib` directory if it does not already exist.
+    file(MAKE_DIRECTORY "${DIST_DIR}/lib")
+    
+    # Copy over each shared library in the specified path.
     foreach(library_path ${target_libraries})
         # Extract library name and create a rule to copy it to the `lib` directory.
         get_filename_component(library_file "${library_path}" NAME)
