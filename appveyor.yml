@@ -2,3 +2,15 @@ version: 1.0.{build}
 shallow_clone: true
 build:
   verbosity: minimal
+
+environment:
+  matrix:
+    - GENERATOR: "Visual Studio 15 Win64"
+      CONFIG: Debug
+
+    - GENERATOR: "Visual Studio 15 Win64"
+      CONFIG: Release
+
+build_script:
+  - cmake "-G%GENERATOR%"
+  - cmake --build --config "%CONFIG%"
