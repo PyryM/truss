@@ -15,16 +15,19 @@ env:
 before_install:
   - mkdir -p "$HOME/.local"
   - export PATH="$HOME/.local/bin:$PATH"
-
-install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then curl -L http://www.cmake.org/files/v3.5/cmake-3.5.2-Linux-x86_64.tar.gz | tar -xz -C "$HOME/.local" --strip-components=1; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then curl -L https://cmake.org/files/v3.5/cmake-3.5.2-Darwin-x86_64.tar.gz | tar -xz -C "$HOME/.local" --strip-components=1; fi
 
-before_script:
-  - cmake -H. -Bbuild -DCMAKE_BUILD_TYPE="$CONFIG"
+install:
+  - mkdir build && cd build
+  - cmake -DCMAKE_BUILD_TYPE="$CONFIG"
+  - make
 
 script:
-  - make -C build
+  - ctest -VV
+
+after_success:
+  - cd $TRAVIS_BUILD_DIR
   - zip -r "truss_${TRAVIS_TAG}_${TRAVIS_OS_NAME}_${CONFIG}.zip" dist/
 
 deploy:
