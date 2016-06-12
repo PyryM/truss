@@ -7,15 +7,15 @@ environment:
   matrix:
     - GENERATOR: "Visual Studio 14 2015 Win64"
       COMPILER: "Microsoft Visual Studio 14.0"
-      CONFIG: Debug
+      CONFIG: debug
 
     - GENERATOR: "Visual Studio 14 2015 Win64"
       COMPILER: "Microsoft Visual Studio 14.0"
-      CONFIG: Release
+      CONFIG: release
 
 artifacts:
   - path: dist
-    name: Truss_v$(APPVEYOR_BUILD_VERSION)_$(CONFIG)_Win
+    name: truss_$(APPVEYOR_REPO_COMMIT)_$(CONFIG)_win
     type: zip
 
 before_build:
@@ -30,6 +30,20 @@ build_script:
 test_script:
   - ps: cd _builds
   - ctest -VV -C "%CONFIG%"
+  
+deploy:
+  release: Truss Redistributable $(APPVEYOR_REPO_TAG)
+  description: "A standalone distribution of `truss` with precompiled native binaries and libraries."
+  provider: GitHub
+  auth_token:
+    secure: RbPK26UowFqyFQzHJ0SL6y6TMbinIN++SVfIlxEAC4nQa2GFhvpsB3qL75og5cNu
+  artifact: truss_$(APPVEYOR_REPO_TAG)_$(CONFIG)_win.zip
+  draft: true
+  prerelease: false
+  force_update: true
+  on:
+    branch: master                 # release from master branch only
+    appveyor_repo_tag: true        # deploy on tag push only
 
 ###################
 # Debugging Tools #
