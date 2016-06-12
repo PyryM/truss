@@ -9,7 +9,7 @@ env:
     - CONFIG=Debug
     - CONFIG=Release
 
-before_script:  
+before_script:
   - mkdir build
   - cd build
   - cmake ..
@@ -20,8 +20,9 @@ script:
 
 deploy:
   provider: releases
-  api_key: "GITHUB OAUTH TOKEN"
-  file: "truss_${TRAVIS_TAG}_${TRAVIS_OS_NAME}_${CONFIG}.zip"
-  skip_cleanup: true
+  api_key:
+    secure: DdGoPjmuZdw0bjgMqZYsSNJ/QRAaViR+v0d3ittbdAKb/zuyM/kq2DtQUgpHc74gq/IjLGqtqvMEKK2z/jI8NrvBD0Qs8TOmUQfZygq872JJvJ59UhdYfJt/WFaxRLpSZUIZFcy8cWmFefzloczZklock0Ni8YvAouikvMs+2J73EI+RzVKITVRR9livo8QaMuU6t5x4XClGqpoRCvPKTdJOKh9oO+0aKgBJ2mS4OJ0UwZ0mvTSOFNCckCNzwO9+tdSNcHAQxcDmSRGRitNOZb2T2aXZzIlmJ+hTxmjFtcRXwbHaqrYTi1lkUoDvxEH3StHdkrB7XtTpj7uSlXjzped7aNkdQOD7x/1lZE7kNosl3tSqrvvzFGlcMsR8kAXGEN2dnZTQz2gfaALgmCS1Lba8B2QDXJFrEE9QC/f/dCdPMvjaDzfSY4IMmRnNIEH84cMpqwDgFr4zGth6yGtdNKrEjY2YEVWC61qIEMjLdYkHPYpPkbW1PbSCy6Ezd7Zr1bRjqUVk4C7YEn3aKK/d4HyPxFdtG6dQq6ZspWYwKkteNeDHxy1Jh549urMykYStsuVFDolPc4FX9rWInXx00PJaC3WFy4cYJbdHEVE6hAn6PsSK3II3Rkex3pROnPrXnNSma4TkJVH9OvO8mkyfAz9ngrrpdIcXivJCAeVAlMU=
+  file: truss_${TRAVIS_TAG}_${TRAVIS_OS_NAME}_${CONFIG}.zip
   on:
+    branch: master
     tags: true
