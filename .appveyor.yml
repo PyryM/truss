@@ -13,6 +13,11 @@ environment:
       COMPILER: "Microsoft Visual Studio 14.0"
       CONFIG: Release
 
+artifacts:
+  - path: dist
+    name: Truss Redistributable
+    type: zip
+
 before_build:
   # Remove unused Xamarin targets to decrease log spam.
   # See: http://help.appveyor.com/discussions/problems/4569
