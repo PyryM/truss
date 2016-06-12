@@ -15,7 +15,7 @@ environment:
 
 artifacts:
   - path: dist
-    name: Truss Redistributable
+    name: Truss_v${APPVEYOR_BUILD_VERSION}_${CONFIG}_Win
     type: zip
 
 before_build:
