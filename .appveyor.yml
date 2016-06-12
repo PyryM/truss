@@ -11,6 +11,11 @@ environment:
     - GENERATOR: "Visual Studio 14 2015 Win64"
       CONFIG: Release
 
+# This adds RDP access to the build VM, which is useful for debugging.
+# See: http://www.appveyor.com/docs/how-to/rdp-to-build-worker
+init:
+- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 build_script:
   - cmake "-G%GENERATOR%" -H. -B_builds
   - cmake --build _builds --config "%CONFIG%"
@@ -19,3 +24,10 @@ build_script:
 test_script:
   - ps: cd _builds
   - ctest -VV -C "%CONFIG%"
+
+# This blocks VM termination until a file is manually deleted on the VM
+# allowing time for RDP debugging (60 min build timeout still applies).
+# See: http://www.appveyor.com/docs/how-to/rdp-to-build-worker
+on_finish:
+- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
