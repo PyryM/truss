@@ -31,16 +31,16 @@ test_script:
 #######################
 artifacts:
   - path: dist
-    name: truss_$(APPVEYOR_REPO_COMMIT)_$(CONFIG)_win
+    name: truss_$(APPVEYOR_REPO_COMMIT)_win_$(CONFIG)
     type: zip
 
 deploy:
+  provider: GitHub
   release: Truss Redistributable $(APPVEYOR_REPO_TAG)
   description: "A standalone distribution of `truss` with precompiled native binaries and libraries."
-  provider: GitHub
   auth_token:
     secure: 448tCusiKgfH997O+lVK+/hPx5v/1jHJpf9ZZ+bcecT3n2jOQg/PGtVEt9FrTjR0
-  artifact: truss_$(APPVEYOR_REPO_TAG)_$(CONFIG)_win.zip
+  artifact: truss_$(APPVEYOR_REPO_TAG)_win_$(CONFIG).zip
   draft: true
   prerelease: false
   force_update: true
