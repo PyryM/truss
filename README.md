@@ -7,7 +7,7 @@ visualization/rendering framework
 Truss is designed for relatively modern computers. In particular,
 - 64bit only
 - Ubuntu 13.04+ only (unless you want to backport a newer version of gcc)
-- Official NVidia linux drivers (in particular, won't work with Mesa Gallium drivers)
+- Official NVidia drivers (in particular, won't work with linux Mesa Gallium drivers)
 - DX11 capable video card recommended on Windows
 
 ## [Build instructions](build.md)
