@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/805j1wikxyx406ms/branch/feature/appveyor?svg=true)](https://ci.appveyor.com/project/psigen/truss/branch/feature/appveyor)
+[![Build status](https://ci.appveyor.com/api/projects/status/805j1wikxyx406ms/branch/master?svg=true)](https://ci.appveyor.com/project/psigen/truss/branch/master)
 
 # truss
 visualization/rendering framework
