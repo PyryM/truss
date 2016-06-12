@@ -9,7 +9,6 @@ os:
 
 env:
   global:
-    - CFLAGS='-Wall -Werror'
     - CTEST_OUTPUT_ON_FAILURE=1
   matrix:
     - CONFIG=debug
