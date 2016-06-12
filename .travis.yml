@@ -8,6 +8,9 @@ os:
   - osx
 
 env:
+  global:
+    - CFLAGS='-Wall -Werror'
+    - CTEST_OUTPUT_ON_FAILURE=1
   matrix:
     - CONFIG=debug
     - CONFIG=release
@@ -16,12 +19,12 @@ before_install:
   - mkdir -p "$HOME/.local"
   - export PATH="$HOME/.local/bin:$PATH"
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then curl -L http://www.cmake.org/files/v3.5/cmake-3.5.2-Linux-x86_64.tar.gz | tar -xz -C "$HOME/.local" --strip-components=1; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then curl -L https://cmake.org/files/v3.5/cmake-3.5.2-Darwin-x86_64.tar.gz | tar -xz -C "$HOME/.local" --strip-components=1; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then curl -L https://cmake.org/files/v3.5/cmake-3.5.2-Darwin-x86_64.tar.gz | tar -xz -C "$HOME/.local" --strip-components=3; fi
 
 install:
   - mkdir build && cd build
   - cmake .. -DCMAKE_BUILD_TYPE=$CONFIG
-  - make
+  - make -Wall
 
 script:
   - ctest -VV
