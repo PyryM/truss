@@ -55,7 +55,7 @@ ExternalProject_Add(bgfx_EXTERNAL
     BUILD_IN_SOURCE 1
     LOG_DOWNLOAD 1
     LOG_CONFIGURE 1
-    LOG_BUILD 1
+    #LOG_BUILD 1
 )
 
 # Recover BGFX paths for additional settings.
