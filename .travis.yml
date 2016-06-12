@@ -24,7 +24,7 @@ before_script:
   - cmake -H. -Bbuild -DCMAKE_BUILD_TYPE="$CONFIG"
 
 script:
-  - make -C build test
+  - make -C build
   - zip -r "truss_${TRAVIS_TAG}_${TRAVIS_OS_NAME}_${CONFIG}.zip" dist/
 
 deploy:
