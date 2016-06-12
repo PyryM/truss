@@ -14,6 +14,7 @@ environment:
 build_script:
   - cmake "-G%GENERATOR%" -H. -B_builds
   - cmake --build _builds --config "%CONFIG%"
+  - dir /s /b /o:gn
 
 test_script:
   - ps: cd _builds
