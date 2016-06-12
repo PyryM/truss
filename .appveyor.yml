@@ -13,11 +13,6 @@ environment:
       COMPILER: "Microsoft Visual Studio 14.0"
       CONFIG: release
 
-artifacts:
-  - path: dist
-    name: truss_$(APPVEYOR_REPO_COMMIT)_$(CONFIG)_win
-    type: zip
-
 before_build:
   # Remove unused Xamarin targets to decrease log spam.
   # See: http://help.appveyor.com/discussions/problems/4569
@@ -30,7 +25,15 @@ build_script:
 test_script:
   - ps: cd _builds
   - ctest -VV -C "%CONFIG%"
-  
+
+#######################
+# Deployment Settings #
+#######################
+artifacts:
+  - path: dist
+    name: truss_$(APPVEYOR_REPO_COMMIT)_$(CONFIG)_win
+    type: zip
+
 deploy:
   release: Truss Redistributable $(APPVEYOR_REPO_TAG)
   description: "A standalone distribution of `truss` with precompiled native binaries and libraries."
@@ -45,9 +48,9 @@ deploy:
     branch: master                 # release from master branch only
     appveyor_repo_tag: true        # deploy on tag push only
 
-###################
-# Debugging Tools #
-###################
+######################
+# Debugging Settings #
+######################
 ## This adds RDP access to the build VM, which is useful for debugging.
 ## See: http://www.appveyor.com/docs/how-to/rdp-to-build-worker
 # init:
