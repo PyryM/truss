@@ -9,6 +9,7 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
     set(terra_SHARED_LIBS_DIR "bin")
     set(terra_LIBRARY_NAME "terra.dll")
     set(terra_IMPLIB_NAME "terra.lib")
+    set(terra_MD5 "d4358ccd3a3dcb312a407026e39cd1e5")
 elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
     set(terra_SYSTEM_NAME "OSX")
     set(terra_SHARED_LIBS_DIR "lib")
@@ -24,6 +25,7 @@ endif()
 # Download `terra` and unzip its binaries.
 ExternalProject_Add(terra_EXTERNAL
     URL "https://github.com/zdevito/terra/releases/download/release-${terra_RELEASE_DATE}/terra-${terra_SYSTEM_NAME}-x86_64-${terra_RELEASE_HASH}.zip"
+    URL_MD5 "${terra_MD5}"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
