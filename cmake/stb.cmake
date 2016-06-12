@@ -7,6 +7,7 @@ ExternalProject_Add(stb_EXTERNAL
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
+    LOG_DOWNLOAD 1
 )
 
 # Recover project paths for additional settings.
