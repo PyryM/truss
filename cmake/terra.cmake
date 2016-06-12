@@ -29,6 +29,7 @@ ExternalProject_Add(terra_EXTERNAL
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
+    LOG_DOWNLOAD 1
 )
 
 # Recover project paths for additional settings.
