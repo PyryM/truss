@@ -39,7 +39,7 @@ deploy:
   description: "A standalone distribution of `truss` with precompiled native binaries and libraries."
   provider: GitHub
   auth_token:
-    secure: RbPK26UowFqyFQzHJ0SL6y6TMbinIN++SVfIlxEAC4nQa2GFhvpsB3qL75og5cNu
+    secure: 448tCusiKgfH997O+lVK+/hPx5v/1jHJpf9ZZ+bcecT3n2jOQg/PGtVEt9FrTjR0
   artifact: truss_$(APPVEYOR_REPO_TAG)_$(CONFIG)_win.zip
   draft: true
   prerelease: false
