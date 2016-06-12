@@ -7,6 +7,7 @@ ExternalProject_Add(bx_EXTERNAL
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
+    LOG_DOWNLOAD 1
 )
 
 # Recover BX tool paths for additional settings.
@@ -52,6 +53,7 @@ ExternalProject_Add(bgfx_EXTERNAL
     BUILD_COMMAND ${bgfx_BUILD_COMMAND}
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
+    LOG_DOWNLOAD 1
     LOG_CONFIGURE 1
     LOG_BUILD 1
 )
