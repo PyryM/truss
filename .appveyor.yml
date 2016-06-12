@@ -17,7 +17,11 @@ init:
 - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 build_script:
+  # DEBUG LINE HERE
+  - echo cmake "-G%GENERATOR%" -H. -B_builds 
   - cmake "-G%GENERATOR%" -H. -B_builds
+  # DEBUG LINE HERE
+  - echo cmake --build _builds --config "%CONFIG%"
   - cmake --build _builds --config "%CONFIG%"
 
 test_script:
