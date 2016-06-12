@@ -13,10 +13,12 @@ environment:
       COMPILER: "Microsoft Visual Studio 14.0"
       CONFIG: Release
 
+before_build:
+  # Remove unused Xamarin targets to decrease log spam.
+  # See: http://help.appveyor.com/discussions/problems/4569
+  - del "C:\Program Files (x86)\MSBuild\14.0\Microsoft.Common.targets\ImportAfter\Xamarin.Common.targets"
+
 build_script:
-  # Add the path to the necessary `devenv.exe` compiler executable.
-  #- ps: $env:PATH="C:\Program Files (x86)\%COMPILER%\Common7\IDE;%PATH%"
-  # Configure and build the CMake project.
   - cmake "-G%GENERATOR%" -H. -B_builds
   - cmake --build _builds --config "%CONFIG%"
 
@@ -27,13 +29,13 @@ test_script:
 ###################
 # Debugging Tools #
 ###################
-# This adds RDP access to the build VM, which is useful for debugging.
-# See: http://www.appveyor.com/docs/how-to/rdp-to-build-worker
-init:
-- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+## This adds RDP access to the build VM, which is useful for debugging.
+## See: http://www.appveyor.com/docs/how-to/rdp-to-build-worker
+# init:
+# - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
-# This blocks VM termination until a file is manually deleted on the VM
-# allowing time for RDP debugging (60 min build timeout still applies).
-# See: http://www.appveyor.com/docs/how-to/rdp-to-build-worker
-on_finish:
-- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+## This blocks VM termination until a file is manually deleted on the VM
+## allowing time for RDP debugging (60 min build timeout still applies).
+## See: http://www.appveyor.com/docs/how-to/rdp-to-build-worker
+# on_finish:
+# - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
