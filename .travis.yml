@@ -1,7 +1,9 @@
 language: cpp
-
 git:
   depth: 3
+notifications:
+  email: false
+osx_image: xcode7.3
 
 os:
   - linux
