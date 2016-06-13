@@ -52,7 +52,7 @@ install:
 script:
   - ctest -VV
 
-after_success:
+before_deploy:
   - cd $TRAVIS_BUILD_DIR
   - zip -r "truss_${TRAVIS_TAG}_${TRAVIS_OS_NAME}_${CONFIG}.zip" dist/
 
