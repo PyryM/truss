@@ -22,12 +22,14 @@ function RenderTarget:init(width, height)
     self.attachments = {}
 end
 
-function RenderTarget:makeRGB8(hasDepth)
-    hasDepth = (hasDepth == nil) or hasDepth
-    self:addColorAttachment(self.width, self.height, m.ColorFormats.BGRA8)
+function RenderTarget:makeRGB8(depthBits, hasStencil)
+    if depthBits == true or depthBits == nil then depthBits = 24 end
+    if depthBits == false then depthBits = 0 end
+    local hasDepth = depthBits > 0
+    self:addColorAttachment(m.ColorFormats.BGRA8)
     if hasDepth then
         log.debug("Creating render target with depth buffer.")
-        self:addDepthAttachment(self.width, self.height)
+        self:addDepthStencilAttachment(depthBits, hasStencil)
     end
     self:finalize()
     return self
@@ -47,7 +49,7 @@ function RenderTarget:makeBackbuffer()
 end
 
 local bc = bgfx_const
-function RenderTarget:addColorAttachment(width, height, colorformat)
+function RenderTarget:addColorAttachment(colorformat)
     if self.finalized then
         log.error("Cannot add more attachments to finalized buffer!")
         return
@@ -55,7 +57,7 @@ function RenderTarget:addColorAttachment(width, height, colorformat)
     local colorflags = bc.BGFX_TEXTURE_RT +
                        bc.BGFX_TEXTURE_U_CLAMP +
                        bc.BGFX_TEXTURE_V_CLAMP
-    local color = bgfx.bgfx_create_texture_2d(width, height, 1,
+    local color = bgfx.bgfx_create_texture_2d(self.width, self.height, 1,
                         colorformat or m.ColorFormats.default,
                         colorflags, nil)
     table.insert(self.attachments, color)
@@ -63,14 +65,21 @@ function RenderTarget:addColorAttachment(width, height, colorformat)
     return self
 end
 
-function RenderTarget:addDepthAttachment(width, height)
+function RenderTarget:addDepthStencilAttachment(depthBits, hasStencil)
     if self.finalized then
         log.error("Cannot add more attachments to finalized buffer!")
         return
     end
-    local depthflags = bc.BGFX_TEXTURE_RT_WRITE_ONLY -- can't read back depth
-    local depth = bgfx.bgfx_create_texture_2d(width, height, 1,
-                        bgfx.BGFX_TEXTURE_FORMAT_D16, depthflags, nil)
+    local fmtName = "BGFX_TEXTURE_FORMAT_" .. "D" .. depthBits
+    if hasStencil then fmtName = fmtName .. "S8" end
+    log.debug("RenderTarget using depth format " .. fmtName)
+    local depthFormat = bgfx[fmtName]
+    if not depthFormat then
+        log.error("Depth format " .. fmtName .. " does not exist.")
+        return
+    end
+    local depth = bgfx.bgfx_create_texture_2d(self.width, self.height, 1,
+                        depthFormat, bc.BGFX_TEXTURE_RT_WRITE_ONLY, nil)
     table.insert(self.attachments, depth)
     self.hasDepth = true
     return self
