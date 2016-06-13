@@ -3,11 +3,13 @@ git:
   depth: 3
 notifications:
   email: false
-
 env:
   global:
     - CTEST_OUTPUT_ON_FAILURE=1
 
+################
+# Build Matrix #
+################
 matrix:
   include:
     - os: linux
@@ -37,6 +39,9 @@ matrix:
       osx_image: xcode7.3
       env: CONFIG=release
 
+##################
+# Build Settings #
+##################
 before_install:
   - mkdir -p "$HOME/.local"
   - export PATH="$HOME/.local/bin:$PATH"
@@ -52,6 +57,9 @@ install:
 script:
   - ctest -VV
 
+#######################
+# Deployment Settings #
+#######################
 before_deploy:
   - cd $TRAVIS_BUILD_DIR
   - zip -r "truss_${TRAVIS_TAG}_${TRAVIS_OS_NAME}_${CONFIG}.zip" dist/
