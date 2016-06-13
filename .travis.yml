@@ -18,9 +18,8 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-      env:
-        - COMPILER=g++-5
-        - CONFIG=debug
+            - gcc-5
+      env: CONFIG=debug
     - os: linux
       compiler: gcc
       addons:
@@ -29,23 +28,21 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-      env:
-        - COMPILER=g++-5
-        - CONFIG=release
+            - gcc-5
+      env: CONFIG=release
     - os: osx
       osx_image: xcode7.3
-      env:
-        - CONFIG=debug
+      env: CONFIG=debug
     - os: osx
       osx_image: xcode7.3
-      env:
-        - CONFIG=release
+      env: CONFIG=release
 
 before_install:
   - mkdir -p "$HOME/.local"
   - export PATH="$HOME/.local/bin:$PATH"
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then curl -L http://www.cmake.org/files/v3.5/cmake-3.5.2-Linux-x86_64.tar.gz | tar -xz -C "$HOME/.local" --strip-components=1; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then curl -L https://cmake.org/files/v3.5/cmake-3.5.2-Darwin-x86_64.tar.gz | tar -xz -C "$HOME/.local" --strip-components=3; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
 
 install:
   - mkdir build && cd build
