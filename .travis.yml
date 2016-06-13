@@ -3,19 +3,43 @@ git:
   depth: 3
 notifications:
   email: false
-osx_image: xcode7.3
-compiler: clang
-
-os:
-  - linux
-  - osx
 
 env:
   global:
     - CTEST_OUTPUT_ON_FAILURE=1
-  matrix:
-    - CONFIG=debug
-    - CONFIG=release
+
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - clang-3.7
+      env:
+        - COMPILER=clang++-3.7
+        - CONFIG=debug
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - clang-3.7
+      env:
+        - COMPILER=clang++-3.7
+        - CONFIG=release
+    - os: osx
+      osx_image: xcode7.3
+      env:
+        - CONFIG=debug
+    - os: osx
+      osx_image: xcode7.3
+      env:
+        - CONFIG=release
 
 before_install:
   - mkdir -p "$HOME/.local"
