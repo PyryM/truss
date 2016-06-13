@@ -2,6 +2,9 @@ shallow_clone: true
 build:
   verbosity: minimal
 
+################
+# Build Matrix #
+################
 environment:
   matrix:
     - GENERATOR: "Visual Studio 14 2015 Win64"
@@ -12,6 +15,9 @@ environment:
       COMPILER: "Microsoft Visual Studio 14.0"
       CONFIG: release
 
+##################
+# Build Settings #
+##################
 before_build:
   # Remove unused Xamarin targets to decrease log spam.
   # See: http://help.appveyor.com/discussions/problems/4569
