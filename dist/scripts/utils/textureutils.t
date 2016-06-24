@@ -25,6 +25,14 @@ local terra loadTexture_mem(filename: &int8, flags: uint32)
 	return ret
 end
 
+local function loadTexture_bgfx(filename, flags)
+	local msg = truss.truss_load_file(filename)
+	if msg == nil then return nil end
+	local bmem = bgfx.bgfx_copy(msg.data, msg.data_length)
+	truss.truss_release_message(msg)
+	return bgfx.bgfx_create_texture(bmem, flags, 0, nil)
+end
+
 -- function loadTexture(filename)
 -- 	--return loadTexture_mem(filename)
 -- 	local msg = loadTexture_mem(filename)
@@ -36,7 +44,14 @@ end
 
 function m.loadTexture(filename, flags)
 	if m.textures[filename] == nil then
-		m.textures[filename] = loadTexture_mem(filename, flags or 0)
+		local extension = string.lower(string.sub(filename, -4, -1))
+		if extension == ".png" or extension == ".jpg" then
+			m.textures[filename] = loadTexture_mem(filename, flags or 0)
+		elseif extension == ".ktx" or extension == ".dds" or extension == ".pvr" then
+			m.textures[filename] = loadTexture_bgfx(filename, flags or 0)
+		else
+			log.error("Unknown texture type " .. extension)
+		end
 	end
 	return m.textures[filename]
 end
