@@ -7,6 +7,7 @@ ExternalProject_Add(bx_EXTERNAL
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
+    LOG_DOWNLOAD 1
 )
 
 # Recover BX tool paths for additional settings.
@@ -35,7 +36,7 @@ endif()
 if("${CMAKE_GENERATOR}" MATCHES "Visual Studio 14 2015")
     set(bgfx_COMPILER "vs2015")
     set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-shared-lib "${bgfx_COMPILER}")
-    set(bgfx_BUILD_COMMAND "devenv" "<SOURCE_DIR>/.build/projects/${bgfx_COMPILER}/bgfx.sln" /Build Release|x64)
+    set(bgfx_BUILD_COMMAND "${CMAKE_VS_DEVENV_COMMAND}" "<SOURCE_DIR>/.build/projects/${bgfx_COMPILER}/bgfx.sln" /Build Release|x64)
 elseif("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
     set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-shared-lib "--gcc=${bgfx_GENIE_GCC}" gmake)
     set(bgfx_BUILD_COMMAND "$(MAKE)" -C "<SOURCE_DIR>/.build/projects/gmake-${bgfx_SYSTEM_NAME}" config=release64)
@@ -52,8 +53,9 @@ ExternalProject_Add(bgfx_EXTERNAL
     BUILD_COMMAND ${bgfx_BUILD_COMMAND}
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
+    LOG_DOWNLOAD 1
     LOG_CONFIGURE 1
-    LOG_BUILD 1
+    #LOG_BUILD 1
 )
 
 # Recover BGFX paths for additional settings.

@@ -1,0 +1,68 @@
+shallow_clone: true
+build:
+  verbosity: minimal
+
+################
+# Build Matrix #
+################
+environment:
+  matrix:
+    - GENERATOR: "Visual Studio 14 2015 Win64"
+      COMPILER: "Microsoft Visual Studio 14.0"
+      CONFIG: debug
+
+    - GENERATOR: "Visual Studio 14 2015 Win64"
+      COMPILER: "Microsoft Visual Studio 14.0"
+      CONFIG: release
+
+##################
+# Build Settings #
+##################
+before_build:
+  # Remove unused Xamarin targets to decrease log spam.
+  # See: http://help.appveyor.com/discussions/problems/4569
+  - del "C:\Program Files (x86)\MSBuild\14.0\Microsoft.Common.targets\ImportAfter\Xamarin.Common.targets"
+
+build_script:
+  - cmake "-G%GENERATOR%" -H. -B_builds
+  - cmake --build _builds --config "%CONFIG%"
+
+test_script:
+  - ps: cd _builds
+  - ctest -VV -C "%CONFIG%"
+
+#######################
+# Deployment Settings #
+#######################
+artifacts:
+  - path: dist
+    name: truss_$(APPVEYOR_REPO_COMMIT)_win_$(CONFIG)
+    type: zip
+
+deploy:
+  provider: GitHub
+  release: Truss Redistributable $(APPVEYOR_REPO_TAG)
+  description: "A standalone distribution of `truss` with precompiled native binaries and libraries."
+  auth_token:
+    secure: 448tCusiKgfH997O+lVK+/hPx5v/1jHJpf9ZZ+bcecT3n2jOQg/PGtVEt9FrTjR0
+  artifact: truss_$(APPVEYOR_REPO_TAG)_win_$(CONFIG).zip
+  draft: true
+  prerelease: false
+  force_update: true
+  on:
+    branch: master                 # release from master branch only
+    appveyor_repo_tag: true        # deploy on tag push only
+
+######################
+# Debugging Settings #
+######################
+## This adds RDP access to the build VM, which is useful for debugging.
+## See: http://www.appveyor.com/docs/how-to/rdp-to-build-worker
+# init:
+# - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+## This blocks VM termination until a file is manually deleted on the VM
+## allowing time for RDP debugging (60 min build timeout still applies).
+## See: http://www.appveyor.com/docs/how-to/rdp-to-build-worker
+# on_finish:
+# - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
