@@ -9,7 +9,7 @@ local Vector = math.Vector
 
 -- the "plate carree" projection, a special case of equirectangular
 function m.plateCarree(lat, lon)
-    local u = lon / (2*math.pi) + 0.5 -- map [-pi,pi]     => [0,1]
+    local u = 1.0 - (lon / (2*math.pi) + 0.5) -- map [-pi,pi]     => [1,0]
     local v = lat / math.pi + 0.5     -- map [-pi/2,pi/2] => [0,1]
     return u,v
 end
@@ -43,7 +43,7 @@ function m.uvSphereData(options)
     -- insert cap vertices
     local positions = {Vector(0,1,0), Vector(0,-1,0)}
     local normals = {Vector(0,1,0), Vector(0,-1,0)}
-    local uvs = {Vector(0.5, 0), Vector(0.5, 1)} -- not correct, but :effort:
+    local uvs = {Vector(0.5, 1), Vector(0.5, 0)} -- not correct, but :effort:
 
     -- create remaining vertices
     for latIdx = 1,latDivs do

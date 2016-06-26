@@ -18,10 +18,14 @@ function FlatShader:init(options)
         matUniforms:add(gfx.TexUniform("s_texAlbedo", 0), "diffuseMap")
         fragmentShaderName = "fs_flattextured"
     end
+    local vertexShaderName = "vs_flat"
+    if options.skybox then
+        vertexShaderName = "vs_flat_skybox"
+    end
 
     self.uniforms = matUniforms
     self.globals = nil
-    self.program = shaderutils.loadProgram("vs_flat", fragmentShaderName)
+    self.program = shaderutils.loadProgram(vertexShaderName, fragmentShaderName)
 end
 
 function FlatMaterial(options)
@@ -30,6 +34,9 @@ function FlatMaterial(options)
         ret.shadername = "flatTextured"
     else
         ret.shadername = "flatSolid"
+    end
+    if options.skybox then
+        ret.shadername = ret.shadername .. "Skybox"
     end
     ret.diffuse = options.diffuse or math.Vector(1.0,1.0,1.0,1.0)
     ret.diffuseMap = options.diffuseMap
