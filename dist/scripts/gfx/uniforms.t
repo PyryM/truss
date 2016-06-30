@@ -72,13 +72,17 @@ function TexUniform:init(uniName, uniSampler)
 end
 
 function TexUniform:set(tex)
-    self.tex = tex
+    if tex.rawTex then
+        self.tex = tex.rawTex
+    else
+        self.tex = tex
+    end
     return self
 end
 
 function TexUniform:bind()
     if self.tex then
-        bgfx.bgfx_set_texture(self.samplerID, self.bh, 
+        bgfx.bgfx_set_texture(self.samplerID, self.bh,
                                 self.tex, bgfx.UINT32_MAX)
     end
     return self
@@ -91,7 +95,7 @@ end
 
 function UniformSet:add(uniform, alias)
     local newname = alias or uniform.uniName
-    log.debug("Adding " .. alias)
+    log.debug("Adding " .. newname)
     if self[newname] then
         log.error("UniformSet.add : uniform named [" .. newname ..
                   "] already exists.")

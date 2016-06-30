@@ -104,6 +104,8 @@ function RenderTarget:finalize()
         cattachments[i-1].mip = 0
         cattachments[i-1].layer = 0
     end
+    -- if used as the value of a texture uniform, use first attachment
+    self.rawTex = self.attachments[1]
     self.frameBuffer = bgfx.bgfx_create_frame_buffer_from_attachment(#attachments, cattachments, true)
     self.cattachments = cattachments
     self.finalized = true

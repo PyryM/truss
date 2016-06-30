@@ -24,7 +24,7 @@ function DemoApp:initPipeline()
 
     local backbuffer = gfx.RenderTarget(self.width, self.height):makeBackbuffer()
     local nvgbuffer = gfx.RenderTarget(1024, 1024):makeRGB8()
-    self.nvgTexture = nvgbuffer.attachments[1]
+    self.nvgTexture = nvgbuffer
 
     local nvgpass = gfx.NanoVGStage({
         renderTarget = nvgbuffer,

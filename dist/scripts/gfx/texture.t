@@ -24,6 +24,8 @@ function MemTexture:init(w,h)
     -- later
     self.tex = bgfx.bgfx_create_texture_2d(w, h, 1,
         bgfx.BGFX_TEXTURE_FORMAT_BGRA8, flags, nil)
+    -- allow a MemTexture to directly be used as a uniform value
+    self.rawTex = self.tex
 end
 
 function MemTexture:update()
