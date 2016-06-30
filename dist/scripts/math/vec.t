@@ -81,6 +81,16 @@ function Vector:length()
     return math.sqrt( x*x + y*y + z*z + w*w )
 end
 
+function Vector:randUniform(minval, maxval)
+	local d = maxval - minval
+	local e = self.elem
+	e.x = math.random()*d + minval
+	e.y = math.random()*d + minval
+	e.z = math.random()*d + minval
+	e.w = math.random()*d + minval
+	return self
+end
+
 function Vector:normalize()
     local length = self:length()
     local e = self.elem
@@ -96,8 +106,17 @@ function Vector:normalize()
         e.z = e.z * length
         e.w = e.w * length
     end
-    
+
     return self
+end
+
+-- normalizes only the first 3 dimensions, ignoring w
+function Vector:normalize3d()
+	local w = self.elem.w
+	self.elem.w = 0
+	self:normalize()
+	self.elem.w = w
+	return self
 end
 
 function Vector:multiplyScalar(s)
@@ -120,6 +139,20 @@ function Vector:addVecs(a, b)
     e.y = ae.y + be.y
     e.z = ae.z + be.z
     e.w = ae.w + be.w
+    return self
+end
+
+-- make this vector equal a*alphaA + b*alphaB
+-- if alphaB is nil, alphaB = 1.0 - alphaA
+function Vector:linComb(a, b, alphaA, alphaB)
+	alphaB = alphaB or (1.0 - alphaA)
+	local ae = a.elem
+    local be = b.elem
+    local e = self.elem
+    e.x = alphaA*ae.x + alphaB*be.x
+    e.y = alphaA*ae.y + alphaB*be.y
+    e.z = alphaA*ae.z + alphaB*be.z
+    e.w = alphaA*ae.w + alphaB*be.w
     return self
 end
 

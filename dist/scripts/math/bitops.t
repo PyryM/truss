@@ -27,4 +27,13 @@ terra m.ullrshift(a: uint64, b: int32) : uint64
     return a >> b
 end
 
+function m.combineFlags(...)
+    local args = {...}
+    local v = args[1]
+    for i = 2,#args do
+        v = m.ullor(v, args[i])
+    end
+    return v
+end
+
 return m
