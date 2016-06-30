@@ -20,6 +20,7 @@ function RenderTarget:init(width, height)
     self.width = width
     self.height = height
     self.attachments = {}
+    self.constructionArgs_ = {}
 end
 
 function RenderTarget:makeRGB8(depthBits, hasStencil)
@@ -48,6 +49,13 @@ function RenderTarget:makeBackbuffer()
     return self
 end
 
+-- need a function that always returns 6 arguments because regular unpack won't
+-- work with embedded nils, and terra/ffi bound functions expect an exact number
+-- of arguments
+local function unpack6(v)
+    return v[1],v[2],v[3],v[4],v[5],v[6]
+end
+
 local bc = bgfx_const
 function RenderTarget:addColorAttachment(colorformat)
     if self.finalized then
@@ -57,10 +65,11 @@ function RenderTarget:addColorAttachment(colorformat)
     local colorflags = bc.BGFX_TEXTURE_RT +
                        bc.BGFX_TEXTURE_U_CLAMP +
                        bc.BGFX_TEXTURE_V_CLAMP
-    local color = bgfx.bgfx_create_texture_2d(self.width, self.height, 1,
-                        colorformat or m.ColorFormats.default,
-                        colorflags, nil)
+    local texArgs = {self.width, self.height, 1,
+                     colorformat or m.ColorFormats.default, colorflags, nil}
+    local color = bgfx.bgfx_create_texture_2d(unpack6(texArgs))
     table.insert(self.attachments, color)
+    table.insert(self.constructionArgs_, texArgs)
     self.hasColor = true
     return self
 end
@@ -78,9 +87,11 @@ function RenderTarget:addDepthStencilAttachment(depthBits, hasStencil)
         log.error("Depth format " .. fmtName .. " does not exist.")
         return
     end
-    local depth = bgfx.bgfx_create_texture_2d(self.width, self.height, 1,
-                        depthFormat, bc.BGFX_TEXTURE_RT_WRITE_ONLY, nil)
+    local texArgs = {self.width, self.height, 1,
+                     depthFormat, bc.BGFX_TEXTURE_RT_WRITE_ONLY, nil}
+    local depth = bgfx.bgfx_create_texture_2d(unpack6(texArgs))
     table.insert(self.attachments, depth)
+    table.insert(self.constructionArgs_, texArgs)
     self.hasDepth = true
     return self
 end
@@ -97,6 +108,29 @@ function RenderTarget:finalize()
     self.cattachments = cattachments
     self.finalized = true
     return self
+end
+
+function RenderTarget:construct_(conargs)
+    self.constructionArgs_ = {}
+    for i,curarg in ipairs(conargs) do
+        local attachment = bgfx.bgfx_create_texture_2d(unpack6(curarg))
+        table.insert(self.attachments, attachment)
+        table.insert(self.constructionArgs_, curarg)
+    end
+end
+
+-- create a new rendertarget with the same layout as this one
+-- does NOT copy the contents of the rendertarget
+function RenderTarget:duplicate(finalize)
+    local ret = RenderTarget(self.width, self.height)
+    ret.hasColor = self.hasColor
+    ret.hasDepth = self.hasDepth
+    ret.isBackbuffer = self.isBackbuffer
+    ret:construct_(self.constructionArgs_)
+    if finalize ~= false then
+        ret:finalize()
+    end
+    return ret
 end
 
 function RenderTarget:destroy()
