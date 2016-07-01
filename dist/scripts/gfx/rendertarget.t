@@ -165,6 +165,14 @@ function RenderTarget:setViewClear(viewid, clearValues)
                              clearColor, clearDepth, clearStencil or 0)
 end
 
+function RenderTarget:setViewport(x, y, width, height)
+    self.viewport = {x, y, width, height}
+end
+
+function RenderTarget:clearViewport()
+    self.viewport = nil
+end
+
 function RenderTarget:bindToView(viewid, setViewRect)
     if self.frameBuffer or self.isBackbuffer then
         self.viewid = viewid
@@ -172,7 +180,12 @@ function RenderTarget:bindToView(viewid, setViewRect)
             bgfx.bgfx_set_view_frame_buffer(viewid, self.frameBuffer)
         end
         if setViewRect == nil or setViewRect then -- default to true
-            bgfx.bgfx_set_view_rect(viewid, 0, 0, self.width, self.height)
+            if not self.viewport then
+                bgfx.bgfx_set_view_rect(viewid, 0, 0, self.width, self.height)
+            else
+                local vp = self.viewport
+                bgfx.bgfx_set_view_rect(viewid, vp[1], vp[2], vp[3], vp[4])
+            end
         end
     else
         log.error("Cannot bind null framebuffer to view!")

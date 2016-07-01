@@ -62,22 +62,10 @@ function AppScaffold:initBGFX()
     log.info("Renderer type: " .. rendererName)
 end
 
-function AppScaffold:initPipeline()
-    local pbr = require("shaders/pbr.t")
-
-    self.pipeline = gfx.Pipeline()
-
-    local backbuffer = gfx.RenderTarget(self.width, self.height):makeBackbuffer()
-    local forwardpass = gfx.MultiShaderStage({
-        renderTarget = backbuffer,
-        clear = {color = 0x303030ff},
-        shaders = {solid = pbr.PBRShader()}
-    })
-    self.pipeline:add("forwardpass", forwardpass)
-    self.pipeline:setupViews(0)
-
+function AppScaffold:setDefaultLights()
     -- set default lights
     local Vector = math.Vector
+    local forwardpass = self.forwardpass
     forwardpass.globals.lightDirs:setMultiple({
             Vector( 1.0,  1.0,  0.0),
             Vector(-1.0,  1.0,  0.0),
@@ -89,7 +77,24 @@ function AppScaffold:initPipeline()
             Vector(1.0, 1.0, 1.0),
             Vector(0.1, 0.1, 0.1),
             Vector(0.1, 0.1, 0.1)})
+end
 
+function AppScaffold:initPipeline()
+    local pbr = require("shaders/pbr.t")
+
+    self.pipeline = gfx.Pipeline()
+
+    local backbuffer = gfx.RenderTarget(self.width, self.height):makeBackbuffer()
+    local forwardpass = gfx.MultiShaderStage({
+        renderTarget = backbuffer,
+        clear = {color = 0x303030ff},
+        shaders = {solid = pbr.PBRShader()}
+    })
+    self.forwardpass = forwardpass
+    self.pipeline:add("forwardpass", forwardpass)
+    self.pipeline:setupViews(0)
+
+    self:setDefaultLights()
 end
 
 function AppScaffold:initScene()
