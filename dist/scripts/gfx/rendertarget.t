@@ -36,6 +36,13 @@ function RenderTarget:makeRGB8(depthBits, hasStencil)
     return self
 end
 
+function RenderTarget:makeShadow(shadowbits, hasStencil)
+    shadowbits = shadowbits or 16
+    self:addShadowAttachment(shadowbits, hasStencil)
+    self:finalize()
+    return self
+end
+
 function RenderTarget:makeBackbuffer()
     if self.finalized then
         log.error("Cannot convert finalized rendertarget to backbuffer!")
@@ -57,14 +64,14 @@ local function unpack6(v)
 end
 
 local bc = bgfx_const
-function RenderTarget:addColorAttachment(colorformat)
+function RenderTarget:addColorAttachment(colorformat, flags)
     if self.finalized then
         log.error("Cannot add more attachments to finalized buffer!")
         return
     end
-    local colorflags = bc.BGFX_TEXTURE_RT +
-                       bc.BGFX_TEXTURE_U_CLAMP +
-                       bc.BGFX_TEXTURE_V_CLAMP
+    local colorflags = flags or math.combineFlags(bc.BGFX_TEXTURE_RT,
+                       bc.BGFX_TEXTURE_U_CLAMP,
+                       bc.BGFX_TEXTURE_V_CLAMP)
     local texArgs = {self.width, self.height, 1,
                      colorformat or m.ColorFormats.default, colorflags, nil}
     local color = bgfx.bgfx_create_texture_2d(unpack6(texArgs))
@@ -74,7 +81,7 @@ function RenderTarget:addColorAttachment(colorformat)
     return self
 end
 
-function RenderTarget:addDepthStencilAttachment(depthBits, hasStencil)
+function RenderTarget:addDepthStencilAttachment(depthBits, hasStencil, flags)
     if self.finalized then
         log.error("Cannot add more attachments to finalized buffer!")
         return
@@ -88,12 +95,20 @@ function RenderTarget:addDepthStencilAttachment(depthBits, hasStencil)
         return
     end
     local texArgs = {self.width, self.height, 1,
-                     depthFormat, bc.BGFX_TEXTURE_RT_WRITE_ONLY, nil}
+                     depthFormat, flags or bc.BGFX_TEXTURE_RT_WRITE_ONLY, nil}
     local depth = bgfx.bgfx_create_texture_2d(unpack6(texArgs))
     table.insert(self.attachments, depth)
     table.insert(self.constructionArgs_, texArgs)
     self.hasDepth = true
     return self
+end
+
+function RenderTarget:addShadowAttachment(depthBits, hasStencil)
+    -- basically the same as a regular depth stencil attachment, except with
+    -- slightly different flags to allow it to be used in a shadow sampler
+    local flags = math.combineFlags(bc.BGFX_TEXTURE_RT,
+                                    bc.BGFX_TEXTURE_COMPARE_LEQUAL)
+    return self:addDepthStencilAttachment(depthBits, hasStencil, flags)
 end
 
 function RenderTarget:finalize()
