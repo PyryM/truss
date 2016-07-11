@@ -110,12 +110,23 @@ function Vector:normalize()
     return self
 end
 
--- normalizes only the first 3 dimensions, ignoring w
+-- normalize only the first 3 dimensions, ignoring w
 function Vector:normalize3d()
 	local w = self.elem.w
 	self.elem.w = 0
 	self:normalize()
 	self.elem.w = w
+	return self
+end
+
+-- divide x,y,z by w
+function Vector:perspectiveDivide()
+	local e = self.elem
+	if e.w == 0.0 then return self end
+	e.x = e.x / e.w
+	e.y = e.y / e.w
+	e.z = e.z / e.w
+	e.w = e.w / e.w
 	return self
 end
 
