@@ -9,12 +9,16 @@ local uniforms = require("gfx/uniforms.t")
 local shaderutils = require("utils/shaderutils.t")
 
 local PBRShader = class("PBRShader")
-function PBRShader:init()
+function PBRShader:init(options)
+    options = options or {}
     local baseColor = uniforms.Uniform("u_baseColor", uniforms.VECTOR, 1)
     local pbrParams = uniforms.Uniform("u_pbrParams", uniforms.VECTOR, 1)
     local matUniforms = uniforms.UniformSet()
     matUniforms:add(baseColor, "diffuse")
     matUniforms:add(pbrParams, "pbrParams")
+    if options.texture then
+        matUniforms:add(uniforms.TexUniform("s_texAlbedo", 0), "texAlbedo")
+    end
 
     local lightDirs = uniforms.Uniform("u_lightDir", uniforms.VECTOR, 4)
     local lightColors = uniforms.Uniform("u_lightRgb", uniforms.VECTOR, 4)
@@ -24,7 +28,11 @@ function PBRShader:init()
 
     self.uniforms = matUniforms
     self.globals = lightUniforms
-    self.program = shaderutils.loadProgram("vs_basicpbr", "fs_basicpbr_x4")
+    if options.texture then
+        self.program = shaderutils.loadProgram("vs_basicpbr_tex", "fs_basicpbr_x4_tex")
+    else
+        self.program = shaderutils.loadProgram("vs_basicpbr", "fs_basicpbr_x4")
+    end
 end
 
 local PBRMaterial = class("PBRMaterial")
@@ -48,6 +56,11 @@ end
 
 function PBRMaterial:diffuse(r,g,b)
     self.vals.diffuse:set(r,g,b,1.0)
+    return self
+end
+
+function PBRMaterial:texture(tex)
+    self.vals.texAlbedo = tex
     return self
 end
 
