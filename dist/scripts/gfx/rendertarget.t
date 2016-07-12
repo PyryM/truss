@@ -143,6 +143,7 @@ function RenderTarget:duplicate(finalize)
     ret.hasColor = self.hasColor
     ret.hasDepth = self.hasDepth
     ret.isBackbuffer = self.isBackbuffer
+    ret.viewport = self.viewport
     ret:construct_(self.constructionArgs_)
     if finalize ~= false then
         ret:finalize()
