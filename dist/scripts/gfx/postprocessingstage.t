@@ -20,7 +20,7 @@ function PostProcessingStage:init(options)
     self.camera_ = gfx.Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
     self.state_ = options.state
     self.drawQuad_ = options.drawQuad
-    if (not self.program_) and options.fshader then
+    if not self.program_ then
         local vshader = options.vshader or "vs_fullscreen"
         local fshader = options.fshader or "fs_fullscreen_copy"
         local shaderutils = require("utils/shaderutils.t")
@@ -35,6 +35,9 @@ end
 
 function PostProcessingStage:setupViews(startView)
     self.viewid_ = startView
+    if self.options_.clear ~= false and self.target then
+        self.target:setViewClear(self.viewid_, self.options_.clear or {})
+    end
     return startView+1
 end
 

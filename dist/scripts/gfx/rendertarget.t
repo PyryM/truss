@@ -23,17 +23,25 @@ function RenderTarget:init(width, height)
     self.constructionArgs_ = {}
 end
 
-function RenderTarget:makeRGB8(depthBits, hasStencil)
+function RenderTarget:makeRGB(colorFormat, depthBits, hasStencil)
     if depthBits == true or depthBits == nil then depthBits = 24 end
     if depthBits == false then depthBits = 0 end
     local hasDepth = depthBits > 0
-    self:addColorAttachment(m.ColorFormats.BGRA8)
+    self:addColorAttachment(colorFormat)
     if hasDepth then
         log.debug("Creating render target with depth buffer.")
         self:addDepthStencilAttachment(depthBits, hasStencil)
     end
     self:finalize()
     return self
+end
+
+function RenderTarget:makeRGB8(depthBits, hasStencil)
+    return self:makeRGB(m.ColorFormats.BGRA8, depthBits, hasStencil)
+end
+
+function RenderTarget:makeRGBF(depthBits, hasStencil)
+    return self:makeRGB(m.ColorFormats.FLOAT, depthBits, hasStencil)
 end
 
 function RenderTarget:makeShadow(shadowbits, hasStencil)
