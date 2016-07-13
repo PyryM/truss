@@ -16,6 +16,12 @@ m.ColorFormats = {
     FLOAT     = bgfx.BGFX_TEXTURE_FORMAT_RGBA32F
 }
 
+m.ColorFormatSizes = {
+    [bgfx.BGFX_TEXTURE_FORMAT_BGRA8] = 4,
+    [bgfx.BGFX_TEXTURE_FORMAT_RGBA16F] = 8,
+    [bgfx.BGFX_TEXTURE_FORMAT_RGBA32F] = 16
+}
+
 function RenderTarget:init(width, height)
     self.width = width
     self.height = height
@@ -157,6 +163,30 @@ function RenderTarget:duplicate(finalize)
         ret:finalize()
     end
     return ret
+end
+
+function RenderTarget:read(attachmentIdx)
+    local attachment = self.attachments[attachmentIdx]
+    local ainfo = self.constructionArgs_[attachmentIdx]
+
+    local w, h, fmt, flags = ainfo[1], ainfo[2], ainfo[4], ainfo[5]
+    local pixelsize = m.ColorFormatSizes[fmt]
+    local datasize = w*h*pixelsize
+
+    -- make sure texture can actually be read back
+    local readable = math.ulland(flags, bc.BGFX_TEXTURE_READ_BACK) > 0
+    if not readable then
+        log.error("Texture cannot be read back, was not created with BGFX_TEXTURE_READ_BACK")
+        return nil
+    end
+
+    if (not self.rbData_) or self.rbData_.data_length ~= datasize then
+        if self.rbData_ then truss.truss_release_message(self.rbData_) end
+        self.rbData_ = truss.truss_create_message(datasize)
+    end
+
+    bgfx.bgfx_read_texture(attachment, self.rbData_.data)
+    return self.rbData_
 end
 
 function RenderTarget:destroy()
