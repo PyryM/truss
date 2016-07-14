@@ -14,6 +14,7 @@ function Camera:init()
     self.viewMat = math.Matrix4():identity()
     self.projMat = math.Matrix4():identity()
     self.invProjMat = math.Matrix4():identity()
+    self.viewProjMat = math.Matrix4():identity()
 end
 
 function Camera:makeProjection(fovDegrees, aspect, near, far)
@@ -38,6 +39,17 @@ end
 function Camera:setViewMatrices(viewid)
     self.viewMat:invert(self.matrixWorld or self.matrix)
     bgfx.bgfx_set_view_transform(viewid, self.viewMat.data, self.projMat.data)
+end
+
+function Camera:getViewMatrices()
+    self.viewMat:invert(self.matrixWorld or self.matrix)
+    return self.viewMat, self.projMat
+end
+
+function Camera:getViewProjMat(target)
+    local view, proj = self:getViewMatrices()
+    target = target or self.viewProjMat
+    return target:multiply(proj, view)
 end
 
 -- "unproject" an image coordinate (in NDC, so [-1,1] w/ (0,0) center) to a ray

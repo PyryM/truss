@@ -17,6 +17,8 @@ m.MAT4 = {
     terraType = float[16]
 }
 
+m.MATRIX = m.MAT4
+
 local Uniform = class("Uniform")
 function Uniform:init(uniName, uniType, uniNum)
     uniNum = uniNum or 1

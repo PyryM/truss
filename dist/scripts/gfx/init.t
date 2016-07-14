@@ -17,7 +17,8 @@ moduleutils.includeSubmodules({
     "gfx/uniforms.t",
     "gfx/vertexdefs.t",
     "gfx/nanovgstage.t",
-    "gfx/postprocessingstage.t"
+    "gfx/postprocessingstage.t",
+    "gfx/shadowstage.t"
 }, gfx)
 
 return gfx
