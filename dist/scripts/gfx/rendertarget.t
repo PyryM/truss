@@ -95,12 +95,13 @@ function RenderTarget:addColorAttachment(colorformat, flags)
     return self
 end
 
-function RenderTarget:addDepthStencilAttachment(depthBits, hasStencil, flags)
+function RenderTarget:addDepthStencilAttachment(depthBits, hasStencil, flags, isfloat)
     if self.finalized then
         log.error("Cannot add more attachments to finalized buffer!")
         return
     end
     local fmtName = "BGFX_TEXTURE_FORMAT_" .. "D" .. depthBits
+    if isfloat then fmtName = fmtName .. "F" end
     if hasStencil then fmtName = fmtName .. "S8" end
     log.debug("RenderTarget using depth format " .. fmtName)
     local depthFormat = bgfx[fmtName]
@@ -122,7 +123,7 @@ function RenderTarget:addShadowAttachment(depthBits, hasStencil)
     -- slightly different flags to allow it to be used in a shadow sampler
     local flags = math.combineFlags(bc.BGFX_TEXTURE_RT,
                                     bc.BGFX_TEXTURE_COMPARE_LEQUAL)
-    return self:addDepthStencilAttachment(depthBits, hasStencil, flags)
+    return self:addDepthStencilAttachment(depthBits, hasStencil, flags, true)
 end
 
 function RenderTarget:finalize()

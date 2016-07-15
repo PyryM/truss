@@ -53,7 +53,7 @@ terra m.projXYWH(mat: &float, x: float, y: float, width: float, height: float, n
     mat[14] = bb
 end
 
-terra m.projFrustum(mat: &float,
+terra m.projFrustumGL(mat: &float,
                     left: float, right: float,
                     bottom: float, top: float,
                     near: float, far: float)
@@ -64,6 +64,19 @@ terra m.projFrustum(mat: &float,
     mat[10] = -(far + near) / (far - near)
     mat[11] = -1.0
     mat[14] = -2 * far * near / (far - near)
+end
+
+terra m.projFrustum(mat: &float,
+                    left: float, right: float,
+                    bottom: float, top: float,
+                    near: float, far: float)
+    mat[ 0] = 2.0*near / (right - left)
+    mat[ 5] = 2.0*near / (top - bottom)
+    mat[ 8] = (right + left) / (right - left)
+    mat[ 9] = (top + bottom) / (top - bottom)
+    mat[10] = -far / (far - near)
+    mat[11] = -1.0
+    mat[14] = -far * near / (far - near)
 end
 
 terra m.setIdentity(mat: &float)

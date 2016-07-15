@@ -3,6 +3,8 @@
 -- shadow map rendering stages
 
 local class = require("class")
+local math = require("math")
+
 local m = {}
 local ShadowStage = class("ShadowStage")
 function ShadowStage:init(options)
@@ -18,7 +20,12 @@ function ShadowStage:init(options)
         pgm = shaderutils.loadProgram("vs_shadowcast", "fs_shadowcast")
     end
     local shadowshader = {
-        program = pgm
+        program = pgm,
+        state = math.combineFlags(
+            bgfx_const.BGFX_STATE_DEPTH_WRITE,
+            bgfx_const.BGFX_STATE_RGB_WRITE,
+            bgfx_const.BGFX_STATE_DEPTH_TEST_LESS,
+            bgfx_const.BGFX_STATE_ALPHA_WRITE)
     }
 
     self.context_ = {}
@@ -30,7 +37,7 @@ function ShadowStage:init(options)
 
     self.stage_ = gfx.MultiShaderStage({
         renderTarget = options.target or options.renderTarget,
-        clear = {depth = 1.0},
+        clear = {depth = 0.999},
         shaders = shaders
     })
     self.shadowcamera = gfx.Camera():makeProjection(70, 1.0, 0.1, 100.0)
