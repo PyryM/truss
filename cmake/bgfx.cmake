@@ -3,7 +3,7 @@ include(ExternalProject)
 # Download `bx` and extract source path.
 ExternalProject_Add(bx_EXTERNAL
     GIT_REPOSITORY "https://github.com/bkaradzic/bx.git"
-    GIT_TAG "c989434ad78398241e8792efc992290ee2823555"
+    GIT_TAG "927be0eda65c0b63f5c4b7843e0d79b7619ecb10"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -48,7 +48,7 @@ endif()
 ExternalProject_Add(bgfx_EXTERNAL
     DEPENDS bx_EXTERNAL
     GIT_REPOSITORY "https://github.com/PyryM/bgfx.git"
-    GIT_TAG "76342bf6227eb32d89344ea7d995c586c71e2af2"
+    GIT_TAG "3d6307521b810de1c0643340e5fb4d9f28cf6e3b"
     CONFIGURE_COMMAND ${bgfx_CONFIGURE_COMMAND}
     BUILD_COMMAND ${bgfx_BUILD_COMMAND}
     INSTALL_COMMAND ""

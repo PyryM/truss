@@ -180,7 +180,7 @@ function AppScaffold:update()
 
     -- Advance to next frame. Rendering thread will be kicked to
     -- process submitted rendering primitives.
-    bgfx.bgfx_frame()
+    bgfx.bgfx_frame(false)
 
     self.frametime = toc(self.startTime)
     self.startTime = tic()

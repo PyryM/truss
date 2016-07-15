@@ -239,7 +239,7 @@ function VRApp:update()
     self.scripttime = toc(self.startTime)
 
     -- Have bgfx do its rendering
-    bgfx.bgfx_frame()
+    bgfx.bgfx_frame(false)
 
     -- Submit eyes
     openvr.submitFrame(self.eyeTexes)

@@ -1,5 +1,5 @@
 -- 05_line.t
--- 
+--
 -- tests line object
 
 bgfx = core.bgfx
@@ -131,7 +131,7 @@ function init()
     log.info("created window")
 
     -- basic init
-    local resetFlags = bgfx_const.BGFX_RESET_VSYNC + 
+    local resetFlags = bgfx_const.BGFX_RESET_VSYNC +
                        bgfx_const.BGFX_RESET_MSAA_X8
 
     bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, nil, nil)
@@ -195,7 +195,7 @@ function update()
 
     -- Advance to next frame. Rendering thread will be kicked to
     -- process submitted rendering primitives.
-    bgfx.bgfx_frame()
+    bgfx.bgfx_frame(false)
 
     frametime = toc(startTime)
 end

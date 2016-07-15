@@ -289,8 +289,10 @@ typedef struct bgfx_hmd_eye
     float rotation[4];
     float translation[3];
     float fov[4];
-    float adjust[3];
+    float viewOffset[3];
+    float projection[16];
     float pixelsPerTanAngle[2];
+
 
 } bgfx_hmd_eye_t;
 
@@ -309,12 +311,16 @@ typedef struct bgfx_hmd
 /**/
 typedef struct bgfx_stats
 {
-    uint64_t cpuTime;
+    uint64_t cpuTimeBegin;
+    uint64_t cpuTimeEnd;
     uint64_t cpuTimerFreq;
 
-    uint64_t gpuTime;
+    uint64_t gpuTimeBegin;
+    uint64_t gpuTimeEnd;
     uint64_t gpuTimerFreq;
 
+    int64_t waitRender;
+    int64_t waitSubmit;
 } bgfx_stats_t;
 
 /**/
@@ -487,7 +493,7 @@ BGFX_C_API void bgfx_shutdown();
 BGFX_C_API void bgfx_reset(uint32_t _width, uint32_t _height, uint32_t _flags);
 
 /**/
-BGFX_C_API uint32_t bgfx_frame();
+BGFX_C_API uint32_t bgfx_frame(bool _capture);
 
 /**/
 BGFX_C_API bgfx_renderer_type_t bgfx_get_renderer_type();
@@ -637,10 +643,10 @@ BGFX_C_API void bgfx_update_texture_3d(bgfx_texture_handle_t _handle, uint8_t _m
 BGFX_C_API void bgfx_update_texture_cube(bgfx_texture_handle_t _handle, uint8_t _side, uint8_t _mip, uint16_t _x, uint16_t _y, uint16_t _width, uint16_t _height, const bgfx_memory_t* _mem, uint16_t _pitch);
 
 /**/
-BGFX_C_API void bgfx_read_texture(bgfx_texture_handle_t _handle, void* _data);
+BGFX_C_API uint32_t bgfx_read_texture(bgfx_texture_handle_t _handle, void* _data);
 
 /**/
-BGFX_C_API void bgfx_read_frame_buffer(bgfx_frame_buffer_handle_t _handle, uint8_t _attachment, void* _data);
+BGFX_C_API uint32_t bgfx_read_frame_buffer(bgfx_frame_buffer_handle_t _handle, uint8_t _attachment, void* _data);
 
 /**/
 BGFX_C_API void bgfx_destroy_texture(bgfx_texture_handle_t _handle);
