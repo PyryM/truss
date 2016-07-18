@@ -161,7 +161,6 @@ function VRApp:updateCameras_()
 end
 
 function VRApp:render()
-    self.scene:updateMatrices()
     self.orthocam:setViewMatrices(self.windowView)
     self.backbuffer:bindToView(self.windowView)
     -- Note: here it looks like we're compositing before we render the eyes,
@@ -235,6 +234,7 @@ function VRApp:update()
         self:preRender()
     end
 
+    self:updateScene()
     self:render()
     self.scripttime = toc(self.startTime)
 

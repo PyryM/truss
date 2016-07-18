@@ -104,7 +104,7 @@ function AppScaffold:initScene()
 end
 
 function AppScaffold:onKeyDown_(keyname, modifiers)
-    log.info("Keydown: " .. keyname)
+    log.info("Keydown: " .. keyname .. " | " .. modifiers)
     if self.keybindings[keyname] ~= nil then
         self.keybindings[keyname](keyname, modifiers)
     end
@@ -144,8 +144,11 @@ function AppScaffold:updateEvents()
     end
 end
 
-function AppScaffold:render()
+function AppScaffold:updateScene()
     self.scene:updateMatrices()
+end
+
+function AppScaffold:render()
     self.pipeline:render({camera = self.camera,
                           scene  = self.scene})
 end
@@ -175,6 +178,7 @@ function AppScaffold:update()
         self:preRender()
     end
 
+    self:updateScene()
     self:render()
     self.scripttime = toc(self.startTime)
 
