@@ -190,25 +190,6 @@ function RenderTarget:createReadBackBuffers(attachmentIdx)
     return {tex = tex, buffer = buffer}
 end
 
-function RenderTarget:read(attachmentIdx)
-
-
-    -- make sure texture can actually be read back
-    local readable = math.ulland(flags, bc.BGFX_TEXTURE_READ_BACK) > 0
-    if not readable then
-        log.error("Texture cannot be read back, was not created with BGFX_TEXTURE_READ_BACK")
-        return nil
-    end
-
-    if (not self.rbData_) or self.rbData_.data_length ~= datasize then
-        if self.rbData_ then truss.truss_release_message(self.rbData_) end
-
-    end
-
-    bgfx.bgfx_read_texture(attachment, self.rbData_.data)
-    return self.rbData_
-end
-
 function RenderTarget:destroy()
     if self.frameBuffer then
         bgfx.bgfx_destroy_frame_buffer(self.frameBuffer)
