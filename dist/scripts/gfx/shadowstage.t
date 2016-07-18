@@ -37,10 +37,10 @@ function ShadowStage:init(options)
 
     self.stage_ = gfx.MultiShaderStage({
         renderTarget = options.target or options.renderTarget,
-        clear = {depth = 0.999},
+        clear = {depth = 1.0},
         shaders = shaders
     })
-    self.shadowcamera = gfx.Camera():makeProjection(70, 1.0, 0.1, 100.0)
+    self.shadowcamera = gfx.Camera():makeProjection(45, 1.0, 0.1, 100.0)
 end
 
 function ShadowStage:setShadowCamera(shadowcamera)
