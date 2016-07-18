@@ -58,7 +58,9 @@ function Pipeline:render(context)
         self:setupViews(0)
     end
     for _, stageData in ipairs(self.orderedStages) do
-        stageData.stage:render(stageData.context or context)
+        if stageData.stage.enabled ~= false then
+            stageData.stage:render(stageData.context or context)
+        end
     end
 end
 
