@@ -1,0 +1,78 @@
+language: cpp
+git:
+  depth: 3
+notifications:
+  email: false
+env:
+  global:
+    - CTEST_OUTPUT_ON_FAILURE=1
+
+################
+# Build Matrix #
+################
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+            - gcc-5
+      env: CONFIG=debug
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+            - gcc-5
+      env: CONFIG=release
+    - os: osx
+      osx_image: xcode7.3
+      env: CONFIG=debug
+    - os: osx
+      osx_image: xcode7.3
+      env: CONFIG=release
+
+##################
+# Build Settings #
+##################
+before_install:
+  - mkdir -p "$HOME/.local"
+  - export PATH="$HOME/.local/bin:$PATH"
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX="g++-5" CC="gcc-5"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then curl -L http://www.cmake.org/files/v3.5/cmake-3.5.2-Linux-x86_64.tar.gz | tar -xz -C "$HOME/.local" --strip-components=1; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then curl -L https://cmake.org/files/v3.5/cmake-3.5.2-Darwin-x86_64.tar.gz | tar -xz -C "$HOME/.local" --strip-components=3; fi
+
+install:
+  - mkdir build && cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=$CONFIG
+  - make
+
+script:
+  - ctest -VV
+
+#######################
+# Deployment Settings #
+#######################
+before_deploy:
+  - cd $TRAVIS_BUILD_DIR
+  - zip -r "truss_${TRAVIS_TAG}_${TRAVIS_OS_NAME}_${CONFIG}.zip" dist/
+
+deploy:
+  provider: releases
+  name: "Truss Redistributable $(APPVEYOR_REPO_TAG)"
+  body: "A standalone distribution of `truss` with precompiled native binaries and libraries."
+  draft: true
+  prerelease: false
+  api_key:
+    secure: DdGoPjmuZdw0bjgMqZYsSNJ/QRAaViR+v0d3ittbdAKb/zuyM/kq2DtQUgpHc74gq/IjLGqtqvMEKK2z/jI8NrvBD0Qs8TOmUQfZygq872JJvJ59UhdYfJt/WFaxRLpSZUIZFcy8cWmFefzloczZklock0Ni8YvAouikvMs+2J73EI+RzVKITVRR9livo8QaMuU6t5x4XClGqpoRCvPKTdJOKh9oO+0aKgBJ2mS4OJ0UwZ0mvTSOFNCckCNzwO9+tdSNcHAQxcDmSRGRitNOZb2T2aXZzIlmJ+hTxmjFtcRXwbHaqrYTi1lkUoDvxEH3StHdkrB7XtTpj7uSlXjzped7aNkdQOD7x/1lZE7kNosl3tSqrvvzFGlcMsR8kAXGEN2dnZTQz2gfaALgmCS1Lba8B2QDXJFrEE9QC/f/dCdPMvjaDzfSY4IMmRnNIEH84cMpqwDgFr4zGth6yGtdNKrEjY2YEVWC61qIEMjLdYkHPYpPkbW1PbSCy6Ezd7Zr1bRjqUVk4C7YEn3aKK/d4HyPxFdtG6dQq6ZspWYwKkteNeDHxy1Jh549urMykYStsuVFDolPc4FX9rWInXx00PJaC3WFy4cYJbdHEVE6hAn6PsSK3II3Rkex3pROnPrXnNSma4TkJVH9OvO8mkyfAz9ngrrpdIcXivJCAeVAlMU=
+  file: truss_${TRAVIS_TAG}_${TRAVIS_OS_NAME}_${CONFIG}.zip
+  on:
+    branch: master
+    tags: true
