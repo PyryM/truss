@@ -41,12 +41,18 @@ function m.cylinderData(radius, height, nsegs, capped)
         local vTop = #(positions)-2
         local vBot = vTop + 1
 
+        -- need to copy side vertices so they can have different normals in
+        -- order to get a sharp edge on the caps
+        for i = 1,nsegs*2 do
+            table.insert(positions, Vector():copy(positions[i]))
+        end
+
         for i = 0,nsegs-1 do
-            local v0 = (i*2  ) % (nsegs * 2)  
-            local v1 = (i*2+2) % (nsegs * 2)
+            local v0 = (vBot + 1) + (i*2  ) % (nsegs * 2)
+            local v1 = (vBot + 1) + (i*2+2) % (nsegs * 2)
             table.insert(indices, {v1,   v0,   vTop})
             table.insert(indices, {v0+1, v1+1, vBot})
-        end 
+        end
     end
 
     return {
@@ -55,6 +61,15 @@ function m.cylinderData(radius, height, nsegs, capped)
             position = positions
         }
     }
+end
+
+function m.cylinderGeo(radius, height, nsegs, capped, gname)
+    local gfx = require("gfx")
+    local geoutils = require("geometry/geoutils.t")
+    local cylinderData = m.cylinderData(radius, height, nsegs, capped)
+    geoutils.computeNormals(cylinderData)
+    local vertInfo = gfx.createStandardVertexType({"position", "normal", "texcoord0"})
+    return gfx.StaticGeometry(gname):fromData(vertInfo, cylinderData)
 end
 
 return m

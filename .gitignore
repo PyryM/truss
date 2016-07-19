@@ -1,5 +1,10 @@
 docs/
 build/
+data/
+dump/
+models/
+temp/
+old_scripts/
 dist/lib/
 dist/truss
 dist/truss.exe

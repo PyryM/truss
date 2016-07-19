@@ -11,10 +11,7 @@ local sdl = addons.sdl
 local nanovg = core.nanovg
 
 local math = require("math")
-local Object3D = require('gfx/object3d.t').Object3D
-local Camera = require("gfx/camera.t").Camera
-local MultiPass = require("gfx/multipass.t").MultiPass
-local uniforms = require("gfx/uniforms.t")
+local gfx = require("gfx")
 
 local AppScaffold = class('AppScaffold')
 
@@ -24,8 +21,9 @@ function AppScaffold:init(options)
     self.height = options.height or 720
     self.quality = options.quality or 1.0 -- highest quality by default
     self.title = options.title or 'truss'
-
-    local usenvg = (options.usenvg == nil) or options.usenvg
+    if options.renderer then
+        self.requestedRenderer = string.upper(options.renderer)
+    end
 
     self.frame = 0
     self.time = 0.0
@@ -41,9 +39,6 @@ function AppScaffold:init(options)
 
     self:initBGFX()
     self:initPipeline()
-    if usenvg then
-        self:initNVG()
-    end
     self:initScene()
 
     self.startTime = tic()
@@ -57,18 +52,17 @@ function AppScaffold:initBGFX()
 
     --local cbInterfacePtr = sdl.truss_sdl_get_bgfx_cb(sdlPointer)
     local cbInterfacePtr = nil
+    local rendererType = bgfx.BGFX_RENDERER_TYPE_COUNT
+    if self.requestedRenderer then
+        local rname = "BGFX_RENDERER_TYPE_" .. self.requestedRenderer
+        rendererType = bgfx[rname]
+    end
 
-    bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
+    bgfx.bgfx_init(rendererType, 0, 0, cbInterfacePtr, nil)
     bgfx.bgfx_reset(self.width, self.height, reset)
 
     -- Enable debug text.
     bgfx.bgfx_set_debug(debug)
-
-    bgfx.bgfx_set_view_clear(0,
-    0x0001 + 0x0002, -- clear color + clear depth
-    0x303030ff,
-    1.0,
-    0)
 
     log.info("AppScaffold: initted bgfx")
     local rendererType = bgfx.bgfx_get_renderer_type()
@@ -76,49 +70,49 @@ function AppScaffold:initBGFX()
     log.info("Renderer type: " .. rendererName)
 end
 
-function AppScaffold:initPipeline()
-    local MultiPass = require("gfx/multipass.t").MultiPass
-    local pbr = require("shaders/pbr.t")
-
-    local renderpass = MultiPass()
-    renderpass:addShader("solid", pbr.PBRShader())
-
+function AppScaffold:setDefaultLights()
     -- set default lights
     local Vector = math.Vector
-    renderpass.globals.lightDirs:setMultiple({
+    local forwardpass = self.forwardpass
+    forwardpass.globals.lightDirs:setMultiple({
             Vector( 1.0,  1.0,  0.0),
             Vector(-1.0,  1.0,  0.0),
             Vector( 0.0, -1.0,  1.0),
             Vector( 0.0, -1.0, -1.0)})
 
-    renderpass.globals.lightColors:setMultiple({
+    forwardpass.globals.lightColors:setMultiple({
             Vector(0.8, 0.8, 0.8),
             Vector(1.0, 1.0, 1.0),
             Vector(0.1, 0.1, 0.1),
             Vector(0.1, 0.1, 0.1)})
+end
 
-    self.pipeline = renderpass
+function AppScaffold:initPipeline()
+    local pbr = require("shaders/pbr.t")
+
+    self.pipeline = gfx.Pipeline()
+
+    local backbuffer = gfx.RenderTarget(self.width, self.height):makeBackbuffer()
+    local forwardpass = gfx.MultiShaderStage({
+        renderTarget = backbuffer,
+        clear = {color = 0x303030ff},
+        shaders = {solid = pbr.PBRShader()}
+    })
+    self.forwardpass = forwardpass
+    self.pipeline:add("forwardpass", forwardpass)
+    self.pipeline:setupViews(0)
+
+    self:setDefaultLights()
 end
 
 function AppScaffold:initScene()
-    self.scene = Object3D()
-    self.camera = Camera():makeProjection(70, self.width/self.height,
+    self.scene = gfx.Object3D()
+    self.camera = gfx.Camera():makeProjection(70, self.width/self.height,
                                             0.1, 100.0)
 end
 
-function AppScaffold:initNVG()
-    -- create context, indicate to bgfx that drawcalls to view
-    -- 0 should happen in the order that they were submitted
-    self.nvg = nanovg.nvgCreate(1, 1) -- make sure to have antialiasing on
-    bgfx.bgfx_set_view_seq(1, true)
-
-    -- load font
-    --nvgfont = nanovg.nvgCreateFont(nvg, "sans", "font/roboto-regular.ttf")
-    self.nvgfont = nanovg.nvgCreateFont(self.nvg, "sans", "font/VeraMono.ttf")
-end
-
 function AppScaffold:onKeyDown_(keyname, modifiers)
-    log.info("Keydown: " .. keyname)
+    log.info("Keydown: " .. keyname .. " | " .. modifiers)
     if self.keybindings[keyname] ~= nil then
         self.keybindings[keyname](keyname, modifiers)
     end
@@ -158,8 +152,11 @@ function AppScaffold:updateEvents()
     end
 end
 
-function AppScaffold:render()
+function AppScaffold:updateScene()
     self.scene:updateMatrices()
+end
+
+function AppScaffold:render()
     self.pipeline:render({camera = self.camera,
                           scene  = self.scene})
 end
@@ -167,8 +164,6 @@ end
 function AppScaffold:update()
     self.frame = self.frame + 1
     self.time = self.time + 1.0 / 60.0
-
-
 
     -- Deal with input events
     self:updateEvents()
@@ -179,7 +174,7 @@ function AppScaffold:update()
 
     -- Touch the view to make sure it is cleared even if no draw
     -- calls happen
-    bgfx.bgfx_touch(0)
+    -- bgfx.bgfx_touch(0)
 
     -- Use debug font to print information about this example.
     bgfx.bgfx_dbg_text_clear(0, false)
@@ -191,12 +186,13 @@ function AppScaffold:update()
         self:preRender()
     end
 
+    self:updateScene()
     self:render()
     self.scripttime = toc(self.startTime)
 
     -- Advance to next frame. Rendering thread will be kicked to
     -- process submitted rendering primitives.
-    bgfx.bgfx_frame()
+    bgfx.bgfx_frame(false)
 
     self.frametime = toc(self.startTime)
     self.startTime = tic()

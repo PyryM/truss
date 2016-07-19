@@ -14,6 +14,10 @@ local bgfx_const = core.bgfx_const
 local QuadApp = AppScaffold:extend("QuadApp")
 function QuadApp:initPipeline()
     self.pgm = shaderutils.loadProgram("vs_fullscreen", "fs_fullscreen_debug")
+    local RenderTarget = require("gfx/rendertarget.t").RenderTarget
+    self.backbuffer = RenderTarget(self.width, self.height):makeBackbuffer()
+    self.backbuffer:setViewClear(0, {color = 0x303030ff})
+    self.backbuffer:bindToView(0)
 end
 
 function QuadApp:initScene()

@@ -1,6 +1,6 @@
 $input v_wpos // in...
 
-//#include "../common/common.sh"
+#include "../common/common.sh"
 
 uniform vec4 u_color;
 

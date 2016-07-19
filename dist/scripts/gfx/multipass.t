@@ -33,7 +33,7 @@ local function renderObject_(obj, mpass)
     local shaders = mpass.shaders_
 
     if not obj.active or not obj.material or not obj.geo then
-        return 
+        return
     end
 
     local objmat = obj.material
@@ -43,14 +43,22 @@ local function renderObject_(obj, mpass)
     if shader.uniforms then shader.uniforms:tableSet(objmat):bind() end
     obj.geo:bind()
     bgfx.bgfx_set_transform(obj.matrixWorld.data, 1)
-    bgfx.bgfx_set_state(shader.state or bgfx_const.BGFX_STATE_DEFAULT, 
+    bgfx.bgfx_set_state(shader.state or bgfx_const.BGFX_STATE_DEFAULT,
                         shader.stateRGB or 0)
-    bgfx.bgfx_submit(mpass.viewid_ or shader.viewid, 
+    bgfx.bgfx_submit(mpass.viewid_ or shader.viewid,
                      shader.program, 0, false)
 end
 
 function MultiPass:render(params)
     if self.globals then self.globals:bind() end
+
+    if params.view then
+        self.viewid_ = params.view
+    end
+
+    if params.rendertarget then
+        params.rendertarget:bindToView(self.viewid_)
+    end
 
     if params.camera then
         params.camera:setViewMatrices(self.viewid_)

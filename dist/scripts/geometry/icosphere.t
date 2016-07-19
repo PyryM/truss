@@ -1,5 +1,5 @@
 -- icosphere.t
--- 
+--
 -- generates an icosphere
 
 local m = {}
@@ -74,14 +74,12 @@ end
 -- creates a basic icosphere StaticGeometry with a
 -- position + normal vertex layout
 function m.icosphereGeo(rad, subdivisions, gname)
+    local gfx = require("gfx")
     local geoutils = require("geometry/geoutils.t")
-    local StaticGeometry = require("gfx/geometry.t").StaticGeometry
     local sphereData = m.icosphereData(rad, subdivisions)
     geoutils.computeNormals(sphereData)
-    local vertexdefs = require("gfx/vertexdefs.t")
-    local vertInfo = vertexdefs.createStandardVertexType({"position", 
-                                                          "normal"})
-    return StaticGeometry(gname):fromData(vertInfo, sphereData)
+    local vertInfo = gfx.createStandardVertexType({"position", "normal"})
+    return gfx.StaticGeometry(gname):fromData(vertInfo, sphereData)
 end
 
 return m

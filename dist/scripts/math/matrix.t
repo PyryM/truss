@@ -22,7 +22,7 @@ terra m.rotateXY(mat: &float, ax: float, ay: float)
     var cy = CMath.cosf(ay)
 
     mat[ 0] = cy
-    mat[ 1] = 0.0f 
+    mat[ 1] = 0.0f
     mat[ 2] = sy
     mat[ 3] = 0.0f
     mat[ 4] = sx*sy
@@ -53,7 +53,7 @@ terra m.projXYWH(mat: &float, x: float, y: float, width: float, height: float, n
     mat[14] = bb
 end
 
-terra m.projFrustum(mat: &float,
+terra m.projFrustumGL(mat: &float,
                     left: float, right: float,
                     bottom: float, top: float,
                     near: float, far: float)
@@ -66,8 +66,21 @@ terra m.projFrustum(mat: &float,
     mat[14] = -2 * far * near / (far - near)
 end
 
+terra m.projFrustum(mat: &float,
+                    left: float, right: float,
+                    bottom: float, top: float,
+                    near: float, far: float)
+    mat[ 0] = 2.0*near / (right - left)
+    mat[ 5] = 2.0*near / (top - bottom)
+    mat[ 8] = (right + left) / (right - left)
+    mat[ 9] = (top + bottom) / (top - bottom)
+    mat[10] = -far / (far - near)
+    mat[11] = -1.0
+    mat[14] = -far * near / (far - near)
+end
+
 terra m.setIdentity(mat: &float)
-    mat[ 0], mat[ 1], mat[ 2], mat[ 3] = 1.0f, 0.0f, 0.0f, 0.0f 
+    mat[ 0], mat[ 1], mat[ 2], mat[ 3] = 1.0f, 0.0f, 0.0f, 0.0f
     mat[ 4], mat[ 5], mat[ 6], mat[ 7] = 0.0f, 1.0f, 0.0f, 0.0f
     mat[ 8], mat[ 9], mat[10], mat[11] = 0.0f, 0.0f, 1.0f, 0.0f
     mat[12], mat[13], mat[14], mat[15] = 0.0f, 0.0f, 0.0f, 1.0f
@@ -134,15 +147,15 @@ terra m.zeroMatrix(dest: &float)
 end
 
 function m.toRad(deg)
-    return deg * math.pi / 180.0 
+    return deg * math.pi / 180.0
 end
 
-function m.makeProjMat(mat, fovy, aspect, near, far)
+function m.makeProjMat(mat, fovy, aspect, near, far, isGL)
     local vheight = 2.0 * near * math.tan(m.toRad(fovy)*0.5)
     local vwidth  = vheight * aspect
-    m.projFrustum(mat, -vwidth/2.0, vwidth/2.0,
-                       -vheight/2.0, vheight/2.0,
-                        near, far)
+    local pfunc = m.projFrustum
+    if isGL then pfunc = m.projFrustumGL end
+    pfunc(mat, -vwidth/2.0, vwidth/2.0, -vheight/2.0, vheight/2.0, near, far)
 end
 
 function m.makeTiledProjection(mat, fovy, aspect, near, far, gwidth, gheight, gxidx, gyidx)
@@ -171,7 +184,7 @@ terra m.setMatrixFromQuat(mat: &float, quat: &vec4_)
     var z = quat.z
     var w = quat.w
 
-    var x2 = x + x 
+    var x2 = x + x
     var y2 = y + y
     var z2 = z + z
     var xx = x * x2
@@ -287,6 +300,18 @@ terra m.multiplyMatrixScalar(mat: &float, scale: float)
     end
 end
 
+-- transposes a matrix in place
+terra m.transposeMatrix(a: &float)
+    var      a12, a13, a14 =         a[ 4 ], a[ 8 ], a[ 12 ]
+    var a21,      a23, a24 = a[ 1 ],         a[ 9 ], a[ 13 ]
+    var a31, a32,      a34 = a[ 2 ], a[ 6 ],         a[ 14 ]
+    var a41, a42, a43      = a[ 3 ], a[ 7 ], a[ 11 ]
+            a[ 4 ], a[ 8 ], a[ 12 ] =      a21, a31, a41
+    a[ 1 ],         a[ 9 ], a[ 13 ] = a12,      a32, a42
+    a[ 2 ], a[ 6 ],         a[ 14 ] = a13, a23,      a43
+    a[ 3 ], a[ 7 ], a[ 11 ]         = a14, a24, a34
+end
+
 -- gets the inverse of a 4x4 matrix
 -- safe to use in place (src == dest)
 terra m.getMatrixInverse(dest: &float, src: &float)
@@ -392,11 +417,24 @@ function Matrix4:clone()
     return ret
 end
 
+function Matrix4:fromCArray(arr)
+    -- both arrays are zero indexed
+    for i = 0,15 do
+        self.data[i] = arr[i]
+    end
+    return self
+end
+
 function Matrix4:fromArray(arr)
     for i = 1,16 do
         -- self.data is zero indexed
-        self.data[i-1] = arr[i] 
+        self.data[i-1] = arr[i]
     end
+    return self
+end
+
+function Matrix4:transpose()
+    m.transposeMatrix(self.data)
     return self
 end
 
@@ -423,12 +461,8 @@ function Matrix4:toQuaternion()
     return qret
 end
 
-function Matrix4:scale(sx, sy, sz)
-    -- if sy or sz are not provided, assume uniform
-    -- scaling (sx == sy == sz)
-    sy = sy or sx
-    sz = sz or sx
-    m.scaleMatrix(self.data, sx, sy, sz)
+function Matrix4:scale(scaleVec)
+    m.scaleMatrix(self.data, scaleVec.elem)
     return self
 end
 
@@ -437,7 +471,12 @@ function Matrix4:setTranslation(posVec)
     return self
 end
 
--- takes a translation (vec3), rotation (quaternion), and scale (vec3) and 
+function Matrix4:makeTranslation(v)
+    self:identity()
+    return self:setTranslation(v)
+end
+
+-- takes a translation (vec3), rotation (quaternion), and scale (vec3) and
 -- and composes them together into one 4x4 transformation
 function Matrix4:compose(posVec, rotationQuat, scaleVec)
     local destmat = self.data
@@ -464,9 +503,16 @@ function Matrix4:invert(src)
 end
 
 -- matrix multiplication:
--- self = self * b
-function Matrix4:multiply(b)
-    m.multiplyMatrices(self.data, self.data, b.data)
+-- if one argument is provided,
+-- self = self * a
+-- if two arguments are provided,
+-- self = a * b
+function Matrix4:multiply(a, b)
+    if b == nil then
+        m.multiplyMatrices(self.data, self.data, a.data)
+    else
+        m.multiplyMatrices(self.data, a.data, b.data)
+    end
     return self
 end
 
@@ -507,6 +553,25 @@ function Matrix4:getColumn(idx, dest)
     return dest
 end
 
+function Matrix4:setColumn(idx, src)
+    if idx <= 0 or idx > 4 then
+        log.error("Error: Matrix4:getColumn expects index in range [1,4], got " .. idx)
+        return nil
+    end
+    local s = (idx-1)*4
+    local d = self.data
+    local e = src.elem
+    d[s], d[s+1], d[s+2], d[s+3] = e.x, e.y, e.z, e.w
+    return self
+end
+
+function Matrix4:fromBasis(basisVecList)
+    for columnIdx, basisVec in ipairs(basisVecList) do
+        self:setColumn(columnIdx, basisVec)
+    end
+    return self
+end
+
 function Matrix4:prettystr()
     local ret = "Matrix4 {"
     local data = self.data
@@ -524,14 +589,24 @@ function Matrix4:prettystr()
     return ret
 end
 
+function Matrix4:fromPrettyArray(parr)
+    local data = self.data
+    -- column major
+    for row = 0,3 do
+        local p = row
+        local src = parr[p+1]
+        data[p], data[p+4], data[p+8], data[p+12] = src[1],src[2],src[3],src[4]
+    end
+end
+
 function Matrix4:__tostring()
     return self:prettystr()
 end
 
 -- fovy in degrees
-function Matrix4:makeProjection(fovy, aspect, near, far)
+function Matrix4:makeProjection(fovy, aspect, near, far, isGL)
     self:zero()
-    m.makeProjMat(self.data, fovy, aspect, near, far)
+    m.makeProjMat(self.data, fovy, aspect, near, far, isGL)
     return self
 end
 

@@ -4,6 +4,9 @@
 #include "addons/sdl/sdl_addon.h"
 #include "addons/nanovg/nanovg_addon.h"
 #include "addons/wsclient/wsclient_addon.h"
+#if defined(WIN32)
+#include "addons/openvr/openvr_addon.h"
+#endif
 #include <iostream>
 #include <sstream>
 
@@ -46,7 +49,7 @@ int main(int argc, char** argv) {
 	truss_test();
 	truss_log(0, "Entered main!");
 	storeArgs(argc, argv);
-		
+
 	// set up physFS filesystem
 	truss::core()->initFS(argv[0], true); // mount the base directory
 	truss::core()->setWriteDir("save");   // write into basedir/save/
@@ -56,15 +59,17 @@ int main(int argc, char** argv) {
 	interpreter->attachAddon(new SDLAddon);
 	interpreter->attachAddon(new NanoVGAddon);
 	interpreter->attachAddon(new WSClientAddon);
+#if defined(WIN32)
+	interpreter->attachAddon(new OpenVRAddon);
+#endif
 	truss_log(0, "Starting interpreter!");
 	// startUnthreaded starts the interpreter in the current thread,
 	// which means the call will block until the interpreter is stopped
 	//interpreter->startUnthreaded("examples/dart_gui_test.t");
 	if (argc > 1) {
 		interpreter->startUnthreaded(argv[1]);
-	}
-	else {
-		interpreter->startUnthreaded("examples/dart_gui_test.t");
+	} else {
+		std::cout << "Usage: truss [script]" << std::endl;
 	}
 	return 0;
 }

@@ -84,8 +84,8 @@ function OrbitCameraRig:panOrbitPoint(dx, dy)
     self:updateMatrix_()
     -- pan using basis vectors from rotation matrix
     -- Note that Matrix4:getColumn is 1-indexed
-    local basisX = target.matrix:getColumn(1)
-    local basisY = target.matrix:getColumn(2)
+    local basisX = self.target.matrix:getColumn(1)
+    local basisY = self.target.matrix:getColumn(2)
 
     -- orbitpoint += (bx*dx + by*dy)
     basisX:multiplyScalar(dx)

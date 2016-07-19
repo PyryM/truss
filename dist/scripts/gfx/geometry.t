@@ -97,8 +97,8 @@ function TransientGeometry:fullScreenTri(width, height, originBottomLeft, vinfo)
     local maxy =  height*2.0
     local minu = -1.0
     local maxu =  1.0
-    local minv =  0.0
-    local maxv =  2.0
+    local minv =  1.0 --v coordinate is flipped to account for texture coords
+    local maxv = -1.0
 
     if originBottomLeft then
         minv, maxv = 1, -1
@@ -147,25 +147,25 @@ function m.makeFastTransientQuadFunc(vinfo)
         vertex[0].position[1] = y0
         vertex[0].position[2] = z
         vertex[0].texcoord0[0] = 0.0
-        vertex[0].texcoord0[1] = 0.0
+        vertex[0].texcoord0[1] = 1.0
 
         vertex[1].position[0] = x1
         vertex[1].position[1] = y0
         vertex[1].position[2] = z
         vertex[1].texcoord0[0] = 1.0
-        vertex[1].texcoord0[1] = 0.0
+        vertex[1].texcoord0[1] = 1.0
 
         vertex[2].position[0] = x1
         vertex[2].position[1] = y1
         vertex[2].position[2] = z
         vertex[2].texcoord0[0] = 1.0
-        vertex[2].texcoord0[1] = 1.0
+        vertex[2].texcoord0[1] = 0.0
 
         vertex[3].position[0] = x0
         vertex[3].position[1] = y1
         vertex[3].position[2] = z
         vertex[3].texcoord0[0] = 0.0
-        vertex[3].texcoord0[1] = 1.0
+        vertex[3].texcoord0[1] = 0.0
 
         var indexb: &uint16 = [&uint16](ib.data)
         indexb[0] = 0
@@ -191,16 +191,16 @@ function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
     local vs = self.verts
     local v0,v1,v2,v3 = vs[0],vs[1],vs[2],vs[3]
     v0.position[0], v0.position[1], v0.position[2] = x0, y0, z
-    v0.texcoord0[0], v0.texcoord0[1] = 0.0, 0.0
+    v0.texcoord0[0], v0.texcoord0[1] = 0.0, 1.0
 
     v1.position[0], v1.position[1], v1.position[2] = x1, y0, z
-    v1.texcoord0[0], v1.texcoord0[1] = 1.0, 0.0
+    v1.texcoord0[0], v1.texcoord0[1] = 1.0, 1.0
 
     v2.position[0], v2.position[1], v2.position[2] = x1, y1, z
-    v2.texcoord0[0], v2.texcoord0[1] = 1.0, 1.0
+    v2.texcoord0[0], v2.texcoord0[1] = 1.0, 0.0
 
     v3.position[0], v3.position[1], v3.position[2] = x0, y1, z
-    v3.texcoord0[0], v3.texcoord0[1] = 0.0, 1.0
+    v3.texcoord0[0], v3.texcoord0[1] = 0.0, 0.0
 
     local idx = self.indices
     idx[0], idx[1], idx[2] = 0, 1, 2

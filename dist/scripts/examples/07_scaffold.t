@@ -4,22 +4,23 @@
 
 local AppScaffold = require("utils/appscaffold.t").AppScaffold
 local icosphere = require("geometry/icosphere.t")
+local cube = require("geometry/cube.t")
 local pbr = require("shaders/pbr.t")
-local Object3D = require('gfx/object3d.t').Object3D
-local orbitcam = require('gui/orbitcam.t')
+local gfx = require("gfx")
+local orbitcam = require("gui/orbitcam.t")
 
-function randu(magnitude)
-    return (math.random() * 2.0 - 1.0)*(magnitude or 1.0)
-end
+function randu(mag) return (math.random() * 2.0 - 1.0)*(mag or 1.0) end
 
 function createGeometry()
-    local geo = icosphere.icosphereGeo(0.5, 3, "sphere")
+    local cylinder = require("geometry/cylinder.t")
+    --local geo = cube.cubeGeo(1.0, 1.0, 1.0, "cube")
+    local geo = cylinder.cylinderGeo(0.5, 2.0, 20, true, "cylinder")
     local mat = pbr.PBRMaterial("solid"):roughness(0.8):tint(0.1,0.1,0.1)
 
-    local nspheres = 5000
-    for i = 1,nspheres do
-        local sphere = Object3D(geo, mat)
+    for i = 1,5000 do
+        local sphere = gfx.Object3D(geo, mat)
         sphere.position:set(randu(5), randu(5), randu(5))
+        sphere.quaternion:fromEuler({x = randu(), y = randu(), z = randu()})
         sphere:updateMatrix()
         app.scene:add(sphere)
     end

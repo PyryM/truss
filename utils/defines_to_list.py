@@ -11,7 +11,7 @@ def translate_lines(lines):
         m = patt_define.match(sline)
         macro_match = patt_func_macro.match(sline)
         if macro_match:
-            print("ignoring {}".format(m.groups()[0]))
+            print("ignoring '{}'".format(sline))
         elif m and not "HEADER_GUARD" in m.groups()[0]:
             tokens.append('"{}"'.format(m.groups()[0]))
 

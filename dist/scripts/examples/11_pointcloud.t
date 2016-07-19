@@ -7,14 +7,11 @@ local webconsole = require("devtools/webconsole.t")
 --webconsole.start()
 
 local AppScaffold = require("utils/appscaffold.t").AppScaffold
+local gfx = require("gfx")
 local pbr = require("shaders/pbr.t")
-local Object3D = require('gfx/object3d.t').Object3D
-local StaticGeometry = require('gfx/geometry.t').StaticGeometry
-local vdefs = require('gfx/vertexdefs.t')
 local line = require('geometry/line.t')
 local grid = require('geometry/grid.t')
 local pcloud = require('geometry/pointcloud.t')
-local tex = require('gfx/texture.t')
 local stringutils = require('utils/stringutils.t')
 
 function createGeometry()
@@ -25,7 +22,7 @@ function createGeometry()
 
     pwidth = 128*2
     pheight = 106*2
-    ptex = tex.MemTexture(pwidth, pheight)
+    ptex = gfx.MemTexture(pwidth, pheight)
     thecloud = pcloud.PointCloudObject(pwidth, pheight)
     thecloud:setPlaneSize(0.7*2,0.57*2)
     thecloud:setPointSize(0.004)
@@ -89,15 +86,16 @@ function init()
                        usenvg = false})
     app.preRender = preRender
 
-    rotator = Object3D()
+    rotator = gfx.Object3D()
     app.scene:add(rotator)
     rotator:add(app.camera)
 
     app.camera.position:set(0.0, 0.2, 0.75)
     app.camera:updateMatrix()
 
-    app.pipeline:addShader("line", line.LineShader("vs_line", "fs_line_depth"))
-    app.pipeline:addShader("pointcloud", pcloud.PointCloudShader(true))
+    local fpass = app.pipeline.stages.forwardpass
+    fpass:addShader("line", line.LineShader("vs_line", "fs_line_depth"))
+    fpass:addShader("pointcloud", pcloud.PointCloudShader(true))
 
     createGeometry()
 end

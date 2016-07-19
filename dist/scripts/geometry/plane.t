@@ -51,4 +51,11 @@ function m.planeData(width, height, wdivs, hdivs)
             }
 end
 
+function m.planeGeo(width, height, wdivs, hdivs, gname)
+    local gfx = require("gfx")
+    local planeData = m.planeData(width, height, wdivs, hdivs)
+    local vertInfo = gfx.createStandardVertexType({"position", "normal", "texcoord0"})
+    return gfx.StaticGeometry(gname):fromData(vertInfo, planeData)
+end
+
 return m
