@@ -49,7 +49,7 @@ endif()
 ExternalProject_Add(bgfx_EXTERNAL
     DEPENDS bx_EXTERNAL
     GIT_REPOSITORY "https://github.com/PyryM/bgfx.git"
-    GIT_TAG "3d6307521b810de1c0643340e5fb4d9f28cf6e3b"
+    GIT_TAG "80bfda47b39ad4b1ff6d37deba19f969983510f5"
     CONFIGURE_COMMAND ${bgfx_CONFIGURE_COMMAND}
     BUILD_COMMAND ${bgfx_BUILD_COMMAND}
     INSTALL_COMMAND ""
