@@ -21,6 +21,7 @@ function AppScaffold:init(options)
     self.height = options.height or 720
     self.quality = options.quality or 1.0 -- highest quality by default
     self.title = options.title or 'truss'
+    self.requestedRenderer = options.renderer
 
     self.frame = 0
     self.time = 0.0
@@ -49,8 +50,13 @@ function AppScaffold:initBGFX()
 
     --local cbInterfacePtr = sdl.truss_sdl_get_bgfx_cb(sdlPointer)
     local cbInterfacePtr = nil
+    local rendererType = bgfx.BGFX_RENDERER_TYPE_COUNT
+    if self.requestedRenderer then
+        local rname = "BGFX_RENDERER_TYPE_" .. string.upper(self.requestedRenderer)
+        rendererType = bgfx[rname]
+    end
 
-    bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
+    bgfx.bgfx_init(rendererType, 0, 0, cbInterfacePtr, nil)
     bgfx.bgfx_reset(self.width, self.height, reset)
 
     -- Enable debug text.
