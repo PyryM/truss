@@ -1,5 +1,10 @@
 docs/
 build/
+data/
+dump/
+models/
+temp/
+old_scripts/
 *.exe
 *.pdb
 *.idb
