@@ -1,6 +1,7 @@
 -- gfx/blitstage.t
 --
 -- a stage to perform a blit operation
+
 local class = require("class")
 local Queue = require("utils/queue.t").Queue
 local m = {}

@@ -21,7 +21,9 @@ function AppScaffold:init(options)
     self.height = options.height or 720
     self.quality = options.quality or 1.0 -- highest quality by default
     self.title = options.title or 'truss'
-    self.requestedRenderer = options.renderer
+    if options.renderer then
+        self.requestedRenderer = string.upper(options.renderer)
+    end
 
     self.frame = 0
     self.time = 0.0
@@ -52,7 +54,7 @@ function AppScaffold:initBGFX()
     local cbInterfacePtr = nil
     local rendererType = bgfx.BGFX_RENDERER_TYPE_COUNT
     if self.requestedRenderer then
-        local rname = "BGFX_RENDERER_TYPE_" .. string.upper(self.requestedRenderer)
+        local rname = "BGFX_RENDERER_TYPE_" .. self.requestedRenderer
         rendererType = bgfx[rname]
     end
 

@@ -150,12 +150,12 @@ function m.toRad(deg)
     return deg * math.pi / 180.0
 end
 
-function m.makeProjMat(mat, fovy, aspect, near, far)
+function m.makeProjMat(mat, fovy, aspect, near, far, isGL)
     local vheight = 2.0 * near * math.tan(m.toRad(fovy)*0.5)
     local vwidth  = vheight * aspect
-    m.projFrustum(mat, -vwidth/2.0, vwidth/2.0,
-                       -vheight/2.0, vheight/2.0,
-                        near, far)
+    local pfunc = m.projFrustum
+    if isGL then pfunc = m.projFrustumGL end
+    pfunc(mat, -vwidth/2.0, vwidth/2.0, -vheight/2.0, vheight/2.0, near, far)
 end
 
 function m.makeTiledProjection(mat, fovy, aspect, near, far, gwidth, gheight, gxidx, gyidx)
@@ -604,9 +604,9 @@ function Matrix4:__tostring()
 end
 
 -- fovy in degrees
-function Matrix4:makeProjection(fovy, aspect, near, far)
+function Matrix4:makeProjection(fovy, aspect, near, far, isGL)
     self:zero()
-    m.makeProjMat(self.data, fovy, aspect, near, far)
+    m.makeProjMat(self.data, fovy, aspect, near, far, isGL)
     return self
 end
 
