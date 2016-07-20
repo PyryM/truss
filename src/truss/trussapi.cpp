@@ -51,6 +51,11 @@ int truss_save_file(const char* filename, truss_message* data) {
     return 0; // TODO: actually check for errors
 }
 
+int truss_save_data(const char* filename, const char* data, unsigned int datalength) {
+	Core::getCore()->saveData(filename, data, datalength);
+	return 0;
+}
+
 int truss_add_fs_path(const char* path, const char* mountpath, int append) {
     core()->addFSPath(path, mountpath, append);
     return 0;

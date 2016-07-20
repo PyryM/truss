@@ -42,6 +42,7 @@ uint64_t truss_get_hp_freq();
 int truss_check_file(const char* filename);
 truss_message* truss_load_file(const char* filename);
 int truss_save_file(const char* filename, truss_message* data);
+int truss_save_data(const char* filename, const char* data, unsigned int datalength);
 int truss_add_fs_path(const char* path, const char* mountpath, int append);
 int truss_set_fs_savedir(const char* path);
 truss_message* truss_get_store_value(const char* key);
@@ -132,7 +133,7 @@ end
 -- to get reasonable error messages), so we have to perform this workaround
 -- to use the lower-level terralib.load which does take a name
 local function loadNamed(str, strname)
-	-- create a function which returns str on the first call 
+	-- create a function which returns str on the first call
 	-- and nil on the second (to let terralib.load know it is done)
 	local s = str
 	local loaderfunc = function()
@@ -171,7 +172,7 @@ function truss_import(filename, force)
 			loadedLibs[filename] = modulefunc()
 			import_nest_level = import_nest_level - 1
 			local dt = toc(t0) * 1000.0
-			log.info(makeindent(import_nest_level) .. 
+			log.info(makeindent(import_nest_level) ..
 							"Loaded library [" .. filename .. "]" ..
 							" in " .. dt .. " ms")
 		else
@@ -286,7 +287,7 @@ function _addPaths()
 			local mountPath = execArgs[i+2]
 			log.info("Adding path " .. physicalPath ..
 					 " => " .. mountPath)
-			truss.truss_add_fs_path(physicalPath, 
+			truss.truss_add_fs_path(physicalPath,
 								  mountPath,
 								  0)
 		end
@@ -307,7 +308,7 @@ function _coreInit(argstring)
 	end
 	setfenv(scriptfunc, subenv)
 	scriptfunc()
-	subenv.init()	
+	subenv.init()
 	local delta = toc(t0)
 	log.info("Time to init: " .. delta)
 end
