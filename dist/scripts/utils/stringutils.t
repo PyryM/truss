@@ -122,11 +122,20 @@ end
 function ByteBuffer:append(s)
     self.cursize_ = m.helperBuffAppendStr_(s, s:len(),
                         self.data_, self.cursize_, self.maxbuffsize_)
+    return self
 end
 
 function ByteBuffer:appendBytes(b, nbytes)
     self.cursize_ = m.helperBuffAppend_(b, nbytes,
                         self.data_, self.cursize_, self.maxbuffsize_)
+    return self
+end
+
+function ByteBuffer:appendStruct(obj, objsize)
+    local data = terralib.cast(&uint8, obj)
+    self.cursize_ = m.helperBuffAppend_(data, objsize,
+                        self.data_, self.cursize_, self.maxbuffsize_)
+    return self
 end
 
 function ByteBuffer:__tostring()
