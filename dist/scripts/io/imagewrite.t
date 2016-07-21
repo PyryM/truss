@@ -36,6 +36,21 @@ function m.createTGA(imWidth, imHeight, imData, bbDest)
     return bb
 end
 
+function m.flipRGBAVertical(imW, imH, imData)
+    local ipos = 0
+    local mid = math.floor(imH / 2)
+    local rowsize = imW*4
+    for r = 0,mid do
+        local rMirrored = imH - r
+        local p0 = r*imW*4
+        local p1 = rMirrored*imW*4
+        for c = 0,rowsize do
+            local a,b = p0+c, p1+c
+            imData[a], imData[b] = imData[b], imData[a]
+        end
+    end
+end
+
 function m.writeTGA(imW, imH, imData, filename)
     local bb = m.createTGA(imW, imH, imData)
     bb:writeToFile(filename)
