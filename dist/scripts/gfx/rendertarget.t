@@ -11,6 +11,7 @@ local RenderTarget = class("RenderTarget")
 m.ColorFormats = {
     default   = bgfx.BGFX_TEXTURE_FORMAT_BGRA8,
     BGRA8     = bgfx.BGFX_TEXTURE_FORMAT_BGRA8,
+    RGBA8     = bgfx.BGFX_TEXTURE_FORMAT_RGBA8,
     UINT8     = bgfx.BGFX_TEXTURE_FORMAT_BGRA8,
     HALFFLOAT = bgfx.BGFX_TEXTURE_FORMAT_RGBA16F,
     FLOAT     = bgfx.BGFX_TEXTURE_FORMAT_RGBA32F
@@ -18,6 +19,7 @@ m.ColorFormats = {
 
 m.ColorFormatSizes = {
     [bgfx.BGFX_TEXTURE_FORMAT_BGRA8] = 4,
+    [bgfx.BGFX_TEXTURE_FORMAT_RGBA8] = 4,
     [bgfx.BGFX_TEXTURE_FORMAT_RGBA16F] = 8,
     [bgfx.BGFX_TEXTURE_FORMAT_RGBA32F] = 16
 }
@@ -44,6 +46,7 @@ end
 
 function RenderTarget:makeRGB8(depthBits, hasStencil)
     return self:makeRGB(m.ColorFormats.BGRA8, depthBits, hasStencil)
+    --return self:makeRGB(m.ColorFormats.RGBA8, depthBits, hasStencil)
 end
 
 function RenderTarget:makeRGBF(depthBits, hasStencil)
@@ -167,15 +170,16 @@ function RenderTarget:duplicate(finalize)
 end
 
 -- create a texture that can be blitted into and a buffer to hold the data
-function RenderTarget:createReadBackBuffers(attachmentIdx)
-    local attachment = self.attachments[attachmentIdx]
-    local ainfo = self.constructionArgs_[attachmentIdx]
+function RenderTarget:createReadBackBuffer(idx)
+    log.debug("Creating readbuffer for attachment " .. idx)
+    local ainfo = self.constructionArgs_[idx]
 
     local w, h, fmt = ainfo[1], ainfo[2], ainfo[4]
     local pixelsize = m.ColorFormatSizes[fmt]
     local datasize = w*h*pixelsize
 
     local flags = math.combineFlags(
+        --bc.BGFX_TEXTURE_RT,
         bc.BGFX_TEXTURE_BLIT_DST,
         bc.BGFX_TEXTURE_READ_BACK,
         bc.BGFX_TEXTURE_MIN_POINT,
@@ -183,11 +187,22 @@ function RenderTarget:createReadBackBuffers(attachmentIdx)
         bc.BGFX_TEXTURE_MIP_POINT,
         bc.BGFX_TEXTURE_U_CLAMP,
         bc.BGFX_TEXTURE_V_CLAMP )
+    log.info("Flags: " .. tostring(flags))
 
-    local tex = bgfx.bgfx_create_texture_2d(w, h, 1, fmt, flags, nil)
+    local dest = bgfx.bgfx_create_texture_2d(w, h, 1, fmt, flags, nil)
     local buffer = truss.truss_create_message(datasize)
+    local src = self.attachments[idx]
 
-    return {tex = tex, buffer = buffer}
+    return {src = src, dest = dest, buffer = buffer}
+end
+
+-- convenience function to avoid repeatedly creating the same buffer
+function RenderTarget:getReadBackBuffer(idx)
+    if self.readbuffers_ == nil then self.readbuffers_ = {} end
+    if self.readbuffers_[idx] == nil then
+        self.readbuffers_[idx] = self:createReadBackBuffer(idx)
+    end
+    return self.readbuffers_[idx]
 end
 
 function RenderTarget:destroy()

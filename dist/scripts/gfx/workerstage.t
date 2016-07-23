@@ -27,7 +27,7 @@ function WorkerStage:render(context)
     -- inidicate to job completed last frame that it has rendered
     if self.cbqueue_:length() > 0 then
         local cb = self.cbqueue_:pop()
-        if cb.finished then cb:finished(self) end
+        if cb.finish then cb:finish(self) end
     end
 
     if self.queue_:length() <= 0 then return end

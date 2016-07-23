@@ -49,6 +49,8 @@ public:
     truss_message* loadFileRaw(const char* filename);
     void saveFile(const char* filename, truss_message* data);
     void saveFileRaw(const char* filename, truss_message* data);
+	void saveData(const char* filename, const char* data, unsigned int datalength);
+	void saveDataRaw(const char* filename, const char* data, unsigned int datalength);
 
     truss_message* getStoreValue(const std::string& key);
     int setStoreValue(const std::string& key, truss_message* val);

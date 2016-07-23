@@ -2,6 +2,7 @@
 --
 -- useful string manipulation utils
 
+local class = require("class")
 local m = {}
 
 -- Split text into a list consisting of the strings in text,
@@ -88,4 +89,70 @@ function m.b64decodeRaw(src, srclen, dest, destlen)
     return m.b64decode_terra(src, srclen, dest, destlen, b64lut_)
 end
 
+local ByteBuffer = class("ByteBuffer")
+function ByteBuffer:init(maxsize)
+    self.data_ = terralib.new(uint8[maxsize])
+    self.maxbuffsize_ = maxsize
+    self.cursize_ = 0
+end
+
+terra m.helperFileWrite_(fn: &int8, data: &uint8, datalen: uint32)
+    var temp_ptr: &int8 = [&int8](data)
+    truss.truss_save_data(fn, temp_ptr, datalen)
+end
+
+terra m.helperBuffAppend_(src: &uint8, srclen: uint32,
+                          dest: &uint8, destpos: uint32, destsize: uint32) : uint32
+    var d: uint32 = destpos
+    var s: uint32 = 0
+    while (d < destsize) and (s < srclen) do
+        dest[d] = src[s]
+        s = s + 1
+        d = d + 1
+    end
+    return d
+end
+
+terra m.helperBuffAppendStr_(src: &int8, srclen: uint32,
+                    dest: &uint8, destpos: uint32, destsize: uint32) : uint32
+    var usrc: &uint8 = [&uint8](src)
+    return m.helperBuffAppend_(usrc, srclen, dest, destpos, destsize)
+end
+
+function ByteBuffer:append(s)
+    self.cursize_ = m.helperBuffAppendStr_(s, s:len(),
+                        self.data_, self.cursize_, self.maxbuffsize_)
+    return self
+end
+
+function ByteBuffer:appendBytes(b, nbytes)
+    self.cursize_ = m.helperBuffAppend_(b, nbytes,
+                        self.data_, self.cursize_, self.maxbuffsize_)
+    return self
+end
+
+function ByteBuffer:appendStruct(obj, objsize)
+    local data = terralib.cast(&uint8, obj)
+    self.cursize_ = m.helperBuffAppend_(data, objsize,
+                        self.data_, self.cursize_, self.maxbuffsize_)
+    return self
+end
+
+function ByteBuffer:__tostring()
+    return ffi.string(self.data_, self.cursize_)
+end
+
+function ByteBuffer:length()
+    return self.cursize_
+end
+
+function ByteBuffer:clear()
+    self.cursize_ = 0
+end
+
+function ByteBuffer:writeToFile(filename)
+    truss.truss_save_data(filename, self.data_, self.cursize_)
+end
+
+m.ByteBuffer = ByteBuffer
 return m

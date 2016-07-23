@@ -65,6 +65,7 @@ TRUSS_C_API uint64_t truss_get_hp_freq();
 TRUSS_C_API int truss_check_file(const char* filename); /* returns 1 if file exists, 2 if directory, 0 otherwise */
 TRUSS_C_API truss_message* truss_load_file(const char* filename);
 TRUSS_C_API int truss_save_file(const char* filename, truss_message* data);
+TRUSS_C_API int truss_save_data(const char* filename, const char* data, unsigned int datalength);
 TRUSS_C_API int truss_add_fs_path(const char* path, const char* mountpath, int append);
 TRUSS_C_API int truss_set_fs_savedir(const char* path);
 

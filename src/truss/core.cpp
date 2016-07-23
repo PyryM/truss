@@ -209,23 +209,31 @@ truss_message* Core::loadFile(const char* filename) {
     return ret;
 }
 
-void Core::saveFile(const char* filename, truss_message* data) {
-    if (!physFSInitted_) {
-        logMessage(TRUSS_LOG_ERROR, "Cannot save file; PhysFS not initted.");
-        logMessage(TRUSS_LOG_ERROR, filename);
-        return;
-    }
+void Core::saveData(const char* filename, const char* data, unsigned int datalength) {
+	if (!physFSInitted_) {
+		logMessage(TRUSS_LOG_ERROR, "Cannot save file; PhysFS not initted.");
+		logMessage(TRUSS_LOG_ERROR, filename);
+		return;
+	}
 
-    PHYSFS_file* myfile = PHYSFS_openWrite(filename);
-    PHYSFS_write(myfile, data->data, 1, data->data_length);
-    PHYSFS_close(myfile);
+	PHYSFS_file* myfile = PHYSFS_openWrite(filename);
+	PHYSFS_write(myfile, data, 1, datalength);
+	PHYSFS_close(myfile);
+}
+
+void Core::saveDataRaw(const char* filename, const char* data, unsigned int datalength) {
+	std::ofstream outfile;
+	outfile.open(filename, std::ios::binary | std::ios::out);
+	outfile.write(data, datalength);
+	outfile.close();
+}
+
+void Core::saveFile(const char* filename, truss_message* data) {
+	saveData(filename, (char*)(data->data), data->data_length);
 }
 
 void Core::saveFileRaw(const char* filename, truss_message* data) {
-    std::ofstream outfile;
-    outfile.open(filename, std::ios::binary | std::ios::out);
-    outfile.write((char*)(data->data), data->data_length);
-    outfile.close();
+	saveDataRaw(filename, (char*)(data->data), data->data_length);
 }
 
 truss_message* Core::getStoreValue(const std::string& key) {

@@ -53,6 +53,27 @@ function MultiShaderStage:addShader(name, shader)
     end
 end
 
+local function renderObjectG_(obj, mpass)
+    local shaders = mpass.shaders_
+
+    if not obj.active or not obj.material or not obj.geo then
+        return
+    end
+
+    local objmat = obj.material
+    local shader = shaders[objmat.shadername] or shaders.default
+    if not shader then return end
+
+    if mpass.tempglobals_ then mpass.tempglobals_:bind() end
+    if shader.uniforms then shader.uniforms:tableSet(objmat):bind() end
+    obj.geo:bind()
+    bgfx.bgfx_set_transform(obj.matrixWorld.data, 1)
+    bgfx.bgfx_set_state(shader.state or bgfx_const.BGFX_STATE_DEFAULT,
+                        shader.stateRGB or 0)
+    bgfx.bgfx_submit(mpass.viewid_ or shader.viewid,
+                     shader.program, 0, false)
+end
+
 local function renderObject_(obj, mpass)
     local shaders = mpass.shaders_
 
@@ -76,6 +97,7 @@ end
 function MultiShaderStage:render(context)
     local globals = context.globals or self.globals
     if globals then globals:bind() end
+    self.tempglobals_ = globals
 
     if self.target then
         self.target:bindToView(self.viewid_)
@@ -86,7 +108,11 @@ function MultiShaderStage:render(context)
     end
 
     if context.scene then
-        context.scene:map(renderObject_, self)
+        if self.options_.hack_forcePerSubmitGlobals then
+            context.scene:map(renderObjectG_, self)
+        else
+            context.scene:map(renderObject_, self)
+        end
     end
 end
 
