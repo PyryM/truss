@@ -572,6 +572,26 @@ function Matrix4:fromBasis(basisVecList)
     return self
 end
 
+local tx, ty, tz
+function Matrix4:lookAt(point, up)
+    local Vector = require("math").Vector
+    tx = tx or Vector()
+    ty = ty or Vector()
+    tz = tz or Vector()
+    self:getColumn(4, tz)
+    tz:sub(point):normalize3d()
+    if up then
+        ty:copy(up):normalize3d()
+    else
+        ty:set(0.0, 1.0, 0.0)
+    end
+    tx:crossVecs(ty, tz)
+    ty:crossVecs(tz, tx)
+    self:setColumn(1, tx)
+    self:setColumn(2, ty)
+    self:setColumn(3, tz)
+end
+
 function Matrix4:prettystr()
     local ret = "Matrix4 {"
     local data = self.data
