@@ -48,7 +48,6 @@ void NanoVGAddon::update(double dt) {
 
 // loads an image
 truss_message* NanoVGAddon::loadImage(const char* filename, int& width, int& height, int& numChannels) {
-	std::cout << "Loading " << filename << std::endl;
 	unsigned char* img;
 	stbi_set_unpremultiply_on_load(1);
 	stbi_convert_iphone_png_to_rgb(1);
@@ -58,18 +57,23 @@ truss_message* NanoVGAddon::loadImage(const char* filename, int& width, int& hei
 	// don't care about that, load that into a dummy variable and
 	// return 4 channels always.
 	int dummy;
-	numChannels = 4;
-	img = stbi_load(filename, &width, &height, &dummy, 4);
-	if (img == NULL) {
-		std::cout << "Failed to load " << filename 
-				  << ": " << stbi_failure_reason() << std::endl;
+	truss_message* rawfile = truss_load_file(filename);
+	if (rawfile == NULL) {
 		return NULL;
 	}
-	std::cout << "w: " << width << ", h: " << height << ", n: " << numChannels << std::endl;
+	numChannels = 4;
+	img = stbi_load_from_memory(rawfile->data, rawfile->data_length, &width, &height, &dummy, 4);
+	if (img == NULL) {
+		truss_log(TRUSS_LOG_ERROR, "Image loading error.");
+		truss_log(TRUSS_LOG_ERROR, stbi_failure_reason());
+		truss_release_message(rawfile);
+		return NULL;
+	}
 	unsigned int datalength = width * height * numChannels;
 	truss_message* ret = truss_create_message(datalength);
 	std::memcpy(ret->data, img, datalength);
 	stbi_image_free(img);
+	truss_release_message(rawfile);
 
 	return ret;
 }
