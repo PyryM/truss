@@ -1,4 +1,3 @@
-docs/
 build/
 data/
 dump/
@@ -8,6 +7,8 @@ old_scripts/
 dist/lib/
 dist/truss
 dist/truss.exe
+dist/docs/
+/docs/
 *.exe
 *.pdb
 *.idb
