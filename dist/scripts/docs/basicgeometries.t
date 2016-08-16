@@ -5,9 +5,9 @@
 -- (although they aren't truly primitives in this case, they're regular meshes)
 -- like spheres, cubes, etc.
 
--- For this example we will just keep on replacing the geometry of one object
--- that's already in the scene (this is safe because Object3Ds are lightweight)
 function basicGeometryExamples(app)
+    -- For this example we will just keep on replacing the geometry of one object
+    -- that's already in the scene (this is safe because Object3Ds are lightweight)
     local target = app.exampleObject
 
     -- #### geometry/cube.t
@@ -58,6 +58,7 @@ end
 
 -- Example setup stuff
 -- -------------------
+
 function init()
     -- Use the DocScaffold app to run our example script
     gfx = require("gfx")
