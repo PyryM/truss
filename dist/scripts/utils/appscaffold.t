@@ -50,8 +50,7 @@ function AppScaffold:initBGFX()
     local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
     --local reset = bgfx_const.BGFX_RESET_MSAA_X8
 
-    --local cbInterfacePtr = sdl.truss_sdl_get_bgfx_cb(sdlPointer)
-    local cbInterfacePtr = nil
+    local cbInterfacePtr = sdl:getBGFXCallback()
     local rendererType = bgfx.BGFX_RENDERER_TYPE_COUNT
     if self.requestedRenderer then
         local rname = "BGFX_RENDERER_TYPE_" .. self.requestedRenderer
@@ -128,6 +127,10 @@ end
 
 function AppScaffold:onMouseMove(func)
     self.mousemove = func
+end
+
+function AppScaffold:takeScreenshot(filename)
+    bgfx.bgfx_save_screen_shot(filename)
 end
 
 function AppScaffold:updateEvents()

@@ -32,6 +32,9 @@ function init()
                        height = 720,
                        usenvg = false})
     app.userEventHandler = onSdlEvent
+    app:onKey("F12", function(key, mod)
+        app:takeScreenshot("test.png")
+    end)
     camerarig = orbitcam.OrbitCameraRig(app.camera)
     camerarig:setZoomLimits(1.0, 30.0)
     camerarig:set(0, 0, 15.0)
