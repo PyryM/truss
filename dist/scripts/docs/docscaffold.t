@@ -24,18 +24,23 @@ function DocScaffold:present(imageFilename)
     coroutine.yield()
 end
 
+-- The script can also yield execution for a frame. For example, this can be
+-- used in an infinite/indefinite loop to avoid freezing the application.
+-- It is also possible to just directly call coroutine.yield.
+function DocScaffold:yield()
+    coroutine.yield()
+end
+
 -- Internally DocScaffold runs a normal per-frame update and uses co-routines
 -- to make the script look like it's running in one continuous block.
 function DocScaffold:continueScript()
     if not self.script_ then return end
 
-    -- When running in multithreaded mode bgfx has a three frame delay, so to
-    -- be safe between script resumes the application delays three frames
+    -- Allow a yield to delay a number of frames until execution resumes
     if self.delayFramesLeft_ > 0 then
         self.delayFramesLeft_ = self.delayFramesLeft_ - 1
         return
     end
-    self.delayFramesLeft_ = 3
 
     -- Examples can add a pre-resume function if they need to do some work here
     -- (for example, clearing the previous scene)
