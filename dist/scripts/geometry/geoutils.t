@@ -18,6 +18,20 @@ function m.colorRandomly(srcdata)
     return srcdata
 end
 
+local function rgbStride(index, vertex)
+    local i = ((index-1) % 3)+1
+    local c = {0, 0, 0, 0}
+    c[i] = 255
+    return Vector():fromArray(c)
+end
+
+-- color each triangle with one vertex R, one G, and one B
+-- assumes data is a triangle soup
+function m.colorRGBTriangles(srcdata, destattr)
+    srcdata.attributes[destattr or "color0"] =
+        m.mapIndexedAttribute(srcdata.attributes.position, rgbStride)
+end
+
 local function normalizeVertex(v, rad)
     v:normalize():multiplyScalar(rad)
 end
@@ -160,6 +174,14 @@ function m.mapAttribute(attribData, f, arg)
     return ret
 end
 
+function m.mapIndexedAttribute(attribData, f, arg)
+    local ret = {}
+    for i,v in ipairs(attribData) do
+        ret[i] = f(i, v, arg)
+    end
+    return ret
+end
+
 -- computes normals for data, modifying srcdata in place to add
 -- srcdata.attributes.normal
 function m.computeNormals(srcdata)
@@ -209,6 +231,33 @@ function m.toBasicGeo(geoName, data)
     if data.attributes.texcoord0 then table.insert(attrNames, "texcoord0") end
     local vertexInfo = gfx.createStandardVertexType(attrNames)
     return gfx.StaticGeometry(geoName):fromData(vertexInfo, data)
+end
+
+local function pushTriVerts(src, dest, tri)
+    table.insert(dest, src[tri[1]+1])
+    table.insert(dest, src[tri[2]+1])
+    table.insert(dest, src[tri[3]+1])
+end
+
+-- splits indexed triangles into a 'triangle soup' so that no triangles share
+-- vertices
+function m.splitData(data)
+    local ret = {indices = {}, attributes = {}}
+    -- split attributes
+    for attrName, attr in pairs(data.attributes) do
+        local dest = {}
+        for idx, tri in ipairs(data.indices) do
+            pushTriVerts(attr, dest, tri)
+        end
+        ret.attributes[attrName] = dest
+    end
+    -- renumber vertices
+    local pos = 0
+    for i = 1,#(data.indices) do
+        table.insert(ret.indices, {pos, pos+1, pos+2})
+        pos = pos + 3
+    end
+    return ret
 end
 
 -- merge geometry data together into a single data block
