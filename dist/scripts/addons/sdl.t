@@ -5,10 +5,12 @@ local raw_destroy_window = nil
 local raw_pointer = nil
 local raw_get_event = nil
 local raw_num_events = nil
+local raw_window_width = nil
+local raw_window_height = nil
 
 function m.wrap(addonName, addonTable, addonPointer, addonVersion)
     -- rename constants from TRUSS_SDL_EVENT_... to just EVENT_...
-    -- so that they can be accessed by sdl.EVENT_... 
+    -- so that they can be accessed by sdl.EVENT_...
     for k,v in pairs(addonTable) do
         local prefix = 'TRUSS_SDL_'
         if string.find(k, prefix) then
@@ -23,6 +25,8 @@ function m.wrap(addonName, addonTable, addonPointer, addonVersion)
     raw_destroy_window = addonTable.truss_sdl_destroy_window
     raw_num_events = addonTable.truss_sdl_num_events
     raw_get_event = addonTable.truss_sdl_get_event
+    raw_window_width = addonTable.truss_sdl_window_width
+    raw_window_height = addonTable.truss_sdl_window_height
     raw_pointer = addonPointer
 
     m.VERSION = addonVersion
@@ -40,8 +44,16 @@ function m:stopTextinput()
     return m.rawfunctions.truss_sdl_stop_textinput(raw_pointer)
 end
 
-function m:createWindow(width, height, name)
-    raw_create_window(raw_pointer, width, height, name)
+function m:createWindow(width, height, name, fullscreen)
+    raw_create_window(raw_pointer, width, height, name, fullscreen)
+end
+
+function m:windowHeight()
+    return raw_window_height(raw_pointer)
+end
+
+function m:windowWidth()
+    return raw_window_width(raw_pointer)
 end
 
 function m:setClipboard(data)
@@ -64,7 +76,7 @@ end
 
 local function event_iterator(state)
     local idx = state.idx
-    if idx >= state.n then 
+    if idx >= state.n then
         return nil
     else
         state.idx = idx + 1

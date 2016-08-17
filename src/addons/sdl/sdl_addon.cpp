@@ -76,8 +76,10 @@ SDLAddon::SDLAddon() {
 		    int flags;
 		} truss_sdl_event;
 
-		void truss_sdl_create_window(Addon* addon, int width, int height, const char* name);
+		void truss_sdl_create_window(Addon* addon, int width, int height, const char* name, int is_fullscreen);
 		void truss_sdl_destroy_window(Addon* addon);
+		int truss_sdl_window_width(Addon* addon);
+		int truss_sdl_window_height(Addon* addon);
 		int  truss_sdl_num_events(Addon* addon);
 		truss_sdl_event truss_sdl_get_event(Addon* addon, int index);
 		void truss_sdl_start_textinput(Addon* addon);
@@ -206,16 +208,32 @@ void SDLAddon::update(double dt) {
 	}
 }
 
-void SDLAddon::createWindow(int width, int height, const char* name) {
+void SDLAddon::createWindow(int width, int height, const char* name, int is_fullscreen) {
+	uint32_t flags = SDL_WINDOW_SHOWN;
+	if (is_fullscreen > 0) {
+		flags = flags | SDL_WINDOW_BORDERLESS | SDL_WINDOW_MAXIMIZED;
+	}
 	window_ = SDL_CreateWindow(name
 			, SDL_WINDOWPOS_UNDEFINED
 			, SDL_WINDOWPOS_UNDEFINED
 			, width
 			, height
-			, SDL_WINDOW_SHOWN
-			| SDL_WINDOW_RESIZABLE
-			);
+			, flags);
 	registerBGFX();
+}
+
+int SDLAddon::windowWidth() {
+	if (window_ == NULL) return -1;
+	int w, h;
+	SDL_GetWindowSize(window_, &w, &h);
+	return w;
+}
+
+int SDLAddon::windowHeight() {
+	if (window_ == NULL) return -1;
+	int w, h;
+	SDL_GetWindowSize(window_, &w, &h);
+	return h;
 }
 
 void SDLAddon::registerBGFX() {
@@ -250,12 +268,20 @@ truss_sdl_event& SDLAddon::getEvent(int index) {
 	}
 }
 
-void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name) {
-	addon->createWindow(width, height, name);
+void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name, int is_fullscreen) {
+	addon->createWindow(width, height, name, is_fullscreen);
 }
 
 void truss_sdl_destroy_window(SDLAddon* addon) {
 	addon->destroyWindow();
+}
+
+int truss_sdl_window_width(SDLAddon* addon) {
+	return addon->windowWidth();
+}
+
+int truss_sdl_window_height(SDLAddon* addon) {
+	return addon->windowHeight();
 }
 
 int  truss_sdl_num_events(SDLAddon* addon) {

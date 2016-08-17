@@ -49,8 +49,10 @@ typedef struct {
 	int flags;
 } truss_sdl_event;
 
-TRUSS_C_API void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name);
+TRUSS_C_API void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name, int is_fullscreen);
 TRUSS_C_API void truss_sdl_destroy_window(SDLAddon* addon);
+TRUSS_C_API int truss_sdl_window_width(SDLAddon* addon);
+TRUSS_C_API int truss_sdl_window_height(SDLAddon* addon);
 TRUSS_C_API int truss_sdl_num_events(SDLAddon* addon);
 TRUSS_C_API truss_sdl_event truss_sdl_get_event(SDLAddon* addon, int index);
 TRUSS_C_API void truss_sdl_start_textinput(SDLAddon* addon);
@@ -70,7 +72,9 @@ public:
 	void shutdown();
 	void update(double dt);
 
-	void createWindow(int width, int height, const char* name);
+	void createWindow(int width, int height, const char* name, int is_fullscreen);
+	int windowWidth();
+	int windowHeight();
 	void registerBGFX();
 	void destroyWindow();
 

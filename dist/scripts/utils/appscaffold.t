@@ -21,6 +21,10 @@ function AppScaffold:init(options)
     self.height = options.height or 720
     self.quality = options.quality or 1.0 -- highest quality by default
     self.title = options.title or 'truss'
+    self.fullscreen = options.fullscreen
+    self.debugtext = options.debugtext ~= false
+    self.vsync = options.vsync ~= false
+    self.msaa = options.msaa ~= false
     if options.renderer then
         self.requestedRenderer = string.upper(options.renderer)
     end
@@ -35,7 +39,14 @@ function AppScaffold:init(options)
     self.keybindings = {}
 
     log.info("AppScaffold init")
-    sdl:createWindow(self.width, self.height, self.title)
+    if self.fullscreen then
+        sdl:createWindow(320, 320, self.title, 1)
+        self.width = sdl:windowWidth()
+        self.height = sdl:windowHeight()
+        log.info("Fullscreen dimensions: " .. self.width .. " x " .. self.height)
+    else
+        sdl:createWindow(self.width, self.height, self.title, 0)
+    end
 
     self:initBGFX()
     self:initPipeline()
@@ -46,8 +57,17 @@ end
 
 function AppScaffold:initBGFX()
     -- Basic init
-    local debug = bgfx_const.BGFX_DEBUG_TEXT
-    local reset = bgfx_const.BGFX_RESET_VSYNC + bgfx_const.BGFX_RESET_MSAA_X8
+    local debug = 0
+    if self.debugtext then
+        debug = debug + bgfx_const.BGFX_DEBUG_TEXT
+    end
+    local reset = 0
+    if self.vsync then
+        reset = reset + bgfx_const.BGFX_RESET_VSYNC
+    end
+    if self.msaa then
+        reset = reset + bgfx_const.BGFX_RESET_MSAA_X8
+    end
     --local reset = bgfx_const.BGFX_RESET_MSAA_X8
 
     local cbInterfacePtr = sdl:getBGFXCallback()
