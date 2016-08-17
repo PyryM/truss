@@ -39,11 +39,15 @@ function Ros:nextId()
     return self.idCounter
 end
 
-function Ros:addHandler_(topicname, handler)
-    if self.topicHandlers[topicname] == nil then
-        self.topicHandlers[topicname] = {}
+function Ros:addHandler_(handler)
+    if self.topicHandlers[handler.topicName] == nil then
+        self.topicHandlers[handler.topicName] = {}
     end
-    self.topicHandlers[topicname][handler.subscribeId] = handler
+    self.topicHandlers[handler.topicName][handler.subscribeId] = handler
+end
+
+function Ros:removeHandler_(handler)
+    self.topicHandlers[handler.topicName][handler.subscribeId] = nil
 end
 
 function Ros:dispatchToTopic_(topicname, msg)
@@ -96,6 +100,10 @@ function Ros:topic(options)
     return Topic(self, options)
 end
 
+function Ros:sendRawJSON(msg)
+    self.socket:sendJSON(msg)
+end
+
 function Topic:init(ros, options)
     self.ros = ros
     self.topicName = options.topicName
@@ -121,7 +129,7 @@ function Topic:subscribe(callback)
         throttle_rate = self.throttleRate or 0
     }
     self.callback = callback
-    self.ros:addHandler_(self.topicName, self)
+    self.ros:addHandler_(self)
     self.ros:sendRawJSON(submsg)
 end
 
@@ -131,6 +139,7 @@ function Topic:unsubscribe()
         id = self.subscribeId,
         topic = self.topicName
     }
+    self.ros:removeHandler_(self)
     self.ros:sendRawJSON(msg)
 end
 
