@@ -50,8 +50,8 @@ function Ros:removeHandler_(handler)
     self.topicHandlers[handler.topicName][handler.subscribeId] = nil
 end
 
-function Ros:dispatchToTopic_(topicname, msg)
-    local handlers = self.topicHandlers[topicname]
+function Ros:dispatchToTopic_(topicName, msg)
+    local handlers = self.topicHandlers[topicName]
     if handlers then
         for _,handler in pairs(handlers) do handler:callback(msg) end
     end
@@ -146,12 +146,12 @@ end
 function Topic:advertise()
     if self.isAdvertised then return end
     local nextid = self.ros:nextId()
-    self.advertiseId = 'advertise:' .. self.topicname .. ":" .. nextid
+    self.advertiseId = 'advertise:' .. self.topicName .. ":" .. nextid
     local admsg = {
         op = "advertise",
         id = self.advertiseId,
         ["type"] = self.messageType,
-        topic = self.topicname,
+        topic = self.topicName,
         latch = self.latch,
         queue_size = self.queueSize
     }

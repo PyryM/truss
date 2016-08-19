@@ -11,7 +11,7 @@ local matrix = require("math/matrix.t")
 
 function Vector:init(x, y, z, w)
     --self.elem = {x = 0, y = 0, z = 0, w = 0}
-	self.elem = terralib.new(matrix.vec4_)
+    self.elem = terralib.new(matrix.vec4_)
     self.e = self.elem -- alias for convenience
     self:set(x, y, z, w)
 end
@@ -69,6 +69,12 @@ function Vector:toDict()
     return {x = e.x, y = e.y, z = e.z, w = e.w}
 end
 
+-- Three element version if you need a dict with exactly x,y,z and nothing else
+function Vector:toDict3()
+    local e = self.elem
+    return {x = e.x, y = e.y, z = e.z}
+end
+
 -- basically unpack(q:toArray())
 function Vector:components()
     local e = self.elem
@@ -82,13 +88,13 @@ function Vector:length()
 end
 
 function Vector:randUniform(minval, maxval)
-	local d = maxval - minval
-	local e = self.elem
-	e.x = math.random()*d + minval
-	e.y = math.random()*d + minval
-	e.z = math.random()*d + minval
-	e.w = math.random()*d + minval
-	return self
+    local d = maxval - minval
+    local e = self.elem
+    e.x = math.random()*d + minval
+    e.y = math.random()*d + minval
+    e.z = math.random()*d + minval
+    e.w = math.random()*d + minval
+    return self
 end
 
 function Vector:normalize()
@@ -112,22 +118,22 @@ end
 
 -- normalize only the first 3 dimensions, ignoring w
 function Vector:normalize3d()
-	local w = self.elem.w
-	self.elem.w = 0
-	self:normalize()
-	self.elem.w = w
-	return self
+    local w = self.elem.w
+    self.elem.w = 0
+    self:normalize()
+    self.elem.w = w
+    return self
 end
 
 -- divide x,y,z by w
 function Vector:perspectiveDivide()
-	local e = self.elem
-	if e.w == 0.0 then return self end
-	e.x = e.x / e.w
-	e.y = e.y / e.w
-	e.z = e.z / e.w
-	e.w = e.w / e.w
-	return self
+    local e = self.elem
+    if e.w == 0.0 then return self end
+    e.x = e.x / e.w
+    e.y = e.y / e.w
+    e.z = e.z / e.w
+    e.w = e.w / e.w
+    return self
 end
 
 function Vector:multiplyScalar(s)
@@ -156,8 +162,8 @@ end
 -- make this vector equal a*alphaA + b*alphaB
 -- if alphaB is nil, alphaB = 1.0 - alphaA
 function Vector:linComb(a, b, alphaA, alphaB)
-	alphaB = alphaB or (1.0 - alphaA)
-	local ae = a.elem
+    alphaB = alphaB or (1.0 - alphaA)
+    local ae = a.elem
     local be = b.elem
     local e = self.elem
     e.x = alphaA*ae.x + alphaB*be.x
