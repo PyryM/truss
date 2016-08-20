@@ -23,10 +23,10 @@ function Camera:makeProjection(fovDegrees, aspect, near, far)
     return self
 end
 
-function Camera:makeOrthographic(left, right, bottom, top, near, far)
+function Camera:makeOrthographic(left, right, bottom, top, near, far, isGL)
     self.projMat:makeOrthographicProjection(left, right,
                                             bottom, top,
-                                            near, far)
+                                            near, far, isGL)
     self.invProjMat:invert(self.projMat)
     return self
 end

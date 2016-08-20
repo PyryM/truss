@@ -86,8 +86,7 @@ terra m.setIdentity(mat: &float)
     mat[12], mat[13], mat[14], mat[15] = 0.0f, 0.0f, 0.0f, 1.0f
 end
 
--- assumes far = 1, near = -1
-terra m.orthoProjMat(mat: &float,
+terra m.orthoProjMatGL(mat: &float,
                      left: float, right: float,
                      bottom: float, top: float,
                      near: float, far: float)
@@ -97,6 +96,19 @@ terra m.orthoProjMat(mat: &float,
     mat[12] = -(right + left) / (right - left)
     mat[13] = -(top + bottom) / (top - bottom)
     mat[14] = -(far + near) / (far - near)
+    mat[15] = 1.0
+end
+
+terra m.orthoProjMat(mat: &float,
+                     left: float, right: float,
+                     bottom: float, top: float,
+                     near: float, far: float)
+    mat[ 0] = 2.0 / (right - left)
+    mat[ 5] = 2.0 / (top - bottom)
+    mat[10] = -1.0 / (far - near)
+    mat[12] = -(right + left) / (right - left)
+    mat[13] = -(top + bottom) / (top - bottom)
+    mat[14] = -near / (far - near)
     mat[15] = 1.0
 end
 
@@ -630,10 +642,18 @@ function Matrix4:makeProjection(fovy, aspect, near, far, isGL)
     return self
 end
 
-function Matrix4:makeOrthographicProjection(left, right, bottom, top, near, far)
-    m.orthoProjMat(self.data, left, right,
+function Matrix4:makeOrthographicProjection(left, right, bottom, top, near, far, isGL)
+    self:zero()
+    if isGL then
+        log.info("Making GL orthographic matrix!")
+        m.orthoProjMatGL(self.data, left, right,
                               bottom, top,
                               near, far)
+    else
+        m.orthoProjMat(self.data, left, right,
+                              bottom, top,
+                              near, far)
+    end
 end
 
 function Matrix4:flipViewHandedness()

@@ -9,6 +9,7 @@ local shaderutils = require('utils/shaderutils.t')
 local math = require("math")
 local bgfx = core.bgfx
 local bgfx_const = core.bgfx_const
+local gfx = require("gfx")
 
 local QuadApp = AppScaffold:extend("QuadApp")
 function QuadApp:initPipeline()
@@ -23,6 +24,7 @@ function QuadApp:initScene()
     self.geo = geometry.TransientGeometry()
     self.mat = math.Matrix4():identity()
     self.camera = Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
+    self.scene = gfx.Object3D()
 end
 
 function QuadApp:render()
