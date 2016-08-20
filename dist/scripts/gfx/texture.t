@@ -8,11 +8,22 @@ local m = {}
 -- for when you need to create a texture in memory
 local MemTexture = class("MemTexture")
 m.MemTexture = MemTexture
-function MemTexture:init(w,h)
+
+local formats = {
+    RGBA8 = {uint8, bgfx.BGFX_TEXTURE_FORMAT_BGRA8, 4, 4},
+    RG16  = {uint16, bgfx.BGFX_TEXTURE_FORMAT_RG16, 2, 4}
+}
+
+function MemTexture:init(w,h,fmt)
     self.width = w or 64
     self.height = h or 64
-    self.data = terralib.new(uint8[w*h*4])
-    self.datasize = w*h*4
+    self.fmt = fmt or "RGBA8"
+    local fmtinfo = formats[self.fmt]
+    local datatype, bgfxformat, nchannels, psize =
+          fmtinfo[1], fmtinfo[2], fmtinfo[3], fmtinfo[4]
+    self.data = terralib.new(datatype[w*h*nchannels])
+    self.datasize = w*h*psize
+    self.pitch = self.width * psize
 
     local bc = bgfx_const
     --local flags = 0
@@ -22,8 +33,7 @@ function MemTexture:init(w,h)
 
     -- Note that we pass in nil as the data to allow us to update this texture
     -- later
-    self.tex = bgfx.bgfx_create_texture_2d(w, h, 1,
-        bgfx.BGFX_TEXTURE_FORMAT_BGRA8, flags, nil)
+    self.tex = bgfx.bgfx_create_texture_2d(w, h, 1, bgfxformat, flags, nil)
     -- allow a MemTexture to directly be used as a uniform value
     self.rawTex = self.tex
 end
@@ -32,7 +42,7 @@ function MemTexture:update()
     bgfx.bgfx_update_texture_2d(self.tex, 0,
                                 0, 0, self.width, self.height,
                                 bgfx.bgfx_make_ref(self.data, self.datasize),
-                                self.width*4)
+                                self.pitch)
 end
 
 terra m.createTextureFromData(w: int32, h: int32, src: &uint8, srclen: uint32, flags: uint32) : bgfx.bgfx_texture_handle_t
