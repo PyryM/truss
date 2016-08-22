@@ -45,7 +45,7 @@ function m:stopTextinput()
 end
 
 function m:createWindow(width, height, name, fullscreen)
-    raw_create_window(raw_pointer, width, height, name, fullscreen)
+    raw_create_window(raw_pointer, width, height, name, fullscreen or 0)
 end
 
 function m:windowHeight()
