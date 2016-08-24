@@ -11,8 +11,9 @@ local NanoVGStage = class("NanoVGStage")
 function NanoVGStage:init(options)
     options = options or {}
     self.options_ = options
-    self.target = options.renderTarget
-    self.draw = options.draw
+    self.target = options.renderTarget or options.target
+    if options.draw then self.draw = options.draw end
+    if options.setup then self.extraNvgSetup = options.setup end
 end
 
 function NanoVGStage:setupViews(startView)

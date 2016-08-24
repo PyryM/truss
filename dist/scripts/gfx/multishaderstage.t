@@ -107,6 +107,7 @@ function MultiShaderStage:render(context)
         context.camera:setViewMatrices(self.viewid_)
     end
 
+    bgfx.bgfx_touch(self.viewid_)
     if context.scene then
         if self.options_.hack_forcePerSubmitGlobals then
             context.scene:map(renderObjectG_, self)

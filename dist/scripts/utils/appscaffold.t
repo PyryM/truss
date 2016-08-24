@@ -25,9 +25,11 @@ function AppScaffold:init(options)
     self.debugtext = options.debugtext ~= false
     self.vsync = options.vsync ~= false
     self.msaa = options.msaa ~= false
+    self.clearcolor = options.clearcolor or 0x303030ff
     if options.renderer then
         self.requestedRenderer = string.upper(options.renderer)
     end
+    self.nvgoptions = options.nvgoptions
 
     self.frame = 0
     self.time = 0.0
@@ -114,11 +116,20 @@ function AppScaffold:initPipeline()
     local backbuffer = gfx.RenderTarget(self.width, self.height):makeBackbuffer()
     local forwardpass = gfx.MultiShaderStage({
         renderTarget = backbuffer,
-        clear = {color = 0x303030ff},
+        clear = {color = self.clearcolor},
         shaders = {solid = pbr.PBRShader()}
     })
     self.forwardpass = forwardpass
     self.pipeline:add("forwardpass", forwardpass)
+    if self.nvgoptions then
+        self.nvgpass = gfx.NanoVGStage({
+            draw = self.nvgoptions.draw,
+            setup = self.nvgoptions.setup,
+            renderTarget = backbuffer,
+            clear = false
+        })
+        self.pipeline:add("nvgpass", self.nvgpass)
+    end
     self.pipeline:setupViews(0)
 
     self:setDefaultLights()
