@@ -42,7 +42,10 @@ void Core::addFSPath(const char* pathname, const char* mountname, int append) {
     logMessage(TRUSS_LOG_DEBUG, ss.str().c_str());
 
     int retval = PHYSFS_mount(ss.str().c_str(), mountname, append);
-    // TODO: do something with the return value (e.g., if it's an error)
+	if (retval == 0) {
+		logMessage(TRUSS_LOG_ERROR, "addFSPath failed: ");
+		logMessage(TRUSS_LOG_ERROR, PHYSFS_getLastError());
+	}
 }
 
 void Core::setWriteDir(const char* writepath) {
@@ -52,7 +55,10 @@ void Core::setWriteDir(const char* writepath) {
     logMessage(TRUSS_LOG_DEBUG, ss.str().c_str());
 
     int retval = PHYSFS_setWriteDir(ss.str().c_str());
-    // TODO: do something with the return value (e.g., if it's an error)
+	if (retval == 0) {
+		logMessage(TRUSS_LOG_ERROR, "addFSPath failed: ");
+		logMessage(TRUSS_LOG_ERROR, PHYSFS_getLastError());
+	}
 }
 
 // NOT THREAD SAFE!!!
