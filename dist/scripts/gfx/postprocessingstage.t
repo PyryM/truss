@@ -10,15 +10,16 @@ local PostProcessingStage = class("PostProcessingStage")
 function PostProcessingStage:init(options)
     local math = require("math")
     local gfx = require("gfx")
+    local shader = options.shader or {}
     self.identitymat_ = math.Matrix4():identity()
     self.quadgeo_ = gfx.TransientGeometry()
     self.options_ = options
     self.inputs = options.inputs or {}
     self.target = options.target or options.renderTarget
-    self.uniforms_ = options.uniforms
-    self.program_ = options.program
+    self.uniforms_ = options.uniforms or shader.uniforms
+    self.program_ = options.program or shader.program
     self.camera_ = gfx.Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
-    self.state_ = options.state
+    self.state_ = options.state or shader.state
     self.drawQuad_ = options.drawQuad
     if not self.program_ then
         local vshader = options.vshader or "vs_fullscreen"
