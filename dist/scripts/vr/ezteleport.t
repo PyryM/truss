@@ -26,7 +26,6 @@ function EZTeleport:update()
 
     self.marker.active = false
     if self.controller.controller.touched.SteamVR_Touchpad then
-        log.info("Touched")
         self.marker.active = true
 
         local jumpfrac = (self.controller.controller.trackpad1.y + 1.0) / 2.0
@@ -44,10 +43,8 @@ function EZTeleport:update()
     end
 
     if self.controller.controller.pressed.SteamVR_Touchpad then
-        log.info("Held")
         self.prepareTeleport = true
     elseif self.prepareTeleport then -- was held down, now released
-        log.info("Released")
         self.roomroot.matrix:copy(self.marker.matrixWorld)
         self.prepareTeleport = false
     end
