@@ -14,7 +14,7 @@ void main()
 {
 	vec3 wpos = mul(u_model[0], vec4(a_position, 1.0) ).xyz;
 	gl_Position = mul(u_viewProj, vec4(wpos, 1.0) );
-	
+
 	vec3 normal = a_normal; // use float normals * 2.0 - 1.0;
 	vec3 wnormal = mul(u_model[0], vec4(normal.xyz, 0.0) ).xyz;
 

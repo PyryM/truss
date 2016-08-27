@@ -19,15 +19,20 @@ function VRApp:init(options)
     if openvr.available then
         vw, vh = openvr.getRecommendedTargetSize()
     end
+    self.extraFlags = true
     self.vrWidth = math.floor((options.vrWidth or 1.0) * vw)
     self.vrHeight = math.floor((options.vrHeight or 1.0) * vh)
-    log.info("VRApp init: w= " .. self.vrWidth .. ", h= " .. self.vrHeight)
+    log.info("VRApp insdfdit: w= " .. self.vrWidth .. ", h= " .. self.vrHeight)
 
     VRApp.super.init(self, options)
     self.stereoCameras = {
         gfx.Camera():makeProjection(70, self.vrWidth/self.vrHeight, 0.1, 100.0),
         gfx.Camera():makeProjection(70, self.vrWidth/self.vrHeight, 0.1, 100.0)
     }
+    self.roomroot = gfx.Object3D()
+    self.roomroot:add(self.stereoCameras[1])
+    self.roomroot:add(self.stereoCameras[2])
+    self.scene:add(self.roomroot)
 
     local testprojL = {{0.76, 0.00, -0.06, 0.00},
                        {0.00, 0.68, -0.00, 0.00},
@@ -147,7 +152,7 @@ end
 function VRApp:updateCameras_()
     local cams = self.stereoCameras
     if openvr.available then
-        self.camera.matrix:copy(openvr.hmd.pose)
+        --self.camera.matrix:copy(openvr.hmd.pose)
         for i = 1,2 do
             cams[i].projMat:copy(openvr.eyeProjections[i])
             cams[i].matrix:copy(openvr.eyePoses[i])
@@ -198,7 +203,8 @@ function VRApp:updateControllers_()
         if controller and controller.connected then
             if self.controllerObjects[i] == nil then
                 self.controllerObjects[i] = self:createPlaceholderControllerObject(controller)
-                self.scene:add(self.controllerObjects[i])
+                self.controllerObjects[i].controller = controller
+                self.roomroot:add(self.controllerObjects[i])
                 local targetself = self
                 local targetobj = self.controllerObjects[i]
                 openvr.loadModel(controller, function(loadresult)
