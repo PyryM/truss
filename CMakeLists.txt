@@ -70,10 +70,13 @@ if (${WIN32})
     target_link_libraries(truss openvr)
 endif()
 
-# Fix obscure LuaJIT issue on OSX.
-# http://www.freelists.org/post/luajit/luaL-newstate-fails-on-64bit-Mac-cant-set-linker-flags
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+    # Fix obscure LuaJIT issue on OSX.
+    # http://www.freelists.org/post/luajit/luaL-newstate-fails-on-64bit-Mac-cant-set-linker-flags
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000")
+    
+    # Fix linking error with missing core libraries on OSX.
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework CoreFoundation -framework Carbon")
 endif()
 
 # Configure the RPATH for Linux and OSX.
