@@ -75,7 +75,7 @@ Core& Core::instance() {
 
 void Core::initFS(char* argv0, bool mountBaseDir) {
     if (physFSInitted_) {
-        logMessage(TRUSS_LOG_WARNING, "PhysFS already initted.");
+        logMessage(TRUSS_LOG_WARNING, "PhysFS already initialized.");
         return;
     }
 
@@ -130,8 +130,7 @@ void Core::extractLibraries() {
 void Core::setWriteDir(const char* writepath) {
     std::stringstream ss;
     ss << PHYSFS_getBaseDir() << PHYSFS_getDirSeparator() << writepath;
-    logMessage(TRUSS_LOG_DEBUG, "Setting physFS write path: ");
-    logMessage(TRUSS_LOG_DEBUG, ss.str().c_str());
+    logPrint(TRUSS_LOG_DEBUG, "Setting physFS write path: %s", ss.str().c_str());
 
     int retval = PHYSFS_setWriteDir(ss.str().c_str());
     if (retval == 0) {
@@ -245,7 +244,7 @@ void Core::deallocateMessage(truss_message* msg) {
 
 int Core::checkFile(const char* filename) {
     if (!physFSInitted_) {
-        logMessage(TRUSS_LOG_WARNING, "PhysFS not initted: checkFile always returns 0.");
+        logMessage(TRUSS_LOG_WARNING, "PhysFS not initialized: checkFile always returns 0.");
         return false;
     }
 
@@ -270,27 +269,24 @@ truss_message* Core::loadFileRaw(const char* filename) {
 
         return ret;
     } else {
-        logStream(TRUSS_LOG_ERROR) << "Unable to open file " << filename << "\n";
+        logPrint(TRUSS_LOG_ERROR) << "Unable to open file '%s'." << filename << "\n";
         return NULL;
     }
 }
 
 truss_message* Core::loadFile(const char* filename) {
     if (!physFSInitted_) {
-        logMessage(TRUSS_LOG_ERROR, "Cannot load file: PhysFS not initted.");
-        logMessage(TRUSS_LOG_ERROR, filename);
+        logPrint(TRUSS_LOG_ERROR, "Cannot load file '%s': PhysFS not initialized.", filename);
         return NULL;
     }
 
     if (PHYSFS_exists(filename) == 0) {
-        logMessage(TRUSS_LOG_ERROR, "Error opening file: does not exist.");
-        logMessage(TRUSS_LOG_ERROR, filename);
+        logPrint(TRUSS_LOG_ERROR, "Error opening file '%s': does not exist.", filename);
         return NULL;
     }
 
     if (PHYSFS_isDirectory(filename) != 0) {
-        logMessage(TRUSS_LOG_ERROR, "Attempted to read directory as a file.");
-        logMessage(TRUSS_LOG_ERROR, filename);
+        logPrint(TRUSS_LOG_ERROR, "Attempted to read directory '%s' as a file.", filename);
         return NULL;
     }
 
@@ -305,8 +301,7 @@ truss_message* Core::loadFile(const char* filename) {
 
 void Core::saveData(const char* filename, const char* data, unsigned int datalength) {
     if (!physFSInitted_) {
-        logMessage(TRUSS_LOG_ERROR, "Cannot save file; PhysFS not initted.");
-        logMessage(TRUSS_LOG_ERROR, filename);
+        logPrint(TRUSS_LOG_ERROR, "Cannot save file '%s': PhysFS not initialized.", filename);
         return;
     }
 
