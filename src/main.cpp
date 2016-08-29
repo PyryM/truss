@@ -44,16 +44,17 @@ void storeArgs(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
-	setupRPath();
-
 	truss_test();
 	truss_log(0, "Entered main!");
 	storeArgs(argc, argv);
 
 	// set up physFS filesystem
 	truss::core().initFS(argv[0], true);			// mount the base directory
-	truss::core().addFSPath("truss.zip", "/", 0);  // try to mount truss.zip as root if it exists
-	truss::core().setWriteDir("save");				// write into basedir/save/
+	truss::core().addFSPath("truss.zip", "/");		// try to mount truss.zip as root if it exists
+	truss::core().extractLibraries();				// extract currently loaded C libraries
+	setupRPath();									// set windows RPATH if necessary
+
+	truss::core().setWriteDir("save");              // write into basedir/save/
 
 	truss::Interpreter* interpreter = truss::core().spawnInterpreter("interpreter_0");
 	interpreter->setDebug(0); // want most verbose debugging output
