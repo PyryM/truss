@@ -15,7 +15,7 @@ namespace truss {
     
 class Core {
 public:
-    static Core* getCore();
+    static Core& instance();
 
     // functions for dealing with physfs (you can also make direct physfs
     // calls if you need to, after you've called initFS)
@@ -58,9 +58,12 @@ public:
 
     ~Core();
 private:
-    static Core* core__;
-
     Core();
+    
+    // Mark core as non-copyable.
+    Core(const Core&) = delete;
+    Core& operator=(const Core&) = delete;
+
     tthread::mutex coreLock_;
     bool physFSInitted_;
     std::vector<Interpreter*> interpreters_;
@@ -70,8 +73,8 @@ private:
 
 // syntax sugar to avoid the verbose
 // truss::Core::getCore()
-inline Core* core() {
-    return Core::getCore();
+inline Core& core() {
+    return Core::instance();
 }
 
 } // namespace truss

@@ -46,7 +46,7 @@ void Interpreter::attachAddon(Addon* addon) {
     if(!running_) {
         addons_.push_back(addon);
     } else {
-        core()->logMessage(TRUSS_LOG_ERROR, "Cannot attach addon to running interpreter.");
+        core().logMessage(TRUSS_LOG_ERROR, "Cannot attach addon to running interpreter.");
         delete addon;
     }
 }
@@ -65,7 +65,7 @@ Addon* Interpreter::getAddon(int idx) {
 
 void Interpreter::setDebug(int debugLevel) {
     if (running_) {
-        core()->logMessage(TRUSS_LOG_WARNING, "Warning: Changing debug level on a running interpreter has no effect!");
+        core().logMessage(TRUSS_LOG_WARNING, "Warning: Changing debug level on a running interpreter has no effect!");
     }
 
     if (debugLevel > 0) {
@@ -79,7 +79,7 @@ void Interpreter::setDebug(int debugLevel) {
 
 void Interpreter::start(const char* arg) {
     if(running_ || thread_ != NULL) {
-        core()->logMessage(TRUSS_LOG_ERROR, "Can't start interpreter twice: already running");
+        core().logMessage(TRUSS_LOG_ERROR, "Can't start interpreter twice: already running");
         return;
     }
 
@@ -91,7 +91,7 @@ void Interpreter::start(const char* arg) {
 
 void Interpreter::startUnthreaded(const char* arg) {
     if(running_ || thread_ != NULL) {
-        core()->logMessage(TRUSS_LOG_ERROR, "Can't start interpreter twice: already running");
+        core().logMessage(TRUSS_LOG_ERROR, "Can't start interpreter twice: already running");
         return;
     }
 
@@ -110,14 +110,14 @@ void Interpreter::stop() {
 }
 
 void Interpreter::execute() {
-    core()->logMessage(TRUSS_LOG_ERROR, "Interpreter::execute not implemented!");
+    core().logMessage(TRUSS_LOG_ERROR, "Interpreter::execute not implemented!");
     // TODO: make this do something
 }
 
 void Interpreter::threadEntry() {
     terraState_ = luaL_newstate();
     if (!terraState_) {
-        core()->logMessage(TRUSS_LOG_ERROR, "Error creating a new Lua state.");
+        core().logMessage(TRUSS_LOG_ERROR, "Error creating a new Lua state.");
         running_ = false;
         return;
     }
@@ -134,9 +134,9 @@ void Interpreter::threadEntry() {
     lua_setglobal(terraState_, "TRUSS_INTERPRETER_ID");
 
     // load and execute the bootstrap script
-    truss_message* bootstrap = core()->loadFile("scripts/core/bootstrap.t");
+    truss_message* bootstrap = core().loadFile("scripts/core/bootstrap.t");
     if (!bootstrap) {
-        core()->logMessage(TRUSS_LOG_ERROR, "Error loading bootstrap script.");
+        core().logMessage(TRUSS_LOG_ERROR, "Error loading bootstrap script.");
         running_ = false;
         return;
     }
@@ -147,7 +147,7 @@ void Interpreter::threadEntry() {
     truss_release_message(bootstrap);
     int res = lua_pcall(terraState_, 0, 0, 0);
     if(res != 0) {
-        core()->logStream(TRUSS_LOG_ERROR) << "Error bootstrapping interpreter: "
+        core().logStream(TRUSS_LOG_ERROR) << "Error bootstrapping interpreter: "
                   << lua_tostring(terraState_, -1) << std::endl;
         running_ = false;
         return;
@@ -160,7 +160,7 @@ void Interpreter::threadEntry() {
 
     // Call init
     if (!call("_coreInit", arg_.c_str())) {
-        core()->logStream(TRUSS_LOG_ERROR) << "Error in coreInit, stopping interpreter [" << id_ << "]\n";
+        core().logStream(TRUSS_LOG_ERROR) << "Error in coreInit, stopping interpreter [" << id_ << "]\n";
         running_ = false;
     }
 
@@ -178,7 +178,7 @@ void Interpreter::threadEntry() {
     }
 
     // Shutdown
-    core()->logMessage(TRUSS_LOG_INFO, "Shutting down.");
+    core().logMessage(TRUSS_LOG_INFO, "Shutting down.");
     // TODO: actually shutdown stuff here
 }
 
@@ -220,7 +220,7 @@ bool Interpreter::call(const char* funcname, const char* argstr) {
     }
     int res = lua_pcall(terraState_, nargs, 0, 0);
     if(res != 0) {
-        core()->logMessage(TRUSS_LOG_ERROR, lua_tostring(terraState_, -1));
+        core().logMessage(TRUSS_LOG_ERROR, lua_tostring(terraState_, -1));
     }
     return res == 0; // return true is no errors
 }
