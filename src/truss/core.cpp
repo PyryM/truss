@@ -12,13 +12,9 @@
 
 using namespace truss;
 
-Core* Core::core__ = NULL;
-
-Core* Core::getCore() {
-    if(core__ == NULL) {
-        core__ = new Core();
-    }
-    return core__;
+Core& Core::instance() {
+    static Core core;
+    return core;
 }
 
 void Core::initFS(char* argv0, bool mountBaseDir) {

@@ -18,15 +18,15 @@ const char* truss_get_version() {
 
 void truss_test() {
     std::cout << ">>>>>>>>>>>>>> TRUSS_TEST CALLED <<<<<<<<<<<<<\n";
-    core()->logMessage(TRUSS_LOG_CRITICAL, ">>>>>>>>>>>>>> TRUSS_TEST CALLED <<<<<<<<<<<<<");
+    core().logMessage(TRUSS_LOG_CRITICAL, ">>>>>>>>>>>>>> TRUSS_TEST CALLED <<<<<<<<<<<<<");
 }
 
 void truss_log(int log_level, const char* str) {
-    Core::getCore()->logMessage(log_level, str);
+    Core::instance().logMessage(log_level, str);
 }
 
 void truss_shutddown() {
-    Core::getCore()->stopAllInterpreters();
+    Core::instance().stopAllInterpreters();
 }
 
 uint64_t truss_get_hp_time() {
@@ -38,83 +38,83 @@ uint64_t truss_get_hp_freq() {
 }
 
 int truss_check_file(const char* filename) {
-    return Core::getCore()->checkFile(filename);
+    return Core::instance().checkFile(filename);
 }
 
 truss_message* truss_load_file(const char* filename) {
-    return Core::getCore()->loadFile(filename);
+    return Core::instance().loadFile(filename);
 }
 
 /* Note that when saving the message_type field is not saved */
 int truss_save_file(const char* filename, truss_message* data) {
-    Core::getCore()->saveFile(filename, data);
+    Core::instance().saveFile(filename, data);
     return 0; // TODO: actually check for errors
 }
 
 int truss_save_data(const char* filename, const char* data, unsigned int datalength) {
-	Core::getCore()->saveData(filename, data, datalength);
+	Core::instance().saveData(filename, data, datalength);
 	return 0;
 }
 
 int truss_add_fs_path(const char* path, const char* mountpath, int append) {
-    core()->addFSPath(path, mountpath, append);
+    core().addFSPath(path, mountpath, append);
     return 0;
 }
 
 int truss_set_fs_savedir(const char* path) {
-    core()->setWriteDir(path);
+    core().setWriteDir(path);
     return 0;
 }
 
 /* Datastore functions */
 truss_message* truss_get_store_value(const char* key) {
     std::string tempkey(key);
-    return Core::getCore()->getStoreValue(tempkey);
+    return Core::instance().getStoreValue(tempkey);
 }
 
 int truss_set_store_value(const char* key, truss_message* val) {
     std::string tempkey(key);
-    return Core::getCore()->setStoreValue(tempkey, val);
+    return Core::instance().setStoreValue(tempkey, val);
 }
 
 int truss_set_store_value_str(const char* key, const char* msg) {
     std::string tempkey(key);
     std::string tempmsg(msg);
-    return Core::getCore()->setStoreValue(tempkey, tempmsg);
+    return Core::instance().setStoreValue(tempkey, tempmsg);
 }
 
 /* Interpreter management functions */
 int truss_spawn_interpreter(const char* name) {
-    Interpreter* spawned = Core::getCore()->spawnInterpreter(name);
+    Interpreter* spawned = Core::instance().spawnInterpreter(name);
     return spawned->getID();
 }
 
 void truss_set_interpreter_debug(truss_interpreter_id target_id, int debug_level) {
-    Core::getCore()->getInterpreter(target_id)->setDebug(debug_level);
+    Core::instance().getInterpreter(target_id)->setDebug(debug_level);
 }
 
 void truss_start_interpreter(truss_interpreter_id target_id, const char* msgstr) {
-    Core::getCore()->getInterpreter(target_id)->start(msgstr);
+    Core::instance().getInterpreter(target_id)->start(msgstr);
 }
 
 void truss_stop_interpreter(truss_interpreter_id target_id) {
-    Core::getCore()->getInterpreter(target_id)->stop();
+    Core::instance().getInterpreter(target_id)->stop();
 }
 
 void truss_execute_interpreter(truss_interpreter_id target_id) {
-    return Core::getCore()->getInterpreter(target_id)->execute();
+    return Core::instance().getInterpreter(target_id)->execute();
 }
 
 int truss_find_interpreter(const char* name) {
-    return Core::getCore()->getNamedInterpreter(name)->getID();
+    return Core::instance().getNamedInterpreter(name)->getID();
 }
 
 void truss_send_message(truss_interpreter_id dest, truss_message* message) {
-    Core::getCore()->dispatchMessage(dest, message);
+    Core::instance().dispatchMessage(dest, message);
 }
 
 int truss_fetch_messages(truss_interpreter_id idx) {
-    Interpreter* interpreter = Core::getCore()->getInterpreter(idx);
+    Interpreter* interpreter = Core::instance().getInterpreter(idx);
     if(interpreter) {
         return interpreter->fetchMessages();
     } else {
@@ -123,7 +123,7 @@ int truss_fetch_messages(truss_interpreter_id idx) {
 }
 
 truss_message* truss_get_message(truss_interpreter_id idx, int message_index) {
-    Interpreter* interpreter = Core::getCore()->getInterpreter(idx);
+    Interpreter* interpreter = Core::instance().getInterpreter(idx);
     if(interpreter) {
         return interpreter->getMessage(message_index);
     } else {
@@ -132,7 +132,7 @@ truss_message* truss_get_message(truss_interpreter_id idx, int message_index) {
 }
 
 int truss_get_addon_count(truss_interpreter_id target_id) {
-    Interpreter* interpreter = Core::getCore()->getInterpreter(target_id);
+    Interpreter* interpreter = Core::instance().getInterpreter(target_id);
     if(interpreter) {
         return interpreter->numAddons();
     } else {
@@ -141,7 +141,7 @@ int truss_get_addon_count(truss_interpreter_id target_id) {
 }
 
 Addon* truss_get_addon(truss_interpreter_id target_id, int addon_idx) {
-    Interpreter* interpreter = Core::getCore()->getInterpreter(target_id);
+    Interpreter* interpreter = Core::instance().getInterpreter(target_id);
     if(interpreter) {
         return interpreter->getAddon(addon_idx);
     } else {
@@ -178,7 +178,7 @@ const char* truss_get_addon_version(truss_interpreter_id target_id, int addon_id
 
 /* Message management functions */
 truss_message* truss_create_message(size_t data_length) {
-    return Core::getCore()->allocateMessage(data_length);
+    return Core::instance().allocateMessage(data_length);
 }
 
 void truss_acquire_message(truss_message* msg) {
@@ -191,7 +191,7 @@ void truss_release_message(truss_message* msg) {
     if (msg != NULL) {
         --(msg->refcount);
         if (msg->refcount <= 0) {
-            Core::getCore()->deallocateMessage(msg);
+            Core::instance().deallocateMessage(msg);
         }
     }
 }
@@ -201,7 +201,7 @@ truss_message* truss_copy_message(truss_message* src) {
         return NULL;
     }
 
-    truss_message* newmsg = Core::getCore()->allocateMessage(src->data_length);
+    truss_message* newmsg = Core::instance().allocateMessage(src->data_length);
     newmsg->message_type = src->message_type;
     std::memcpy(newmsg->data, src->data, newmsg->data_length);
     return newmsg;

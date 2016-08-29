@@ -39,7 +39,7 @@ void storeArgs(int argc, char** argv) {
 		std::stringstream ss;
 		ss << "arg" << i;
 		std::string val(argv[i]);
-		truss::core()->setStoreValue(ss.str(), val);
+		truss::core().setStoreValue(ss.str(), val);
 	}
 }
 
@@ -51,11 +51,11 @@ int main(int argc, char** argv) {
 	storeArgs(argc, argv);
 
 	// set up physFS filesystem
-	truss::core()->initFS(argv[0], true);			// mount the base directory
-	truss::core()->addFSPath("truss.zip", "/", 0);  // try to mount truss.zip as root if it exists
-	truss::core()->setWriteDir("save");				// write into basedir/save/
+	truss::core().initFS(argv[0], true);			// mount the base directory
+	truss::core().addFSPath("truss.zip", "/", 0);  // try to mount truss.zip as root if it exists
+	truss::core().setWriteDir("save");				// write into basedir/save/
 
-	truss::Interpreter* interpreter = truss::core()->spawnInterpreter("interpreter_0");
+	truss::Interpreter* interpreter = truss::core().spawnInterpreter("interpreter_0");
 	interpreter->setDebug(0); // want most verbose debugging output
 	interpreter->attachAddon(new SDLAddon);
 	interpreter->attachAddon(new NanoVGAddon);
