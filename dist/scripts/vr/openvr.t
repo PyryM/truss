@@ -11,7 +11,7 @@ local modelloader = require("vr/modelloader.t")
 
 if raw_addons.openvr ~= nil then
     log.info("OpenVR support is available.")
-    openvr_c = terralib.includec("include/openvr_c.h")
+    openvr_c = terralib.includec("openvr_c.h")
     m.c_api = openvr_c
     m.available = true
 else
