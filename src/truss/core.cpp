@@ -269,7 +269,7 @@ truss_message* Core::loadFileRaw(const char* filename) {
 
         return ret;
     } else {
-        logPrint(TRUSS_LOG_ERROR) << "Unable to open file '%s'." << filename << "\n";
+        logPrint(TRUSS_LOG_ERROR, "Unable to open file '%s'.", filename);
         return NULL;
     }
 }
