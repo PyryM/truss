@@ -147,8 +147,8 @@ void Interpreter::threadEntry() {
     truss_release_message(bootstrap);
     int res = lua_pcall(terraState_, 0, 0, 0);
     if(res != 0) {
-        core().logStream(TRUSS_LOG_ERROR) << "Error bootstrapping interpreter: "
-                  << lua_tostring(terraState_, -1) << std::endl;
+        core().logPrint(TRUSS_LOG_ERROR, "Error bootstrapping interpreter: %s",
+                        lua_tostring(terraState_, -1));
         running_ = false;
         return;
     }
@@ -160,7 +160,7 @@ void Interpreter::threadEntry() {
 
     // Call init
     if (!call("_coreInit", arg_.c_str())) {
-        core().logStream(TRUSS_LOG_ERROR) << "Error in coreInit, stopping interpreter [" << id_ << "]\n";
+        core().logPrint(TRUSS_LOG_ERROR, "Error in coreInit, stopping interpreter [%d].", id_);
         running_ = false;
     }
 

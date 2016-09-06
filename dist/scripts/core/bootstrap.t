@@ -8,7 +8,7 @@ end
 
 -- Have terra include path include the *fake* std so systems without
 -- dev tools can still run it
-terralib.includepath = terralib.includepath .. ";include/compat"
+terralib.includepath = "include;include/compat"
 
 -- Link in truss api
 truss = terralib.includecstring([[
@@ -240,9 +240,9 @@ end
 local vstr = ffi.string(truss.truss_get_version())
 
 -- these are important enough to just be dumped into the global namespace
-bgfx = terralib.includec("include/bgfx_truss.c99.h")
+bgfx = terralib.includec("bgfx_truss.c99.h")
 bgfx_const = truss_import("bgfx_constants.t")
-nanovg = terralib.includec("include/nanovg_terra.h")
+nanovg = terralib.includec("nanovg_terra.h")
 
 core = {}
 core.truss = truss

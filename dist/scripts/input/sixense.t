@@ -7,7 +7,7 @@ local bit = bit
 
 -- link the dynamic library (should only happen once ideally)
 terralib.linklibrary("sixense")
-local sixense_ = terralib.includec("include/sixense.h")
+local sixense_ = terralib.includec("sixense.h")
 
 local m = {}
 m.data = terralib.new(sixense_.sixenseAllControllerData)

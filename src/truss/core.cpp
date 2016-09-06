@@ -2,6 +2,7 @@
 #include "addon.h"
 
 // TODO: switch to a better logging framework
+#include <array>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -12,6 +13,61 @@
 
 using namespace truss;
 
+// Extracts the contents of these folders to the PhysFS write directory.
+void recursiveExtract(void *data, const char *parent_path, const char *filename)
+{
+    std::array<char, 65535> buffer;
+
+    // Construct the virtual source path to this file.
+    std::stringstream source_path_ss;
+    source_path_ss << parent_path << "/" << filename;
+    const std::string source_path = source_path_ss.str();
+
+    // Determine if this path is a real or virtual one by checking if the 
+    // real path ends in a path separator (directory) or not (archive).
+    // If it is a real path, we do not need to extract it.
+    const std::string real_path = PHYSFS_getRealDir(source_path.c_str());
+    const std::string path_separator = PHYSFS_getDirSeparator();
+    if (!real_path.compare(real_path.size() - path_separator.size(),
+                           path_separator.size(), path_separator)) {
+        return;
+    }
+
+    // Iterate through any virtual directories recursively.
+    if (PHYSFS_isDirectory(source_path.c_str())) {
+        PHYSFS_enumerateFilesCallback(source_path.c_str(), recursiveExtract, data);
+        return;
+    }
+
+    // Construct the virtual parent destination containing this file.
+    std::stringstream dest_parent_ss;
+    dest_parent_ss << parent_path;
+    const std::string dest_parent = dest_parent_ss.str();
+
+    // Construct the virtual destination path to this file.
+    std::stringstream dest_path_ss;
+    dest_path_ss << dest_parent << "/" << filename;
+    const std::string dest_path = dest_path_ss.str();
+
+    // At this point, we need to extract this file into the write directory.
+    truss::core().logPrint(TRUSS_LOG_DEBUG, "Extracting '%s'.", source_path.c_str());
+
+    // Create the parent directory for files that need to be extracted.
+    PHYSFS_mkdir(dest_parent.c_str());
+
+    // Copy the virtual file to a real location on disk in chunks.
+    PHYSFS_File *infile = PHYSFS_openRead(source_path.c_str());
+    PHYSFS_File *outfile = PHYSFS_openWrite(dest_path.c_str());
+
+    PHYSFS_sint64 bytes_read;
+    while ((bytes_read = PHYSFS_read(infile, buffer.data(), 1, buffer.size())) > 0) {
+        PHYSFS_write(outfile, buffer.data(), 1, bytes_read);
+    }
+    
+    PHYSFS_close(outfile);
+    PHYSFS_close(infile);
+}
+
 Core& Core::instance() {
     static Core core;
     return core;
@@ -19,7 +75,7 @@ Core& Core::instance() {
 
 void Core::initFS(char* argv0, bool mountBaseDir) {
     if (physFSInitted_) {
-        logMessage(TRUSS_LOG_WARNING, "PhysFS already initted.");
+        logMessage(TRUSS_LOG_WARNING, "PhysFS already initialized.");
         return;
     }
 
@@ -31,30 +87,55 @@ void Core::initFS(char* argv0, bool mountBaseDir) {
     physFSInitted_ = true;
 }
 
-void Core::addFSPath(const char* pathname, const char* mountname, int append) {
+void Core::addFSPath(const char* pathname, const char* mountname, bool append) {
     std::stringstream ss;
     ss << PHYSFS_getBaseDir() << PHYSFS_getDirSeparator() << pathname;
-    logMessage(TRUSS_LOG_DEBUG, "Adding physFS path: ");
-    logMessage(TRUSS_LOG_DEBUG, ss.str().c_str());
+    logPrint(TRUSS_LOG_DEBUG, "Adding physFS path: %s", ss.str().c_str());
 
     int retval = PHYSFS_mount(ss.str().c_str(), mountname, append);
-	if (retval == 0) {
-		logMessage(TRUSS_LOG_ERROR, "addFSPath failed: ");
-		logMessage(TRUSS_LOG_ERROR, PHYSFS_getLastError());
-	}
+    if (retval == 0) {
+        logPrint(TRUSS_LOG_ERROR, "addFSPath failed: %s", PHYSFS_getLastError());
+    }
+}
+
+// Extract contents of include and lib directories just-in-time.
+// NOTE: Not thread-safe due to changing write-dir()
+void Core::extractLibraries() {
+    int retval;
+
+    // The write directory might be NULL if unset.  So we will store both
+    // the original pointer and a std::string with its contents.  That way,
+    // we can later tell if we should set the path back to the value of the
+    // string, or set it back to NULL.
+    const char *originalWritePtr = PHYSFS_getWriteDir();
+    std::string originalWriteDir = originalWritePtr ? originalWritePtr : "";
+    
+    retval = PHYSFS_setWriteDir(PHYSFS_getBaseDir());
+    if (retval == 0) {
+        logPrint(TRUSS_LOG_ERROR, "Changing write dir to '%s' failed: %s",
+                 PHYSFS_getBaseDir(), PHYSFS_getLastError());
+        return;
+    }
+
+    PHYSFS_enumerateFilesCallback("include", recursiveExtract, nullptr);
+    PHYSFS_enumerateFilesCallback("lib", recursiveExtract, nullptr);
+
+    retval = PHYSFS_setWriteDir(originalWritePtr ? originalWriteDir.c_str() : NULL);
+    if (retval == 0) {
+        logPrint(TRUSS_LOG_ERROR, "Restoring write dir to '%s' failed: %s",
+                 PHYSFS_getBaseDir(), PHYSFS_getLastError());
+    }
 }
 
 void Core::setWriteDir(const char* writepath) {
     std::stringstream ss;
     ss << PHYSFS_getBaseDir() << PHYSFS_getDirSeparator() << writepath;
-    logMessage(TRUSS_LOG_DEBUG, "Setting physFS write path: ");
-    logMessage(TRUSS_LOG_DEBUG, ss.str().c_str());
+    logPrint(TRUSS_LOG_DEBUG, "Setting physFS write path: %s", ss.str().c_str());
 
     int retval = PHYSFS_setWriteDir(ss.str().c_str());
-	if (retval == 0) {
-		logMessage(TRUSS_LOG_ERROR, "addFSPath failed: ");
-		logMessage(TRUSS_LOG_ERROR, PHYSFS_getLastError());
-	}
+    if (retval == 0) {
+        logPrint(TRUSS_LOG_ERROR, "setWriteDir failed: %s", PHYSFS_getLastError());
+    }
 }
 
 // NOT THREAD SAFE!!!
@@ -67,6 +148,16 @@ void Core::logMessage(int log_level, const char* msg) {
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
     // dump to logfile
     logfile_ << "[" << log_level << "] " << msg << std::endl;
+}
+
+void Core::logPrint(int log_level, const char* format, ...) {
+    std::array<char, 4096> buffer;
+
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer.data(), buffer.size(), format, args);
+    logMessage(log_level, buffer.data());
+    va_end(args);
 }
 
 Interpreter* Core::getInterpreter(int idx) {
@@ -107,7 +198,7 @@ void Core::stopAllInterpreters() {
 
 int Core::numInterpreters() {
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
-    return interpreters_.size();
+    return static_cast<int>(interpreters_.size());
 }
 
 void Core::dispatchMessage(int targetIdx, truss_message* msg) {
@@ -153,7 +244,7 @@ void Core::deallocateMessage(truss_message* msg) {
 
 int Core::checkFile(const char* filename) {
     if (!physFSInitted_) {
-        logMessage(TRUSS_LOG_WARNING, "PhysFS not initted: checkFile always returns 0.");
+        logMessage(TRUSS_LOG_WARNING, "PhysFS not initialized: checkFile always returns 0.");
         return false;
     }
 
@@ -178,27 +269,24 @@ truss_message* Core::loadFileRaw(const char* filename) {
 
         return ret;
     } else {
-        logStream(TRUSS_LOG_ERROR) << "Unable to open file " << filename << "\n";
+        logPrint(TRUSS_LOG_ERROR, "Unable to open file '%s'.", filename);
         return NULL;
     }
 }
 
 truss_message* Core::loadFile(const char* filename) {
     if (!physFSInitted_) {
-        logMessage(TRUSS_LOG_ERROR, "Cannot load file: PhysFS not initted.");
-        logMessage(TRUSS_LOG_ERROR, filename);
+        logPrint(TRUSS_LOG_ERROR, "Cannot load file '%s': PhysFS not initialized.", filename);
         return NULL;
     }
 
     if (PHYSFS_exists(filename) == 0) {
-        logMessage(TRUSS_LOG_ERROR, "Error opening file: does not exist.");
-        logMessage(TRUSS_LOG_ERROR, filename);
+        logPrint(TRUSS_LOG_ERROR, "Error opening file '%s': does not exist.", filename);
         return NULL;
     }
 
     if (PHYSFS_isDirectory(filename) != 0) {
-        logMessage(TRUSS_LOG_ERROR, "Attempted to read directory as a file.");
-        logMessage(TRUSS_LOG_ERROR, filename);
+        logPrint(TRUSS_LOG_ERROR, "Attempted to read directory '%s' as a file.", filename);
         return NULL;
     }
 
@@ -212,30 +300,31 @@ truss_message* Core::loadFile(const char* filename) {
 }
 
 void Core::saveData(const char* filename, const char* data, unsigned int datalength) {
-	if (!physFSInitted_) {
-		logMessage(TRUSS_LOG_ERROR, "Cannot save file; PhysFS not initted.");
-		logMessage(TRUSS_LOG_ERROR, filename);
-		return;
-	}
+    if (!physFSInitted_) {
+        logPrint(TRUSS_LOG_ERROR, "Cannot save file '%s': PhysFS not initialized.", filename);
+        return;
+    }
 
-	PHYSFS_file* myfile = PHYSFS_openWrite(filename);
-	PHYSFS_write(myfile, data, 1, datalength);
-	PHYSFS_close(myfile);
+    PHYSFS_file* myfile = PHYSFS_openWrite(filename);
+    PHYSFS_write(myfile, data, 1, datalength);
+    PHYSFS_close(myfile);
 }
 
 void Core::saveDataRaw(const char* filename, const char* data, unsigned int datalength) {
-	std::ofstream outfile;
-	outfile.open(filename, std::ios::binary | std::ios::out);
-	outfile.write(data, datalength);
-	outfile.close();
+    std::ofstream outfile;
+    outfile.open(filename, std::ios::binary | std::ios::out);
+    outfile.write(data, datalength);
+    outfile.close();
 }
 
 void Core::saveFile(const char* filename, truss_message* data) {
-	saveData(filename, (char*)(data->data), data->data_length);
+    saveData(filename, (char*)(data->data),
+             static_cast<unsigned int>(data->data_length));
 }
 
 void Core::saveFileRaw(const char* filename, truss_message* data) {
-	saveDataRaw(filename, (char*)(data->data), data->data_length);
+    saveDataRaw(filename, (char*)(data->data),
+                static_cast<unsigned int>(data->data_length));
 }
 
 truss_message* Core::getStoreValue(const std::string& key) {

@@ -11,7 +11,7 @@ local SoloudSpeech = class("SoloudSpeech")
 
 -- link the dynamic library (should only happen once ideally)
 terralib.linklibrary("soloud")
-local soloud_ = terralib.includec("include/soloud_c.h")
+local soloud_ = terralib.includec("soloud_c.h")
 
 function m.init()
     m.instance_ = soloud_.Soloud_create()

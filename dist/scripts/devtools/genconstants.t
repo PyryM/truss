@@ -13,7 +13,7 @@ end
 
 local function makeCFile(defpairs)
 	local ret =  '#include <stdint.h>\n'
-	ret = ret .. '#include "include/bgfxdefines.h"\n\n'
+	ret = ret .. '#include "bgfxdefines.h"\n\n'
 	for defname, funcname in pairs(defpairs) do
 		ret = ret .. makeCReturnFunc(funcname, defname)
 	end

@@ -19,12 +19,14 @@ public:
 
     // functions for dealing with physfs (you can also make direct physfs
     // calls if you need to, after you've called initFS)
-    void initFS(char* argv0, bool mountBaseDir = true);
-    void addFSPath(const char* pathname, const char* mountname, int append);
+    void initFS(char* argv0, bool mountBaseDir=true);
+    void addFSPath(const char* pathname, const char* mountname, bool append=true);
     void setWriteDir(const char* writepath);
+    void extractLibraries();
 
     std::ostream& logStream(int log_level);
     void logMessage(int log_level, const char* msg);
+    void logPrint(int log_level, const char* format, ...);
 
     Interpreter* getInterpreter(int idx);
     Interpreter* getNamedInterpreter(const char* name);
