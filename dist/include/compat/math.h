@@ -6,7 +6,7 @@
 #ifndef MATH_H
 #define MATH_H
 
-/*  
+/*
  *  Used by truss to check whether this header has been included from fakestd
  *  or from the actual system includes
  */
@@ -51,6 +51,7 @@ float expm1f(float);
 double fabs(double);
 double fdim(double, double);
 float fdimf(float, float);
+float floorf(float);
 double floor(double);
 double fma(double, double, double);
 float fmaf(float, float, float);
