@@ -82,6 +82,7 @@ endif()
 # Configure the RPATH for Linux and OSX.
 set(CMAKE_SKIP_BUILD_RPATH TRUE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+set(CMAKE_MACOSX_RPATH TRUE)
 set_target_properties(truss PROPERTIES
     INSTALL_RPATH "./lib"
     RUNTIME_OUTPUT_DIRECTORY "${DIST_DIR}"
