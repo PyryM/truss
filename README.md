@@ -14,14 +14,8 @@ Truss is designed for relatively modern computers. In particular,
 
 ## Miscellaneous tips
 
-### Compiling DirectX11 (dx11) shaders
-```
-shaderc -f source_fs_file.sc -o output_fs_file.bin --type f -i common\ --platform windows -p ps_4_0 -O 3
-```
-For vertex shader change `ps_4_0` to `vs_4_0`
-(for DirectX9 (dx9) use `ps_3_0` and `vs_3_0`)
+### Compiling shaders
+Copy `shadercRelease[.exe]` (found in e.g., `build\bgfx_EXTERNAL-prefix\src\bgfx_EXTERNAL\.build\win64_vs2015\bin` after building) into `dist/shaders/raw`, and then in that directory run `python compile_shaders.py`.
 
-### Compiling OpenGL shaders
-```
-shaderc -f source_fs_file.sc -o output_fs_file.bin --type f -i common\ --platform linux -p 120
-```
+### Creating a distribution .zip
+Truss will try to automatically mount `truss.zip`, so it's possible to create a two-file truss distribution (`truss[.exe]` and `truss.zip`) by zipping up `font`, `include`, `libs`, `scripts`, and `shaders` from `dist/` into `truss.zip`. 
