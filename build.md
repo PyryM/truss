@@ -1,14 +1,15 @@
 # Truss Build Instructions
 
-## Windows (vs2015)
-* Dependencies: `cmake`
-  * Get and install `cmake`
+## Windows
+* Dependencies:
+  * Download and install [`cmake`](https://cmake.org/download/)
+  * Download and install [`Visual Studio 2015`](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx)
 
 * Compilation
   * Run `cmake-gui`
     * Specify the source directory as your git checkout
     * Specify the build directory as your git checkout + `./build`
-    * Click `Configure` and select the compiler (make sure to choose 64-bit).
+    * Click `Configure` and select the compiler `Visual Studio 14 2015 Win64` (make sure to choose 64-bit).
     * Click `Generate`
   * Open the `./build` directory and double-click `truss.sln`
   * In Visual Studio, build the `ALL_BUILD` project to build everything.
