@@ -28,7 +28,7 @@ function m.axisWidgetData(scale, length, segments)
     local q = math.Quaternion()
     local p = math.Vector():zero()
 
-    local rotations = {{0,0,math.pi/2}, {0,0,0}, {-math.pi/2,0,0}}
+    local rotations = {{0,0,-math.pi/2}, {0,0,0}, {math.pi/2,0,0}}
     local bsize = scale * 0.1
     local lines = {
         {{-length*0.25, length}},
