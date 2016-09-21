@@ -299,7 +299,7 @@ function _coreInit(argstring)
 	_addPaths()
 	-- Load in argstring
 	local t0 = tic()
-	local fn = "scripts/" .. argstring
+	local fn = argstring
 	log.info("Loading " .. fn)
 	local script = loadStringFromFile(fn)
 	local scriptfunc, loaderror = loadNamed(script, argstring)
