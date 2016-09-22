@@ -9,8 +9,6 @@ local futureplot = require("gui/futureplot.t")
 local orbitcam = require('gui/orbitcam.t')
 local AppScaffold = require("utils/appscaffold.t").AppScaffold
 
-local nanovg = core.nanovg
-
 function myDrawFunction(stage, nvg, width, height)
     futureplot.draw(nvg, width, height)
 end

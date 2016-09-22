@@ -50,7 +50,7 @@ terra m.createTextureFromData(w: int32, h: int32, src: &uint8, srclen: uint32, f
     if src ~= nil then
         bmem = bgfx.bgfx_copy(src, srclen)
     else
-        truss.truss_log(truss.TRUSS_LOG_ERROR, "Error creating texture: null pointer")
+        truss.C.log(truss.C.LOG_ERROR, "Error creating texture: null pointer")
         var ret : bgfx.bgfx_texture_handle_t
         ret.idx = bgfx.BGFX_INVALID_HANDLE
         return ret

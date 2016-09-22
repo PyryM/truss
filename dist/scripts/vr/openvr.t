@@ -9,7 +9,7 @@ local openvr_c = nil
 local const = require("vr/constants.t")
 local modelloader = require("vr/modelloader.t")
 
-if raw_addons.openvr ~= nil then
+if truss.rawAddons.openvr ~= nil then
     log.info("OpenVR support is available.")
     openvr_c = terralib.includec("openvr_c.h")
     m.c_api = openvr_c
@@ -102,8 +102,8 @@ function m.init()
         return false, "OpenVR support not built."
     end
 
-    local addonfuncs = raw_addons.openvr.functions
-    local addonptr   = raw_addons.openvr.pointer
+    local addonfuncs = truss.rawAddons.openvr.functions
+    local addonptr   = truss.rawAddons.openvr.pointer
     log.info("Initting...")
     local success = addonfuncs.truss_openvr_init(addonptr, 0)
     if success > 0 then

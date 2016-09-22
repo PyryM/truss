@@ -31,7 +31,7 @@ function createGeometry()
     thecloud:updateMatrix()
 
     -- 128*106
-    local bc = core.bgfx_const
+    local bc = bgfx_const
     local texflags = bc.BGFX_TEXTURE_MIN_POINT + bc.BGFX_TEXTURE_MAG_POINT
     itex = require('utils/textureutils.t').loadTexture('textures/cone.png', texflags)
 

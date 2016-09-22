@@ -3,12 +3,7 @@
 -- a basic app scaffold that does setup, event handling, etc.
 
 local class = require('class')
-local bgfx = core.bgfx
-local bgfx_const = core.bgfx_const
-local terralib = core.terralib
-local truss = core.truss
-local sdl = addons.sdl
-local nanovg = core.nanovg
+local sdl = truss.addons.sdl
 
 local math = require("math")
 local gfx = require("gfx")
@@ -54,7 +49,7 @@ function AppScaffold:init(options)
     self:initPipeline()
     self:initScene()
 
-    self.startTime = tic()
+    self.startTime = truss.tic()
 end
 
 function AppScaffold:initBGFX()
@@ -177,8 +172,8 @@ function AppScaffold:updateEvents()
                 self.downkeys[keyname] = false
             end
         elseif evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
-            log.info("Received window close, stopping interpreter...")
-            truss.truss_stop_interpreter(core.TRUSS_ID)
+            log.info("Received window close, quitting...")
+            truss.quit()
         end
         if self.userEventHandler then
             self:userEventHandler(evt)
@@ -227,14 +222,14 @@ function AppScaffold:update()
 
     self:updateScene()
     self:render()
-    self.scripttime = toc(self.startTime)
+    self.scripttime = truss.toc(self.startTime)
 
     -- Advance to next frame. Rendering thread will be kicked to
     -- process submitted rendering primitives.
     bgfx.bgfx_frame(false)
 
-    self.frametime = toc(self.startTime)
-    self.startTime = tic()
+    self.frametime = truss.toc(self.startTime)
+    self.startTime = truss.tic()
 end
 
 local m = {}

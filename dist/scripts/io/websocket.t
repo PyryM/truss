@@ -10,8 +10,8 @@ local WebSocketConnection = class("WebSocketConnection")
 
 local numsockets = 0
 
-wsAddon = raw_addons.wsclient.functions
-wsAddonPointer = raw_addons.wsclient.pointer
+wsAddon = truss.rawAddons.wsclient.functions
+wsAddonPointer = truss.rawAddons.wsclient.pointer
 
 function WebSocketConnection:init()
     self.open = false
@@ -38,7 +38,7 @@ end
 
 function WebSocketConnection:update()
     if not self.open then return end
-    
+
     local nmessages = wsAddon.truss_wsclient_receive(wsAddonPointer, self.id)
     if nmessages < 0 then
         log.error("Websocket connection broken or closed remotely.")
@@ -47,7 +47,7 @@ function WebSocketConnection:update()
     end
 
     if not self.callback then return end
-    
+
     if self.decodeJSON then
         for i = 1,nmessages do
             local rawstr = wsAddon.truss_wsclient_getmessage(wsAddonPointer, self.id, i - 1)

@@ -2,8 +2,6 @@
 --
 -- useful functions for drawing stylized text
 
-local nanovg = core.nanovg
-
 local m = {}
 
 m.linemargin = 2

@@ -250,7 +250,7 @@ function VRApp:update()
 
     self:updateScene()
     self:render()
-    self.scripttime = toc(self.startTime)
+    self.scripttime = truss.toc(self.startTime)
 
     -- Have bgfx do its rendering
     bgfx.bgfx_frame(false)
@@ -258,13 +258,13 @@ function VRApp:update()
     -- Submit eyes
     openvr.submitFrame(self.eyeTexes)
 
-    self.frametime = toc(self.startTime)
+    self.frametime = truss.toc(self.startTime)
 
     if self.frame % 60 == 0 then
         log.info("ft: " .. self.frametime)
     end
 
-    self.startTime = tic()
+    self.startTime = truss.tic()
 end
 
 m.VRApp = VRApp

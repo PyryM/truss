@@ -2,11 +2,7 @@
 --
 -- tests line object
 
-bgfx = core.bgfx
-bgfx_const = core.bgfx_const
-terralib = core.terralib
-truss = core.truss
-sdl = addons.sdl
+sdl = truss.addons.sdl
 
 -- start at very beginning to get most log messages
 local webconsole = require("devtools/webconsole.t")
@@ -33,7 +29,7 @@ function updateEvents()
     for evt in sdl:events() do
         if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
             log.info("Received window close, stopping interpreter...")
-            truss.truss_stop_interpreter(core.TRUSS_ID)
+            truss.quit()
         end
     end
 end
@@ -181,7 +177,7 @@ function update()
     webconsole.update()
     time = time + 1.0 / 60.0
 
-    local startTime = tic()
+    local startTime = truss.tic()
 
     -- Deal with input events
     updateEvents()
@@ -202,5 +198,5 @@ function update()
     -- process submitted rendering primitives.
     bgfx.bgfx_frame(false)
 
-    frametime = toc(startTime)
+    frametime = truss.toc(startTime)
 end
