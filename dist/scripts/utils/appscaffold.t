@@ -21,6 +21,7 @@ function AppScaffold:init(options)
     self.vsync = options.vsync ~= false
     self.msaa = options.msaa ~= false
     self.clearcolor = options.clearcolor or 0x303030ff
+    self.consoleOnError = options.consoleOnError
     if options.renderer then
         self.requestedRenderer = string.upper(options.renderer)
     end
@@ -233,6 +234,22 @@ function AppScaffold:update()
     self.startTime = truss.tic()
 end
 
+function AppScaffold:attachWebconsole()
+    if self.webconsole then return true end
+    local webconsole = require("devtools/webconsole.t")
+    if webconsole then
+        local connected = webconsole.start()
+        if connected then
+            self.webconsole = webconsole
+            return true
+        else
+            return false, "connection error"
+        end
+    else
+        return false, "devtools/webconsole.t not present"
+    end
+end
+
 function AppScaffold:fallbackUpdate()
     if not self.bgfxInitted then
         log.info("Crash before bgfx init; no choice but to quit.")
@@ -250,20 +267,13 @@ function AppScaffold:fallbackUpdate()
                 0)
         bgfx.bgfx_set_view_frame_buffer(0, self.fbBackBuffer)
         bgfx.bgfx_set_debug(bgfx_const.BGFX_DEBUG_TEXT)
-        local text = {}
-        table.insert(text, {"Had an error :(", 0x83})
-        local webconsole = require("devtools/webconsole.t")
-        if webconsole then
-            table.insert(text, {"Attempting to connect to webconsole...", 0x6f})
-            local connected = webconsole.start()
-            if connected then
-                table.insert(text, {"Connected to webconsole.", 0x6f})
-                self.fbConsole = webconsole
-            else
-                table.insert(text, {"Failed to connect to webconsole (is it running?)", 0x6f})
-            end
+        local text = {{">>>>>>>>>>>>> CRASH <<<<<<<<<<<<<", 0x83}}
+        if self.consoleOnError then
+            local happy, msg = self:attachWebconsole()
+            if happy then msg = "Webconsole connected" end
+            table.insert(text, {msg, 0x6f})
         else
-            table.insert(text, {"No webconsole support.", 0x83})
+            table.insert(text, {"Pass 'consoleOnError = true' to AppScaffold to enable webconsole.", 0x6f})
         end
         table.insert(text, {truss.crashMessage or "unspecified crash", 0x83})
         self.fbTextLines = text
@@ -276,7 +286,7 @@ function AppScaffold:fallbackUpdate()
             truss.quit()
         end
     end
-    if self.fbConsole then self.fbConsole.update() end
+    if self.webconsole then self.webconsole.update() end
 
     bgfx.bgfx_dbg_text_clear(0, false)
     for i, line in ipairs(self.fbTextLines) do
