@@ -76,6 +76,7 @@ function AppScaffold:initBGFX()
 
     bgfx.bgfx_init(rendererType, 0, 0, cbInterfacePtr, nil)
     bgfx.bgfx_reset(self.width, self.height, reset)
+    self.bgfxInitted = true
 
     -- Enable debug text.
     bgfx.bgfx_set_debug(debug)
@@ -230,6 +231,60 @@ function AppScaffold:update()
 
     self.frametime = truss.toc(self.startTime)
     self.startTime = truss.tic()
+end
+
+function AppScaffold:fallbackUpdate()
+    if not self.bgfxInitted then
+        log.info("Crash before bgfx init; no choice but to quit.")
+        truss.quit()
+    end
+
+    if not self._inittedFallback then
+        self.fbBackBuffer = terralib.new(bgfx.bgfx_frame_buffer_handle_t)
+        self.fbBackBuffer.idx = bgfx.BGFX_INVALID_HANDLE
+        bgfx.bgfx_set_view_rect(0, 0, 0, self.width, self.height)
+        bgfx.bgfx_set_view_clear(0, -- viewid 0
+                bgfx_const.BGFX_CLEAR_COLOR + bgfx_const.BGFX_CLEAR_DEPTH,
+                0x503030ff, -- clearcolor (reddish)
+                1.0, -- cleardepth (in normalized space: 1.0 = max depth)
+                0)
+        bgfx.bgfx_set_view_frame_buffer(0, self.fbBackBuffer)
+        bgfx.bgfx_set_debug(bgfx_const.BGFX_DEBUG_TEXT)
+        local text = {}
+        table.insert(text, {"Had an error :(", 0x83})
+        local webconsole = require("devtools/webconsole.t")
+        if webconsole then
+            table.insert(text, {"Attempting to connect to webconsole...", 0x6f})
+            local connected = webconsole.start()
+            if connected then
+                table.insert(text, {"Connected to webconsole.", 0x6f})
+                self.fbConsole = webconsole
+            else
+                table.insert(text, {"Failed to connect to webconsole (is it running?)", 0x6f})
+            end
+        else
+            table.insert(text, {"No webconsole support.", 0x83})
+        end
+        table.insert(text, {truss.crashMessage or "unspecified crash", 0x83})
+        self.fbTextLines = text
+        self._inittedFallback = true
+    end
+
+    local sdl = truss.addons.sdl
+    for evt in sdl:events() do
+        if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
+            truss.quit()
+        end
+    end
+    if self.fbConsole then self.fbConsole.update() end
+
+    bgfx.bgfx_dbg_text_clear(0, false)
+    for i, line in ipairs(self.fbTextLines) do
+        local text, color = unpack(line)
+        bgfx.bgfx_dbg_text_printf(1, i+1, color or 0x6f, text)
+    end
+    bgfx.bgfx_touch(0)
+    bgfx.bgfx_frame(false)
 end
 
 local m = {}

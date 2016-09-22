@@ -4,6 +4,8 @@ local websocket = require("io/websocket.t")
 local m = {}
 
 function m.start(options)
+    if m.socket and m.socket.open then return true end
+
     options = options or {}
     m.createEnvironment()
 
@@ -13,7 +15,9 @@ function m.start(options)
 
     local host = options.host or "ws://localhost:8087"
     if host ~= "" then
-        m.connect(host)
+        return m.connect(host)
+    else
+        return false
     end
 end
 
@@ -27,6 +31,7 @@ function m.connect(host)
     m.socket:onJSON(m.onMessage)
     m.socket:connect(host)
     m.print("------ truss connected ------")
+    return m.socket.open
 end
 
 function m.installLogRedirects()
@@ -42,12 +47,13 @@ end
 
 function m.createEnvironment()
     m.env = {}
-    m.env.main = subenv
-    m.env.modules = loadedLibs
+    m.env.mainObj = truss.mainObj
+    m.env.mainEnv = truss.mainEnv
+    m.env.loadedLibs = truss.loadedLibs
     m.env.G = _G
 
     -- copy over the 'clean' subenvironment
-    for k,v in pairs(clean_subenv) do
+    for k,v in pairs(truss.clean_subenv) do
         m.env[k] = v
     end
 

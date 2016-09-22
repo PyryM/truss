@@ -93,6 +93,13 @@ bit = require("bit")
 
 truss.tic = truss.C.get_hp_time
 
+local lua_error = error
+function truss.error(msg)
+    log.critical(msg)
+    lua_error(msg)
+end
+error = truss.error
+
 terra truss.toc(startTime: uint64)
     var curtime = truss.C.get_hp_time()
     var freq = truss.C.get_hp_freq()
@@ -292,6 +299,29 @@ for sk,sv in pairs(subenv) do
     truss.clean_subenv[sk] = sv
 end
 
+local function loadAndRun(fn)
+    local script = truss.loadStringFromFile(fn)
+    local scriptfunc, loaderror = truss.loadNamedString(script, fn)
+    if scriptfunc == nil then
+        error("Main script loading error: " .. loaderror)
+        return
+    end
+    setfenv(scriptfunc, subenv)
+    truss.mainObj = scriptfunc() or truss.mainEnv
+    truss.mainObj:init()
+end
+
+function truss.enterErrorState(errmsg)
+    log.critical(errmsg)
+    truss.crashMessage = errmsg
+    if truss.mainObj and truss.mainObj.fallbackUpdate then
+        _coreUpdate = _fallbackUpdate
+    else
+        log.info("No fallback update function present; quitting.")
+        truss.quit()
+    end
+end
+
 -- These functions have to be global because
 function _coreInit(argstring)
     -- Set paths from command line arguments
@@ -300,19 +330,21 @@ function _coreInit(argstring)
     local t0 = truss.tic()
     local fn = argstring
     log.info("Loading " .. fn)
-    local script = truss.loadStringFromFile(fn)
-    local scriptfunc, loaderror = truss.loadNamedString(script, argstring)
-    if scriptfunc == nil then
-        log.critical("Main script loading error: " .. loaderror)
-        return
+    local happy, errmsg = pcall(loadAndRun, fn)
+    if not happy then
+        truss.enterErrorState(errmsg)
     end
-    setfenv(scriptfunc, subenv)
-    truss.mainObj = scriptfunc() or truss.mainEnv
-    truss.mainObj:init()
     local delta = truss.toc(t0)
     log.info("Time to init: " .. delta)
 end
 
+function _fallbackUpdate()
+    truss.mainObj:fallbackUpdate()
+end
+
 function _coreUpdate()
-    truss.mainObj:update()
+    local happy, errmsg = pcall(truss.mainObj.update, truss.mainObj)
+    if not happy then
+        truss.enterErrorState(errmsg)
+    end
 end
