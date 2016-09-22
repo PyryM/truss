@@ -72,12 +72,19 @@ function VRApp:initBGFX()
         reset = bgfx_const.BGFX_RESET_FLIP_AFTER_RENDER +
                   bgfx_const.BGFX_RESET_FLUSH_AFTER_RENDER
     end
+    if not openvr.available then
+        -- add in vsync if vr is not available to avoid melting gpu
+        reset = reset + bgfx_const.BGFX_RESET_VSYNC
+    end
     --local cbInterfacePtr = sdl.truss_sdl_get_bgfx_cb(sdlPointer)
     local cbInterfacePtr = nil
     bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
     bgfx.bgfx_reset(self.width, self.height, reset)
 
-    local debug = 0 -- debug text doesn't play nice with views other than 0
+    local debug = 0 --
+    if self.debugtext then
+        debug = debug + bgfx_const.BGFX_DEBUG_TEXT
+    end
     bgfx.bgfx_set_debug(debug)
 
     log.info("VRApp: initted bgfx")
@@ -235,6 +242,7 @@ function VRApp:update()
 
     -- Set the window view to take up the entire target
     --bgfx.bgfx_set_view_rect(self.windowView, 0, 0, self.width, self.height)
+    self:drawDebugText()
 
     if self.preRender then
         self:preRender()

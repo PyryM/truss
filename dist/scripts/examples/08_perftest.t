@@ -38,6 +38,7 @@ function PerfApp:initScene()
     self.pos = Vector(0,0,0)
     self.scale = Vector(1,1,1)
     self.quat = Quaternion():identity()
+    self.scene = Object3D() -- need a dummy here for super.update
 end
 
 function PerfApp:bindFFIBGFX()

@@ -195,6 +195,16 @@ function AppScaffold:render()
                           scene  = self.scene})
 end
 
+function AppScaffold:drawDebugText()
+    if not self.debugtext then return end
+    -- Use debug font to print information about this example.
+    bgfx.bgfx_dbg_text_clear(0, false)
+    bgfx.bgfx_dbg_text_printf(0, 1, 0x6f, "total: " .. self.frametime*1000.0
+                                                    .. " ms, script: "
+                                                    .. self.scripttime*1000.0
+                                                    .. " ms")
+end
+
 function AppScaffold:update()
     self.frame = self.frame + 1
     self.time = self.time + 1.0 / 60.0
@@ -209,13 +219,8 @@ function AppScaffold:update()
     -- Touch the view to make sure it is cleared even if no draw
     -- calls happen
     -- bgfx.bgfx_touch(0)
+    self:drawDebugText()
 
-    -- Use debug font to print information about this example.
-    bgfx.bgfx_dbg_text_clear(0, false)
-    bgfx.bgfx_dbg_text_printf(0, 1, 0x6f, "total: " .. self.frametime*1000.0
-                                                    .. " ms, script: "
-                                                    .. self.scripttime*1000.0
-                                                    .. " ms")
     if self.preRender then
         self:preRender()
     end
