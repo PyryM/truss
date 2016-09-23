@@ -3,6 +3,7 @@
 -- a console that displays using the bgfx debug text
 
 local m = {}
+local stringutils = require("utils/stringutils.t")
 
 m.defaultColor = 0x8f
 m.errorColor = 0x83
@@ -11,6 +12,10 @@ m.inverseEditColor = 0x07
 m.commandColor = 0x87
 m.headerSize = 3
 m.headerColor = 0x6f
+
+local function bg_print(x, y, color, string)
+	bgfx.bgfx_dbg_text_printf(x, y, color, "%s", string)
+end
 
 -- take over view 0
 function m.hijackBGFX(windowW, windowH)
@@ -102,28 +107,41 @@ function m.printColors()
 	end
 end
 
+function m.drawPositionBar_()
+	local fp = m.bufferPos / (#(m.lineBuffer) - m.height)
+	local p = math.min(m.height - 1, math.ceil(m.height * fp))
+	local nheader = #(m.headerLines)
+	local bar = string.char(179)
+	for i = 0,(m.height-1) do
+		local c = bar
+		if i == p then c = string.char(219) end
+		bg_print(m.width-1, i + nheader + 1, m.inverseEditColor, c)
+	end
+end
+
 function m.debugPrintLines()
 	bgfx.bgfx_dbg_text_clear(0, false)
 	local headersize = #(m.headerLines) + 1
 	for idx, headerline in ipairs(m.headerLines) do
-		bgfx.bgfx_dbg_text_printf(0, idx-1, m.headerColor, headerline or "?")
+		bg_print(0, idx-1, m.headerColor, headerline or "?")
 	end
 	for i = 0,m.height-1 do
 		local lineinfo = m.lineBuffer[m.bufferPos + i] or {}
 		local text, color = lineinfo[1] or "", lineinfo[2] or m.defaultColor
 		local ppos = text:len()
 		local padding = m.paddings[m.width - ppos] or ""
-		bgfx.bgfx_dbg_text_printf(0, i+headersize, color, text)
-		bgfx.bgfx_dbg_text_printf(ppos, i+headersize, color, padding)
+		bg_print(0, i+headersize, color, text)
+		bg_print(ppos, i+headersize, color, padding)
 	end
 	local fp = m.editLine:sub(1, m.cursorPos)
 	local cp = m.editLine:sub(m.cursorPos+1, m.cursorPos+1)
 	local rp = m.editLine:sub(m.cursorPos+2,-1)
 	local editpadding = m.paddings[m.width - #(m.editLine) - 1] or ""
-	bgfx.bgfx_dbg_text_printf(0, m.height+headersize, m.editColor, ">" ..
+	bg_print(0, m.height+headersize, m.editColor, ">" ..
 		fp .. editpadding)
-	bgfx.bgfx_dbg_text_printf(#(fp)+1, m.height+headersize, m.inverseEditColor, cp)
-	bgfx.bgfx_dbg_text_printf(#(fp)+2, m.height+headersize, m.editColor, rp .. editpadding)
+	bg_print(#(fp)+1, m.height+headersize, m.inverseEditColor, cp)
+	bg_print(#(fp)+2, m.height+headersize, m.editColor, rp .. editpadding)
+	m.drawPositionBar_()
 end
 
 function m.update()
@@ -152,15 +170,22 @@ function m.attachWebconsole()
     end
 end
 
-function m.wrapLines(s)
+function m.wrapOverlong_(s, ret)
 	local remainder = s
-	local ret = {}
 	while remainder:len() > m.width do
 		local front = remainder:sub(1,m.width)
 		remainder = remainder:sub(m.width+1,-1)
 		table.insert(ret, front)
 	end
 	table.insert(ret, remainder)
+end
+
+function m.wrapLines(s)
+	local ret = {}
+	local lines = stringutils.splitLines(s)
+	for _, line in ipairs(lines) do
+		m.wrapOverlong_(line, ret)
+	end
 	return ret
 end
 
@@ -201,12 +226,17 @@ end
 function m.printMiniHelp()
 	m.print("Miniconsole")
 	m.divider()
-	m.print("help() for help | info(thing) to pretty-print info")
-	m.print("print() to print to this console | colors() for pretty colors")
-	m.print("truss.quit() to quit [or just close the window]")
+	m.print("help() for help [this message]")
+	m.print("info(thing) to pretty-print info")
+	m.print("print(str, color) to print to this console")
+	m.print("colors() for pretty colors")
+	m.print("truss.quit() or quit() to quit [or just close the window]")
 	m.print("remote() or rc() to connect to remote console")
 	m.print("resume() to resume [warning! very wonky!]")
+	m.print("log() to show the log")
 	m.print("pageup / pagedown to see history")
+	m.print("clear() to clear")
+	m.print("div() or divider() to create a divider")
 	m.divider()
 end
 
@@ -266,6 +296,27 @@ function m.createEnvironment()
 	m.env.rc = m.attachWebconsole
 	m.env.remote = m.attachWebconsole
 	m.env.resume = truss.resumeFromError
+	m.env.quit = truss.quit
+	m.env.printlog = m.dumpLog
+	m.env.log = m.dumpLog
+	m.env.clear = m.clear
+	m.env.div = m.divider
+	m.env.divider = m.divider
+end
+
+function m.clear()
+	m.bufferPos = 0
+	m.lineBuffer = {}
+end
+
+function m.dumpLog()
+	local loglines = truss.loadStringFromFile("trusslog.txt")
+	if not loglines then
+		m.print("Couldn't load trusslog.txt", m.errorColor)
+		return
+	end
+	local lines = stringutils.splitLines(loglines)
+	for _, line in ipairs(lines) do m.print(line) end
 end
 
 function m.execute_()
