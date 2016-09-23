@@ -96,7 +96,7 @@ truss.tic = truss.C.get_hp_time
 local lua_error = error
 function truss.error(msg)
     log.critical(msg)
-    lua_error(msg)
+    lua_error(msg, 2)
 end
 error = truss.error
 
@@ -311,17 +311,6 @@ local function loadAndRun(fn)
     truss.mainObj:init()
 end
 
-function truss.enterErrorState(errmsg)
-    log.critical(errmsg)
-    truss.crashMessage = errmsg
-    if truss.mainObj and truss.mainObj.fallbackUpdate then
-        _coreUpdate = _fallbackUpdate
-    else
-        log.info("No fallback update function present; quitting.")
-        truss.quit()
-    end
-end
-
 -- These functions have to be global because
 function _coreInit(argstring)
     -- Set paths from command line arguments
@@ -346,5 +335,27 @@ function _coreUpdate()
     local happy, errmsg = pcall(truss.mainObj.update, truss.mainObj)
     if not happy then
         truss.enterErrorState(errmsg)
+    end
+end
+
+_resumeUpdate = _coreUpdate
+function truss.enterErrorState(errmsg)
+    log.critical(errmsg)
+    truss.crashMessage = errmsg
+    if truss.mainObj and truss.mainObj.fallbackUpdate then
+        _resumeUpdate = _coreUpdate
+        _coreUpdate = _fallbackUpdate
+    else
+        log.info("No fallback update function present; quitting.")
+        truss.quit()
+    end
+end
+
+function truss.resumeFromError()
+    log.info("Attempting to resume from an error")
+    if _resumeUpdate then
+        _coreUpdate = _resumeUpdate
+    else
+        log.warn("Cannot resume; no resume update function set.")
     end
 end

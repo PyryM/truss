@@ -22,6 +22,9 @@ function AppScaffold:init(options)
     self.msaa = options.msaa ~= false
     self.clearcolor = options.clearcolor or 0x303030ff
     self.consoleOnError = options.consoleOnError
+    if self.consoleOnError ~= false then
+        self:installFallback()
+    end
     if options.renderer then
         self.requestedRenderer = string.upper(options.renderer)
     end
@@ -51,6 +54,18 @@ function AppScaffold:init(options)
     self:initScene()
 
     self.startTime = truss.tic()
+end
+
+function AppScaffold:installFallback()
+    if truss.mainEnv.fallbackUpdate then
+        log.info("AppScaffold:installFallback : fallback already present.")
+        return
+    end
+
+    local closureSelf = self
+    truss.mainEnv.fallbackUpdate = function()
+        closureSelf:fallbackUpdate()
+    end
 end
 
 function AppScaffold:initBGFX()
@@ -262,39 +277,49 @@ function AppScaffold:fallbackUpdate()
         bgfx.bgfx_set_view_rect(0, 0, 0, self.width, self.height)
         bgfx.bgfx_set_view_clear(0, -- viewid 0
                 bgfx_const.BGFX_CLEAR_COLOR + bgfx_const.BGFX_CLEAR_DEPTH,
-                0x503030ff, -- clearcolor (reddish)
+                0x000000ff, -- clearcolor (black)
                 1.0, -- cleardepth (in normalized space: 1.0 = max depth)
                 0)
         bgfx.bgfx_set_view_frame_buffer(0, self.fbBackBuffer)
         bgfx.bgfx_set_debug(bgfx_const.BGFX_DEBUG_TEXT)
         local text = {{">>>>>>>>>>>>> CRASH <<<<<<<<<<<<<", 0x83}}
-        if self.consoleOnError then
+        if self.consoleOnError == "remote" then
             local happy, msg = self:attachWebconsole()
             if happy then msg = "Webconsole connected" end
             table.insert(text, {msg, 0x6f})
+        elseif self.consoleOnError ~= false then
+            -- local console
+            self.fbMiniconsole = require("devtools/miniconsole.t")
+            self.fbMiniconsole.init(math.floor(self.width / 8),
+                                    math.floor(self.height / 16))
+            self.fbMiniconsole.setHeader("Something broke: " .. truss.crashMessage, 0x83)
+            self.fbMiniconsole.printMiniHelp()
         else
-            table.insert(text, {"Pass 'consoleOnError = true' to AppScaffold to enable webconsole.", 0x6f})
+            table.insert(text, {"Pass 'consoleOnError = true' to AppScaffold to enable debug console.", 0x6f})
         end
         table.insert(text, {truss.crashMessage or "unspecified crash", 0x83})
         self.fbTextLines = text
         self._inittedFallback = true
     end
 
-    local sdl = truss.addons.sdl
-    for evt in sdl:events() do
-        if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
-            truss.quit()
-        end
-    end
     if self.webconsole then self.webconsole.update() end
-
-    bgfx.bgfx_dbg_text_clear(0, false)
-    for i, line in ipairs(self.fbTextLines) do
-        local text, color = unpack(line)
-        bgfx.bgfx_dbg_text_printf(1, i+1, color or 0x6f, text)
+    if self.fbMiniconsole then -- miniconsole will take care of sdl events
+        self.fbMiniconsole.update()
+    else
+        local sdl = truss.addons.sdl
+        for evt in sdl:events() do
+            if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
+                truss.quit()
+            end
+        end
+        bgfx.bgfx_dbg_text_clear(0, false)
+        for i, line in ipairs(self.fbTextLines) do
+            local text, color = unpack(line)
+            bgfx.bgfx_dbg_text_printf(1, i+1, color or 0x6f, text)
+        end
+        bgfx.bgfx_touch(0)
+        bgfx.bgfx_frame(false)
     end
-    bgfx.bgfx_touch(0)
-    bgfx.bgfx_frame(false)
 end
 
 local m = {}
