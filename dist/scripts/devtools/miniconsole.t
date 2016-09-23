@@ -240,10 +240,6 @@ function m.printMiniHelp()
 	m.divider()
 end
 
-function m.printHelp()
-	m.print("TODO: put help text here")
-end
-
 function m.info(val, maxrecurse, indent, nprinted)
 	indent = indent or 0
 	maxrecurse = maxrecurse or 2
@@ -292,7 +288,7 @@ function m.createEnvironment()
     m.env.print = m.print
 	m.env.info = m.info
 	m.env.colors = m.printColors
-	m.env.help = m.printHelp
+	m.env.help = m.printMiniHelp
 	m.env.rc = m.attachWebconsole
 	m.env.remote = m.attachWebconsole
 	m.env.resume = truss.resumeFromError
