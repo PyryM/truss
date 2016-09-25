@@ -29,12 +29,16 @@
 
 #if defined(_WIN64)
         typedef long long unsigned int size_t;
+        typedef long long int ssize_t;
 #elif defined(_WIN32)
         typedef unsigned int size_t;
-#elif defined (__APPLE__) && defined(__SIZE_TYPE__)
+        typedef int ssize_t;
+#elif defined (__APPLE__) && defined(__SIZE_TYPE__) && defined(__SSIZE_TYPE__)
         typedef __SIZE_TYPE__ size_t;
-#elif defined (__linux__) && defined(__SIZE_TYPE__)
+        typedef __SSIZE_TYPE__ ssize_t;
+#elif defined (__linux__) && defined(__SIZE_TYPE__) && defined(__SSIZE_TYPE__)
         typedef __SIZE_TYPE__ size_t;
+        typedef __SSIZE_TYPE__ ssize_t;
 #else
 #       include <stddef.h>
 #endif
