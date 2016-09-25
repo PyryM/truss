@@ -9,10 +9,23 @@ function init()
                        width = 660,
                        height = 600,
                        usenvg = false})
+    woo()
+end
+
+function ohno()
+    error("I am error")
+end
+
+function yay()
+    ohno()
+end
+
+function woo()
+    yay()
 end
 
 function update()
     -- have an error
-    error("I am error")
+    woo()
     app:update()
 end

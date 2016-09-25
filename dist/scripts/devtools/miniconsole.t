@@ -24,10 +24,10 @@ function m.hijackBGFX(windowW, windowH)
 	bgfx.bgfx_set_view_rect(0, 0, 0, windowW or 640, windowH or 480)
 	bgfx.bgfx_set_view_clear(0, -- viewid 0
 			bgfx_const.BGFX_CLEAR_COLOR + bgfx_const.BGFX_CLEAR_DEPTH,
-			0x503030ff, -- clearcolor (reddish)
+			0x000000ff, -- clearcolor (black)
 			1.0, -- cleardepth (in normalized space: 1.0 = max depth)
 			0)
-	bgfx.bgfx_set_view_frame_buffer(0, self.fbBackBuffer)
+	bgfx.bgfx_set_view_frame_buffer(0, m.fbBackBuffer)
 	bgfx.bgfx_set_debug(bgfx_const.BGFX_DEBUG_TEXT)
 end
 
@@ -172,9 +172,10 @@ end
 
 function m.wrapOverlong_(s, ret)
 	local remainder = s
-	while remainder:len() > m.width do
-		local front = remainder:sub(1,m.width)
-		remainder = remainder:sub(m.width+1,-1)
+	local lw = m.width - 1
+	while remainder:len() > lw do
+		local front = remainder:sub(1,lw)
+		remainder = remainder:sub(lw+1,-1)
 		table.insert(ret, front)
 	end
 	table.insert(ret, remainder)
@@ -220,7 +221,7 @@ function m.eval(code)
 end
 
 function m.divider()
-	m.print(string.rep("-", m.width))
+	m.print(string.rep("-", m.width-1))
 end
 
 function m.printMiniHelp()
@@ -237,6 +238,8 @@ function m.printMiniHelp()
 	m.print("pageup / pagedown to see history")
 	m.print("clear() to clear")
 	m.print("div() or divider() to create a divider")
+	m.print("trace() to get traceback at error")
+	m.print("save([filename]) to save this console buffer to a text file")
 	m.divider()
 end
 
@@ -298,6 +301,12 @@ function m.createEnvironment()
 	m.env.clear = m.clear
 	m.env.div = m.divider
 	m.env.divider = m.divider
+	m.env.trace = m.trace
+	m.env.save = m.saveConsoleLines
+end
+
+function m.trace()
+	m.print(truss.errorTrace)
 end
 
 function m.clear()
@@ -305,6 +314,13 @@ function m.clear()
 	m.lineBuffer = {}
 end
 
+m.logColors = {
+	["[0]"] = 0x90,
+	["[1]"] = 0x89,
+	["[2]"] = 0x83,
+	["[3]"] = 0x8c,
+	["[4]"] = 0x8a
+}
 function m.dumpLog()
 	local loglines = truss.loadStringFromFile("trusslog.txt")
 	if not loglines then
@@ -312,11 +328,25 @@ function m.dumpLog()
 		return
 	end
 	local lines = stringutils.splitLines(loglines)
-	for _, line in ipairs(lines) do m.print(line) end
+	for _, line in ipairs(lines) do
+		local prefix = line:sub(1,3)
+		m.print(line, m.logColors[prefix])
+	end
+end
+
+function m.saveConsoleLines(filename)
+	filename = filename or "console_log.txt"
+	truss.C.set_fs_savedir("/")
+	local lines = {}
+	for i,line in ipairs(m.lineBuffer) do
+		lines[i] = line[1]
+	end
+	local str = table.concat(lines, "\n")
+	truss.C.save_data(filename, str, str:len())
 end
 
 function m.execute_()
-	m.print(m.editLine, m.commandColor)
+	m.print("=>" .. m.editLine, m.commandColor)
 	m.bufferPos = math.max(0, #m.lineBuffer - m.height + 1)
 	if m.execCallback then
 		m.execCallback(m.editLine)

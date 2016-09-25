@@ -74,7 +74,7 @@ end
 truss.C.Message = truss.C.message -- eh
 
 truss.C.test()
-truss.C.log(0, "Bootstrapping [" .. TRUSS_INTERPRETER_ID .. "]")
+truss.C.log(truss.C.LOG_INFO, "Bootstrapping [" .. TRUSS_INTERPRETER_ID .. "]")
 local TRUSS_ID = TRUSS_INTERPRETER_ID
 truss.TRUSS_ID = TRUSS_ID
 
@@ -84,7 +84,7 @@ log.debug = function(msg) ctruss.truss_log(4, tostring(msg)) end
 log.info = function(msg) ctruss.truss_log(3, tostring(msg)) end
 log.warn = function(msg) ctruss.truss_log(2, tostring(msg)) end
 log.error = function(msg) ctruss.truss_log(1, tostring(msg)) end
-log.critical = function(msg) ctruss.truss_log(1, tostring(msg)) end
+log.critical = function(msg) ctruss.truss_log(0, tostring(msg)) end
 truss.log = log
 
 -- from luajit
@@ -93,12 +93,14 @@ bit = require("bit")
 
 truss.tic = truss.C.get_hp_time
 
-local lua_error = error
-function truss.error(msg)
-    log.critical(msg)
-    lua_error(msg, 2)
-end
-error = truss.error
+-- local lua_error = error
+-- function truss.error(msg)
+--     log.critical(msg)
+--     truss.errorTrace = debug.traceback()
+--     lua_error(msg, 2)
+-- end
+-- error = truss.error
+truss.error = error
 
 terra truss.toc(startTime: uint64)
     var curtime = truss.C.get_hp_time()
@@ -150,7 +152,6 @@ truss.loadedLibs = loadedLibs
 local requireNestLevel = 0
 local _requirePrefixPath = ""
 function truss.require(filename, force)
-    filename = _requirePrefixPath .. filename
     if loadedLibs[filename] == nil or force then
         log.info("Starting to load [" .. filename .. "]")
         local oldmodule = loadedLibs[filename] -- only relevant if force==true
@@ -185,6 +186,12 @@ function truss.require(filename, force)
         end
     end
     return loadedLibs[filename]
+end
+
+function truss.checkModuleExists(filename)
+    if loadedLibs[filename] ~= nil then return true end
+    local fullpath = "scripts/" .. _requirePrefixPath .. filename
+    return truss.C.check_file(fullpath) ~= 0
 end
 
 function truss.requireAs(filename, libname, force)
@@ -227,17 +234,14 @@ for addonIdx = 1,numAddons do
     local addonName = ffi.string(truss.C.get_addon_name(TRUSS_ID, addonIdx-1))
     local addonVersion = ffi.string(truss.C.get_addon_version(TRUSS_ID, addonIdx-1))
     log.info("Loading addon [" .. addonName .. "]")
-    local addonwrapper = truss.require("addons/" .. addonName .. ".t")
     local addonTable = terralib.includecstring(addonHeader)
-
     raw_addons[addonName] = {functions = addonTable, pointer = addonPointer, version = addonVersion}
-
-    if addonwrapper and addonwrapper.wrap then
+    if truss.checkModuleExists("addons/" .. addonName .. ".t") then
+        local addonwrapper = truss.require("addons/" .. addonName .. ".t")
         addonTable = addonwrapper.wrap(addonName, addonTable, addonPointer, addonVersion)
     else
         log.warn("Warning: no wrapper found for addon [" .. addonName .. "]")
     end
-
     addons[addonName] = addonTable
 end
 truss.addons = addons
@@ -311,6 +315,12 @@ local function loadAndRun(fn)
     truss.mainObj:init()
 end
 
+local function errorHandler(err)
+    log.critical(err)
+    truss.errorTrace = debug.traceback(err, 3)
+    return err
+end
+
 -- These functions have to be global because
 function _coreInit(argstring)
     -- Set paths from command line arguments
@@ -319,7 +329,7 @@ function _coreInit(argstring)
     local t0 = truss.tic()
     local fn = argstring
     log.info("Loading " .. fn)
-    local happy, errmsg = pcall(loadAndRun, fn)
+    local happy, errmsg = xpcall(loadAndRun, errorHandler, fn)
     if not happy then
         truss.enterErrorState(errmsg)
     end
@@ -327,20 +337,20 @@ function _coreInit(argstring)
     log.info("Time to init: " .. delta)
 end
 
-function _fallbackUpdate()
-    truss.mainObj:fallbackUpdate()
-end
-
 function _coreUpdate()
-    local happy, errmsg = pcall(truss.mainObj.update, truss.mainObj)
+    local happy, errmsg = xpcall(truss.mainObj.update, errorHandler, truss.mainObj)
     if not happy then
         truss.enterErrorState(errmsg)
     end
 end
 
+function _fallbackUpdate()
+    truss.mainObj:fallbackUpdate()
+end
+
 _resumeUpdate = _coreUpdate
 function truss.enterErrorState(errmsg)
-    log.critical(errmsg)
+    log.warn("Entering error state: " .. errmsg)
     truss.crashMessage = errmsg
     if truss.mainObj and truss.mainObj.fallbackUpdate then
         _resumeUpdate = _coreUpdate
