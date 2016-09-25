@@ -8,8 +8,6 @@ local Camera = require("gfx/camera.t").Camera
 local geometry = require("gfx/geometry.t")
 local shaderutils = require('utils/shaderutils.t')
 local math = require("math")
-local bgfx = core.bgfx
-local bgfx_const = core.bgfx_const
 local gfx = require('gfx')
 
 local QuadApp = AppScaffold:extend("QuadApp")

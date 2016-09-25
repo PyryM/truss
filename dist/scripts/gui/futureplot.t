@@ -2,7 +2,6 @@
 --
 -- Futuristic plotting gui thing for truss
 
-local nanovg = core.nanovg
 local class = require("class")
 local m = {}
 
@@ -52,7 +51,7 @@ local function drawCross(nvg, x, y)
     nanovg.nvgMoveTo(nvg, x-5, y)
     nanovg.nvgLineTo(nvg, x+5, y)
     nanovg.nvgMoveTo(nvg, x, y-5)
-    nanovg.nvgLineTo(nvg, x, y+5)   
+    nanovg.nvgLineTo(nvg, x, y+5)
 
     nanovg.nvgStroke(nvg)
 end
@@ -62,7 +61,7 @@ function FuturePlot:drawBorder(component, nvg)
     local y = (component.row - 1) * self.cellheight_
     local w = component.colwidth * self.cellwidth_
     local h = component.rowheight * self.cellheight_
-    
+
     nanovg.nvgSave(nvg)
 
     nanovg.nvgStrokeWidth(nvg, 1)
@@ -94,7 +93,7 @@ end
 function m.init(nvg, w, h)
     local plots = require("gui/plotting.t")
 
-    m.fp = FuturePlot({gridrows = 4, 
+    m.fp = FuturePlot({gridrows = 4,
                        gridcols = 6}, w, h)
 
     m.p1 = plots.CandleGraph({title = "Plot 1: Candle", filled = true})
@@ -212,7 +211,7 @@ function TextLog:setBounds(bounds)
 end
 
 function TextLog:draw(nvg)
-    textdrawing.drawFormattedText(nvg, self.text, 
+    textdrawing.drawFormattedText(nvg, self.text,
                                   self.innerbounds_, self.style)
 end
 

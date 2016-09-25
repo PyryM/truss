@@ -6,7 +6,7 @@ local class = require("class")
 local math = require("math")
 
 local OrbitCameraRig = class("OrbitCameraRig")
-local sdl = addons.sdl
+local sdl = truss.addons.sdl
 
 function OrbitCameraRig:init(target)
     self.target = target

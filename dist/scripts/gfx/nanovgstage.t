@@ -4,7 +4,6 @@
 
 local class = require("class")
 local math = require("math")
-local nanovg = core.nanovg
 local m = {}
 
 local NanoVGStage = class("NanoVGStage")

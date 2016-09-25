@@ -2,7 +2,6 @@
 --
 -- functions for plotting graphs
 
-local nanovg = core.nanovg
 local class = require("class")
 local m = {}
 
@@ -157,7 +156,7 @@ function m.drawLineGraphCore(nvg, bounds, style, vals, ntuples)
 end
 
 -- finds next multiple of base that is larger than start
--- e.g. v = c*base >= start 
+-- e.g. v = c*base >= start
 local function nextMultiple(start, base)
 	local i = math.ceil(start / base)
 	return base * i, i
@@ -199,9 +198,9 @@ function m.drawHTicMarks(nvg, bounds, style)
 		if ticidx % ticmultiple == 0 then
 			nanovg.nvgMoveTo(nvg, curx, y0-5)
 			nanovg.nvgLineTo(nvg, curx, yminor)
-			nanovg.nvgText( nvg, 
+			nanovg.nvgText( nvg,
 							curx, y1,
-							string.format(format, curh), 
+							string.format(format, curh),
 							nil)
 		else
 			nanovg.nvgMoveTo(nvg, curx, y0)
@@ -252,7 +251,7 @@ function m.drawVTicMarks(nvg, bounds, style)
 		nanovg.nvgMoveTo(nvg, xcenter, cury)
 		if ticidx % ticmultiple == 0 then
 			nanovg.nvgLineTo(nvg, x1, cury)
-			nanovg.nvgText(nvg, 
+			nanovg.nvgText(nvg,
 				           x1, cury-3,
 				           string.format(format, curv),
 				           nil)
@@ -276,17 +275,17 @@ function m.init(nvg, width, height)
 end
 
 function m.drawLineGraph(nvg, bounds, style, pts, scratch)
-	m.drawTypicalGraph(nvg, bounds, style, pts, scratch, 
+	m.drawTypicalGraph(nvg, bounds, style, pts, scratch,
 						{"x", "y"}, m.drawLineGraphCore)
 end
 
 function m.drawCandleGraph(nvg, bounds, style, pts, scratch)
-	m.drawTypicalGraph(nvg, bounds, style, pts, scratch, 
+	m.drawTypicalGraph(nvg, bounds, style, pts, scratch,
 						{"x", "y", "y"}, m.drawCandleCore)
 end
 
 function m.drawXYGraph(nvg, bounds, style, pts, scratch)
-	m.drawTypicalGraph(nvg, bounds, style, pts, scratch, 
+	m.drawTypicalGraph(nvg, bounds, style, pts, scratch,
 						{"x", "y"}, m.drawXYCore)
 end
 
@@ -315,7 +314,7 @@ function m.testUpdatePts(pts, doubleAdd)
 		nval2 = math.min(1.0, math.max(0.0, nval2))
 		table.insert(pts, nval2)
 	end
-	
+
 	table.insert(pts, nval)
 
 	while #pts > 60 do
@@ -335,7 +334,7 @@ function m.drawCross(nvg, x, y)
 	nanovg.nvgMoveTo(nvg, x-5, y)
 	nanovg.nvgLineTo(nvg, x+5, y)
 	nanovg.nvgMoveTo(nvg, x, y-5)
-	nanovg.nvgLineTo(nvg, x, y+5)	
+	nanovg.nvgLineTo(nvg, x, y+5)
 
 	nanovg.nvgStroke(nvg)
 
@@ -369,7 +368,7 @@ function m.draw(nvg, width, height)
 				m.drawXYGraph(nvg, bounds, style, pts[idx])
 			end
 			nanovg.nvgText(nvg, x+7, y-4, "Graph " .. idx, nil)
-			
+
 			idx = idx + 1
 		end
 	end
@@ -462,7 +461,7 @@ function Graph:draw(nvg)
 	nanovg.nvgFontFace(nvg, "sans")
 	nanovg.nvgFontSize(nvg, 20)
 
-	nanovg.nvgText(nvg, self.bounds_.x + self.bounds_.ticlength*2, 
+	nanovg.nvgText(nvg, self.bounds_.x + self.bounds_.ticlength*2,
 					self.bounds_.y + 15, self.title_, nil)
 
 	nanovg.nvgRestore(nvg)
@@ -518,7 +517,7 @@ function TextBox:draw(nvg)
 	else
 		x = self.bounds_.x + self.margin
 	end
-	
+
 	nanovg.nvgText(nvg, x, y, self.text, nil)
 
 	nanovg.nvgRestore(nvg)

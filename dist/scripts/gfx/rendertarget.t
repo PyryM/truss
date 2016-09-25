@@ -68,7 +68,8 @@ function RenderTarget:makeBackbuffer()
     self.isBackbuffer = true
     self.hasColor = true
     self.hasDepth = true
-    self.frameBuffer = nil
+    self.frameBuffer = terralib.new(bgfx.bgfx_frame_buffer_handle_t)
+    self.frameBuffer.idx = bgfx.BGFX_INVALID_HANDLE
     self.finalized = true
     return self
 end

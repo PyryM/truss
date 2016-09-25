@@ -98,7 +98,7 @@ end
 
 terra m.helperFileWrite_(fn: &int8, data: &uint8, datalen: uint32)
     var temp_ptr: &int8 = [&int8](data)
-    truss.truss_save_data(fn, temp_ptr, datalen)
+    truss.C.save_data(fn, temp_ptr, datalen)
 end
 
 terra m.helperBuffAppend_(src: &uint8, srclen: uint32,
@@ -151,7 +151,7 @@ function ByteBuffer:clear()
 end
 
 function ByteBuffer:writeToFile(filename)
-    truss.truss_save_data(filename, self.data_, self.cursize_)
+    truss.C.save_data(filename, self.data_, self.cursize_)
 end
 
 m.ByteBuffer = ByteBuffer

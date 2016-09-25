@@ -3,12 +3,7 @@
 -- a basic app scaffold that does setup, event handling, etc.
 
 local class = require('class')
-local bgfx = core.bgfx
-local bgfx_const = core.bgfx_const
-local terralib = core.terralib
-local truss = core.truss
-local sdl = addons.sdl
-local nanovg = core.nanovg
+local sdl = truss.addons.sdl
 
 local math = require("math")
 local gfx = require("gfx")
@@ -26,6 +21,10 @@ function AppScaffold:init(options)
     self.vsync = options.vsync ~= false
     self.msaa = options.msaa ~= false
     self.clearcolor = options.clearcolor or 0x303030ff
+    self.consoleOnError = options.consoleOnError
+    if self.consoleOnError ~= false then
+        self:installFallback()
+    end
     if options.renderer then
         self.requestedRenderer = string.upper(options.renderer)
     end
@@ -54,7 +53,19 @@ function AppScaffold:init(options)
     self:initPipeline()
     self:initScene()
 
-    self.startTime = tic()
+    self.startTime = truss.tic()
+end
+
+function AppScaffold:installFallback()
+    if truss.mainEnv.fallbackUpdate then
+        log.info("AppScaffold:installFallback : fallback already present.")
+        return
+    end
+
+    local closureSelf = self
+    truss.mainEnv.fallbackUpdate = function()
+        closureSelf:fallbackUpdate()
+    end
 end
 
 function AppScaffold:initBGFX()
@@ -81,6 +92,7 @@ function AppScaffold:initBGFX()
 
     bgfx.bgfx_init(rendererType, 0, 0, cbInterfacePtr, nil)
     bgfx.bgfx_reset(self.width, self.height, reset)
+    self.bgfxInitted = true
 
     -- Enable debug text.
     bgfx.bgfx_set_debug(debug)
@@ -177,8 +189,8 @@ function AppScaffold:updateEvents()
                 self.downkeys[keyname] = false
             end
         elseif evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
-            log.info("Received window close, stopping interpreter...")
-            truss.truss_stop_interpreter(core.TRUSS_ID)
+            log.info("Received window close, quitting...")
+            truss.quit()
         end
         if self.userEventHandler then
             self:userEventHandler(evt)
@@ -227,14 +239,36 @@ function AppScaffold:update()
 
     self:updateScene()
     self:render()
-    self.scripttime = toc(self.startTime)
+    self.scripttime = truss.toc(self.startTime)
 
     -- Advance to next frame. Rendering thread will be kicked to
     -- process submitted rendering primitives.
     bgfx.bgfx_frame(false)
 
-    self.frametime = toc(self.startTime)
-    self.startTime = tic()
+    self.frametime = truss.toc(self.startTime)
+    self.startTime = truss.tic()
+end
+
+function AppScaffold:fallbackUpdate()
+    -- show the miniconsole
+
+    if not self.bgfxInitted then
+        log.info("Crash before bgfx init; no choice but to quit.")
+        truss.quit()
+    end
+
+    if not self._inittedFallback then
+        self.fbMiniconsole = require("devtools/miniconsole.t")
+        self.fbMiniconsole.hijackBGFX(self.width, self.height)
+        self.fbMiniconsole.init(math.floor(self.width / 8),
+                                math.floor(self.height / 16))
+        self.fbMiniconsole.setHeader("Something broke: " .. truss.crashMessage, 0x83)
+        self.fbMiniconsole.printMiniHelp()
+
+        self._inittedFallback = true
+    end
+
+    self.fbMiniconsole.update()
 end
 
 local m = {}

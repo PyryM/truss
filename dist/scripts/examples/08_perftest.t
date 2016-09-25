@@ -2,10 +2,6 @@
 --
 -- testing raw bgfx drawcall performance
 
-terralib = core.terralib
-truss = core.truss
-sdl = addons.sdl
-
 local AppScaffold = require("utils/appscaffold.t").AppScaffold
 local debugcube = require("geometry/debugcube.t")
 local shaderutils = require('utils/shaderutils.t')
@@ -16,7 +12,6 @@ local Quaternion = math.Quaternion
 local Camera = require("gfx/camera.t").Camera
 local Object3D = require('gfx/object3d.t').Object3D
 local CMath = terralib.includec("math.h")
-
 
 local PerfApp = AppScaffold:extend("PerfApp")
 function PerfApp:initPipeline()
@@ -67,8 +62,6 @@ function PerfApp:bindFFIBGFX()
     self.ffipgm.idx = self.pgm.idx
 end
 
-local bgfx = core.bgfx
-local bgfx_const = core.bgfx_const
 struct BGFXJunk {
     vbuff: bgfx.bgfx_vertex_buffer_handle_t;
     ibuff: bgfx.bgfx_index_buffer_handle_t;
@@ -98,8 +91,6 @@ terra terraSingleDrawCall(binfo: &BGFXJunk, tmat: &float)
 end
 
 function PerfApp:render()
-    local bgfx = core.bgfx
-    local bgfx_const = core.bgfx_const
     local umax = 4294967295
     --bgfx.UINT32_MAX or
 
