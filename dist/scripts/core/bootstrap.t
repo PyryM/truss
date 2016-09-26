@@ -357,6 +357,10 @@ function truss.enterErrorState(errmsg)
         _coreUpdate = _fallbackUpdate
     else
         log.info("No fallback update function present; quitting.")
+        local tstr = "Traceback: " .. tostring(truss.errorTrace)
+        print("Runtime error. See trusslog.txt for details.")
+        print(tstr)
+        log.info(tstr)
         truss.quit()
     end
 end

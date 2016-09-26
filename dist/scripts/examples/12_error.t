@@ -13,7 +13,9 @@ function init()
 end
 
 function ohno()
-    error("I am error")
+    terra blah(input: &ThisTypeDoesntExist)
+        return input.fakeField
+    end
 end
 
 function yay()
