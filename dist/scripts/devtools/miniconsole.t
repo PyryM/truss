@@ -12,6 +12,7 @@ m.inverseEditColor = 0x07
 m.commandColor = 0x87
 m.headerSize = 3
 m.headerColor = 0x6f
+m.scrollChar = string.char(254)
 
 local function bg_print(x, y, color, string)
     bgfx.bgfx_dbg_text_printf(x, y, color, "%s", string)
@@ -147,7 +148,7 @@ function m.drawPositionBar_()
     local bar = string.char(179)
     for i = 0,(m.height-1) do
         local c = bar
-        if i == p then c = string.char(219) end
+        if i == p then c = m.scrollChar end
         bg_print(m.width-1, i + nheader + 1, m.inverseEditColor, c)
     end
 end
@@ -308,6 +309,10 @@ function m.info(val, maxrecurse, indent, nprinted)
     end
 end
 
+function m.printChars()
+    for i = 0,255 do m.print(i .. " = " .. string.char(i)) end
+end
+
 function m.createEnvironment()
     m.env = {}
     m.env.mainObj = truss.mainObj
@@ -325,6 +330,7 @@ function m.createEnvironment()
     m.env.print = m.print
     m.env.info = m.info
     m.env.colors = m.printColors
+    m.env.chars = m.printChars
     m.env.help = m.printMiniHelp
     m.env.rc = m.attachWebconsole
     m.env.remote = m.attachWebconsole
@@ -339,6 +345,7 @@ function m.createEnvironment()
     m.env.save = m.saveConsoleLines
     m.env.m = truss.mainEnv
     m.env.app = (truss.mainEnv or {}).app
+    m.env.minicon = m
 end
 
 function m.trace()
