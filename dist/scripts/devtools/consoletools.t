@@ -67,7 +67,6 @@ function ConsoleTools:valToString(v, vtype, blacklistName)
     end
 end
 
-
 function ConsoleTools:_tableInfo(val, maxrecurse, indent, nprinted)
     indent = indent or 0
     maxrecurse = maxrecurse or 2
@@ -78,15 +77,17 @@ function ConsoleTools:_tableInfo(val, maxrecurse, indent, nprinted)
     end
 
     for k,v in pairs(val) do
-        local vtypename, bname = self:vtype(v)
-        self.print(pad .. tostring(k) .. ": " .. self:valToString(v, vtypename, bname))
-        nprinted = nprinted + 1
-        if k ~= "class" and vtypename == "table" and maxrecurse > 0 then
-            nprinted = nprinted + self:_tableInfo(v, maxrecurse-1, indent+1, nprinted)
-        end
-        if nprinted > 60 then
-            self.print("[too many printed]")
-            return 1000
+        if truss.clean_subenv[k] ~= v then
+            local vtypename, bname = self:vtype(v)
+            self.print(pad .. tostring(k) .. ": " .. self:valToString(v, vtypename, bname))
+            nprinted = nprinted + 1
+            if k ~= "class" and vtypename == "table" and maxrecurse > 0 then
+                nprinted = nprinted + self:_tableInfo(v, maxrecurse-1, indent+1, nprinted)
+            end
+            if nprinted > 100 then
+                self.print("[too many printed]")
+                return 1000
+            end
         end
     end
     return nprinted

@@ -49,8 +49,11 @@ function m.createEnvironment()
     m.env = {}
     m.env.mainObj = truss.mainObj
     m.env.mainEnv = truss.mainEnv
+    m.env.m = truss.mainEnv
+    m.env.app = (truss.mainEnv or {}).app
     m.env.loadedLibs = truss.loadedLibs
     m.env.G = _G
+    m.env.CG = m.env
 
     -- copy over the 'clean' subenvironment
     for k,v in pairs(truss.clean_subenv) do
@@ -60,6 +63,11 @@ function m.createEnvironment()
     -- make print be our remote print
     m.env.raw_print = print
     m.env.print = m.print
+
+    m.ct = require("devtools/consoletools.t").ConsoleTools{print = m.print,
+                                                           width = m.width}
+
+    m.env.info = m.ct:wrap("info")
 end
 
 function m.log(msg, topic)
