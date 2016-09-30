@@ -278,42 +278,16 @@ function m.printMiniHelp()
     m.divider()
 end
 
-function m.info(val, maxrecurse, indent, nprinted)
-    indent = indent or 0
-    maxrecurse = maxrecurse or 2
-    nprinted = nprinted or 0
-    local padding = m.paddings[indent*2]
-    if not padding then
-        return 1000
-    end
-    if type(val) == "table" then
-        for k,v in pairs(val) do
-            if type(v) == "table" then
-                m.print(padding .. k .. ": [table]")
-                if maxrecurse > 0 then
-                    nprinted = nprinted + m.info(v, maxrecurse-1, indent+1, nprinted)
-                end
-            else
-                nprinted = nprinted + 1
-                m.print(padding .. k .. ": " .. tostring(v))
-            end
-            if nprinted > 60 then
-                m.print("[too many printed]")
-                return 1000
-            end
-        end
-        return nprinted
-    else
-        m.print(padding .. tostring(val))
-        return nprinted+1
-    end
-end
+
 
 function m.printChars()
     for i = 0,255 do m.print(i .. " = " .. string.char(i)) end
 end
 
 function m.createEnvironment()
+    m.ct = require("devtools/consoletools.t").ConsoleTools{print = m.print,
+                                                           width = m.width}
+
     m.env = {}
     m.env.mainObj = truss.mainObj
     m.env.mainEnv = truss.mainEnv
@@ -328,7 +302,7 @@ function m.createEnvironment()
     -- make print be our remote print
     m.env.raw_print = print
     m.env.print = m.print
-    m.env.info = m.info
+    m.env.info = m.ct:wrap("info")
     m.env.colors = m.printColors
     m.env.chars = m.printChars
     m.env.help = m.printMiniHelp
@@ -405,8 +379,8 @@ function m.execute_()
 end
 
 function m.init(width, height)
-    m.headerLines = {}
     m.width = width or 80
+    m.headerLines = {}
     m.totalHeight = height or 30
     m.height = m.totalHeight - 2 - #(m.headerLines)
     m.bufferPos = 0
