@@ -48,6 +48,7 @@ function VRApp:init(options)
 
     -- controller objects
     self.controllerObjects = {}
+    self.maxControllers = 0
 
     -- used to draw screen space quads to composite things
     self.orthocam = gfx.Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
@@ -205,7 +206,8 @@ function VRApp:onControllerModelLoaded(data, target)
 end
 
 function VRApp:updateControllers_()
-    for i = 1,2 do
+    self.maxControllers = openvr.maxControllers
+    for i = 1,self.maxControllers do
         local controller = openvr.controllers[i]
         if controller and controller.connected then
             if self.controllerObjects[i] == nil then

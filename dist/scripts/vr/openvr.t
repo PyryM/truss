@@ -26,9 +26,10 @@ struct m.TargetSize {
 }
 
 local Controller = class("Controller")
-function Controller:init()
+function Controller:init(deviceIndex)
     -- nothing to do
     self.hasVibrated_ = false
+    self.deviceIndex = deviceIndex
 end
 
 function Controller:vibrate(strength)
@@ -64,7 +65,7 @@ function Controller:parseAxes_()
     end
 end
 
-function Controller:update_(deviceIndex)
+function Controller:update_()
     if self.rawstate == nil then
         self.rawstate = terralib.new(openvr_c.VRControllerState_t)
         self.pressed = {}
@@ -73,8 +74,7 @@ function Controller:update_(deviceIndex)
     end
     local rawstate = self.rawstate
     local lastpacket = rawstate.unPacketNum
-    openvr_c.tr_ovw_GetControllerState(m.sysptr, deviceIndex, rawstate)
-    self.deviceIndex = deviceIndex
+    openvr_c.tr_ovw_GetControllerState(m.sysptr, self.deviceIndex, rawstate)
     -- if rawstate.unPacketNum == lastpacket then
     --     log.debug("Skipping " .. self.deviceIndex ..
     --              " packet @ " .. lastpacket)
@@ -145,16 +145,21 @@ function m.init()
         m.trackables = terralib.new(openvr_c.TrackedDevicePose_t[m.maxTrackables])
         m.createButtonMasks_()
 
+        m.maxControllers = 0
+        m.controllerIDMapping = {}
         m.controllers = {}
         m.referencePoints = {}
         for i = 1,m.maxTrackables do
-            m.controllers[i] = Controller()
             m.referencePoints[i] = {}
         end
 
         modelloader.init(m)
 
         log.info("Finished Vr init")
+        -- normally I would not care overly much about shutting down stuff on
+        -- exit, but steamvr will show the app as unresponsive forever unless
+        -- openvr actually shuts down
+        truss.onQuit(m.shutdown)
         return true, ""
     else
         local errorstr = "OpenVR init error: " .. ffi.string(addonfuncs.truss_openvr_get_last_error(addonptr))
@@ -164,26 +169,34 @@ function m.init()
     end
 end
 
+function m.shutdown()
+    if not m.available then return end
+    local addonfuncs = truss.rawAddons.openvr.functions
+    local addonptr   = truss.rawAddons.openvr.pointer
+    addonfuncs.truss_openvr_shutdown(addonptr)
+    m.available = false
+end
+
 function m.createButtonMasks_()
     m.buttonMasks = {}
     local bnames = {
         "System",
-    	"ApplicationMenu",
-    	"Grip",
-    	"DPad_Left",
-    	"DPad_Up",
-    	"DPad_Right",
-    	"DPad_Down",
-    	"A",
-    	"Axis0",
-    	"Axis1",
-    	"Axis2",
-    	"Axis3",
-    	"Axis4",
-    	"SteamVR_Touchpad",
-    	"SteamVR_Trigger",
-    	"Dashboard_Back",
-    	"Max"
+        "ApplicationMenu",
+        "Grip",
+        "DPad_Left",
+        "DPad_Up",
+        "DPad_Right",
+        "DPad_Down",
+        "A",
+        "Axis0",
+        "Axis1",
+        "Axis2",
+        "Axis3",
+        "Axis4",
+        "SteamVR_Touchpad",
+        "SteamVR_Trigger",
+        "Dashboard_Back",
+        "Max"
     }
     for _, bname in ipairs(bnames) do
         local enumVal = openvr_c["EVRButtonId_k_EButton_" .. bname]
@@ -246,7 +259,7 @@ function m.processVREvent_()
         log.info("Openvr requested application quit!")
         if m.onQuit then m.onQuit() end
         openvr_c.tr_ovw_AcknowledgeQuit_Exiting(m.sysptr)
-        truss.truss_stop_interpreter(TRUSS_ID)
+        truss.quit()
     end
 end
 
@@ -257,12 +270,21 @@ function m.updateVREvents_()
     end
 end
 
+function m.deviceIndexToController(idx)
+    local controllerIdx = m.controllerIDMapping[idx]
+    if not controllerIdx then
+        m.maxControllers = m.maxControllers + 1
+        controllerIdx = m.maxControllers
+        m.controllerIDMapping[idx] = controllerIdx
+        m.controllers[controllerIdx] = Controller(idx)
+    end
+    return m.controllers[controllerIdx]
+end
+
 function m.updateTrackables_()
     m.hasInputFocus = openvr_c.tr_ovw_IsInputFocusCapturedByAnotherProcess(m.sysptr)
 
-    local controllerIdx = 0
     local referenceIdx = 0
-    local hmdIdx = 0
 
     for i = 0,m.maxTrackables-1 do
         local trackable = m.trackables[i]
@@ -270,24 +292,18 @@ function m.updateTrackables_()
             local ttype = openvr_c.tr_ovw_GetTrackedDeviceClass(m.sysptr, i)
             local target = nil
             if ttype == openvr_c.ETrackedDeviceClass_TrackedDeviceClass_Controller then
-                controllerIdx = controllerIdx + 1
-                target = m.controllers[controllerIdx]
-                target:update_(i)
+                target = m.deviceIndexToController(i)
+                target:update_()
             elseif ttype == openvr_c.ETrackedDeviceClass_TrackedDeviceClass_TrackingReference then
                 referenceIdx = referenceIdx + 1
                 target = m.referencePoints[referenceIdx]
             elseif ttype == openvr_c.ETrackedDeviceClass_TrackedDeviceClass_HMD then
-                hmdIdx = hmdIdx + 1
                 target = m.hmd
             end
 
             if target then m.trackableToTable(trackable, target) end
         end
     end
-
-    m.nControllers = controllerIdx
-    m.nReferences = referenceIdx
-    m.nHMDs = hmdIdx
 end
 
 function m.openvrV3ToVector(v3, target)

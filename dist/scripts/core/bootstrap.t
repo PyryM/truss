@@ -109,7 +109,14 @@ terra truss.toc(startTime: uint64)
     return deltaF / [float](freq)
 end
 
+truss.cleanupFunctions = {}
+
+function truss.onQuit(f)
+    truss.cleanupFunctions[f] = f
+end
+
 function truss.quit()
+    for _, f in pairs(truss.cleanupFunctions) do f() end
     truss.C.stop_interpreter(TRUSS_ID)
 end
 
