@@ -8,6 +8,7 @@ old_scripts/
 dist/lib/
 dist/truss
 dist/truss.exe
+dist/save
 *.exe
 *.pdb
 *.idb
@@ -19,3 +20,6 @@ dist/truss.exe
 *.bin
 *.ilk
 trusslog.txt
+shader_errors.txt
+console_log.txt
+error.txt
