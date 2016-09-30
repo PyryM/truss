@@ -1,9 +1,12 @@
 local m = {}
 m.programs = {}
 
-terra m.loadFileToBGFX(filename: &int8)
-	var msg: &truss.C.Message = truss.C.load_file(filename)
-	var ret: &bgfx.bgfx_memory = bgfx.bgfx_copy(msg.data, msg.data_length)
+function m.loadFileToBGFX(filename)
+	local msg = truss.C.load_file(filename)
+	if msg == nil then
+		error("Error loading shader [" .. filename .. "]; shader missing or uncompiled.")
+	end
+	local ret = bgfx.bgfx_copy(msg.data, msg.data_length)
 	truss.C.release_message(msg)
 	return ret
 end
