@@ -8,14 +8,14 @@ Truss is designed for relatively modern computers. In particular,
 - 64bit only
 - Ubuntu 13.04+ only (unless you want to backport a newer version of gcc)
 - Official NVidia drivers (in particular, won't work with linux Mesa Gallium drivers)
-- DX11 capable video card recommended on Windows
+- DX11 is recommended on Windows (Windows 7 only partially supports DX11, so >= Windows 8 is suggested)
 
 ## [Build instructions](build.md)
 
 ## Miscellaneous tips
 
 ### Compiling shaders
-Copy `shadercRelease[.exe]` (found in e.g., `build\bgfx_EXTERNAL-prefix\src\bgfx_EXTERNAL\.build\win64_vs2015\bin` after building) into `dist/shaders/raw`, and then in that directory run `python compile_shaders.py`.
+Copy `shadercRelease[.exe]` (found in `dist/bin/` after building) into `dist/shaders/raw`, and then in `dist/shaders/raw/` run `python compile_shaders.py`.
 
 ### Creating a distribution .zip
 Truss will try to automatically mount `truss.zip`, so it's possible to create a two-file truss distribution (`truss[.exe]` and `truss.zip`) by zipping up `font`, `include`, `libs`, `scripts`, and `shaders` from `dist/` into `truss.zip`. 
