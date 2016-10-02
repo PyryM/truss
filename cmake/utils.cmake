@@ -29,7 +29,24 @@ function(truss_copy_libraries target target_libraries)
             COMMAND "${CMAKE_COMMAND}"
             ARGS -E copy "${library_path}" "${DIST_DIR}/lib/${library_file}"
             BYPRODUCTS "${DIST_DIR}/lib/${library_file}"
-            COMMENT "Installed ${target} library to distribution directory."
+            COMMENT "Installed '${library_file}' library to distribution directory."
+        )
+    endforeach()
+endfunction()
+
+# Copies a list of binaries to the `dist` bin directory.
+function(truss_copy_binaries target target_binaries)
+    foreach(binary_path ${target_binaries})
+        # Extract library name from full path.
+        get_filename_component(binary_file "${binary_path}" NAME)
+
+        # Create a rule to copy the library to the `lib` directory.
+        add_custom_command(
+            TARGET "${target}" POST_BUILD
+            COMMAND "${CMAKE_COMMAND}"
+            ARGS -E copy "${binary_path}" "${DIST_DIR}/bin/${binary_file}"
+            BYPRODUCTS "${DIST_DIR}/lib/${binary_file}"
+            COMMENT "Installed '${binary_file}' binary to distribution directory."
         )
     endforeach()
 endfunction()

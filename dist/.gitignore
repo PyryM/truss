@@ -1,0 +1,9 @@
+lib/
+bin/
+truss
+truss.exe
+save/
+trusslog.txt
+shader_errors.txt
+console_log.txt
+error.txt

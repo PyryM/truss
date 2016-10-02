@@ -15,19 +15,19 @@
   * In Visual Studio, build the `ALL_BUILD` project to build everything.
 
 ## Linux
-* Dependencies: `cmake`, `build-essential`, `libxext-dev`, `mesa-common-dev`
+* Dependencies: `cmake`, `build-essential`, `libxext-dev`, `mesa-common-dev`, `flex` (for shaders), `bison` (for shaders)
   * Get CMake version 3.3+
 
     **For Ubuntu 16.04+:**
 
     ```bash
-    sudo apt-get install cmake libxext-dev mesa-common-dev
+    sudo apt-get install cmake libxext-dev mesa-common-dev flex bison
     ```
 
     **For Ubuntu <16.04:**
 
     ```bash
-    sudo apt-get install build-essential libxext-dev mesa-common-dev
+    sudo apt-get install build-essential libxext-dev mesa-common-dev flex bison
     wget http://www.cmake.org/files/v3.3/cmake-3.3.2.tar.gz
     tar xf cmake-3.3.2.tar.gz
     cd cmake-3.3.2/
