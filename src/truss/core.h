@@ -27,6 +27,8 @@ public:
     std::ostream& logStream(int log_level);
     void logMessage(int log_level, const char* msg);
     void logPrint(int log_level, const char* format, ...);
+	void setError(int errcode);
+	int hadError();
 
     Interpreter* getInterpreter(int idx);
     Interpreter* getNamedInterpreter(const char* name);
@@ -71,6 +73,8 @@ private:
     std::vector<Interpreter*> interpreters_;
     std::map<std::string, truss_message*> store_;
     std::ofstream logfile_;
+
+	int errCode_;
 };
 
 // syntax sugar to avoid the verbose

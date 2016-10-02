@@ -161,6 +161,14 @@ void Core::logPrint(int log_level, const char* format, ...) {
     va_end(args);
 }
 
+void Core::setError(int errcode) {
+	errCode_ = errcode;
+}
+
+int Core::hadError() {
+	return errCode_;
+}
+
 Interpreter* Core::getInterpreter(int idx) {
     tthread::lock_guard<tthread::mutex> Lock(coreLock_);
 
@@ -368,6 +376,7 @@ Core::~Core() {
 
 Core::Core() {
     physFSInitted_ = false;
+	errCode_ = 0;
 
     // open log file
     logfile_.open("trusslog.txt", std::ios::out);

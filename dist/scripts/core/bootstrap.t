@@ -30,6 +30,7 @@ typedef struct Addon Addon;
 const char* truss_get_version();
 void truss_test();
 void truss_log(int log_level, const char* str);
+void truss_set_error(int errcode);
 void truss_shutdown();
 uint64_t truss_get_hp_time();
 uint64_t truss_get_hp_freq();
@@ -111,6 +112,13 @@ end
 
 function truss.quit()
     truss.C.stop_interpreter(TRUSS_ID)
+end
+
+function truss.quitWithError(code)
+    code = code or 0xDEADBEEF
+    log.info("Error code: [" .. tostring(code) .. "]")
+    truss.C.set_error(code)
+    truss.quit()
 end
 
 function truss.loadStringFromFile(filename)
@@ -368,7 +376,7 @@ function truss.enterErrorState(errmsg)
         print("Runtime error. See trusslog.txt for details.")
         print(tstr)
         log.info(tstr)
-        truss.quit()
+        truss.quitWithError()
     end
 end
 
