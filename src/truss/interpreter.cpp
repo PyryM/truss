@@ -174,7 +174,10 @@ void Interpreter::threadEntry() {
         }
 
         // update lua
-        call("_coreUpdate");
+		if (!call("_coreUpdate")) {
+			core().logPrint(TRUSS_LOG_ERROR, "Uncaught error reached C++, quitting.");
+			running_ = false;
+		}
     }
 
     // Shutdown
@@ -222,5 +225,6 @@ bool Interpreter::call(const char* funcname, const char* argstr) {
     if(res != 0) {
         core().logMessage(TRUSS_LOG_ERROR, lua_tostring(terraState_, -1));
     }
+	lua_settop(terraState_, 0); // clear stack to avoid overflows
     return res == 0; // return true is no errors
 }
