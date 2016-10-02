@@ -125,6 +125,13 @@ function truss.loadStringFromFile(filename)
     end
 end
 
+-- terra has issues with line numbering with dos line endings (\r\n), so
+-- this function loads a string and then gets rid of carriage returns (\r)
+function truss.loadScriptFromFile(filename)
+    local s = truss.loadStringFromFile(filename)
+    if s then return s:gsub("\r", "") else return nil end
+end
+
 local function makeindent(n)
     if n == 0 then return "" end
     local ret = ">"
@@ -165,7 +172,7 @@ function truss.require(filename, force)
         end
 
         local t0 = truss.tic()
-        local funcsource = truss.loadStringFromFile(fullpath)
+        local funcsource = truss.loadScriptFromFile(fullpath)
         if funcsource == nil then
             log.error("Error loading library [" .. filename .. "]: file does not exist.")
             loadedLibs[filename] = nil
@@ -304,7 +311,7 @@ for sk,sv in pairs(subenv) do
 end
 
 local function loadAndRun(fn)
-    local script = truss.loadStringFromFile(fn)
+    local script = truss.loadScriptFromFile(fn)
     local scriptfunc, loaderror = truss.loadNamedString(script, fn)
     if scriptfunc == nil then
         error("Main script loading error: " .. loaderror)
