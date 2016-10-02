@@ -112,11 +112,10 @@ terra truss.toc(startTime: uint64)
 end
 
 function truss.quit(code)
-    code = code or 0
-    if code then
-      log.info("Error code: [" .. tostring(code) .. "]")
+    if code and type(code) == "number" then
+        truss.C.set_error(code)
+        log.info("Error code: [" .. tostring(code) .. "]")
     end
-    truss.C.set_error(code)
     truss.C.stop_interpreter(TRUSS_ID)
 end
 
