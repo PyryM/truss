@@ -115,7 +115,7 @@ function truss.quit()
 end
 
 function truss.quitWithError(code)
-    code = code or 0xDEADBEEF
+    code = code or 2001
     log.info("Error code: [" .. tostring(code) .. "]")
     truss.C.set_error(code)
     truss.quit()
