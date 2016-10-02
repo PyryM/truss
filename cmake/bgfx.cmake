@@ -77,6 +77,11 @@ set(bgfx_INCLUDE_DIR "${SOURCE_DIR}/include")
 set(bgfx_LIBRARIES_DIR "${SOURCE_DIR}/.build/${bgfx_SYSTEM_NAME}64_${bgfx_COMPILER}/bin")
 set(bgfx_LIBRARY "${bgfx_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}bgfx-shared-libRelease${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set(bgfx_IMPLIB "${bgfx_LIBRARIES_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}bgfx-shared-libRelease${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(bgfx_BINARIES
+    "${bgfx_LIBRARIES_DIR}/shadercRelease${CMAKE_EXECUTABLE_SUFFIX}"
+    "${bgfx_LIBRARIES_DIR}/texturecRelease${CMAKE_EXECUTABLE_SUFFIX}"
+    "${bgfx_LIBRARIES_DIR}/geometrycRelease${CMAKE_EXECUTABLE_SUFFIX}"
+)
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
 file(MAKE_DIRECTORY "${bx_INCLUDE_DIR}")
@@ -102,3 +107,4 @@ endif()
 
 # Create install commands to install the shared libs.
 truss_copy_libraries(bgfx_EXTERNAL "${bgfx_LIBRARY}")
+truss_copy_binaries(bgfx_EXTERNAL "${bgfx_BINARIES}")
