@@ -31,6 +31,7 @@ const char* truss_get_version();
 void truss_test();
 void truss_log(int log_level, const char* str);
 void truss_set_error(int errcode);
+int truss_get_error();
 void truss_shutdown();
 uint64_t truss_get_hp_time();
 uint64_t truss_get_hp_freq();
@@ -110,15 +111,13 @@ terra truss.toc(startTime: uint64)
     return deltaF / [float](freq)
 end
 
-function truss.quit()
-    truss.C.stop_interpreter(TRUSS_ID)
-end
-
-function truss.quitWithError(code)
-    code = code or 2001
-    log.info("Error code: [" .. tostring(code) .. "]")
+function truss.quit(code)
+    code = code or 0
+    if code then
+      log.info("Error code: [" .. tostring(code) .. "]")
+    end
     truss.C.set_error(code)
-    truss.quit()
+    truss.C.stop_interpreter(TRUSS_ID)
 end
 
 function truss.loadStringFromFile(filename)
@@ -376,7 +375,7 @@ function truss.enterErrorState(errmsg)
         print("Runtime error. See trusslog.txt for details.")
         print(tstr)
         log.info(tstr)
-        truss.quitWithError()
+        truss.quit(2001)
     end
 end
 
