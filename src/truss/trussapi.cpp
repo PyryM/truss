@@ -25,6 +25,10 @@ void truss_log(int log_level, const char* str) {
     Core::instance().logMessage(log_level, str);
 }
 
+void truss_set_error(int errcode) {
+	Core::instance().setError(errcode);
+}
+
 void truss_shutddown() {
     Core::instance().stopAllInterpreters();
 }

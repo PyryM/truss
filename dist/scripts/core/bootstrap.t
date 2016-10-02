@@ -30,6 +30,8 @@ typedef struct Addon Addon;
 const char* truss_get_version();
 void truss_test();
 void truss_log(int log_level, const char* str);
+void truss_set_error(int errcode);
+int truss_get_error();
 void truss_shutdown();
 uint64_t truss_get_hp_time();
 uint64_t truss_get_hp_freq();
@@ -109,7 +111,11 @@ terra truss.toc(startTime: uint64)
     return deltaF / [float](freq)
 end
 
-function truss.quit()
+function truss.quit(code)
+    if code and type(code) == "number" then
+        truss.C.set_error(code)
+        log.info("Error code: [" .. tostring(code) .. "]")
+    end
     truss.C.stop_interpreter(TRUSS_ID)
 end
 
@@ -368,7 +374,7 @@ function truss.enterErrorState(errmsg)
         print("Runtime error. See trusslog.txt for details.")
         print(tstr)
         log.info(tstr)
-        truss.quit()
+        truss.quit(2001)
     end
 end
 
