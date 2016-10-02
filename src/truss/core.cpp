@@ -162,11 +162,11 @@ void Core::logPrint(int log_level, const char* format, ...) {
 }
 
 void Core::setError(int errcode) {
-	errCode_ = errcode;
+    errCode_ = errcode;
 }
 
-int Core::hadError() {
-	return errCode_;
+int Core::getError() {
+    return errCode_;
 }
 
 Interpreter* Core::getInterpreter(int idx) {
@@ -376,7 +376,7 @@ Core::~Core() {
 
 Core::Core() {
     physFSInitted_ = false;
-	errCode_ = 0;
+    errCode_ = 0;
 
     // open log file
     logfile_.open("trusslog.txt", std::ios::out);
