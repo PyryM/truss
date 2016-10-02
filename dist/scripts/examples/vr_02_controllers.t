@@ -8,7 +8,6 @@ local pbr = require("shaders/pbr.t")
 local gfx = require("gfx")
 local plotting = require("gui/plotting.t")
 local futureplot = require("gui/futureplot.t")
-local nanovg = core.nanovg
 local openvr = require("vr/openvr.t")
 
 ControllerApp = VRApp:extend("ControllerApp")

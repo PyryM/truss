@@ -232,12 +232,16 @@ function VRApp:update()
     self.frame = self.frame + 1
     self.time = self.time + 1.0 / 60.0
 
+    local scriptToWait = truss.toc(self.startTime)
+
     if openvr.available then
         openvr.beginFrame()
         self:updateCameras_()
         self:updateControllers_()
         self.controllers = openvr.controllers
     end
+
+    local startTime2 = truss.tic()
 
     -- Deal with input events
     self:updateEvents()
@@ -252,20 +256,15 @@ function VRApp:update()
 
     self:updateScene()
     self:render()
-    self.scripttime = truss.toc(self.startTime)
 
-    -- Have bgfx do its rendering
+    local sceneUpdateTime = truss.toc(startTime2)
+    self.scripttime = scriptToWait + sceneUpdateTime
+
+    -- Render frame and submit eye textures
     bgfx.bgfx_frame(false)
-
-    -- Submit eyes
     openvr.submitFrame(self.eyeTexes)
 
     self.frametime = truss.toc(self.startTime)
-
-    if self.frame % 60 == 0 then
-        log.info("ft: " .. self.frametime)
-    end
-
     self.startTime = truss.tic()
 end
 

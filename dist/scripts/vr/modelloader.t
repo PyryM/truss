@@ -11,8 +11,8 @@ function m.init(parent_)
     openvr_c = parent_.c_api
     parent = parent_
 
-    local addonfuncs = raw_addons.openvr.functions
-    local addonptr   = raw_addons.openvr.pointer
+    local addonfuncs = truss.rawAddons.openvr.functions
+    local addonptr   = truss.rawAddons.openvr.pointer
 
     m.rendermodelsptr = addonfuncs.truss_openvr_get_rendermodels(addonptr)
 
