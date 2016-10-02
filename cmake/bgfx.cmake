@@ -38,6 +38,7 @@ if("${CMAKE_GENERATOR}" MATCHES "Visual Studio 14 2015")
     set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-tools --with-single-threaded --with-shared-lib "${bgfx_COMPILER}")
     set(bgfx_BUILD_COMMAND "${CMAKE_VS_DEVENV_COMMAND}" "<SOURCE_DIR>/.build/projects/${bgfx_COMPILER}/bgfx.sln" /Build Release|x64)
 elseif("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
+    set(bgfx_GENERATE_GLSL_PARSERS_COMMAND "<SOURCE_DIR>/3rdparty/glsl-optimizer/generateParsers.sh")
     set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-tools --with-single-threaded --with-shared-lib "--gcc=${bgfx_GENIE_GCC}" gmake)
     set(bgfx_BUILD_COMMAND "$(MAKE)" -C "<SOURCE_DIR>/.build/projects/gmake-${bgfx_SYSTEM_NAME}" config=release64)
 else()
@@ -50,7 +51,7 @@ ExternalProject_Add(bgfx_EXTERNAL
     DEPENDS bx_EXTERNAL
     GIT_REPOSITORY "https://github.com/PyryM/bgfx.git"
     GIT_TAG "80bfda47b39ad4b1ff6d37deba19f969983510f5"
-    CONFIGURE_COMMAND ${bgfx_CONFIGURE_COMMAND}
+    CONFIGURE_COMMAND ${bgfx_GENERATE_PARSERS_COMMAND} COMMAND ${bgfx_CONFIGURE_COMMAND}
     BUILD_COMMAND ${bgfx_BUILD_COMMAND}
     INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
