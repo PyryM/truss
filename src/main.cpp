@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
 	//interpreter->startUnthreaded("examples/dart_gui_test.t");
 	if (argc > 1) {
 		interpreter->startUnthreaded(argv[1]);
-		int retval = truss::core().hadError();
+		int retval = truss::core().getError();
 		if (retval != 0) {
 			std::cout << "Quit with error code: " << retval << std::endl;
 		}

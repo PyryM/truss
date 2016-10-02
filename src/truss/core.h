@@ -12,7 +12,7 @@
 #include <trussapi.h>
 
 namespace truss {
-    
+
 class Core {
 public:
     static Core& instance();
@@ -27,8 +27,8 @@ public:
     std::ostream& logStream(int log_level);
     void logMessage(int log_level, const char* msg);
     void logPrint(int log_level, const char* format, ...);
-	void setError(int errcode);
-	int hadError();
+    void setError(int errcode);
+    int getError();
 
     Interpreter* getInterpreter(int idx);
     Interpreter* getNamedInterpreter(const char* name);
@@ -53,8 +53,8 @@ public:
     truss_message* loadFileRaw(const char* filename);
     void saveFile(const char* filename, truss_message* data);
     void saveFileRaw(const char* filename, truss_message* data);
-	void saveData(const char* filename, const char* data, unsigned int datalength);
-	void saveDataRaw(const char* filename, const char* data, unsigned int datalength);
+    void saveData(const char* filename, const char* data, unsigned int datalength);
+    void saveDataRaw(const char* filename, const char* data, unsigned int datalength);
 
     truss_message* getStoreValue(const std::string& key);
     int setStoreValue(const std::string& key, truss_message* val);
@@ -63,7 +63,7 @@ public:
     ~Core();
 private:
     Core();
-    
+
     // Mark core as non-copyable.
     Core(const Core&) = delete;
     Core& operator=(const Core&) = delete;
@@ -74,7 +74,7 @@ private:
     std::map<std::string, truss_message*> store_;
     std::ofstream logfile_;
 
-	int errCode_;
+    int errCode_;
 };
 
 // syntax sugar to avoid the verbose
