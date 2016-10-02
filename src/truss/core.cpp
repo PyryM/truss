@@ -23,7 +23,7 @@ void recursiveExtract(void *data, const char *parent_path, const char *filename)
     source_path_ss << parent_path << "/" << filename;
     const std::string source_path = source_path_ss.str();
 
-    // Determine if this path is a real or virtual one by checking if the 
+    // Determine if this path is a real or virtual one by checking if the
     // real path ends in a path separator (directory) or not (archive).
     // If it is a real path, we do not need to extract it.
     const std::string real_path = PHYSFS_getRealDir(source_path.c_str());
@@ -63,7 +63,7 @@ void recursiveExtract(void *data, const char *parent_path, const char *filename)
     while ((bytes_read = PHYSFS_read(infile, buffer.data(), 1, buffer.size())) > 0) {
         PHYSFS_write(outfile, buffer.data(), 1, bytes_read);
     }
-    
+
     PHYSFS_close(outfile);
     PHYSFS_close(infile);
 }
@@ -109,7 +109,7 @@ void Core::extractLibraries() {
     // string, or set it back to NULL.
     const char *originalWritePtr = PHYSFS_getWriteDir();
     std::string originalWriteDir = originalWritePtr ? originalWritePtr : "";
-    
+
     retval = PHYSFS_setWriteDir(PHYSFS_getBaseDir());
     if (retval == 0) {
         logPrint(TRUSS_LOG_ERROR, "Changing write dir to '%s' failed: %s",
@@ -118,6 +118,7 @@ void Core::extractLibraries() {
     }
 
     PHYSFS_enumerateFilesCallback("include", recursiveExtract, nullptr);
+    PHYSFS_enumerateFilesCallback("bin", recursiveExtract, nullptr);
     PHYSFS_enumerateFilesCallback("lib", recursiveExtract, nullptr);
 
     retval = PHYSFS_setWriteDir(originalWritePtr ? originalWriteDir.c_str() : NULL);
@@ -158,6 +159,14 @@ void Core::logPrint(int log_level, const char* format, ...) {
     vsnprintf(buffer.data(), buffer.size(), format, args);
     logMessage(log_level, buffer.data());
     va_end(args);
+}
+
+void Core::setError(int errcode) {
+    errCode_ = errcode;
+}
+
+int Core::getError() {
+    return errCode_;
 }
 
 Interpreter* Core::getInterpreter(int idx) {
@@ -367,6 +376,7 @@ Core::~Core() {
 
 Core::Core() {
     physFSInitted_ = false;
+    errCode_ = 0;
 
     // open log file
     logfile_.open("trusslog.txt", std::ios::out);

@@ -103,10 +103,10 @@ void Interpreter::startUnthreaded(const char* arg) {
 
 void Interpreter::stop() {
     running_ = false;
-	if (thread_ != NULL && thread_->joinable()) {
-		thread_->join();
-		delete thread_;
-	}
+    if (thread_ != NULL && thread_->joinable()) {
+        thread_->join();
+        delete thread_;
+    }
 }
 
 void Interpreter::execute() {
@@ -137,6 +137,7 @@ void Interpreter::threadEntry() {
     truss_message* bootstrap = core().loadFile("scripts/core/bootstrap.t");
     if (!bootstrap) {
         core().logMessage(TRUSS_LOG_ERROR, "Error loading bootstrap script.");
+        core().setError(1000);
         running_ = false;
         return;
     }
@@ -149,6 +150,7 @@ void Interpreter::threadEntry() {
     if(res != 0) {
         core().logPrint(TRUSS_LOG_ERROR, "Error bootstrapping interpreter: %s",
                         lua_tostring(terraState_, -1));
+        core().setError(1001);
         running_ = false;
         return;
     }
@@ -161,6 +163,7 @@ void Interpreter::threadEntry() {
     // Call init
     if (!call("_coreInit", arg_.c_str())) {
         core().logPrint(TRUSS_LOG_ERROR, "Error in coreInit, stopping interpreter [%d].", id_);
+        core().setError(1002);
         running_ = false;
     }
 
@@ -174,7 +177,11 @@ void Interpreter::threadEntry() {
         }
 
         // update lua
-        call("_coreUpdate");
+        if (!call("_coreUpdate")) {
+            core().logPrint(TRUSS_LOG_ERROR, "Uncaught error reached C++, quitting.");
+            core().setError(2000);
+            running_ = false;
+        }
     }
 
     // Shutdown
@@ -222,5 +229,6 @@ bool Interpreter::call(const char* funcname, const char* argstr) {
     if(res != 0) {
         core().logMessage(TRUSS_LOG_ERROR, lua_tostring(terraState_, -1));
     }
+    lua_settop(terraState_, 0); // clear stack to avoid overflows
     return res == 0; // return true is no errors
 }

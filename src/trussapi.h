@@ -52,6 +52,7 @@ TRUSS_C_API const char* truss_get_version();
 
 TRUSS_C_API void truss_test();
 TRUSS_C_API void truss_log(int log_level, const char* str);
+TRUSS_C_API void truss_set_error(int errcode);
 
 /* Quit program by stopping all interpreters */
 TRUSS_C_API void truss_shutdown();

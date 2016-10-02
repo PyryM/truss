@@ -18,12 +18,18 @@ function ohno()
     end
 end
 
+-- the weird spacing here is to test that error line numbering is correct
+
 function yay()
+
     ohno()
+
 end
 
 function woo()
+
     yay()
+
 end
 
 function update()

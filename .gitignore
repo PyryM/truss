@@ -5,10 +5,6 @@ dump/
 models/
 temp/
 old_scripts/
-dist/lib/
-dist/truss
-dist/truss.exe
-dist/save
 *.exe
 *.pdb
 *.idb

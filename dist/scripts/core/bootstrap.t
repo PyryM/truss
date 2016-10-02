@@ -30,6 +30,8 @@ typedef struct Addon Addon;
 const char* truss_get_version();
 void truss_test();
 void truss_log(int log_level, const char* str);
+void truss_set_error(int errcode);
+int truss_get_error();
 void truss_shutdown();
 uint64_t truss_get_hp_time();
 uint64_t truss_get_hp_freq();
@@ -110,13 +112,16 @@ terra truss.toc(startTime: uint64)
 end
 
 truss.cleanupFunctions = {}
-
 function truss.onQuit(f)
     truss.cleanupFunctions[f] = f
 end
 
-function truss.quit()
+function truss.quit(code)
     for _, f in pairs(truss.cleanupFunctions) do f() end
+    if code and type(code) == "number" then
+        truss.C.set_error(code)
+        log.info("Error code: [" .. tostring(code) .. "]")
+    end
     truss.C.stop_interpreter(TRUSS_ID)
 end
 
@@ -130,6 +135,13 @@ function truss.loadStringFromFile(filename)
         log.error("Unable to load " .. filename)
         return nil
     end
+end
+
+-- terra has issues with line numbering with dos line endings (\r\n), so
+-- this function loads a string and then gets rid of carriage returns (\r)
+function truss.loadScriptFromFile(filename)
+    local s = truss.loadStringFromFile(filename)
+    if s then return s:gsub("\r", "") else return nil end
 end
 
 local function makeindent(n)
@@ -172,7 +184,7 @@ function truss.require(filename, force)
         end
 
         local t0 = truss.tic()
-        local funcsource = truss.loadStringFromFile(fullpath)
+        local funcsource = truss.loadScriptFromFile(fullpath)
         if funcsource == nil then
             log.error("Error loading library [" .. filename .. "]: file does not exist.")
             loadedLibs[filename] = nil
@@ -311,7 +323,7 @@ for sk,sv in pairs(subenv) do
 end
 
 local function loadAndRun(fn)
-    local script = truss.loadStringFromFile(fn)
+    local script = truss.loadScriptFromFile(fn)
     local scriptfunc, loaderror = truss.loadNamedString(script, fn)
     if scriptfunc == nil then
         error("Main script loading error: " .. loaderror)
@@ -368,7 +380,7 @@ function truss.enterErrorState(errmsg)
         print("Runtime error. See trusslog.txt for details.")
         print(tstr)
         log.info(tstr)
-        truss.quit()
+        truss.quit(2001)
     end
 end
 

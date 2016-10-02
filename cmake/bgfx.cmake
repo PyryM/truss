@@ -38,7 +38,7 @@ if("${CMAKE_GENERATOR}" MATCHES "Visual Studio 14 2015")
     set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-tools --with-single-threaded --with-shared-lib "${bgfx_COMPILER}")
     set(bgfx_BUILD_COMMAND "${CMAKE_VS_DEVENV_COMMAND}" "<SOURCE_DIR>/.build/projects/${bgfx_COMPILER}/bgfx.sln" /Build Release|x64)
 elseif("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
-    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-single-threaded --with-shared-lib "--gcc=${bgfx_GENIE_GCC}" gmake)
+    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-tools --with-single-threaded --with-shared-lib "--gcc=${bgfx_GENIE_GCC}" gmake)
     set(bgfx_BUILD_COMMAND "$(MAKE)" -C "<SOURCE_DIR>/.build/projects/gmake-${bgfx_SYSTEM_NAME}" config=release64)
 else()
     message(FATAL_ERROR "BGFX does not support the generator '${CMAKE_GENERATOR}'.")
@@ -59,12 +59,29 @@ ExternalProject_Add(bgfx_EXTERNAL
     #LOG_BUILD 1
 )
 
+# Add "Generate Parsers" step on Linux platforms.
+# Required by BGFX (https://github.com/bkaradzic/bgfx/issues/364)
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    ExternalProject_Add_Step(bgfx_EXTERNAL GENERATE_PARSERS
+        COMMAND "./generateParsers.sh"
+        WORKING_DIRECTORY "<SOURCE_DIR>/3rdparty/glsl-optimizer/"
+        COMMENT "Generating parsers for GLSL optimizer."
+        DEPENDEES download
+        DEPENDERS build
+    )
+endif()
+
 # Recover BGFX paths for additional settings.
 ExternalProject_Get_Property(bgfx_EXTERNAL SOURCE_DIR)
 set(bgfx_INCLUDE_DIR "${SOURCE_DIR}/include")
 set(bgfx_LIBRARIES_DIR "${SOURCE_DIR}/.build/${bgfx_SYSTEM_NAME}64_${bgfx_COMPILER}/bin")
 set(bgfx_LIBRARY "${bgfx_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}bgfx-shared-libRelease${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set(bgfx_IMPLIB "${bgfx_LIBRARIES_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}bgfx-shared-libRelease${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(bgfx_BINARIES
+    "${bgfx_LIBRARIES_DIR}/shadercRelease${CMAKE_EXECUTABLE_SUFFIX}"
+    "${bgfx_LIBRARIES_DIR}/texturecRelease${CMAKE_EXECUTABLE_SUFFIX}"
+    "${bgfx_LIBRARIES_DIR}/geometrycRelease${CMAKE_EXECUTABLE_SUFFIX}"
+)
 
 # Workaround for https://cmake.org/Bug/view.php?id=15052
 file(MAKE_DIRECTORY "${bx_INCLUDE_DIR}")
@@ -90,3 +107,4 @@ endif()
 
 # Create install commands to install the shared libs.
 truss_copy_libraries(bgfx_EXTERNAL "${bgfx_LIBRARY}")
+truss_copy_binaries(bgfx_EXTERNAL "${bgfx_BINARIES}")
