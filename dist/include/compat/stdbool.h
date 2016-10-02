@@ -24,9 +24,14 @@
  * of the Software.
  *
  **************************************************************************/
+#ifndef TRUSS_STDBOOL_H
+#define TRUSS_STDBOOL_H
 
-#ifndef _STDBOOL_H_
-#define _STDBOOL_H_
+/*
+ * Used by truss to check whether this header has been included from compat
+ * or from the actual system includes
+ */
+#define TRUSS_CHECK_STDBOOL 7777
 
 #ifndef __cplusplus
 
@@ -40,8 +45,8 @@
 typedef unsigned char _Bool;
 #endif
 
-#endif /* !__cplusplus */
+#endif /* __cplusplus */
 
 #define __bool_true_false_are_defined   1
 
-#endif /* !_STDBOOL_H_ */
+#endif /* TRUSS_STDBOOL_H */
