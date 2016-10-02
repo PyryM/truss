@@ -178,9 +178,9 @@ void Interpreter::threadEntry() {
 
         // update lua
         if (!call("_coreUpdate")) {
-          core().logPrint(TRUSS_LOG_ERROR, "Uncaught error reached C++, quitting.");
-          core().setError(2000);
-          running_ = false;
+            core().logPrint(TRUSS_LOG_ERROR, "Uncaught error reached C++, quitting.");
+            core().setError(2000);
+            running_ = false;
         }
     }
 
