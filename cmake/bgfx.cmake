@@ -59,6 +59,18 @@ ExternalProject_Add(bgfx_EXTERNAL
     #LOG_BUILD 1
 )
 
+# Add "Generate Parsers" step on Linux platforms.
+# Required by BGFX (https://github.com/bkaradzic/bgfx/issues/364)
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    ExternalProject_Add_Step(bgfx_EXTERNAL GENERATE_PARSERS
+        COMMAND "./generateParsers.sh"
+        WORKING_DIRECTORY "<SOURCE_DIR>/3rdparty/glsl-optimizer/"
+        COMMENT "Generating parsers for GLSL optimizer."
+        DEPENDEES download
+        DEPENDERS build
+    )
+endif()
+
 # Recover BGFX paths for additional settings.
 ExternalProject_Get_Property(bgfx_EXTERNAL SOURCE_DIR)
 set(bgfx_INCLUDE_DIR "${SOURCE_DIR}/include")
