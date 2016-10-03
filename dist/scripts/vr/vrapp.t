@@ -81,6 +81,7 @@ function VRApp:initBGFX()
     local cbInterfacePtr = nil
     bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
     bgfx.bgfx_reset(self.width, self.height, reset)
+    self.bgfxInitted = true
 
     local debug = 0 --
     if self.debugtext then

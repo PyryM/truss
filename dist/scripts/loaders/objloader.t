@@ -7,8 +7,8 @@ local m = {}
 m.verbose = false
 
 function m.loadOBJ(filename, invert)
-    local starttime = tic()
-    local srcMessage = truss.truss_load_file(filename)
+    local starttime = truss.tic()
+    local srcMessage = truss.C.load_file(filename)
     if srcMessage == nil then
         log.error("Error: unable to open file " .. filename)
         return nil
@@ -16,8 +16,8 @@ function m.loadOBJ(filename, invert)
 
     local srcstr = ffi.string(srcMessage.data, srcMessage.data_length)
     local ret = m.parseOBJ(srcstr, invert)
-    truss.truss_release_message(srcMessage)
-    local dtime = toc(starttime)
+    truss.C.release_message(srcMessage)
+    local dtime = truss.toc(starttime)
     log.info("Loaded " .. filename .. " in " .. (dtime*1000.0) .. " ms")
     return ret
 end
