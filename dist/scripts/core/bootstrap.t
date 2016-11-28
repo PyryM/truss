@@ -111,7 +111,13 @@ terra truss.toc(startTime: uint64)
     return deltaF / [float](freq)
 end
 
+truss.cleanupFunctions = {}
+function truss.onQuit(f)
+    truss.cleanupFunctions[f] = f
+end
+
 function truss.quit(code)
+    for _, f in pairs(truss.cleanupFunctions) do f() end
     if code and type(code) == "number" then
         truss.C.set_error(code)
         log.info("Error code: [" .. tostring(code) .. "]")

@@ -26,10 +26,10 @@ local terra loadTexture_mem(filename: &int8, flags: uint32)
 end
 
 local function loadTexture_bgfx(filename, flags)
-	local msg = truss.truss_load_file(filename)
+	local msg = truss.C.load_file(filename)
 	if msg == nil then return nil end
 	local bmem = bgfx.bgfx_copy(msg.data, msg.data_length)
-	truss.truss_release_message(msg)
+	truss.C.release_message(msg)
 	return bgfx.bgfx_create_texture(bmem, flags, 0, nil)
 end
 

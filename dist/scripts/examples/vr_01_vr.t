@@ -15,7 +15,7 @@ function createGeometry()
     local geo = icosphere.icosphereGeo(0.5, 3, "sphere")
     local mat = pbr.PBRMaterial("solid"):roughness(0.8):tint(0.1,0.1,0.1)
 
-    local nspheres = 200
+    local nspheres = 1000
     for i = 1,nspheres do
         local sphere = gfx.Object3D(geo, mat)
         sphere.position:set(randu(5), randu(5), randu(5))

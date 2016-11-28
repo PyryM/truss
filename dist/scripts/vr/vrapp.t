@@ -48,6 +48,7 @@ function VRApp:init(options)
 
     -- controller objects
     self.controllerObjects = {}
+    self.maxControllers = 0
 
     -- used to draw screen space quads to composite things
     self.orthocam = gfx.Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
@@ -80,6 +81,7 @@ function VRApp:initBGFX()
     local cbInterfacePtr = nil
     bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
     bgfx.bgfx_reset(self.width, self.height, reset)
+    self.bgfxInitted = true
 
     local debug = 0 --
     if self.debugtext then
@@ -205,7 +207,8 @@ function VRApp:onControllerModelLoaded(data, target)
 end
 
 function VRApp:updateControllers_()
-    for i = 1,2 do
+    self.maxControllers = openvr.maxControllers
+    for i = 1,self.maxControllers do
         local controller = openvr.controllers[i]
         if controller and controller.connected then
             if self.controllerObjects[i] == nil then
@@ -230,12 +233,16 @@ function VRApp:update()
     self.frame = self.frame + 1
     self.time = self.time + 1.0 / 60.0
 
+    local scriptToWait = truss.toc(self.startTime)
+
     if openvr.available then
         openvr.beginFrame()
         self:updateCameras_()
         self:updateControllers_()
         self.controllers = openvr.controllers
     end
+
+    local startTime2 = truss.tic()
 
     -- Deal with input events
     self:updateEvents()
@@ -250,20 +257,15 @@ function VRApp:update()
 
     self:updateScene()
     self:render()
-    self.scripttime = truss.toc(self.startTime)
 
-    -- Have bgfx do its rendering
+    local sceneUpdateTime = truss.toc(startTime2)
+    self.scripttime = scriptToWait + sceneUpdateTime
+
+    -- Render frame and submit eye textures
     bgfx.bgfx_frame(false)
-
-    -- Submit eyes
     openvr.submitFrame(self.eyeTexes)
 
     self.frametime = truss.toc(self.startTime)
-
-    if self.frame % 60 == 0 then
-        log.info("ft: " .. self.frametime)
-    end
-
     self.startTime = truss.tic()
 end
 
