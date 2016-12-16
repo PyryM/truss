@@ -4,6 +4,7 @@
 
 local class = require("class")
 local sg = require("scenegraph/scenegraph.t")
+local event = require("ecs/event.t")
 local m = {}
 
 local Entity = class("Entity")
@@ -11,6 +12,7 @@ m.Entity = Entity
 Entity:with(sg.ScenegraphMixin)
 function Entity:init(name)
     self._components = {}
+    self._event_handlers = {}
     self:sg_init()
     if name then self.name = name end
 end
@@ -53,6 +55,37 @@ function Entity:remove_component(component_name)
     self._components[component_name] = nil
     self[component_name] = nil
     comp:unmount(self)
+    self:_remove_handlers(comp)
+end
+
+function Entity:_add_handler(event_name, component)
+    self._event_handlers[event_name] = self._event_handlers[event_name] or {}
+    self._event_handlers[event_name][component] = component
+end
+
+function Entity:_remove_handlers(component)
+    for _, handlers in pairs(self._event_handlers) do
+        handlers[component] = nil
+    end
+end
+
+local function dispatch_event(targets, event_name, arg)
+    if not targets then return end
+    for _, handler in pairs(targets) do
+        -- i.e., for "on_update", first try handler:on_update(arg)
+        -- then fall back to handler:event("on_update", arg)
+        if handler[event_name] then
+            handler[event_name](handler, arg)
+        else
+            handler:event(event_name, arg)
+        end
+    end
+end
+
+-- send an event to any components that want to handle it
+function Entity:event(event_name, arg)
+    dispatch_event(self._event_handlers["*"], event_name, arg)
+    dispatch_event(self._event_handlers[event_name], event_name, arg)
 end
 
 return m
