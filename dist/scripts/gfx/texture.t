@@ -10,6 +10,7 @@ local MemTexture = class("MemTexture")
 m.MemTexture = MemTexture
 
 local formats = {
+    R8 = {uint8, bgfx.BGFX_TEXTURE_FORMAT_R8, 1, 1},
     RGBA8 = {uint8, bgfx.BGFX_TEXTURE_FORMAT_BGRA8, 4, 4},
     RG16  = {uint16, bgfx.BGFX_TEXTURE_FORMAT_RG16, 2, 4}
 }
