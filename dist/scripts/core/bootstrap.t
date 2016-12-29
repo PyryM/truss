@@ -11,7 +11,7 @@ local ctruss = terralib.includec("truss_api.h")
 -- (note, this is essentially the same function as in core/module.t,
 -- but we haven't set up `require` yet)
 truss = {}
-truss.CRaw = ctruss
+truss.C_raw = ctruss
 truss.C = {}
 for k,v in pairs(ctruss) do
   if k:sub(1,6):lower() == "truss_" then
@@ -90,10 +90,6 @@ function truss.load_script_from_file(filename)
   if s then return s:gsub("\r", "") else return nil end
 end
 
-local function create_module_env()
-  return _G
-end
-
 -- terralib.loadstring does not take a name parameter (which is needed
 -- to get reasonable error messages), so we have to perform this workaround
 -- to use the lower-level terralib.load which does take a name
@@ -107,6 +103,24 @@ function truss.load_named_string(str, strname)
     return s2
   end
   return terralib.load(loaderfunc, strname)
+end
+
+local function extend_table(dest, addition)
+  for k,v in pairs(addition) do dest[k] = v end
+  return dest
+end
+
+truss._module_env = extend_table({}, _G)
+local disallow_globals_mt = {
+  __newindex = function (t,k,v)
+    truss.error("Module tried to create global %s.":format(k))
+  end
+}
+
+local function create_module_env()
+  local modenv = extend_table({}, truss._module_env)
+  setmetatable(modenv, disallow_globals_mt)
+  return modenv
 end
 
 local loaded_libs = {}
@@ -218,20 +232,6 @@ nanovg = terralib.includec("nanovg_terra.h")
 lua_require = require
 require = truss.require
 
--- create the subenv that the main script will run in
-local subenv = {}
-for k,v in pairs(_G) do
-  subenv[k] = v
-end
-truss.mainenv = subenv
-
--- create a fresh copy of subenv for modules that need to have
--- a clean-ish sandbox
-truss.clean_subenv = {}
-for sk,sv in pairs(subenv) do
-  truss.clean_subenv[sk] = sv
-end
-
 -- read out command line arguments into a convenient table
 truss.args = {}
 local idx = 0
@@ -262,6 +262,10 @@ local function add_paths()
   end
 end
 
+-- create some environments
+truss.clean_subenv = extend_table({},  _G)
+truss.mainenv = extend_table({}, _G)
+
 local function load_and_fun(fn)
   local script = truss.load_script_from_file(fn)
   local scriptfunc, loaderror = truss.load_named_string(script, fn)
@@ -269,7 +273,7 @@ local function load_and_fun(fn)
     error("Main script loading error: " .. loaderror)
     return
   end
-  setfenv(scriptfunc, subenv)
+  setfenv(scriptfunc, truss.mainenv)
   truss.mainobj = scriptfunc() or truss.mainenv
   truss.mainobj:init()
 end
