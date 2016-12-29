@@ -90,12 +90,8 @@ function truss.load_script_from_file(filename)
   if s then return s:gsub("\r", "") else return nil end
 end
 
--- create a series of indents ====> for showing module load nesting
-local function makeindent(n)
-  if n == 0 then return "" end
-  local ret = ">"
-  for i = 1,n do ret = "=" .. ret end
-  return ret
+local function create_module_env()
+  return _G
 end
 
 -- terralib.loadstring does not take a name parameter (which is needed
@@ -115,13 +111,15 @@ end
 
 local loaded_libs = {}
 truss._loaded_libs = loaded_libs
-local require_nest_level = 0
 local require_prefix_path = ""
 function truss.require(filename, force)
+  if loaded_libs[filename] == false then
+    truss.error("require [%s] : cyclical require":format(filename))
+    return nil
+  end
   if loaded_libs[filename] == nil or force then
-    log.info("Starting to load [" .. filename .. "]")
     local oldmodule = loaded_libs[filename] -- only relevant if force==true
-    loaded_libs[filename] = {} -- prevent possible infinite recursion
+    loaded_libs[filename] = false -- prevent possible infinite recursion
 
     -- if the filename is actually a directory, try to load init.t
     local fullpath = "scripts/" .. require_prefix_path .. filename
@@ -132,24 +130,18 @@ function truss.require(filename, force)
 
     local t0 = truss.tic()
     local funcsource = truss.load_script_from_file(fullpath)
-    if funcsource == nil then
-      loaded_libs[filename] = nil
-      truss.error("require [" .. filename .. "]: file does not exist.")
+    if not funcsource then
+      truss.error("require [%s]: file does not exist.":format(filename))
       return nil
     end
     local modulefunc, loaderror = truss.load_named_string(funcsource, filename)
-    if modulefunc then
-      require_nest_level = require_nest_level + 1
-      loaded_libs[filename] = modulefunc()
-      require_nest_level = require_nest_level - 1
-      local dt = truss.toc(t0) * 1000.0
-      log.info(makeindent(require_nest_level) ..
-        "Loaded library [" .. filename .. "]" ..
-        " in " .. dt .. " ms")
-    else
-      loaded_libs[filename] = oldmodule
-      truss.error("require [" .. filename .. "]: " .. loaderror)
+    if not modulefunc then
+      truss.error("require [%s]: syntax error: %s":format(filename, loaderror))
+      return nil
     end
+    setfenv(modulefunc, create_module_env())
+    loaded_libs[filename] = modulefunc()
+    log.info("Loaded [%s] in %f ms":format(filename, truss.toc(t0) * 1000.0))
   end
   return loaded_libs[filename]
 end
@@ -192,7 +184,6 @@ local numaddons = truss.C.get_addon_count(TRUSS_ID)
 log.info("Found " .. numaddons .. " addons.")
 
 local addons = {}
-local raw_addons = {}
 
 for addonIdx = 1,numaddons do
   local header = ffi.string(truss.C.get_addon_header(TRUSS_ID, addonIdx-1))
@@ -201,18 +192,10 @@ for addonIdx = 1,numaddons do
   local addon_version = ffi.string(truss.C.get_addon_version(TRUSS_ID, addonIdx-1))
   log.info("Loading addon [" .. addon_name .. "]")
   local addon_table = terralib.includecstring(header)
-  raw_addons[addon_name] = {functions = addon_table, pointer = pointer, 
-                            version = addon_version}
-  if truss.check_module_exists("addons/" .. addon_name .. ".t") then
-    local wrapper = truss.require("addons/" .. addon_name .. ".t")
-    addon_table = wrapper.wrap(addon_name, addon_table, pointer, addon_version)
-  else
-    log.warn("Warning: no wrapper found for addon [" .. addon_name .. "]")
-  end
-  addons[addon_name] = addon_table
+  addons[addon_name] = {functions = addon_table, pointer = pointer, 
+                        version = addon_version}
 end
 truss.addons = addons
-truss.raw_addons = raw_addons
 
 local vstr = ffi.string(truss.C.get_version())
 truss.VERSION = vstr
