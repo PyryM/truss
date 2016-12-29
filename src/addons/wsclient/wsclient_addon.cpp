@@ -23,6 +23,8 @@ bool initWSA() {
 		truss_log(TRUSS_LOG_INFO, "WSAStartup Succeeded.");
 		return true;
 	}
+#else
+	return false;
 #endif
 }
 

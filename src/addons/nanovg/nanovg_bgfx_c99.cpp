@@ -321,6 +321,7 @@ namespace
 
 		tex->id = bgfx_create_texture_2d(tex->width
 						, tex->height
+						, false
 						, 1
 						, NVG_TEXTURE_RGBA == _type ? BGFX_TEXTURE_FORMAT_RGBA8 : BGFX_TEXTURE_FORMAT_R8
 						, BGFX_TEXTURE_NONE
@@ -348,7 +349,7 @@ namespace
 		uint32_t bytesPerPixel = NVG_TEXTURE_RGBA == tex->type ? 4 : 1;
 		uint32_t pitch = tex->width * bytesPerPixel;
 
-		bgfx_update_texture_2d(tex->id, 0, x, y, w, h
+		bgfx_update_texture_2d(tex->id, 0, 0, x, y, w, h
 				, bgfx_make_ref(data + y*pitch + x*bytesPerPixel, h*pitch)
 				, pitch
 				);
