@@ -67,16 +67,14 @@ int main(int argc, char** argv) {
 	truss_log(0, "Starting interpreter!");
 	// startUnthreaded starts the interpreter in the current thread,
 	// which means the call will block until the interpreter is stopped
-	//interpreter->startUnthreaded("examples/dart_gui_test.t");
 	if (argc > 1) {
 		interpreter->startUnthreaded(argv[1]);
-		int retval = truss::core().getError();
-		if (retval != 0) {
-			std::cout << "Quit with error code: " << retval << std::endl;
-		}
-		return retval;
 	} else {
-		std::cout << "Usage: truss [script]" << std::endl;
+		interpreter->startUnthreaded("scripts/main.t");
 	}
-	return 0;
+	int retval = truss::core().getError();
+	if (retval != 0) {
+		std::cout << "Quit with error code: " << retval << std::endl;
+	}
+	return retval;
 }
