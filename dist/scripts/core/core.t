@@ -1,4 +1,5 @@
--- bootstrap script
+-- core.t
+-- defines truss library functions, imports bgfx, sets up require system
 
 -- add our compatibility C standard library headers so systems without
 -- dev tools can still use truss (e.g., windows without VS installed)
