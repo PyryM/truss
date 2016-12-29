@@ -6,11 +6,7 @@ local m = {}
 
 -- copy all public exports from module srcname into destination table
 -- if the returned module object has an explicit .exports, use that
-function m.reexport(srcname, desttable)
-  local srcmodule = require(srcname)
-  if not srcmodule then
-    return
-  end
+function m.reexport(srcmodule, desttable)
   local src = srcmodule.exports or srcmodule
   for k,v in pairs(src) do
     if not desttable[k] then
@@ -25,7 +21,7 @@ end
 -- ex: include_submodules({"foo/bar.t", "foo/baz.t"}, foo)
 function m.include_submodules(srclist, dest)
   for _,srcname in ipairs(srclist) do
-    m.reexport(srcname, dest)
+    m.reexport(require(srcname), dest)
   end
 end
 
