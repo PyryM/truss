@@ -900,6 +900,23 @@ BGFX_C_API void bgfx_blit(uint8_t _id, bgfx_texture_handle_t _dst, uint8_t _dstM
 BGFX_C_API void bgfx_save_screen_shot(const char* _filePath);
 
 // From c99/platform.h:
+typedef enum bgfx_render_frame
+{
+    BGFX_RENDER_FRAME_NO_CONTEXT,
+    BGFX_RENDER_FRAME_RENDER,
+    BGFX_RENDER_FRAME_EXITING,
+
+    BGFX_RENDER_FRAME_COUNT
+
+} bgfx_render_frame_t;
+
+/**
+ * WARNING: This call should be only used on platforms that don't
+ * allow creating separate rendering thread. If it is called before
+ * to bgfx_init, render thread won't be created by bgfx_init call.
+ */
+BGFX_C_API bgfx_render_frame_t bgfx_render_frame();
+
 /**/
 BGFX_C_API uintptr_t bgfx_get_internal_texture_ptr(bgfx_texture_handle_t _handle);
 
