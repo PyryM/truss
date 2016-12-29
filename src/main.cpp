@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 	truss::core().extractLibraries();				// extract currently loaded C libraries
 	setupRPath();									// set windows RPATH if necessary
 
-	truss::core().setWriteDir("save");              // write into basedir/save/
+	truss::core().setWriteDir("");              	// write into basedir/
 
 	truss::Interpreter* interpreter = truss::core().spawnInterpreter("interpreter_0");
 	interpreter->setDebug(0); // want most verbose debugging output
