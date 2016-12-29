@@ -161,7 +161,7 @@ void Interpreter::threadEntry() {
     }
 
     // Call init
-    if (!call("_coreInit", arg_.c_str())) {
+    if (!call("_core_init", arg_.c_str())) {
         core().logPrint(TRUSS_LOG_ERROR, "Error in coreInit, stopping interpreter [%d].", id_);
         core().setError(1002);
         running_ = false;
@@ -177,7 +177,7 @@ void Interpreter::threadEntry() {
         }
 
         // update lua
-        if (!call("_coreUpdate")) {
+        if (!call("_core_update")) {
             core().logPrint(TRUSS_LOG_ERROR, "Uncaught error reached C++, quitting.");
             core().setError(2000);
             running_ = false;

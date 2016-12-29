@@ -147,7 +147,7 @@ function truss.require(filename, force)
 end
 
 function truss.check_module_exists(filename)
-  if loaded_libs[filename] ~= nil then return true end
+  if loaded_libs[filename] then return true end
   local fullpath = "scripts/" .. require_prefix_path .. filename
   return truss.C.check_file(fullpath) ~= 0
 end
@@ -223,7 +223,7 @@ local subenv = {}
 for k,v in pairs(_G) do
   subenv[k] = v
 end
-truss.mainEnv = subenv
+truss.mainenv = subenv
 
 -- create a fresh copy of subenv for modules that need to have
 -- a clean-ish sandbox
@@ -247,7 +247,7 @@ end
 log.debug("Loaded " .. idx .. " args.")
 
 --
-local function _addPaths()
+local function add_paths()
   local nargs = #(truss.args)
   for i = 3,nargs do
     if execArgs[i] == "--addpath" and i+2 <= nargs then
@@ -262,7 +262,7 @@ local function _addPaths()
   end
 end
 
-local function loadAndRun(fn)
+local function load_and_fun(fn)
   local script = truss.load_script_from_file(fn)
   local scriptfunc, loaderror = truss.load_named_string(script, fn)
   if scriptfunc == nil then
@@ -270,53 +270,53 @@ local function loadAndRun(fn)
     return
   end
   setfenv(scriptfunc, subenv)
-  truss.mainObj = scriptfunc() or truss.mainEnv
-  truss.mainObj:init()
+  truss.mainobj = scriptfunc() or truss.mainenv
+  truss.mainobj:init()
 end
 
-local function errorHandler(err)
+local function error_handler(err)
   log.critical(err)
-  truss.errorTrace = debug.traceback(err, 3)
+  truss.error_trace = debug.traceback(err, 3)
   return err
 end
 
 -- These functions have to be global because
-function _coreInit(argstring)
+function _core_init(argstring)
   -- Set paths from command line arguments
-  _addPaths()
+  add_paths()
   -- Load in argstring
   local t0 = truss.tic()
   local fn = argstring
   log.info("Loading " .. fn)
-  local happy, errmsg = xpcall(loadAndRun, errorHandler, fn)
+  local happy, errmsg = xpcall(load_and_run, error_handler, fn)
   if not happy then
-    truss.enterErrorState(errmsg)
+    truss.enter_error_state(errmsg)
   end
   local delta = truss.toc(t0)
   log.info("Time to init: " .. delta)
 end
 
-function _coreUpdate()
-  local happy, errmsg = xpcall(truss.mainObj.update, errorHandler, truss.mainObj)
+function _core_update()
+  local happy, errmsg = xpcall(truss.mainobj.update, error_handler, truss.mainobj)
   if not happy then
-    truss.enterErrorState(errmsg)
+    truss.enter_error_state(errmsg)
   end
 end
 
-function _fallbackUpdate()
-  truss.mainObj:fallbackUpdate()
+function _fallback_update()
+  truss.mainobj:fallback_update()
 end
 
-_resumeUpdate = _coreUpdate
-function truss.enterErrorState(errmsg)
+_resume_update = _core_update
+function truss.enter_error_state(errmsg)
   log.warn("Entering error state: " .. errmsg)
-  truss.crashMessage = errmsg
-  if truss.mainObj and truss.mainObj.fallbackUpdate then
-    _resumeUpdate = _coreUpdate
-    _coreUpdate = _fallbackUpdate
+  truss.crash_message = errmsg
+  if truss.mainobj and truss.mainobj.fallback_update then
+    _resume_update = _core_update
+    _core_update = _fallback_update
   else
     log.info("No fallback update function present; quitting.")
-    local tstr = "Traceback: " .. tostring(truss.errorTrace)
+    local tstr = "Traceback: " .. tostring(truss.error_trace)
     print("Runtime error. See trusslog.txt for details.")
     print(tstr)
     log.info(tstr)
@@ -324,10 +324,10 @@ function truss.enterErrorState(errmsg)
   end
 end
 
-function truss.resumeFromError()
+function truss.resume_from_error()
   log.info("Attempting to resume from an error")
-  if _resumeUpdate then
-    _coreUpdate = _resumeUpdate
+  if _resume_update then
+    _core_update = _resume_update
   else
     log.warn("Cannot resume; no resume update function set.")
   end
