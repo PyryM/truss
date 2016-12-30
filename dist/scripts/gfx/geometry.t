@@ -316,10 +316,6 @@ function StaticGeometry:update()
   -- Create static bgfx buffers
   -- Warning! This only wraps the data, so make sure it doesn't go out
   -- of scope for at least two frames (bgfx requirement)
-  log.info(tostring(self.verts))
-  log.info(tostring(self.vert_data_size))
-  log.info(tostring(self.vertinfo.vdecl))
-
   self._vbh = bgfx.create_vertex_buffer(
       bgfx.make_ref(self.verts, self.vert_data_size),
       self.vertinfo.vdecl, flags )

@@ -53,7 +53,37 @@ function m.init_gfx(options)
   local renderer_type = bgfx.get_renderer_type()
   local renderer_name = ffi.string(bgfx.get_renderer_name(renderer_type))
   m.renderer_name = renderer_name
-  log.info("Renderer type: " .. renderer_name)
+  m.renderer_type = renderer_type
+  m.short_renderer_name = m._translate_renderer_type(renderer_type)
+  log.info("Renderer name: " .. renderer_name)
+  log.info("Short renderer name: " .. m.short_renderer_name)
+end
+
+function m._translate_renderer_type(bgfx_type)
+  local rtypes = {
+    "NOOP",
+    "DIRECT3D9",
+    "DIRECT3D11",
+    "DIRECT3D12",
+    "GNM",
+    "METAL",
+    "OPENGLES",
+    "OPENGL",
+    "VULKAN"
+  }
+  for _, rtype in ipairs(rtypes) do
+    if bgfx["RENDERER_TYPE_" .. rtype] == bgfx_type then
+      return rtype
+    end
+  end
+end
+
+function m.get_renderer_name()
+  return m.renderer_name
+end
+
+function m.get_renderer_type()
+  return m.short_renderer_name
 end
 
 function m.frame()
