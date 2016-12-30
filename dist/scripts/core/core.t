@@ -124,6 +124,12 @@ local function create_module_env()
   return modenv
 end
 
+
+-- require a module
+-- unlike the built-in `require`, truss.require uses / as the path separator
+-- and needs the file extension (e.g., require("core/module.t"))
+-- if no file extension is present and the path is a directory, then truss
+-- tries to load dir/init.t
 local loaded_libs = {}
 truss._loaded_libs = loaded_libs
 local require_prefix_path = ""
@@ -228,6 +234,7 @@ bgfx.raw_functions = bgfx_c
 bgfx.raw_constants = bgfx_const
 
 nanovg = terralib.includec("nanovg_terra.h")
+modutils.reexport(require("core/memory.t"), truss)
 
 -- replace lua require with truss require
 lua_require = require
@@ -247,7 +254,7 @@ while true do
 end
 log.debug("Loaded " .. idx .. " args.")
 
---
+-- mount command line argument paths into physfs
 local function add_paths()
   local nargs = #(truss.args)
   for i = 3,nargs do
