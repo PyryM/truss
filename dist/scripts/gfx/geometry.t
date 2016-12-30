@@ -4,14 +4,12 @@
 -- a class representing indexed vertex data (vertices + index list)
 
 local class = require("class")
-local vec = require("math/vec.t")
-local quat = require("math/quat.t")
-local matrix = require("math/matrix.t")
+local math = require("math")
 local bufferutils = require("gfx/bufferutils.t")
 
-local Quaternion = quat.Quaternion
-local Matrix4 = matrix.Matrix4
-local Vector = vec.Vector
+local Quaternion = math.Quaternion
+local Matrix4 = math.Matrix4
+local Vector = math.Vector
 
 local m = {}
 
@@ -48,8 +46,8 @@ function TransientGeometry:init(name)
     last_geo_idx_ = last_geo_idx_ + 1
     self.allocated = false
 
-    self.transientVB_ = terralib.new(bgfx.bgfx_transient_vertex_buffer_t)
-    self.transientIB_ = terralib.new(bgfx.bgfx_transient_index_buffer_t)
+    self._transient_vb = terralib.new(bgfx.bgfx_transient_vertex_buffer_t)
+    self._transient_ib = terralib.new(bgfx.bgfx_transient_index_buffer_t)
 end
 
 function TransientGeometry:allocate(vertInfo, nVertices, nIndices)
@@ -73,11 +71,11 @@ function TransientGeometry:allocate(vertInfo, nVertices, nIndices)
         return
     end
 
-    bgfx.bgfx_alloc_transient_buffers(self.transientVB_, vertInfo.vertDecl, nVertices,
-                                      self.transientIB_, nIndices)
+    bgfx.bgfx_alloc_transient_buffers(self._transient_vb, vertInfo.vertDecl, nVertices,
+                                      self._transient_ib, nIndices)
 
-    self.indices = terralib.cast(&uint16, self.transientIB_.data)
-    self.verts   = terralib.cast(&vertInfo.vertType, self.transientVB_.data)
+    self.indices = terralib.cast(&uint16, self._transient_ib.data)
+    self.verts   = terralib.cast(&vertInfo.vertType, self._transient_vb.data)
     self.allocated = true
 
     return self
@@ -106,7 +104,7 @@ function TransientGeometry:fullScreenTri(width, height, originBottomLeft, vinfo)
 
     if not vinfo then
         local vdefs = require("gfx/vertexdefs.t")
-        vinfo = vdefs.createStandardVertexType({"position", "texcoord0"})
+        vinfo = vdefs.create_basic_vertex_type({"position", "texcoord0"})
     end
 
     self:allocate(vinfo, 3, 3)
@@ -132,7 +130,7 @@ end
 function m.makeFastTransientQuadFunc(vinfo)
     if not vinfo then
         local vdefs = require("gfx/vertexdefs.t")
-        vinfo = vdefs.createStandardVertexType({"position", "texcoord0"})
+        vinfo = vdefs.create_basic_vertex_type({"position", "texcoord0"})
     end
     local vtype = vinfo.vertType
     local vdecl = vinfo.vertDecl
@@ -185,7 +183,7 @@ end
 function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
     if not vinfo then
         local vdefs = require("gfx/vertexdefs.t")
-        vinfo = vdefs.createStandardVertexType({"position", "texcoord0"})
+        vinfo = vdefs.create_basic_vertex_type({"position", "texcoord0"})
     end
     self:allocate(vinfo, 4, 6)
     local vs = self.verts
@@ -215,8 +213,8 @@ function TransientGeometry:bind()
         return
     end
 
-    bgfx.bgfx_set_transient_vertex_buffer(self.transientVB_, 0, bgfx.UINT32_MAX)
-    bgfx.bgfx_set_transient_index_buffer(self.transientIB_, 0, bgfx.UINT32_MAX)
+    bgfx.bgfx_set_transient_vertex_buffer(self._transient_vb, 0, bgfx.UINT32_MAX)
+    bgfx.bgfx_set_transient_index_buffer(self._transient_ib, 0, bgfx.UINT32_MAX)
 
     self.bound = true
     return self
@@ -228,7 +226,7 @@ function TransientGeometry:build()
     return self
 end
 
-function TransientGeometry:beginFrame()
+function TransientGeometry:begin_frame()
     if self.allocated and not self.bound then
         log.warn("Allocating transient geometry without binding it the same frame will leak memory!")
     end
@@ -240,41 +238,41 @@ function TransientGeometry:beginFrame()
     return self
 end
 
-function StaticGeometry:allocate(vertInfo, nVertices, nIndices)
-    local indexType = uint16
-    if nVertices >= 2^16 then
+function StaticGeometry:allocate(vertinfo, n_verts, n_indices)
+    local index_type = uint16
+    if n_verts >= 2^16 then
         log.debug("Using 32 bit indices in index buffer!")
-        indexType = uint32
-        self.has32bitIndices = true
+        index_type = uint32
     end
+    self.index_type = index_type
 
-    self.vertInfo = vertInfo
-    self.verts = terralib.new(vertInfo.vertType[nVertices])
-    self.nVertices = nVertices
-    self.indices = terralib.new(indexType[nIndices])
-    self.nIndices = nIndices
-    self.vertDataSize = sizeof(vertInfo.vertType[nVertices])
-    self.indexDataSize = sizeof(indexType[nIndices])
+    self.vertinfo = vertinfo
+    self.verts = truss.allocate(vertinfo.vert_type[n_verts])
+    self.n_verts = n_verts
+    self.indices = truss.allocate(index_type[n_indices])
+    self.n_indices = n_indices
+    self.vert_data_size = sizeof(vertinfo.vert_type[n_verts])
+    self.index_data_size = sizeof(index_type[n_indices])
     self.allocated = true
     return self
 end
 DynamicGeometry.allocate = StaticGeometry.allocate
 
-function StaticGeometry:setIndices(indices)
-    bufferutils.setIndices(self, indices)
+function StaticGeometry:set_indices(indices)
+    bufferutils.set_indices(self, indices)
 end
-DynamicGeometry.setIndices = StaticGeometry.setIndices
-TransientGeometry.setIndices = StaticGeometry.setIndices
+DynamicGeometry.set_indices = StaticGeometry.set_indices
+TransientGeometry.set_indices = StaticGeometry.set_indices
 
-function StaticGeometry:setAttribute(attribName, attribList)
-    bufferutils.setAttribute(self, attribName, attribList)
+function StaticGeometry:set_attribute(attribName, attribList)
+    bufferutils.set_attribute(self, attribName, attribList)
 end
-DynamicGeometry.setAttribute = StaticGeometry.setAttribute
-TransientGeometry.setAttribute = StaticGeometry.setAttribute
+DynamicGeometry.set_attribute = StaticGeometry.set_attribute
+TransientGeometry.set_attribute = StaticGeometry.set_attribute
 
-function StaticGeometry:fromData(vertexInfo, modeldata, noBuild)
-    if modeldata == nil or vertexInfo == nil then
-        log.error("Geometry:fromData: nil vertexInfo or modeldata!")
+function StaticGeometry:from_data(vertinfo, modeldata, no_update)
+    if modeldata == nil or vertinfo == nil then
+        log.error("Geometry:from_data: nil vertinfo or modeldata!")
         return
     end
 
@@ -284,114 +282,96 @@ function StaticGeometry:fromData(vertexInfo, modeldata, noBuild)
     else
         nindices = #modeldata.indices * 3
     end
-    self:allocate(vertexInfo, #(modeldata.attributes.position), nindices)
+    self:allocate(vertinfo, #(modeldata.attributes.position), nindices)
 
-    for attribName, attribData in pairs(modeldata.attributes) do
-        self:setAttribute(attribName, attribData)
+    for a_name, a_data in pairs(modeldata.attributes) do
+        self:set_attribute(a_name, a_data)
     end
-    self:setIndices(modeldata.indices)
+    self:set_indices(modeldata.indices)
 
-    if noBuild then
+    if no_update then
         return self
     else
-        return self:build()
+        return self:update()
     end
 end
-DynamicGeometry.fromData = StaticGeometry.fromData
-TransientGeometry.fromData = StaticGeometry.fromData
+DynamicGeometry.from_data = StaticGeometry.from_data
+TransientGeometry.from_data = StaticGeometry.from_data
 
-function StaticGeometry:build(recreate)
+function StaticGeometry:update()
     if not self.allocated then
         log.error("Cannot build geometry with no allocated data!")
         return
     end
 
-    local flags = bgfx_const.BGFX_BUFFER_NONE
-    if self.has32bitIndices then
+    local flags = bgfx.BUFFER_NONE
+    if self.index_type == uint32 then
         log.debug("Building w/ 32 bit index buffer!")
-        flags = bgfx_const.BGFX_BUFFER_INDEX32
+        flags = bgfx.BUFFER_INDEX32
     end
 
-    if (self.vbh or self.ibh) and (not recreate) then
-        log.warn("Tried to rebuild StaticGeometry [" ..
-                    self.name .. "] without explicit recreate!")
-        return
-    end
-
-    if self.vbh then
-        bgfx.bgfx_destroy_vertex_buffer(self.vbh)
-    end
-    if self.ibh then
-        bgfx.bgfx_destroy_index_buffer(self.ibh)
-    end
+    if self._vbh then bgfx.destroy_vertex_buffer(self._vbh) end
+    if self._ibh then bgfx.destroy_index_buffer(self._ibh) end
 
     -- Create static bgfx buffers
     -- Warning! This only wraps the data, so make sure it doesn't go out
     -- of scope for at least two frames (bgfx requirement)
-    self.vbh = bgfx.bgfx_create_vertex_buffer(
-          bgfx.bgfx_make_ref(self.verts, self.vertDataSize),
-          self.vertInfo.vertDecl, flags )
+    self._vbh = bgfx.create_vertex_buffer(
+          bgfx.make_ref(self.verts, self.vert_data_size),
+          self.vertinfo.decl, flags )
 
-    self.ibh = bgfx.bgfx_create_index_buffer(
-          bgfx.bgfx_make_ref(self.indices, self.indexDataSize), flags )
+    self._ibh = bgfx.create_index_buffer(
+          bgfx.make_ref(self.indices, self.index_data_size), flags )
 
-    self.built = (self.vbh ~= nil) and (self.ibh ~= nil)
+    self.uploaded = (self._vbh ~= nil) and (self._ibh ~= nil)
 
     return self
 end
 
-function StaticGeometry:update()
-    self:build()
-end
-
-local function check_built_(geo)
-    if geo.built then return true end
+local function check_built(geo)
+    if geo.uploaded then return true end
 
     if not geo.warned then
-        log.warn("Warning: geometry [" .. geo.name .. "] has not been built.")
+        log.warn("Geometry [" .. geo.name .. "] has not been uploaded.")
         geo.warned = true
     end
     return false
 end
 
 function StaticGeometry:bind()
-    if not check_built_(self) then return end
+    if not check_built(self) then return end
 
-    bgfx.bgfx_set_vertex_buffer(self.vbh, 0, bgfx.UINT32_MAX)
-    bgfx.bgfx_set_index_buffer(self.ibh, 0, bgfx.UINT32_MAX)
+    bgfx.set_vertex_buffer(self._vbh, 0, bgfx.UINT32_MAX)
+    bgfx.set_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
 
     return true
 end
 
-function DynamicGeometry:build(recreate)
+function DynamicGeometry:_build()
     local flags = 0
 
-    if self.built and not recreate then
+    if self.uploaded and not recreate then
         log.warn("Tried to rebuilt already built DynamicGeometry " ..
                   self.name)
         return
     end
 
-    if self.vbh then
-        bgfx.bgfx_destroy_dynamic_vertex_buffer(self.vbh)
-    end
-    if self.ibh then
-        bgfx.bgfx_destroy_dynamic_index_buffer(self.ibh)
-    end
+    if self._vbh then bgfx.destroy_dynamic_vertex_buffer(self._vbh) end
+    if self._ibh then bgfx.destroy_dynamic_index_buffer(self._ibh) end
 
     log.debug("Creating dynamic buffer...")
 
     -- Create dynamic bgfx buffers
     -- Warning! This only wraps the data, so make sure it doesn't go out
     -- of scope for at least two frames (bgfx requirement)
-    self.vbh = bgfx.bgfx_create_dynamic_vertex_buffer_mem(
+    self._vbh = bgfx.bgfx_create_dynamic_vertex_buffer_mem(
           bgfx.bgfx_make_ref(self.verts, self.vertDataSize),
           self.vertInfo.vertDecl, flags )
 
-    self.ibh = bgfx.bgfx_create_dynamic_index_buffer_mem(
+    self._ibh = bgfx.bgfx_create_dynamic_index_buffer_mem(
           bgfx.bgfx_make_ref(self.indices, self.indexDataSize), flags )
 
-    self.built = (self.vbh ~= nil) and (self.ibh ~= nil)
+    self.built = (self._vbh ~= nil) and (self._ibh ~= nil)
 
     return self
 end
@@ -400,41 +380,36 @@ function DynamicGeometry:update()
     if not self.built then
         self:build()
     else
-        self:updateVertices()
-        self:updateIndices()
+        self:update_vertices()
+        self:update_indices()
     end
 
     return self
 end
 
-function DynamicGeometry:updateVertices()
-    if not self.vbh then return end
+function DynamicGeometry:update_vertices()
+    if not self._vbh then return end
 
-    bgfx.bgfx_update_dynamic_vertex_buffer(self.vbh, 0,
-        bgfx.bgfx_make_ref(self.verts, self.vertDataSize))
+    bgfx.update_dynamic_vertex_buffer(self._vbh, 0,
+        bgfx.make_ref(self.verts, self.vert_data_size))
 
     return self
 end
 
-function DynamicGeometry:updateIndices()
-    if not self.ibh then return end
+function DynamicGeometry:update_indices()
+    if not self._ibh then return end
 
-    bgfx.bgfx_update_dynamic_index_buffer(self.ibh, 0,
-         bgfx.bgfx_make_ref(self.indices, self.indexDataSize))
+    bgfx.update_dynamic_index_buffer(self._ibh, 0,
+         bgfx.make_ref(self.indices, self.index_data_size))
 
     return self
 end
 
 function DynamicGeometry:bind()
-    if not check_built_(self) then return end
+    if not check_built(self) then return end
 
-    -- for some reason set_dynamic_vertex_buffer does not take a start
-    -- index argument, only the number of vertices
-    bgfx.bgfx_set_dynamic_vertex_buffer(self.vbh,
-                                         0, bgfx.UINT32_MAX)
-
-    bgfx.bgfx_set_dynamic_index_buffer(self.ibh,
-                                        0, bgfx.UINT32_MAX)
+    bgfx.set_dynamic_vertex_buffer(self._vbh, 0, bgfx.UINT32_MAX)
+    bgfx.set_dynamic_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
 end
 
 m.StaticGeometry    = StaticGeometry -- 'export' Geometry
