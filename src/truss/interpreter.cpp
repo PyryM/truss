@@ -141,12 +141,20 @@ void Interpreter::threadEntry() {
         running_ = false;
         return;
     }
-    terra_loadbuffer(terraState_,
+    int res = terra_loadbuffer(terraState_,
                      (char*)bootstrap->data,
                      bootstrap->data_length,
                      "core.t");
     truss_release_message(bootstrap);
-    int res = lua_pcall(terraState_, 0, 0, 0);
+    if(res != 0) {
+        core().logPrint(TRUSS_LOG_ERROR, "Error parsing core.t: %s",
+                        lua_tostring(terraState_, -1));
+        core().setError(1001);
+        running_ = false;
+        return;        
+    }
+
+    res = lua_pcall(terraState_, 0, 0, 0);
     if(res != 0) {
         core().logPrint(TRUSS_LOG_ERROR, "Error in core.t: %s",
                         lua_tostring(terraState_, -1));

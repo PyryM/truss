@@ -64,14 +64,14 @@ function TransientGeometry:allocate(vertInfo, nVertices, nIndices)
   end
 
   local hasSpace = bgfx.bgfx_check_avail_transient_buffers(nVertices,
-                       vertInfo.decl, nIndices)
+                       vertInfo.vdecl, nIndices)
   if not hasSpace then
     log.error("Not enough space to allocate " .. nVertices ..
           " / " .. nIndices .. " in transient buffer.")
     return
   end
 
-  bgfx.bgfx_alloc_transient_buffers(self._transient_vb, vertInfo.decl, nVertices,
+  bgfx.bgfx_alloc_transient_buffers(self._transient_vb, vertInfo.vdecl, nVertices,
                     self._transient_ib, nIndices)
 
   self.indices = terralib.cast(&uint16, self._transient_ib.data)
@@ -133,7 +133,7 @@ function m.makeFastTransientQuadFunc(vinfo)
     vinfo = vdefs.create_basic_vertex_type({"position", "texcoord0"})
   end
   local vtype = vinfo.ttype
-  local vdecl = vinfo.decl
+  local vdecl = vinfo.vdecl
   local terra fastQuad(x0: float, y0: float, x1: float, y1: float, z: float)
     var vb: bgfx.bgfx_transient_vertex_buffer_t
     var ib: bgfx.bgfx_transient_index_buffer_t
@@ -247,11 +247,11 @@ function StaticGeometry:allocate(vertinfo, n_verts, n_indices)
   self.index_type = index_type
 
   self.vertinfo = vertinfo
-  self.verts = truss.allocate(vertinfo.vert_type[n_verts])
+  self.verts = truss.allocate(vertinfo.ttype[n_verts])
   self.n_verts = n_verts
   self.indices = truss.allocate(index_type[n_indices])
   self.n_indices = n_indices
-  self.vert_data_size = sizeof(vertinfo.vert_type[n_verts])
+  self.vert_data_size = sizeof(vertinfo.ttype[n_verts])
   self.index_data_size = sizeof(index_type[n_indices])
   self.allocated = true
   return self
@@ -270,7 +270,7 @@ end
 DynamicGeometry.set_attribute = StaticGeometry.set_attribute
 TransientGeometry.set_attribute = StaticGeometry.set_attribute
 
-function StaticGeometry:from_data(vertinfo, modeldata, no_update)
+function StaticGeometry:from_data(modeldata, vertinfo, no_update)
   if modeldata == nil or vertinfo == nil then
     log.error("Geometry:from_data: nil vertinfo or modeldata!")
     return
@@ -316,13 +316,17 @@ function StaticGeometry:update()
   -- Create static bgfx buffers
   -- Warning! This only wraps the data, so make sure it doesn't go out
   -- of scope for at least two frames (bgfx requirement)
+  log.info(tostring(self.verts))
+  log.info(tostring(self.vert_data_size))
+  log.info(tostring(self.vertinfo.vdecl))
+
   self._vbh = bgfx.create_vertex_buffer(
       bgfx.make_ref(self.verts, self.vert_data_size),
-      self.vertinfo.decl, flags )
+      self.vertinfo.vdecl, flags )
 
   self._ibh = bgfx.create_index_buffer(
       bgfx.make_ref(self.indices, self.index_data_size), flags )
-
+  
   self.uploaded = (self._vbh ~= nil) and (self._ibh ~= nil)
 
   return self
@@ -366,7 +370,7 @@ function DynamicGeometry:_build()
   -- of scope for at least two frames (bgfx requirement)
   self._vbh = bgfx.create_dynamic_vertex_buffer_mem(
       bgfx.make_ref(self.verts, self.vert_data_size),
-      self.vertinfo.decl, flags )
+      self.vertinfo.vdecl, flags )
 
   self._ibh = bgfx.create_dynamic_index_buffer_mem(
       bgfx.make_ref(self.indices, self.index_data_size), flags )

@@ -6,9 +6,9 @@ local m = {}
 local vertexdefs = require("gfx/vertexdefs.t")
 
 local function check_index_size_(geo, nindices)
-    if geo.nIndices ~= nindices then
-        log.error("Wrong number of indices, expected "
-                .. (geo.nIndices or "nil")
+    if geo.n_indices ~= nindices then
+        truss.error("Wrong number of indices, expected "
+                .. (geo.n_indices or "nil")
                 .. " got " .. (nindices or "nil"))
         return false
     end
@@ -19,7 +19,7 @@ end
 --
 -- sets face indices, checking whether the input is a list of lists
 -- or a flat list
-function m.setIndices(geo, indexdata)
+function m.set_indices(geo, indexdata)
     if #indexdata == 0 then return end
     if type(indexdata[1]) == "table" then
         m.setIndicesLoL(geo, indexdata)
@@ -99,7 +99,7 @@ end
 
 -- populate setter list
 m.setters = {}
-for _, aInfo in ipairs(vertexdefs.AttributeInfo) do
+for _, aInfo in ipairs(vertexdefs.DefaultAttributeInfo) do
     local aName = aInfo[1]
     m.setters[aName .. "_F"] = m.makeLSetter(aName, 1)
     for i = 1,4 do
@@ -119,7 +119,7 @@ end
 function m.findSetter(target, attribName, attribList)
     -- figure out how many elements the target has for the attribute
     -- (e.g., 3 element colors [rgb] vs. 4 element color [rgba])
-    local datanum = target.vertInfo.attributes[attribName]
+    local datanum = target.vertinfo.attributes[attribName]
     if datanum == nil then return end
 
     -- determine what setter to use based on the src list
@@ -143,14 +143,14 @@ function m.findSetter(target, attribName, attribList)
     return setter
 end
 
-function m.setAttribute(target, attribName, attribList, setter)
+function m.set_attribute(target, attribName, attribList, setter)
     local listSize = #attribList
     if listSize == 0 then
-        log.warn("setAttribute with #attribList == 0 does nothing")
+        log.warn("set_attribute with #attribList == 0 does nothing")
         return
-    elseif listSize ~= target.nVertices then
-        log.error("setAttribute: wrong number of vertices, expected "
-                .. (data.nVertices or "nil")
+    elseif listSize ~= target.n_verts then
+        truss.error("set_attribute: wrong number of vertices, expected "
+                .. (target.n_verts or "nil?")
                 .. " got " .. (listSize or "nil"))
         return
     end

@@ -6,22 +6,22 @@ function m.loadFileToBGFX(filename)
 	if msg == nil then
 		error("Error loading shader [" .. filename .. "]; shader missing or uncompiled.")
 	end
-	local ret = bgfx.bgfx_copy(msg.data, msg.data_length)
+	local ret = bgfx.copy(msg.data, msg.data_length)
 	truss.C.release_message(msg)
 	return ret
 end
 
 function m.shaderpath()
-	local rendertype = bgfx.bgfx_get_renderer_type()
-	local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendertype))
+	local rendertype = bgfx.get_renderer_type()
+	local rendererName = ffi.string(bgfx.get_renderer_name(rendertype))
 	local renderpath = "shaders/"
 
-	if rendertype == bgfx.BGFX_RENDERER_TYPE_OPENGL then
+	if rendertype == bgfx.RENDERER_TYPE_OPENGL then
 		renderpath = renderpath .. "glsl/"
-	elseif rendertype == bgfx.BGFX_RENDERER_TYPE_DIRECT3D11 then
+	elseif rendertype == bgfx.RENDERER_TYPE_DIRECT3D11 then
 		renderpath = renderpath .. "dx11/"
 	else
-		truss.C.log(truss.C.LOG_ERROR, "Unimplemented shaders for current renderer [" ..
+		truss.error("Unimplemented shaders for current renderer [" ..
 			rendererName .. "]: " .. rendertype)
 	end
 
@@ -36,14 +36,14 @@ function m.loadProgram(vshadername, fshadername)
 		local vspath = m.shaderpath() .. vshadername .. ".bin"
 		local fspath = m.shaderpath() .. fshadername .. ".bin"
 
-		local vshader = bgfx.bgfx_create_shader(m.loadFileToBGFX(vspath))
-		local fshader = bgfx.bgfx_create_shader(m.loadFileToBGFX(fspath))
+		local vshader = bgfx.create_shader(m.loadFileToBGFX(vspath))
+		local fshader = bgfx.create_shader(m.loadFileToBGFX(fspath))
 
 		log.debug("vidx: " .. vshader.idx)
 		log.debug("fidx: " .. fshader.idx)
 
 
-		m.programs[pname] = bgfx.bgfx_create_program(vshader, fshader, true)
+		m.programs[pname] = bgfx.create_program(vshader, fshader, true)
 	end
 
 	return m.programs[pname]

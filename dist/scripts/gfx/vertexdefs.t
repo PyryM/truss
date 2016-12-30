@@ -4,7 +4,7 @@
 
 local m = {}
 
-m.DefaultDefaultAttributeInfo = {
+m.DefaultAttributeInfo = {
   {"position",  "p",  float, 3, false},
   {"normal",    "n",  float, 3, false},
   {"tangent",   "t",  float, 3, false},
@@ -24,9 +24,9 @@ m.DefaultDefaultAttributeInfo = {
 }
 
 m.AttributeBGFXTypes = {
-  [float]  = bgfx.BGFX_ATTRIB_TYPE_FLOAT,
-  [uint8]  = bgfx.BGFX_ATTRIB_TYPE_UINT8,
-  [int16] = bgfx.BGFX_ATTRIB_TYPE_INT16
+  [float]  = bgfx.ATTRIB_TYPE_FLOAT,
+  [uint8]  = bgfx.ATTRIB_TYPE_UINT8,
+  [int16] = bgfx.ATTRIB_TYPE_INT16
 }
 
 m.AttributeMap = {}
@@ -34,6 +34,9 @@ m.AttributeBGFXEnums = {}
 for i,attribData in ipairs(m.DefaultAttributeInfo) do
   local attribName = attribData[1]
   local enumVal = bgfx["ATTRIB_" .. string.upper(attribName)]
+  if not enumVal then
+    truss.error("nil enum val: " .. attribName)
+  end
   m.AttributeBGFXEnums[attribName] = enumVal
   m.AttributeMap[attribName] = attribData
 end
@@ -57,7 +60,7 @@ function m.create_basic_vertex_type(attrib_list)
   if not m._basic_vertex_types[cname] then
     local entries = {}
     local ntype = terralib.types.newstruct(cname)
-    local vdecl = terralib.new(bgfx.bgfx_vertex_decl_t)
+    local vdecl = terralib.new(bgfx.vertex_decl_t)
     local acounts = {}
 
     bgfx.vertex_decl_begin(vdecl, bgfx.get_renderer_type())
@@ -80,8 +83,8 @@ function m.create_basic_vertex_type(attrib_list)
     ntype:complete()
 
     m._basic_vertex_types[cname] = {ttype = ntype,
-                    vdecl = vdecl,
-                    attributes = acounts}
+                                    vdecl = vdecl,
+                                    attributes = acounts}
   end
   return m._basic_vertex_types[cname]
 end

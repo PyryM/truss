@@ -27,8 +27,12 @@ function m.init_gfx(options)
     reset = reset + bgfx.RESET_MSAA_X8
   end
   if options.lowlatency then
+    -- extra flags that may help with latency
     reset = reset + bgfx.RESET_FLIP_AFTER_RENDER +
           bgfx.RESET_FLUSH_AFTER_RENDER
+
+    -- put bgfx into single-threaded mode by calling render_frame before init
+    bgfx.render_frame()
   end
 
   local cb_ptr = nil
@@ -50,6 +54,11 @@ function m.init_gfx(options)
   local renderer_name = ffi.string(bgfx.get_renderer_name(renderer_type))
   m.renderer_name = renderer_name
   log.info("Renderer type: " .. renderer_name)
+end
+
+function m.frame()
+  m.frame_index = m.frame_index + 1
+  m.bgfx_frame_index = bgfx.frame(false)
 end
 
 return m

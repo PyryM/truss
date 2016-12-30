@@ -114,7 +114,7 @@ end
 truss._module_env = extend_table({}, _G)
 local disallow_globals_mt = {
   __newindex = function (t,k,v)
-    truss.error("Module tried to create global %s.":format(k))
+    truss.error("Module tried to create global " .. k)
   end
 }
 
@@ -123,7 +123,6 @@ local function create_module_env()
   setmetatable(modenv, disallow_globals_mt)
   return modenv
 end
-
 
 -- require a module
 -- unlike the built-in `require`, truss.require uses / as the path separator
@@ -135,7 +134,7 @@ truss._loaded_libs = loaded_libs
 local require_prefix_path = ""
 function truss.require(filename, force)
   if loaded_libs[filename] == false then
-    truss.error("require [%s] : cyclical require":format(filename))
+    truss.error("require [" .. filename .. "] : cyclical require")
     return nil
   end
   if loaded_libs[filename] == nil or force then
@@ -152,20 +151,21 @@ function truss.require(filename, force)
     local t0 = truss.tic()
     local funcsource = truss.load_script_from_file(fullpath)
     if not funcsource then
-      truss.error("require [%s]: file does not exist.":format(filename))
+      truss.error("require [" .. filename .. "%s]: file does not exist.")
       return nil
     end
-    local modulefunc, loaderror = truss.load_named_string(funcsource, filename)
-    if not modulefunc then
-      truss.error("require [%s]: syntax error: %s":format(filename, loaderror))
+    local module_def, loaderror = truss.load_named_string(funcsource, filename)
+    if not module_def then
+      truss.error("require [" .. filename .. "]: syntax error: " .. loaderror)
       return nil
     end
-    setfenv(modulefunc, create_module_env())
-    loaded_libs[filename] = modulefunc()
-    log.info("Loaded [%s] in %f ms":format(filename, truss.toc(t0) * 1000.0))
+    setfenv(module_def, create_module_env())
+    loaded_libs[filename] = module_def()
+    log.info("Loaded [" .. filename .. "] in " .. truss.toc(t0) * 1000.0 .. " ms")
   end
   return loaded_libs[filename]
 end
+truss._module_env.require = truss.require
 
 function truss.check_module_exists(filename)
   if loaded_libs[filename] then return true end
@@ -226,15 +226,16 @@ truss.VERSION = vstr
 local bgfx_c = terralib.includec("bgfx_truss.c99.h")
 local bgfx_const = truss.require("core/bgfx_constants.t")
 
-bgfx = {C = {}}
+bgfx = {}
 local modutils = truss.require("core/module.t")
-modutils.reexport_without_prefix(bgfx_c, "bgfx_", bgfx.C)
-modutils.reexport_without_prefix(bgfx_const, "BGFX_", bgfx.C)
+modutils.reexport_without_prefix(bgfx_c, "bgfx_", bgfx)
+modutils.reexport_without_prefix(bgfx_c, "BGFX_", bgfx)
+modutils.reexport_without_prefix(bgfx_const, "BGFX_", bgfx)
 bgfx.raw_functions = bgfx_c
 bgfx.raw_constants = bgfx_const
 
 nanovg = terralib.includec("nanovg_terra.h")
-modutils.reexport(require("core/memory.t"), truss)
+modutils.reexport(truss.require("core/memory.t"), truss)
 
 -- replace lua require with truss require
 lua_require = require
@@ -273,8 +274,9 @@ end
 -- create some environments
 truss.clean_subenv = extend_table({},  _G)
 truss.mainenv = extend_table({}, _G)
+extend_table(truss._module_env, _G)
 
-local function load_and_fun(fn)
+local function load_and_run(fn)
   local script = truss.load_script_from_file(fn)
   local scriptfunc, loaderror = truss.load_named_string(script, fn)
   if scriptfunc == nil then
