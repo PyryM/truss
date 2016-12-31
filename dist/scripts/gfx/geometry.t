@@ -232,6 +232,8 @@ function TransientGeometry:begin_frame()
 end
 
 function StaticGeometry:allocate(n_verts, n_indices, vertinfo)
+  if self._allocated then truss.error("Geometry already allocated!") end
+
   local index_type = uint16
   if n_verts >= 2^16 then
     log.debug("Using 32 bit indices in index buffer!")
@@ -250,6 +252,24 @@ function StaticGeometry:allocate(n_verts, n_indices, vertinfo)
   return self
 end
 DynamicGeometry.allocate = StaticGeometry.allocate
+
+-- release the cpu memory backing this geometry
+-- if the geometry has been committed (uploaded to gpu), then the backing memory
+-- will be released only three frames later
+function StaticGeometry:release_backing()
+  local verts, indices = self.verts, self.indices
+  self.verts, self.indices = nil, nil
+  self._allocated = false
+
+  -- if the geometry has been committed, they to be safe need to wait 3 frames
+  if not self._committed then return self end
+  local gfx = require("gfx")
+  gfx.schedule(function()
+    verts, indices = nil, nil
+  end)
+  return self
+end
+DynamicGeometry.release_backing = StaticGeometry.release_backing
 
 function StaticGeometry:set_indices(indices)
   bufferutils.set_indices(self, indices)
@@ -287,9 +307,32 @@ end
 DynamicGeometry.from_data = StaticGeometry.from_data
 TransientGeometry.from_data = StaticGeometry.from_data
 
+function StaticGeometry:_create_bgfx_buffers(flags)
+  self._vbh = bgfx.create_vertex_buffer(
+      bgfx.make_ref(self.verts, self.vert_data_size),
+      self.vertinfo.vdecl, flags )
+
+  self._ibh = bgfx.create_index_buffer(
+      bgfx.make_ref(self.indices, self.index_data_size), flags )
+end
+
+function DynamicGeometry:_create_bgfx_buffers(flags)
+  self._vbh = bgfx.create_dynamic_vertex_buffer_mem(
+      bgfx.make_ref(self.verts, self.vert_data_size),
+      self.vertinfo.vdecl, flags )
+
+  self._ibh = bgfx.create_dynamic_index_buffer_mem(
+      bgfx.make_ref(self.indices, self.index_data_size), flags )
+end
+
 function StaticGeometry:commit()
   if not self._allocated then
     truss.error("Cannot commit geometry with no allocated data!")
+  end
+
+  if self._committed then
+    log.warn("StaticGeometry: cannot commit, already committed.")
+    return self
   end
 
   local flags = bgfx.BUFFER_NONE
@@ -298,23 +341,36 @@ function StaticGeometry:commit()
     flags = bgfx.BUFFER_INDEX32
   end
 
-  if self._vbh then bgfx.destroy_vertex_buffer(self._vbh) end
-  if self._ibh then bgfx.destroy_index_buffer(self._ibh) end
-
   -- Create static bgfx buffers
-  -- Warning! This only wraps the data, so make sure it doesn't go out
-  -- of scope for at least two frames (bgfx requirement)
-  self._vbh = bgfx.create_vertex_buffer(
-      bgfx.make_ref(self.verts, self.vert_data_size),
-      self.vertinfo.vdecl, flags )
-
-  self._ibh = bgfx.create_index_buffer(
-      bgfx.make_ref(self.indices, self.index_data_size), flags )
+  self:_create_bgfx_buffers(flags)
   
-  self._committed = (self._vbh ~= nil) and (self._ibh ~= nil)
+  if not bgfx.check_handle(self._vbh) then truss.error("invalid vbh") end
+  if not bgfx.check_handle(self._ibh) then truss.error("invalid ibh") end
+  self._committed = true
 
   return self
 end
+DynamicGeometry.commit = StaticGeometry.commit
+
+function StaticGeometry:uncommit()
+  if self._vbh then bgfx.destroy_vertex_buffer(self._vbh) end
+  if self._ibh then bgfx.destroy_index_buffer(self._ibh) end
+  self._vbh, self._ibh = nil, nil
+  self._committed = false
+end
+
+function DynamicGeometry:uncommit()
+  if self._vbh then bgfx.destroy_dynamic_vertex_buffer(self._vbh) end
+  if self._ibh then bgfx.destroy_dynamic_index_buffer(self._ibh) end
+  self._vbh, self._ibh = nil, nil
+  self._committed = false
+end
+
+function StaticGeometry:destroy()
+  self:release_backing()
+  self:uncommit()
+end
+DynamicGeometry.destroy = StaticGeometry.destroy
 
 local function check_committed(geo)
   if geo._committed then return true end
@@ -331,33 +387,13 @@ function StaticGeometry:bind()
 
   bgfx.set_vertex_buffer(self._vbh, 0, bgfx.UINT32_MAX)
   bgfx.set_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
-
-  return true
 end
 
-function DynamicGeometry:commit()
-  if not self._allocated then
-    truss.error("Cannot commit geometry with no allocated data!")
-  end
+function DynamicGeometry:bind()
+  if not check_committed(self) then return end
 
-  local flags = 0
-
-  if self._vbh then bgfx.destroy_dynamic_vertex_buffer(self._vbh) end
-  if self._ibh then bgfx.destroy_dynamic_index_buffer(self._ibh) end
-
-  -- Create dynamic bgfx buffers
-  -- Warning! This only wraps the data, so make sure it doesn't go out
-  -- of scope for at least two frames (bgfx requirement)
-  self._vbh = bgfx.create_dynamic_vertex_buffer_mem(
-      bgfx.make_ref(self.verts, self.vert_data_size),
-      self.vertinfo.vdecl, flags )
-
-  self._ibh = bgfx.create_dynamic_index_buffer_mem(
-      bgfx.make_ref(self.indices, self.index_data_size), flags )
-
-  self._committed = (self._vbh ~= nil) and (self._ibh ~= nil)
-
-  return self
+  bgfx.set_dynamic_vertex_buffer(self._vbh, 0, bgfx.UINT32_MAX)
+  bgfx.set_dynamic_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
 end
 
 function DynamicGeometry:update()
@@ -387,13 +423,6 @@ function DynamicGeometry:update_indices()
      bgfx.make_ref(self.indices, self.index_data_size))
 
   return self
-end
-
-function DynamicGeometry:bind()
-  if not check_committed(self) then return end
-
-  bgfx.set_dynamic_vertex_buffer(self._vbh, 0, bgfx.UINT32_MAX)
-  bgfx.set_dynamic_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
 end
 
 m.StaticGeometry    = StaticGeometry

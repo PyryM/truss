@@ -79,6 +79,7 @@ function init_bgfx()
 
   -- init the cube
   cubegeo = make_cube_geo()
+  cubegeo:release_backing() -- don't keep backing memory around
 
   -- load shader program
   log.info("Loading program")

@@ -5,7 +5,10 @@
 local m = {}
 m.frame_index = 0
 m.bgfx_frame_index = 0
+m._schedule_frame = 0
 m._scheduled_tasks = {}
+m._safe_wait_frames = 3
+m._bgfx_initted = false
 
 function m.init_gfx(options)
   if m._bgfx_initted then
@@ -32,6 +35,7 @@ function m.init_gfx(options)
           bgfx.RESET_FLUSH_AFTER_RENDER
 
     -- put bgfx into single-threaded mode by calling render_frame before init
+    m._safe_wait_frames = 1
     bgfx.render_frame()
   end
 
@@ -76,6 +80,7 @@ function m._translate_renderer_type(bgfx_type)
       return rtype
     end
   end
+  return "UNKNOWN"
 end
 
 function m.get_renderer_name()
@@ -86,9 +91,25 @@ function m.get_renderer_type()
   return m.short_renderer_name
 end
 
+function m.schedule(task, frame_delay)
+  local target = m._schedule_frame + (frame_delay or m._safe_wait_frames)
+  m._scheduled_tasks[target] = m._scheduled_tasks[target] or {}
+  table.insert(m._scheduled_tasks[target], task)
+end
+
 function m.frame()
-  m.frame_index = m.frame_index + 1
   m.bgfx_frame_index = bgfx.frame(false)
+
+  while m._schedule_frame < m.frame_index do
+    local tasks = m._scheduled_tasks[m._schedule_frame]
+    if tasks then
+      for _, task in ipairs(tasks) do task() end
+    end
+    m._scheduled_tasks[m._schedule_frame] = nil
+    m._schedule_frame = m._schedule_frame + 1
+  end
+
+  m.frame_index = m.frame_index + 1
 end
 
 return m

@@ -31,22 +31,22 @@ m.AttributeBGFXTypes = {
 
 m.AttributeMap = {}
 m.AttributeBGFXEnums = {}
-for i,attribData in ipairs(m.DefaultAttributeInfo) do
-  local attribName = attribData[1]
-  local enumVal = bgfx["ATTRIB_" .. string.upper(attribName)]
-  if not enumVal then
-    truss.error("nil enum val: " .. attribName)
+for i,attrib_data in ipairs(m.DefaultAttributeInfo) do
+  local attrib_name = attrib_data[1]
+  local enum_val = bgfx["ATTRIB_" .. string.upper(attrib_name)]
+  if not enum_val then
+    truss.error("attribute has no bgfx enum: " .. attrib_name)
   end
-  m.AttributeBGFXEnums[attribName] = enumVal
-  m.AttributeMap[attribName] = attribData
+  m.AttributeBGFXEnums[attrib_name] = enum_val
+  m.AttributeMap[attrib_name] = attrib_data
 end
 
+-- reorder attributes into canonical order
 function m.order_attributes(attrib_list)
-  local t = {}
+  local t, ordered = {}, {}
   for _,v in ipairs(attrib_list) do
     t[v] = true
   end
-  local ordered = {}
   for _,v in ipairs(m.DefaultAttributeInfo) do
     if t[v[1]] then table.insert(ordered, v[1]) end
   end
@@ -78,9 +78,7 @@ function m.create_basic_vertex_type(attrib_list)
     bgfx.vertex_decl_end(vdecl)
 
     ntype.entries = entries
-    -- terra will automatically complete types in some, but not all, cases
-    -- so force the type to complete now to avoid cryptic bugs
-    ntype:complete()
+    ntype:complete() -- complete the terra type now to avoid cryptic bugs
 
     m._basic_vertex_types[cname] = {ttype = ntype,
                                     vdecl = vdecl,

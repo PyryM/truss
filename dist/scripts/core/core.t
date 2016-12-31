@@ -236,6 +236,7 @@ modutils.reexport_without_prefix(bgfx_c, "BGFX_", bgfx)
 modutils.reexport_without_prefix(bgfx_const, "BGFX_", bgfx)
 bgfx.raw_functions = bgfx_c
 bgfx.raw_constants = bgfx_const
+function bgfx.check_handle(h) return h.idx ~= bgfx.INVALID_HANDLE end
 
 nanovg = terralib.includec("nanovg_terra.h")
 modutils.reexport(truss.require("core/memory.t"), truss)
