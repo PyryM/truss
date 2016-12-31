@@ -10,6 +10,16 @@ m._scheduled_tasks = {}
 m._safe_wait_frames = 3
 m._bgfx_initted = false
 
+function m.load_file_to_bgfx(filename)
+  local msg = truss.C.load_file(filename)
+  if msg == nil then
+    return nil
+  end
+  local ret = bgfx.copy(msg.data, msg.data_length)
+  truss.C.release_message(msg)
+  return ret
+end
+
 function m.init_gfx(options)
   if m._bgfx_initted then
     truss.error("Tried to init gfx twice.")

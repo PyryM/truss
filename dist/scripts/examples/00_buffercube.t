@@ -7,7 +7,6 @@ local sdl = require("addons/sdl.t")
 local math = require("math")
 local gfx = require("gfx")
 local StaticGeometry = gfx.StaticGeometry
-local shaderutils = require('utils/shaderutils.t')
 
 width = 800
 height = 600
@@ -83,7 +82,7 @@ function init_bgfx()
 
   -- load shader program
   log.info("Loading program")
-  program = shaderutils.loadProgram("vs_cubes", "fs_cubes")
+  program = gfx.load_program("vs_cubes", "fs_cubes")
 
   -- create matrices
   projmat = math.Matrix4():makeProjection(70, 800/600, 0.1, 100.0)
