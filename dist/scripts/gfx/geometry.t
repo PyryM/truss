@@ -264,16 +264,16 @@ DynamicGeometry.set_attribute = StaticGeometry.set_attribute
 TransientGeometry.set_attribute = StaticGeometry.set_attribute
 
 function StaticGeometry:from_data(modeldata, vertinfo, no_commit)
-  if modeldata == nil or vertinfo == nil then
-    log.error("Geometry:from_data: nil vertinfo or modeldata!")
-    return
+  if not modeldata then
+    truss.error("Geometry:from_data: nil modeldata!")
   end
 
-  local nindices
-  if type(modeldata.indices[1]) == "number" then
-    nindices = #modeldata.indices
-  else
-    nindices = #modeldata.indices * 3
+  local nindices = #modeldata.indices
+  if type(modeldata.indices[1]) ~= "number" then -- list of lists format
+    nindices = nindices * 3                      -- assume triangles
+  end
+  if not vertinfo then 
+    vertinfo = require("gfx").guess_vertex_type(modeldata)
   end
   self:allocate(#(modeldata.attributes.position), nindices, vertinfo)
 

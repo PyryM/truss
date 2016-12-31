@@ -86,7 +86,18 @@ function m.create_basic_vertex_type(attrib_list)
                                     vdecl = vdecl,
                                     attributes = acounts}
   end
-  return m._basic_vertex_types[cname]
+  return m._basic_vertex_types[cname], cname
+end
+
+function m.guess_vertex_type(data)
+  local attributes = data.attributes or data
+  local attrib_list = {}
+  for attrib_name, _ in pairs(attributes) do
+    table.insert(attrib_list, attrib_name)
+  end
+  local vtype, vtypename = m.create_basic_vertex_type(attrib_list)
+  log.info("guessed vertex type [" .. vtypename .. "]")
+  return vtype
 end
 
 function m.create_pos_color_vertex_info()

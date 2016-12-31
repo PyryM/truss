@@ -7,7 +7,6 @@ local sdl = require("addons/sdl.t")
 local math = require("math")
 local gfx = require("gfx")
 local StaticGeometry = gfx.StaticGeometry
-local vinfo = gfx.create_pos_color_vertex_info()
 local shaderutils = require('utils/shaderutils.t')
 
 width = 800
@@ -49,7 +48,7 @@ function make_cube_geo()
   }
 
   log.info("trying to make cube...")
-  return StaticGeometry("cube"):from_data(data, vinfo)
+  return StaticGeometry("cube"):from_data(data)
 end
 
 function init()
