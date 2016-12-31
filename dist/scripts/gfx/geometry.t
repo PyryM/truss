@@ -40,7 +40,7 @@ function TransientGeometry:init(name)
   self._transient_ib = terralib.new(bgfx.bgfx_transient_index_buffer_t)
 end
 
-function TransientGeometry:allocate(vertinfo, n_verts, n_indices)
+function TransientGeometry:allocate(n_verts, n_indices, vertinfo)
   if self._allocated and not self._bound then
     truss.error("TransientGeometry [" .. self.name ..
           "] must be bound before it can be allocated again!")
@@ -101,7 +101,7 @@ function TransientGeometry:fullscreen_tri(width, height, origin_bottom, vinfo)
     vinfo = vdefs.create_basic_vertex_type({"position", "texcoord0"})
   end
 
-  self:allocate(vinfo, 3, 3)
+  self:allocate(3, 3, vinfo)
   local verts = self.verts
   local v0p, v0t = verts[0].position, verts[0].texcoord0
   local v1p, v1t = verts[1].position, verts[1].texcoord0
@@ -179,7 +179,7 @@ function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
     local vdefs = require("gfx/vertexdefs.t")
     vinfo = vdefs.create_basic_vertex_type({"position", "texcoord0"})
   end
-  self:allocate(vinfo, 4, 6)
+  self:allocate(4, 6, vinfo)
   local vs = self.verts
   local v0,v1,v2,v3 = vs[0],vs[1],vs[2],vs[3]
   v0.position[0], v0.position[1], v0.position[2] = x0, y0, z
@@ -231,7 +231,7 @@ function TransientGeometry:begin_frame()
   return self
 end
 
-function StaticGeometry:allocate(vertinfo, n_verts, n_indices)
+function StaticGeometry:allocate(n_verts, n_indices, vertinfo)
   local index_type = uint16
   if n_verts >= 2^16 then
     log.debug("Using 32 bit indices in index buffer!")
@@ -257,8 +257,8 @@ end
 DynamicGeometry.set_indices = StaticGeometry.set_indices
 TransientGeometry.set_indices = StaticGeometry.set_indices
 
-function StaticGeometry:set_attribute(attribName, attribList)
-  bufferutils.set_attribute(self, attribName, attribList)
+function StaticGeometry:set_attribute(attrib_name, attrib_list)
+  bufferutils.set_attribute(self, attrib_name, attrib_list)
 end
 DynamicGeometry.set_attribute = StaticGeometry.set_attribute
 TransientGeometry.set_attribute = StaticGeometry.set_attribute
@@ -275,7 +275,7 @@ function StaticGeometry:from_data(modeldata, vertinfo, no_commit)
   else
     nindices = #modeldata.indices * 3
   end
-  self:allocate(vertinfo, #(modeldata.attributes.position), nindices)
+  self:allocate(#(modeldata.attributes.position), nindices, vertinfo)
 
   for a_name, a_data in pairs(modeldata.attributes) do
     self:set_attribute(a_name, a_data)
