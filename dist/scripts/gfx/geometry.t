@@ -1,7 +1,6 @@
 -- geometry.t
 --
--- Geometry
--- a class representing indexed vertex data (vertices + index list)
+-- represent indexed geometry
 
 local class = require("class")
 local math = require("math")
@@ -13,82 +12,77 @@ local Vector = math.Vector
 
 local m = {}
 
-local buffer_library_ = {} -- needed for memory management reasons
-local last_geo_idx_ = 0
+local last_geo_idx = 0
 
 local StaticGeometry = class("StaticGeometry")
 function StaticGeometry:init(name)
-  if name then
-    self.name = name
-  else
-    self.name = "__anon_staticgeometry_" .. last_geo_idx_
-    last_geo_idx_ = last_geo_idx_ + 1
-  end
-  self.allocated = false
-  self.built     = false
+  self.name = name or "__anon_staticgeometry_" .. last_geo_idx
+  last_geo_idx = last_geo_idx + 1
+  self._allocated = false
+  self._committed = false
 end
 
 local DynamicGeometry = class("DynamicGeometry")
 function DynamicGeometry:init(name)
-  if name then
-    self.name = name
-  else
-    self.name = "__anon_dyngeometry_" .. last_geo_idx_
-    last_geo_idx_ = last_geo_idx_ + 1
-  end
-  self.allocated = false
-  self.built     = false
+  self.name = name or "__anon_dyngeometry_" .. last_geo_idx
+  last_geo_idx = last_geo_idx + 1
+  self._allocated = false
+  self._committed = false
 end
 
 local TransientGeometry = class("TransientGeometry")
 function TransientGeometry:init(name)
-  self.name = name or "__anon_transientgeometry_" .. last_geo_idx_
-  last_geo_idx_ = last_geo_idx_ + 1
-  self.allocated = false
+  self.name = name or "__anon_transientgeometry_" .. last_geo_idx
+  last_geo_idx = last_geo_idx + 1
+  self._allocated = false
 
   self._transient_vb = terralib.new(bgfx.bgfx_transient_vertex_buffer_t)
   self._transient_ib = terralib.new(bgfx.bgfx_transient_index_buffer_t)
 end
 
-function TransientGeometry:allocate(vertInfo, nVertices, nIndices)
-  if self.allocated and not self.bound then
-    log.error("TransientGeometry [" .. self.name ..
+function TransientGeometry:allocate(vertinfo, n_verts, n_indices)
+  if self._allocated and not self._bound then
+    truss.error("TransientGeometry [" .. self.name ..
           "] must be bound before it can be allocated again!")
     return
   end
 
-  if nVertices >= 2^16 then
-    log.error("TransientGeometry [" .. self.name ..
+  if n_verts >= 2^16 then
+    truss.error("TransientGeometry [" .. self.name ..
            "] cannot have more then 2^16 vertices.")
-    return
+    return false
   end
 
-  local hasSpace = bgfx.bgfx_check_avail_transient_buffers(nVertices,
-                       vertInfo.vdecl, nIndices)
-  if not hasSpace then
-    log.error("Not enough space to allocate " .. nVertices ..
-          " / " .. nIndices .. " in transient buffer.")
-    return
+  local verts_available = bgfx.get_avail_transient_vertex_buffer(n_verts, 
+                            vertinfo.vdecl)
+  if verts_available < n_verts then
+    log.error("Not enough space to allocate " .. n_verts .. " vertices.")
+    return false
+  end
+  local indices_available = bgfx.get_avail_transient_index_buffer(n_indices)
+  if indices_available < n_indices then
+    log.error("Not enough space to allocate " .. n_indices .. " indices.")
+    return false
   end
 
-  bgfx.bgfx_alloc_transient_buffers(self._transient_vb, vertInfo.vdecl, nVertices,
-                    self._transient_ib, nIndices)
+  bgfx.alloc_transient_buffers(self._transient_vb, vertinfo.vdecl, n_verts,
+                    self._transient_ib, n_indices)
 
   self.indices = terralib.cast(&uint16, self._transient_ib.data)
-  self.verts   = terralib.cast(&vertInfo.ttype, self._transient_vb.data)
-  self.allocated = true
+  self.verts   = terralib.cast(&vertinfo.ttype, self._transient_vb.data)
+  self._allocated = true
 
   return self
 end
 
--- create what would typically be called a "screenSpaceQuad"
+-- create what would typically be called a "fullscreen quad"
 -- width and height default to 1.0, uv coordinates go 0-1
 --
---        /|  actually implemented as a triangle that overflows the screen
---      /__|  like this
---    /|   |
---  /__|___|  hey it saves one triangle, that adds up
-function TransientGeometry:fullScreenTri(width, height, originBottomLeft, vinfo)
+--     /|  actually implemented as a triangle that overflows the screen
+--    /_|  <-- like this
+--   /| |
+--  /_|_|  hey it saves one triangle, that adds up
+function TransientGeometry:fullscreen_tri(width, height, origin_bottom, vinfo)
   local minx = -width
   local maxx =  width
   local miny =  0.0
@@ -98,7 +92,7 @@ function TransientGeometry:fullScreenTri(width, height, originBottomLeft, vinfo)
   local minv =  1.0 --v coordinate is flipped to account for texture coords
   local maxv = -1.0
 
-  if originBottomLeft then
+  if origin_bottom then
     minv, maxv = 1, -1
   end
 
@@ -127,7 +121,7 @@ function TransientGeometry:fullScreenTri(width, height, originBottomLeft, vinfo)
   return self
 end
 
-function m.makeFastTransientQuadFunc(vinfo)
+function m.make_fast_transient_quad_func(vinfo)
   if not vinfo then
     local vdefs = require("gfx/vertexdefs.t")
     vinfo = vdefs.create_basic_vertex_type({"position", "texcoord0"})
@@ -208,7 +202,7 @@ function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
 end
 
 function TransientGeometry:bind()
-  if not self.allocated then
+  if not self._allocated then
     log.error("Cannot bind unallocated transient buffer!")
     return
   end
@@ -216,25 +210,24 @@ function TransientGeometry:bind()
   bgfx.bgfx_set_transient_vertex_buffer(self._transient_vb, 0, bgfx.UINT32_MAX)
   bgfx.bgfx_set_transient_index_buffer(self._transient_ib, 0, bgfx.UINT32_MAX)
 
-  self.bound = true
+  self._bound = true
   return self
 end
 
-function TransientGeometry:build()
-  -- transient geometry does not need to be built; this stub exists only for
-  -- compatibility with functions that do try to build
+function TransientGeometry:commit()
+  -- transient buffers are committed when allocated, so this does nothing
   return self
 end
 
 function TransientGeometry:begin_frame()
-  if self.allocated and not self.bound then
+  if self._allocated and not self._bound then
     log.warn("Allocating transient geometry without binding it the same frame will leak memory!")
   end
 
   self.indices = nil
   self.verts = nil
-  self.allocated = false
-  self.bound = false
+  self._allocated = false
+  self._bound = false
   return self
 end
 
@@ -253,7 +246,7 @@ function StaticGeometry:allocate(vertinfo, n_verts, n_indices)
   self.n_indices = n_indices
   self.vert_data_size = sizeof(vertinfo.ttype[n_verts])
   self.index_data_size = sizeof(index_type[n_indices])
-  self.allocated = true
+  self._allocated = true
   return self
 end
 DynamicGeometry.allocate = StaticGeometry.allocate
@@ -270,7 +263,7 @@ end
 DynamicGeometry.set_attribute = StaticGeometry.set_attribute
 TransientGeometry.set_attribute = StaticGeometry.set_attribute
 
-function StaticGeometry:from_data(modeldata, vertinfo, no_update)
+function StaticGeometry:from_data(modeldata, vertinfo, no_commit)
   if modeldata == nil or vertinfo == nil then
     log.error("Geometry:from_data: nil vertinfo or modeldata!")
     return
@@ -289,19 +282,14 @@ function StaticGeometry:from_data(modeldata, vertinfo, no_update)
   end
   self:set_indices(modeldata.indices)
 
-  if no_update then
-    return self
-  else
-    return self:update()
-  end
+  if no_commit then return self else return self:commit() end
 end
 DynamicGeometry.from_data = StaticGeometry.from_data
 TransientGeometry.from_data = StaticGeometry.from_data
 
-function StaticGeometry:update()
-  if not self.allocated then
-    log.error("Cannot build geometry with no allocated data!")
-    return
+function StaticGeometry:commit()
+  if not self._allocated then
+    truss.error("Cannot commit geometry with no allocated data!")
   end
 
   local flags = bgfx.BUFFER_NONE
@@ -323,23 +311,23 @@ function StaticGeometry:update()
   self._ibh = bgfx.create_index_buffer(
       bgfx.make_ref(self.indices, self.index_data_size), flags )
   
-  self.uploaded = (self._vbh ~= nil) and (self._ibh ~= nil)
+  self._committed = (self._vbh ~= nil) and (self._ibh ~= nil)
 
   return self
 end
 
-local function check_built(geo)
-  if geo.uploaded then return true end
+local function check_committed(geo)
+  if geo._committed then return true end
 
-  if not geo.warned then
-    log.warn("Geometry [" .. geo.name .. "] has not been uploaded.")
-    geo.warned = true
+  if not geo._warned then
+    log.warn("Geometry [" .. geo.name .. "] has not been committed.")
+    geo._warned = true
   end
   return false
 end
 
 function StaticGeometry:bind()
-  if not check_built(self) then return end
+  if not check_committed(self) then return end
 
   bgfx.set_vertex_buffer(self._vbh, 0, bgfx.UINT32_MAX)
   bgfx.set_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
@@ -347,19 +335,15 @@ function StaticGeometry:bind()
   return true
 end
 
-function DynamicGeometry:_build()
-  local flags = 0
-
-  if self.uploaded and not recreate then
-    log.warn("Tried to rebuilt already built DynamicGeometry " ..
-          self.name)
-    return
+function DynamicGeometry:commit()
+  if not self._allocated then
+    truss.error("Cannot commit geometry with no allocated data!")
   end
+
+  local flags = 0
 
   if self._vbh then bgfx.destroy_dynamic_vertex_buffer(self._vbh) end
   if self._ibh then bgfx.destroy_dynamic_index_buffer(self._ibh) end
-
-  log.debug("Creating dynamic buffer...")
 
   -- Create dynamic bgfx buffers
   -- Warning! This only wraps the data, so make sure it doesn't go out
@@ -371,14 +355,14 @@ function DynamicGeometry:_build()
   self._ibh = bgfx.create_dynamic_index_buffer_mem(
       bgfx.make_ref(self.indices, self.index_data_size), flags )
 
-  self.built = (self._vbh ~= nil) and (self._ibh ~= nil)
+  self._committed = (self._vbh ~= nil) and (self._ibh ~= nil)
 
   return self
 end
 
 function DynamicGeometry:update()
-  if not self.built then
-    self:build()
+  if not self._committed then
+    self:commit()
   else
     self:update_vertices()
     self:update_indices()
@@ -406,13 +390,13 @@ function DynamicGeometry:update_indices()
 end
 
 function DynamicGeometry:bind()
-  if not check_built(self) then return end
+  if not check_committed(self) then return end
 
   bgfx.set_dynamic_vertex_buffer(self._vbh, 0, bgfx.UINT32_MAX)
   bgfx.set_dynamic_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
 end
 
-m.StaticGeometry    = StaticGeometry -- 'export' Geometry
+m.StaticGeometry    = StaticGeometry
 m.DynamicGeometry   = DynamicGeometry
 m.TransientGeometry = TransientGeometry
 
