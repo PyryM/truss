@@ -114,7 +114,10 @@ end
 truss._module_env = extend_table({}, _G)
 local disallow_globals_mt = {
   __newindex = function (t,k,v)
-    truss.error("Module tried to create global " .. k)
+    truss.error("Module tried to create global '" .. k .. "'")
+  end,
+  __index = function (t,k)
+    truss.error("Module tried to access nil global '" .. k .. "'")
   end
 }
 
