@@ -18,30 +18,30 @@ local StaticGeometry = class("StaticGeometry")
 function StaticGeometry:init(name)
   self.name = name or "__anon_staticgeometry_" .. last_geo_idx
   last_geo_idx = last_geo_idx + 1
-  self._allocated = false
-  self._committed = false
+  self.allocated = false
+  self.committed = false
 end
 
 local DynamicGeometry = class("DynamicGeometry")
 function DynamicGeometry:init(name)
   self.name = name or "__anon_dyngeometry_" .. last_geo_idx
   last_geo_idx = last_geo_idx + 1
-  self._allocated = false
-  self._committed = false
+  self.allocated = false
+  self.committed = false
 end
 
 local TransientGeometry = class("TransientGeometry")
 function TransientGeometry:init(name)
   self.name = name or "__anon_transientgeometry_" .. last_geo_idx
   last_geo_idx = last_geo_idx + 1
-  self._allocated = false
+  self.allocated = false
 
   self._transient_vb = terralib.new(bgfx.bgfx_transient_vertex_buffer_t)
   self._transient_ib = terralib.new(bgfx.bgfx_transient_index_buffer_t)
 end
 
 function TransientGeometry:allocate(n_verts, n_indices, vertinfo)
-  if self._allocated and not self._bound then
+  if self.allocated and not self._bound then
     truss.error("TransientGeometry [" .. self.name ..
           "] must be bound before it can be allocated again!")
     return
@@ -70,7 +70,7 @@ function TransientGeometry:allocate(n_verts, n_indices, vertinfo)
 
   self.indices = terralib.cast(&uint16, self._transient_ib.data)
   self.verts   = terralib.cast(&vertinfo.ttype, self._transient_vb.data)
-  self._allocated = true
+  self.allocated = true
 
   return self
 end
@@ -202,7 +202,7 @@ function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
 end
 
 function TransientGeometry:bind()
-  if not self._allocated then
+  if not self.allocated then
     log.error("Cannot bind unallocated transient buffer!")
     return
   end
@@ -220,19 +220,19 @@ function TransientGeometry:commit()
 end
 
 function TransientGeometry:begin_frame()
-  if self._allocated and not self._bound then
+  if self.allocated and not self._bound then
     log.warn("Allocating transient geometry without binding it the same frame will leak memory!")
   end
 
   self.indices = nil
   self.verts = nil
-  self._allocated = false
+  self.allocated = false
   self._bound = false
   return self
 end
 
 function StaticGeometry:allocate(n_verts, n_indices, vertinfo)
-  if self._allocated then truss.error("Geometry already allocated!") end
+  if self.allocated then truss.error("Geometry already allocated!") end
 
   local index_type = uint16
   if n_verts >= 2^16 then
@@ -248,7 +248,7 @@ function StaticGeometry:allocate(n_verts, n_indices, vertinfo)
   self.n_indices = n_indices
   self.vert_data_size = sizeof(vertinfo.ttype[n_verts])
   self.index_data_size = sizeof(index_type[n_indices])
-  self._allocated = true
+  self.allocated = true
   return self
 end
 DynamicGeometry.allocate = StaticGeometry.allocate
@@ -259,10 +259,10 @@ DynamicGeometry.allocate = StaticGeometry.allocate
 function StaticGeometry:release_backing()
   local verts, indices = self.verts, self.indices
   self.verts, self.indices = nil, nil
-  self._allocated = false
+  self.allocated = false
 
   -- if the geometry has been committed, they to be safe need to wait 3 frames
-  if not self._committed then return self end
+  if not self.committed then return self end
   local gfx = require("gfx")
   gfx.schedule(function()
     verts, indices = nil, nil
@@ -326,11 +326,11 @@ function DynamicGeometry:_create_bgfx_buffers(flags)
 end
 
 function StaticGeometry:commit()
-  if not self._allocated then
+  if not self.allocated then
     truss.error("Cannot commit geometry with no allocated data!")
   end
 
-  if self._committed then
+  if self.committed then
     log.warn("StaticGeometry: cannot commit, already committed.")
     return self
   end
@@ -346,7 +346,7 @@ function StaticGeometry:commit()
   
   if not bgfx.check_handle(self._vbh) then truss.error("invalid vbh") end
   if not bgfx.check_handle(self._ibh) then truss.error("invalid ibh") end
-  self._committed = true
+  self.committed = true
 
   return self
 end
@@ -356,14 +356,14 @@ function StaticGeometry:uncommit()
   if self._vbh then bgfx.destroy_vertex_buffer(self._vbh) end
   if self._ibh then bgfx.destroy_index_buffer(self._ibh) end
   self._vbh, self._ibh = nil, nil
-  self._committed = false
+  self.committed = false
 end
 
 function DynamicGeometry:uncommit()
   if self._vbh then bgfx.destroy_dynamic_vertex_buffer(self._vbh) end
   if self._ibh then bgfx.destroy_dynamic_index_buffer(self._ibh) end
   self._vbh, self._ibh = nil, nil
-  self._committed = false
+  self.committed = false
 end
 
 function StaticGeometry:destroy()
@@ -373,7 +373,7 @@ end
 DynamicGeometry.destroy = StaticGeometry.destroy
 
 local function check_committed(geo)
-  if geo._committed then return true end
+  if geo.committed then return true end
 
   if not geo._warned then
     log.warn("Geometry [" .. geo.name .. "] has not been committed.")
@@ -411,7 +411,7 @@ function DynamicGeometry:bind_subset(start_v, n_v, start_i, n_i)
 end
 
 function DynamicGeometry:update()
-  if not self._committed then
+  if not self.committed then
     self:commit()
   else
     self:update_vertices()
