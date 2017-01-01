@@ -7,11 +7,12 @@ local m = {}
 local class = require("class")
 
 local Vector = class("Vector")
-local matrix = require("math/matrix.t")
+local mathtypes = require("math/types.t")
+local vec4_ = mathtypes.vec4_
 
 function Vector:init(x, y, z, w)
     --self.elem = {x = 0, y = 0, z = 0, w = 0}
-    self.elem = terralib.new(matrix.vec4_)
+    self.elem = terralib.new(vec4_)
     self.e = self.elem -- alias for convenience
     self:set(x, y, z, w)
 end
@@ -40,7 +41,7 @@ function Vector:zero()
     return self
 end
 
-local terra copyvec(src: &matrix.vec4_, dest: &matrix.vec4_)
+local terra copyvec(src: &vec4_, dest: &vec4_)
     @dest = @src
 end
 

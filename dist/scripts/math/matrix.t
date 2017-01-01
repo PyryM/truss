@@ -6,23 +6,19 @@ local m = {}
 local CMath = require("math/cmath.t")
 local class = require("class")
 local projections = require("math/projections.t")
+local mathtypes = require("math/types.t")
 
-struct m.vec4_ {
-    x: float;
-    y: float;
-    z: float;
-    w: float;
-}
-local vec4_ = m.vec4_
+local scalar_ = mathtypes.scalar_
+local vec4_ = mathtypes.vec4_
 
-terra m.setIdentity(mat: &float)
+terra m.setIdentity(mat: &scalar_)
     mat[ 0], mat[ 1], mat[ 2], mat[ 3] = 1.0f, 0.0f, 0.0f, 0.0f
     mat[ 4], mat[ 5], mat[ 6], mat[ 7] = 0.0f, 1.0f, 0.0f, 0.0f
     mat[ 8], mat[ 9], mat[10], mat[11] = 0.0f, 0.0f, 1.0f, 0.0f
     mat[12], mat[13], mat[14], mat[15] = 0.0f, 0.0f, 0.0f, 1.0f
 end
 
-terra m.zeroMatrix(dest: &float)
+terra m.zeroMatrix(dest: &scalar_)
     for i = 0,16 do
         dest[i] = 0.0f
     end
@@ -32,7 +28,7 @@ end
 -- https://github.com/mrdoob/three.js/blob/master/src/math/Matrix4.js
 
 -- makes the matrix be a pure rotation from a quaternion
-terra m.setMatrixFromQuat(mat: &float, quat: &vec4_)
+terra m.setMatrixFromQuat(mat: &scalar_, quat: &vec4_)
     var x = quat.x
     var y = quat.y
     var z = quat.z
@@ -76,7 +72,7 @@ terra m.setMatrixFromQuat(mat: &float, quat: &vec4_)
 end
 
 -- applies scaling to a transform (4x4 matrix) in place
-terra m.scaleMatrix(mat: &float, s: &vec4_)
+terra m.scaleMatrix(mat: &scalar_, s: &vec4_)
     mat[ 0 ]  = mat[0] * s.x
     mat[ 4 ]  = mat[4] * s.y
     mat[ 8 ]  = mat[8] * s.z
@@ -91,7 +87,7 @@ terra m.scaleMatrix(mat: &float, s: &vec4_)
     mat[ 11 ] = mat[11] * s.z
 end
 
-terra m.setMatrixPosition(mat: &float, p: &vec4_)
+terra m.setMatrixPosition(mat: &scalar_, p: &vec4_)
     mat[ 12 ] = p.x
     mat[ 13 ] = p.y
     mat[ 14 ] = p.z
@@ -100,7 +96,7 @@ end
 -- multiplies 4x4 matrices so that dest = a * b
 -- it is safe to have dest == a to do an in-place
 -- multiply
-terra m.multiplyMatrices(dest: &float, a: &float, b: &float)
+terra m.multiplyMatrices(dest: &scalar_, a: &scalar_, b: &scalar_)
     var a11, a12, a13, a14 = a[ 0 ], a[ 4 ], a[ 8 ], a[ 12 ]
     var a21, a22, a23, a24 = a[ 1 ], a[ 5 ], a[ 9 ], a[ 13 ]
     var a31, a32, a33, a34 = a[ 2 ], a[ 6 ], a[ 10 ], a[ 14 ]
@@ -134,7 +130,7 @@ end
 
 -- multiplies a vec4 vsrc by matrix a and puts the result into vdest
 -- safe to use inplace (vsrc == vdest)
-terra m.multiplyMatrixVector(a: &float, vsrc: &vec4_, vdest: &vec4_)
+terra m.multiplyMatrixVector(a: &scalar_, vsrc: &vec4_, vdest: &vec4_)
     var v0 = vsrc.x
     var v1 = vsrc.y
     var v2 = vsrc.z
@@ -147,7 +143,7 @@ terra m.multiplyMatrixVector(a: &float, vsrc: &vec4_, vdest: &vec4_)
 end
 
 -- multiplies a 4x4 matrix by a scalar in place
-terra m.multiplyMatrixScalar(mat: &float, scale: float)
+terra m.multiplyMatrixScalar(mat: &scalar_, scale: scalar_)
     -- note terra is 0 indexed so this is like a c loop
     for i = 0,16 do
         mat[i] = mat[i] * scale
@@ -155,7 +151,7 @@ terra m.multiplyMatrixScalar(mat: &float, scale: float)
 end
 
 -- transposes a matrix in place
-terra m.transposeMatrix(a: &float)
+terra m.transposeMatrix(a: &scalar_)
     var      a12, a13, a14 =         a[ 4 ], a[ 8 ], a[ 12 ]
     var a21,      a23, a24 = a[ 1 ],         a[ 9 ], a[ 13 ]
     var a31, a32,      a34 = a[ 2 ], a[ 6 ],         a[ 14 ]
@@ -168,7 +164,7 @@ end
 
 -- gets the inverse of a 4x4 matrix
 -- safe to use in place (src == dest)
-terra m.getMatrixInverse(dest: &float, src: &float)
+terra m.getMatrixInverse(dest: &scalar_, src: &scalar_)
         -- based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
         var n11, n12, n13, n14 = src[ 0 ], src[ 4 ], src[ 8 ],  src[ 12 ]
         var n21, n22, n23, n24 = src[ 1 ], src[ 5 ], src[ 9 ],  src[ 13 ]
@@ -202,13 +198,13 @@ terra m.getMatrixInverse(dest: &float, src: &float)
 end
 
 -- assumes pure rotation upper 3x3 (unscaled)
-terra m.matrixToQuaternion(src: &float, dest: &vec4_)
+terra m.matrixToQuaternion(src: &scalar_, dest: &vec4_)
     var m11, m12, m13 = src[ 0 ], src[ 4 ], src[ 8 ]
     var m21, m22, m23 = src[ 1 ], src[ 5 ], src[ 9 ]
     var m31, m32, m33 = src[ 2 ], src[ 6 ], src[ 10 ]
 
     var trace = m11 + m22 + m33
-    var s: float = 0.0
+    var s: scalar_ = 0.0
 
     if trace > 0.0 then
         s = 0.5 / CMath.sqrt( trace + 1.0 )
@@ -237,7 +233,7 @@ terra m.matrixToQuaternion(src: &float, dest: &vec4_)
     end
 end
 
-terra m.matrixCopy(dest: &float, src: &float)
+terra m.matrixCopy(dest: &scalar_, src: &scalar_)
     for i = 0,16 do
         dest[i] = src[i]
     end
@@ -246,7 +242,7 @@ end
 local Matrix4 = class("Matrix4")
 
 function Matrix4:init()
-    self.data = terralib.new(float[16])
+    self.data = terralib.new(scalar_[16])
     self.elem = self.data
 end
 
