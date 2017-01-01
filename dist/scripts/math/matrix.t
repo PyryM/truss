@@ -3,9 +3,9 @@
 -- 4x4 matrix math functions
 
 local m = {}
-local CMath = terralib.includec("math.h")
-
+local CMath = require("math/cmath.t")
 local class = require("class")
+local projections = require("math/projections.t")
 
 struct m.vec4_ {
     x: float;
@@ -15,101 +15,11 @@ struct m.vec4_ {
 }
 local vec4_ = m.vec4_
 
-terra m.rotateXY(mat: &float, ax: float, ay: float)
-    var sx = CMath.sinf(ax)
-    var cx = CMath.cosf(ax)
-    var sy = CMath.sinf(ay)
-    var cy = CMath.cosf(ay)
-
-    mat[ 0] = cy
-    mat[ 1] = 0.0f
-    mat[ 2] = sy
-    mat[ 3] = 0.0f
-    mat[ 4] = sx*sy
-    mat[ 5] = cx
-    mat[ 6] = -sx*cy
-    mat[ 7] = 0.0f
-    mat[ 8] = -cx*sy
-    mat[ 9] = sx
-    mat[10] = cx*cy
-    mat[11] = 0.0f
-    mat[12] = 0.0f
-    mat[13] = 0.0f
-    mat[14] = 0.0f
-    mat[15] = 1.0f
-end
-
-terra m.projXYWH(mat: &float, x: float, y: float, width: float, height: float, near: float, far: float)
-    var diff = far - near
-    var aa = far / diff
-    var bb = -near*aa
-
-    mat[ 0] = width
-    mat[ 5] = height
-    mat[ 8] =  x
-    mat[ 9] = -y
-    mat[10] = -aa
-    mat[11] = -1.0f
-    mat[14] = bb
-end
-
-terra m.projFrustumGL(mat: &float,
-                    left: float, right: float,
-                    bottom: float, top: float,
-                    near: float, far: float)
-    mat[ 0] = 2.0*near / (right - left)
-    mat[ 5] = 2.0*near / (top - bottom)
-    mat[ 8] = (right + left) / (right - left)
-    mat[ 9] = (top + bottom) / (top - bottom)
-    mat[10] = -(far + near) / (far - near)
-    mat[11] = -1.0
-    mat[14] = -2 * far * near / (far - near)
-end
-
-terra m.projFrustum(mat: &float,
-                    left: float, right: float,
-                    bottom: float, top: float,
-                    near: float, far: float)
-    mat[ 0] = 2.0*near / (right - left)
-    mat[ 5] = 2.0*near / (top - bottom)
-    mat[ 8] = (right + left) / (right - left)
-    mat[ 9] = (top + bottom) / (top - bottom)
-    mat[10] = -far / (far - near)
-    mat[11] = -1.0
-    mat[14] = -far * near / (far - near)
-end
-
 terra m.setIdentity(mat: &float)
     mat[ 0], mat[ 1], mat[ 2], mat[ 3] = 1.0f, 0.0f, 0.0f, 0.0f
     mat[ 4], mat[ 5], mat[ 6], mat[ 7] = 0.0f, 1.0f, 0.0f, 0.0f
     mat[ 8], mat[ 9], mat[10], mat[11] = 0.0f, 0.0f, 1.0f, 0.0f
     mat[12], mat[13], mat[14], mat[15] = 0.0f, 0.0f, 0.0f, 1.0f
-end
-
-terra m.orthoProjMatGL(mat: &float,
-                     left: float, right: float,
-                     bottom: float, top: float,
-                     near: float, far: float)
-    mat[ 0] = 2.0 / (right - left)
-    mat[ 5] = 2.0 / (top - bottom)
-    mat[10] = -2.0 / (far - near)
-    mat[12] = -(right + left) / (right - left)
-    mat[13] = -(top + bottom) / (top - bottom)
-    mat[14] = -(far + near) / (far - near)
-    mat[15] = 1.0
-end
-
-terra m.orthoProjMat(mat: &float,
-                     left: float, right: float,
-                     bottom: float, top: float,
-                     near: float, far: float)
-    mat[ 0] = 2.0 / (right - left)
-    mat[ 5] = 2.0 / (top - bottom)
-    mat[10] = -1.0 / (far - near)
-    mat[12] = -(right + left) / (right - left)
-    mat[13] = -(top + bottom) / (top - bottom)
-    mat[14] = -near / (far - near)
-    mat[15] = 1.0
 end
 
 -- Convert LH to RH projection matrix and vice versa.
@@ -156,34 +66,6 @@ terra m.zeroMatrix(dest: &float)
     for i = 0,16 do
         dest[i] = 0.0f
     end
-end
-
-function m.toRad(deg)
-    return deg * math.pi / 180.0
-end
-
-function m.makeProjMat(mat, fovy, aspect, near, far, isGL)
-    local vheight = 2.0 * near * math.tan(m.toRad(fovy)*0.5)
-    local vwidth  = vheight * aspect
-    local pfunc = m.projFrustum
-    if isGL then pfunc = m.projFrustumGL end
-    pfunc(mat, -vwidth/2.0, vwidth/2.0, -vheight/2.0, vheight/2.0, near, far)
-end
-
-function m.makeTiledProjection(mat, fovy, aspect, near, far, gwidth, gheight, gxidx, gyidx)
-    local vheight = 2.0 * near * math.tan(m.toRad(fovy)*0.5)
-    local vwidth  = vheight * aspect
-
-    local xdiv = vwidth / gwidth
-    local ydiv = vheight / gheight
-    local left = (-vwidth/2.0) + xdiv * gxidx
-    local right = left + xdiv
-    local bottom = (-vheight/2.0) + ydiv * gyidx
-    local top = bottom + ydiv
-
-    m.projFrustum(mat, left, right,
-                       bottom, top,
-                        near, far)
 end
 
 -- matrix functions ported from threejs
@@ -638,22 +520,13 @@ end
 -- fovy in degrees
 function Matrix4:makeProjection(fovy, aspect, near, far, isGL)
     self:zero()
-    m.makeProjMat(self.data, fovy, aspect, near, far, isGL)
+    projections.make_proj_mat(self.data, fovy, aspect, near, far, isGL)
     return self
 end
 
-function Matrix4:makeOrthographicProjection(left, right, bottom, top, near, far, isGL)
+function Matrix4:makeOrthographicProjection(left, right, bottom, top, near, far, is_gl)
     self:zero()
-    if isGL then
-        log.info("Making GL orthographic matrix!")
-        m.orthoProjMatGL(self.data, left, right,
-                              bottom, top,
-                              near, far)
-    else
-        m.orthoProjMat(self.data, left, right,
-                              bottom, top,
-                              near, far)
-    end
+    projections.proj_ortho(self.data, left, right, bottom, top, near, far, is_gl)
 end
 
 function Matrix4:flipViewHandedness()
