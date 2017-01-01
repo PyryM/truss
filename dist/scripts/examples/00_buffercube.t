@@ -3,10 +3,8 @@
 -- manually create a cube mesh and use it to draw multiple cubes spinning
 
 local sdl = require("addons/sdl.t")
-
 local math = require("math")
 local gfx = require("gfx")
-local StaticGeometry = gfx.StaticGeometry
 
 width = 800
 height = 600
@@ -16,38 +14,39 @@ function make_cube_geo()
   local data = {
     attributes = {
       position = {{-1.0,  1.0,  1.0},
-            { 1.0,  1.0,  1.0},
-            {-1.0, -1.0,  1.0},
-            { 1.0, -1.0,  1.0},
-            {-1.0,  1.0, -1.0},
-            { 1.0,  1.0, -1.0},
-            {-1.0, -1.0, -1.0},
-            { 1.0, -1.0, -1.0}},
+                  { 1.0,  1.0,  1.0},
+                  {-1.0, -1.0,  1.0},
+                  { 1.0, -1.0,  1.0},
+                  {-1.0,  1.0, -1.0},
+                  { 1.0,  1.0, -1.0},
+                  {-1.0, -1.0, -1.0},
+                  { 1.0, -1.0, -1.0}
+                 },
       color0   = {{ 0.0, 0.0, 0.0, 255},
-            { 255, 0.0, 0.0, 255},
-            { 0.0, 255, 0.0, 255},
-            { 255, 255, 0.0, 255},
-            { 0.0, 0.0, 255, 255},
-            { 255, 0.0, 255, 255},
-            { 0.0, 255, 255, 255},
-            { 255, 255, 255, 255}}
+                  { 255, 0.0, 0.0, 255},
+                  { 0.0, 255, 0.0, 255},
+                  { 255, 255, 0.0, 255},
+                  { 0.0, 0.0, 255, 255},
+                  { 255, 0.0, 255, 255},
+                  { 0.0, 255, 255, 255},
+                  { 255, 255, 255, 255}}
     },
     indices   = { 0, 2, 1,
-            1, 2, 3,
-            4, 5, 6,
-            5, 7, 6,
-            0, 4, 2,
-            4, 6, 2,
-            1, 3, 5,
-            5, 3, 7,
-            0, 1, 4,
-            4, 1, 5,
-            2, 6, 3,
-            6, 7, 3 }
+                  1, 2, 3,
+                  4, 5, 6,
+                  5, 7, 6,
+                  0, 4, 2,
+                  4, 6, 2,
+                  1, 3, 5,
+                  5, 3, 7,
+                  0, 1, 4,
+                  4, 1, 5,
+                  2, 6, 3,
+                  6, 7, 3 }
   }
 
   log.info("trying to make cube...")
-  return StaticGeometry("cube"):from_data(data)
+  return gfx.StaticGeometry("cube"):from_data(data)
 end
 
 function init()
@@ -132,14 +131,13 @@ function update()
   -- Set viewprojection matrix
   bgfx.set_view_transform(0, viewmat.data, projmat.data)
 
-  -- -- draw four cubes
+  -- draw four cubes
   draw_cube( 3,  3, 0.0)
   draw_cube(-3,  3, 1.0)
   draw_cube(-3, -3, 2.0)
   draw_cube( 3, -3, 3.0)
 
-  -- Advance to next frame. Rendering thread will be kicked to
-  -- process submitted rendering primitives.
+  -- Advance to next frame.
   gfx.frame()
 
   frametime = truss.toc(startTime)
