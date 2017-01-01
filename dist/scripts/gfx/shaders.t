@@ -7,14 +7,14 @@ m._programs = {}
 m._shaders = {}
 
 local subpaths = {
-    DIRECT3D9 = "dx9",
-    DIRECT3D11 = "dx11",
-    DIRECT3D12 = "dx11", -- not a typo, same shaders
-    GNM = "pssl",
-    METAL = "metal",
-    OPENGLES = "essl",
-    OPENGL = "glsl",
-    VULKAN = "spirv"
+  DIRECT3D9 = "dx9",
+  DIRECT3D11 = "dx11",
+  DIRECT3D12 = "dx11", -- not a typo, same shaders
+  GNM = "pssl",
+  METAL = "metal",
+  OPENGLES = "essl",
+  OPENGL = "glsl",
+  VULKAN = "spirv"
 }
 
 function m.get_shader_path()
