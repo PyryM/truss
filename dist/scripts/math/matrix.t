@@ -96,7 +96,7 @@ end
 -- multiplies 4x4 matrices so that dest = a * b
 -- it is safe to have dest == a to do an in-place
 -- multiply
-terra m.multiplyMatrices(dest: &scalar_, a: &scalar_, b: &scalar_)
+terra m.multiply_matrices(dest: &scalar_, a: &scalar_, b: &scalar_)
     var a11, a12, a13, a14 = a[ 0 ], a[ 4 ], a[ 8 ], a[ 12 ]
     var a21, a22, a23, a24 = a[ 1 ], a[ 5 ], a[ 9 ], a[ 13 ]
     var a31, a32, a33, a34 = a[ 2 ], a[ 6 ], a[ 10 ], a[ 14 ]
@@ -267,7 +267,7 @@ function Matrix4:clone()
     return ret
 end
 
-function Matrix4:fromCArray(arr)
+function Matrix4:from_c_array(arr)
     -- both arrays are zero indexed
     for i = 0,15 do
         self.data[i] = arr[i]
@@ -275,7 +275,7 @@ function Matrix4:fromCArray(arr)
     return self
 end
 
-function Matrix4:fromArray(arr)
+function Matrix4:from_array(arr)
     for i = 1,16 do
         -- self.data is zero indexed
         self.data[i-1] = arr[i]
@@ -288,7 +288,7 @@ function Matrix4:transpose()
     return self
 end
 
-function Matrix4:toArray()
+function Matrix4:to_arry()
     local ret = {}
     for i = 1,16 do
         -- self.data is zero indexed
@@ -297,16 +297,16 @@ function Matrix4:toArray()
     return ret
 end
 
-function Matrix4:fromQuaternion(q)
+function Matrix4:from_quaternion(q)
     local e = q.elem
     m.setMatrixFromQuat(self.data, e.x, e.y, e.z, e.w)
     return self
 end
 
-function Matrix4:toQuaternion()
+function Matrix4:to_quaternion(dest)
     -- import 'late' to avoid mutual recursion issues
     local quat = require("math/quat.t")
-    local qret = quat.Quaternion()
+    local qret = dest or quat.Quaternion()
     m.matrixToQuaternion(self.data, qret.elem)
     return qret
 end
@@ -316,31 +316,23 @@ function Matrix4:scale(scaleVec)
     return self
 end
 
-function Matrix4:setTranslation(posVec)
+function Matrix4:set_translation(posVec)
     m.setMatrixPosition(self.data, posVec.elem)
     return self
 end
 
-function Matrix4:makeTranslation(v)
+function Matrix4:translation(v)
     self:identity()
     return self:setTranslation(v)
 end
 
--- takes a translation (vec3), rotation (quaternion), and scale (vec3) and
--- and composes them together into one 4x4 transformation
-function Matrix4:compose(posVec, rotationQuat, scaleVec)
+-- take a translation (v3), rotation (quat), and optional scale (v) and
+-- and composes them together into this 4x4 transformation
+function Matrix4:compose(pos, quat, scale)
     local destmat = self.data
-    m.setMatrixFromQuat(destmat, rotationQuat.elem)
-    m.scaleMatrix(destmat, scaleVec.elem)
-    m.setMatrixPosition(destmat, posVec.elem)
-    return self
-end
-
--- like compose, but without a scale component
-function Matrix4:composeRigid(posVec, rotationQuat)
-    local destmat = self.data
-    m.setMatrixFromQuat(destmat, rotationQuat.elem)
-    m.setMatrixPosition(destmat, posVec.elem)
+    m.setMatrixFromQuat(destmat, quat.elem)
+    if scale then m.scaleMatrix(destmat, scaleVec.elem) end
+    m.setMatrixPosition(destmat, pos.elem)
     return self
 end
 
@@ -357,40 +349,41 @@ end
 -- self = self * a
 -- if two arguments are provided,
 -- self = a * b
-function Matrix4:multiply(a, b)
-    if b == nil then
-        m.multiplyMatrices(self.data, self.data, a.data)
+function Matrix4:multiply_matrix(a, b)
+    if b then
+        m.multiply_matrices(self.data, a.data, b.data)
     else
-        m.multiplyMatrices(self.data, a.data, b.data)
+        m.multiply_matrices(self.data, self.data, a.data)
     end
     return self
 end
 
 -- matrix multiplication on left:
 -- self = b * self
-function Matrix4:leftMultiply(b)
-    m.multiplyMatrices(self.data, b.data, self.data)
-    return self
-end
-
--- matrix multiplication:
--- self = a * b
-function Matrix4:multiplyInto(a,b)
-    m.multiplyMatrices(self.data, a.data, b.data)
+function Matrix4:left_multiply(b)
+    m.multiply_matrices(self.data, b.data, self.data)
     return self
 end
 
 -- matrix*vector multiplication, in place
 -- i.e. v <- M * v
-function Matrix4:multiplyVector(v)
-    m.multiplyMatrixVector(self.data, v.elem, v.elem)
-    return v
+function Matrix4:multiply_vector(v, dest)
+    m.multiplyMatrixVector(self.data, v.elem, (dest or v).elem)
+    return dest
+end
+
+function Matrix4:multiply(a, b)
+    if b or a.data then -- matrix * matrix
+        return self:multiply_matrix(a, b)
+    else                 -- matrix * vector?
+        return self:multiply_vector(a)
+    end
 end
 
 -- Note: this is 1-indexed, so the columns are 1,2,3,4
-function Matrix4:getColumn(idx, dest)
+function Matrix4:get_column(idx, dest)
     if idx <= 0 or idx > 4 then
-        log.error("Error: Matrix4:getColumn expects index in range [1,4], got " .. idx)
+        truss.error("get_column index out of range: " .. idx)
         return nil
     end
     local s = (idx-1)*4
@@ -403,9 +396,9 @@ function Matrix4:getColumn(idx, dest)
     return dest
 end
 
-function Matrix4:setColumn(idx, src)
+function Matrix4:set_column(idx, src)
     if idx <= 0 or idx > 4 then
-        log.error("Error: Matrix4:getColumn expects index in range [1,4], got " .. idx)
+        truss.error("set_column index out of range: " .. idx)
         return nil
     end
     local s = (idx-1)*4
@@ -415,20 +408,20 @@ function Matrix4:setColumn(idx, src)
     return self
 end
 
-function Matrix4:fromBasis(basisVecList)
-    for columnIdx, basisVec in ipairs(basisVecList) do
-        self:setColumn(columnIdx, basisVec)
+function Matrix4:from_basis(basis_vecs)
+    for idx, vec in ipairs(basis_vecs) do
+        self:set_column(idx, vec)
     end
     return self
 end
 
 local tx, ty, tz
-function Matrix4:lookAt(point, up)
+function Matrix4:look_at(point, up)
     local Vector = require("math").Vector
     tx = tx or Vector()
     ty = ty or Vector()
     tz = tz or Vector()
-    self:getColumn(4, tz)
+    self:get_column(4, tz)
     tz:sub(point):normalize3d()
     if up then
         ty:copy(up):normalize3d()
@@ -437,9 +430,9 @@ function Matrix4:lookAt(point, up)
     end
     tx:crossVecs(ty, tz)
     ty:crossVecs(tz, tx)
-    self:setColumn(1, tx)
-    self:setColumn(2, ty)
-    self:setColumn(3, tz)
+    self:set_column(1, tx)
+    self:set_column(2, ty)
+    self:set_column(3, tz)
 end
 
 function Matrix4:prettystr()
@@ -459,7 +452,7 @@ function Matrix4:prettystr()
     return ret
 end
 
-function Matrix4:fromPrettyArray(parr)
+function Matrix4:from_table(parr)
     local data = self.data
     -- column major
     for row = 0,3 do
@@ -474,19 +467,19 @@ function Matrix4:__tostring()
 end
 
 -- fovy in degrees
-function Matrix4:makeProjection(fovy, aspect, near, far, isGL)
+function Matrix4:perspective_projection(fovy, aspect, near, far, is_gl)
     self:zero()
-    projections.make_proj_mat(self.data, fovy, aspect, near, far, isGL)
+    projections.make_proj_mat(self.data, fovy, aspect, near, far, is_gl)
     return self
 end
 
-function Matrix4:makeOrthographicProjection(left, right, bottom, top, near, far, is_gl)
+function Matrix4:orthographic_projection(left, right, bottom, top, near, far, is_gl)
     self:zero()
     projections.proj_ortho(self.data, left, right, bottom, top, near, far, is_gl)
+    return self
 end
 
 -- 'export' the class
 m.Matrix4 = Matrix4
-m.Mat4    = Matrix4 -- shorter alias
 
 return m
