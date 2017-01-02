@@ -84,7 +84,7 @@ function init_bgfx()
   program = gfx.load_program("vs_cubes", "fs_cubes")
 
   -- create matrices
-  projmat = math.Matrix4():makeProjection(70, 800/600, 0.1, 100.0)
+  projmat = math.Matrix4():perspective_projection(70, 800/600, 0.1, 100.0)
   viewmat = math.Matrix4():identity()
   modelmat = math.Matrix4():identity()
   posvec = math.Vector(0.0, 0.0, -10.0)
@@ -94,9 +94,9 @@ end
 
 function draw_cube(xpos, ypos, phase)
   -- Compute the cube's transformation
-  rotquat:fromEuler({x = time + phase, y = time + phase, z = 0.0})
+  rotquat:euler({x = time + phase, y = time + phase, z = 0.0})
   posvec:set(xpos, ypos, -10.0)
-  modelmat:composeRigid(posvec, rotquat)
+  modelmat:compose(posvec, rotquat)
   bgfx.set_transform(modelmat.data, 1) -- only one matrix in array
 
   -- Bind the cube buffers
@@ -112,7 +112,7 @@ frametime = 0.0
 function update()
   time = time + 1.0 / 60.0
 
-  local startTime = truss.tic()
+  local start_time = truss.tic()
 
   -- Deal with input events
   update_events()
@@ -140,5 +140,5 @@ function update()
   -- Advance to next frame.
   gfx.frame()
 
-  frametime = truss.toc(startTime)
+  frametime = truss.toc(start_time)
 end
