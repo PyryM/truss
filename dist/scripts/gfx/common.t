@@ -107,6 +107,10 @@ function m.schedule(task, frame_delay)
   table.insert(m._scheduled_tasks[target], task)
 end
 
+function m.set_transform(mat)
+  if mat.data then bgfx.set_transform(mat.data, 1) end
+end
+
 function m.frame()
   m.bgfx_frame_index = bgfx.frame(false)
 
@@ -120,6 +124,44 @@ function m.frame()
   end
 
   m.frame_index = m.frame_index + 1
+end
+
+local state_aliases = {primitive = "pt"}
+m.DefaultStateOptions = {
+  rgb_write = true, depth_write = true, alpha_write = true,
+  conservative_raster = false, msaa = true,
+  depth_test = "less", cull = "cw", blend = false, pt = false
+}
+
+function m.create_state(user_options)
+  if not user_options then return bgfx.STATE_DEFAULT end
+  local state = bgfx.STATE_NONE
+  local math = require("math")
+  local options = {}
+  truss.extend_table(options, m.DefaultStateOptions)
+  truss.extend_table(options, user_options)
+
+  for k,v in pairs(options) do
+    k = state_aliases[k] or k
+    if m.DefaultStateOptions[k] == nil then
+      truss.error("Unknown state option [" .. k .. "]")
+    end
+
+    local const_name = "STATE_" .. string.upper(k)
+    if v then
+      if v ~= true then
+        const_name = const_name .. "_" .. string.upper(v)
+      end
+      if not bgfx[const_name] then truss.error("No flag " .. const_name) end
+      state = math.ullor(state, bgfx[const_name])
+    end
+  end
+
+  return state
+end
+
+function m.set_state(state)
+  bgfx.set_state(state or bgfx.STATE_DEFAULT, 0)
 end
 
 return m

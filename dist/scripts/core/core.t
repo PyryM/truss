@@ -45,7 +45,7 @@ bit = require("bit")
 
 -- timing functions
 -- local t0 = tic()
--- local dt = toc(t0) -- dt is elapsed seconds as a float 
+-- local dt = toc(t0) -- dt is elapsed seconds as a float
 truss.tic = truss.C.get_hp_time
 terra truss.toc(startTime: uint64)
   var curtime = truss.C.get_hp_time()
@@ -110,6 +110,7 @@ local function extend_table(dest, addition)
   for k,v in pairs(addition) do dest[k] = v end
   return dest
 end
+truss.extend_table = extend_table
 
 truss._module_env = extend_table({}, _G)
 local disallow_globals_mt = {
@@ -216,7 +217,7 @@ for addonIdx = 1,numaddons do
   local addon_version = ffi.string(truss.C.get_addon_version(TRUSS_ID, addonIdx-1))
   log.info("Loading addon [" .. addon_name .. "]")
   local addon_table = terralib.includecstring(header)
-  addons[addon_name] = {functions = addon_table, pointer = pointer, 
+  addons[addon_name] = {functions = addon_table, pointer = pointer,
                         version = addon_version}
 end
 truss.addons = addons

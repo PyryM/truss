@@ -20,6 +20,7 @@ m.UNI_MAT4 = {
 local Uniform = class("Uniform")
 function Uniform:init(uni_name, uni_type, num)
   num = num or 1
+  uni_type = uni_type or m.UNI_VEC
 
   self._handle = bgfx.create_uniform(uni_name, uni_type.bgfx_type, num)
   self._num = num
@@ -125,5 +126,14 @@ end
 m.Uniform = Uniform
 m.TexUniform = TexUniform
 m.UniformSet = UniformSet
+
+-- convenience versions
+m.VecUniform = function(name, num)
+  return m.Uniform(name, m.UNI_VEC, num)
+end
+
+m.MatUniform = function(name, num)
+  return m.Uniform(name, m.UNI_MAT4, num)
+end
 
 return m

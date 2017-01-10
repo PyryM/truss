@@ -11,6 +11,8 @@ height = 600
 time = 0.0
 
 function make_cube_geo()
+  local gray = {20, 20, 20, 255}
+  local grey = {40, 40, 40, 255}
   local data = {
     attributes = {
       position = {{-1.0,  1.0,  1.0},
@@ -90,6 +92,8 @@ function init_bgfx()
   posvec = math.Vector(0.0, 0.0, -10.0)
   scalevec = math.Vector(1.0, 1.0, 1.0)
   rotquat = math.Quaternion():identity()
+
+  cubestate = gfx.create_state()
 end
 
 function draw_cube(xpos, ypos, phase)
@@ -97,13 +101,13 @@ function draw_cube(xpos, ypos, phase)
   rotquat:euler({x = time + phase, y = time + phase, z = 0.0})
   posvec:set(xpos, ypos, -10.0)
   modelmat:compose(posvec, rotquat)
-  bgfx.set_transform(modelmat.data, 1) -- only one matrix in array
+  gfx.set_transform(modelmat)
 
   -- Bind the cube buffers
   cubegeo:bind()
 
   -- Setting default state is not strictly necessary, but good practice
-  bgfx.set_state(bgfx.STATE_DEFAULT, 0)
+  gfx.set_state(cubestate)
   bgfx.submit(0, program, 0, false)
 end
 
