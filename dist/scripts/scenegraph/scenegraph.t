@@ -10,28 +10,28 @@ local math = require("math")
 
 -- apply function f to object and all of object's descendents
 local function recursive_apply(object, f, arg)
-    f(object, arg)
+  f(object, arg)
 
-    for _,child in pairs(object.children) do
-        recursive_apply(child, f, arg)
-    end
+  for _,child in pairs(object.children) do
+    recursive_apply(child, f, arg)
+  end
 end
 m.recursive_apply = recursive_apply
 
 -- recursively calculate world matrices from local transforms for
 -- object and all its children
 local function recursive_update_world_mat(object, parentmat)
-    if object.enabled == false then return end
-    if not object.matrix then return end
+  if object.enabled == false then return end
+  if not object.matrix then return end
 
-    local worldmat = object.matrix_world or math.Matrix4():identity()
-    object.matrix_world = worldmat
+  local worldmat = object.matrix_world or math.Matrix4():identity()
+  object.matrix_world = worldmat
 
-    worldmat:multiplyInto(parentmat, object.matrix)
+  worldmat:multiplyInto(parentmat, object.matrix)
 
-    for _,child in pairs(object.children) do
-        recursive_update_world_mat(child, worldmat)
-    end
+  for _,child in pairs(object.children) do
+    recursive_update_world_mat(child, worldmat)
+  end
 end
 m.recursive_update_world_mat = recursive_update_world_mat
 
@@ -45,68 +45,68 @@ m.MAX_TREE_DEPTH = 200
 local TransformableMixin = {}
 m.TransformableMixin = TransformableMixin
 
-function TransformableMixin:init_tf()
-    self.position = math.Vector(0.0, 0.0, 0.0, 0.0)
-    self.scale = math.Vector(1.0, 1.0, 1.0, 0.0)
-    self.quaternion = math.Quaternion():identity()
-    self.matrix = math.Matrix4():identity()
+function TransformableMixin:tf_init()
+  self.position = math.Vector(0.0, 0.0, 0.0, 0.0)
+  self.scale = math.Vector(1.0, 1.0, 1.0, 0.0)
+  self.quaternion = math.Quaternion():identity()
+  self.matrix = math.Matrix4():identity()
 end
 
 function TransformableMixin:updateMatrix()
-    self.matrix:compose(self.position, self.quaternion, self.scale)
+  self.matrix:compose(self.position, self.quaternion, self.scale)
 end
 
 -- mixin for having a tree of children
 local ScenegraphMixin = {}
 m.ScenegraphMixin = ScenegraphMixin
 
-function ScenegraphMixin:init_sg()
-    self.children = {}
-    self.enabled = true
+function ScenegraphMixin:sg_init()
+  self.children = {}
+  self.enabled = true
 end
 
 -- check whether adding a prospective child to a parent
 -- would cause a cycle (i.e., that our scene tree would
 -- no longer be a tree)
 local function wouldCauseCycle(parent, prospectiveChild)
-    -- we would have a cycle if tracing the parent up
-    -- to root would encounter the child or itself
-    local depth = 0
-    local curnode = parent
-    local MAXD = m.MAX_TREE_DEPTH
-    while curnode ~= nil do
-        curnode = curnode.parent
-        if curnode == parent or curnode == prospectiveChild then
-            log.error("Adding child would have caused cycle!")
-            return true
-        end
-        depth = depth + 1
-        if depth > MAXD then
-            log.error("Adding child would exceed max tree depth!")
-            return true
-        end
+  -- we would have a cycle if tracing the parent up
+  -- to root would encounter the child or itself
+  local depth = 0
+  local curnode = parent
+  local MAXD = m.MAX_TREE_DEPTH
+  while curnode ~= nil do
+    curnode = curnode.parent
+    if curnode == parent or curnode == prospectiveChild then
+      log.error("Adding child would have caused cycle!")
+      return true
     end
-    return false
+    depth = depth + 1
+    if depth > MAXD then
+      log.error("Adding child would exceed max tree depth!")
+      return true
+    end
+  end
+  return false
 end
 
 function ScenegraphMixin:add(child)
-    if wouldCauseCycle(self, child) then return false end
+  if wouldCauseCycle(self, child) then return false end
 
-    -- remove child from its previous parent
-    if child.parent then
-        child.parent:remove(child)
-    end
+  -- remove child from its previous parent
+  if child.parent then
+    child.parent:remove(child)
+  end
 
-    self.children[child] = child
-    child.parent = self
+  self.children[child] = child
+  child.parent = self
 
-    return true
+  return true
 end
 
 function ScenegraphMixin:remove(child)
-    if not self.children[child] then return end
-    self.children[child] = nil
-    child.parent = nil
+  if not self.children[child] then return end
+  self.children[child] = nil
+  child.parent = nil
 end
 
 return m
