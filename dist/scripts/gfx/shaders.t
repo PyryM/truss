@@ -20,7 +20,7 @@ local subpaths = {
 function m.get_shader_path()
   local gfx = require("gfx")
 
-  local rendertype = gfx.get_renderer_type()
+  local rendertype = gfx.short_renderer_name
   local subpath = subpaths[rendertype]
   if not subpath then truss.error("No subpath for " .. rendertype) end
 

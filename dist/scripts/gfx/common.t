@@ -21,6 +21,8 @@ function m.load_file_to_bgfx(filename)
 end
 
 function m.init_gfx(options)
+  local gfx = require("gfx") -- so we can set module level values
+
   if m._bgfx_initted then
     truss.error("Tried to init gfx twice.")
     return
@@ -58,7 +60,15 @@ function m.init_gfx(options)
   end
 
   bgfx.init(renderer_type, 0, 0, cb_ptr, nil)
-  bgfx.reset(options.width or 800, options.height or 600, reset)
+  if not options.window and (not options.width or not options.height) then
+    truss.error("gfx.init_gfx needs to be supplied with width and height.")
+  end
+  local w, h = options.width, options.height
+  if options.window then
+    w, h = options.window.get_window_size()
+  end
+  bgfx.reset(w, h, reset)
+  gfx.backbuffer_width, gfx.backbuffer_height = w, h
   m._bgfx_initted = true
 
   bgfx.set_debug(debug)
@@ -66,11 +76,11 @@ function m.init_gfx(options)
   log.info("initted bgfx")
   local renderer_type = bgfx.get_renderer_type()
   local renderer_name = ffi.string(bgfx.get_renderer_name(renderer_type))
-  m.renderer_name = renderer_name
-  m.renderer_type = renderer_type
-  m.short_renderer_name = m._translate_renderer_type(renderer_type)
+  gfx.renderer_name = renderer_name
+  gfx.renderer_type = renderer_type
+  gfx.short_renderer_name = m._translate_renderer_type(renderer_type)
   log.info("Renderer name: " .. renderer_name)
-  log.info("Short renderer name: " .. m.short_renderer_name)
+  log.info("Short renderer name: " .. gfx.short_renderer_name)
 end
 
 function m._translate_renderer_type(bgfx_type)
@@ -91,14 +101,6 @@ function m._translate_renderer_type(bgfx_type)
     end
   end
   return "UNKNOWN"
-end
-
-function m.get_renderer_name()
-  return m.renderer_name
-end
-
-function m.get_renderer_type()
-  return m.short_renderer_name
 end
 
 function m.schedule(task, frame_delay)
@@ -124,6 +126,7 @@ function m.frame()
   end
 
   m.frame_index = m.frame_index + 1
+  return m.frame_index
 end
 
 local state_aliases = {primitive = "pt"}

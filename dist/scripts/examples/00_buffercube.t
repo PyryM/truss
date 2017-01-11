@@ -6,8 +6,8 @@ local sdl = require("addons/sdl.t")
 local math = require("math")
 local gfx = require("gfx")
 
-width = 800
-height = 600
+width = 1280
+height = 720
 time = 0.0
 
 function make_cube_geo()
@@ -47,50 +47,39 @@ function make_cube_geo()
                   6, 7, 3 }
   }
 
-  log.info("trying to make cube...")
   return gfx.StaticGeometry("cube"):from_data(data)
-end
-
-function init()
-  log.info("cube.t init")
-  sdl.create_window(width, height, '00 buffercube')
-  log.info("created window")
-  init_bgfx()
 end
 
 function update_events()
   for evt in sdl.events() do
     if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
-      log.info("Received window close, stopping interpreter...")
       truss.quit()
     end
   end
 end
 
-function init_bgfx()
+function init()
   -- basic init
-  gfx.init_gfx({msaa = true, debugtext = true})
+  sdl.create_window(width, height, '00 buffercube')
+  gfx.init_gfx({msaa = true, debugtext = true, window = sdl})
 
-  bgfx.set_view_clear(0, -- viewid 0
-    bgfx.CLEAR_COLOR + bgfx.CLEAR_DEPTH,
-    0x303030ff, -- clearcolor (gray)
-    1.0, -- cleardepth (in normalized space: 1.0 = max depth)
-    0)
+  -- set up our one view (rendering directly to backbuffer)
+  view = gfx.View(0)
+  view:set_clear({color = 0x403030ff, depth = 1.0})
+  view:set_viewport(false)
 
   -- init the cube
   cubegeo = make_cube_geo()
   cubegeo:release_backing() -- don't keep backing memory around
 
   -- load shader program
-  log.info("Loading program")
   program = gfx.load_program("vs_cubes", "fs_cubes")
 
   -- create matrices
-  projmat = math.Matrix4():perspective_projection(70, 800/600, 0.1, 100.0)
+  projmat = math.Matrix4():perspective_projection(70, width/height, 0.1, 100.0)
   viewmat = math.Matrix4():identity()
   modelmat = math.Matrix4():identity()
   posvec = math.Vector(0.0, 0.0, -10.0)
-  scalevec = math.Vector(1.0, 1.0, 1.0)
   rotquat = math.Quaternion():identity()
 
   cubestate = gfx.create_state()
@@ -108,21 +97,17 @@ function draw_cube(xpos, ypos, phase)
 
   -- Setting default state is not strictly necessary, but good practice
   gfx.set_state(cubestate)
-  bgfx.submit(0, program, 0, false)
+  view:submit(program)
 end
 
 frametime = 0.0
 
 function update()
   time = time + 1.0 / 60.0
-
   local start_time = truss.tic()
 
   -- Deal with input events
   update_events()
-
-  -- Set view 0 default viewport.
-  bgfx.set_view_rect(0, 0, 0, width, height)
 
   -- Use debug font to print information about this example.
   bgfx.dbg_text_clear(0, false)
@@ -130,10 +115,8 @@ function update()
   bgfx.dbg_text_printf(0, 1, 0x4f, "scripts/examples/cube.t")
   bgfx.dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
 
-  bgfx.touch(0)
-
   -- Set viewprojection matrix
-  bgfx.set_view_transform(0, viewmat.data, projmat.data)
+  view:set_matrices(viewmat, projmat)
 
   -- draw four cubes
   draw_cube( 3,  3, 0.0)

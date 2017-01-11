@@ -10,7 +10,8 @@ moduleutils.include_submodules({
     "gfx/common.t",
     "gfx/geometry.t",
     "gfx/vertexdefs.t",
-    "gfx/shaders.t"
+    "gfx/shaders.t",
+    "gfx/view.t"
 }, gfx)
 
 return gfx
