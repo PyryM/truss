@@ -136,6 +136,11 @@ m.DefaultStateOptions = {
   depth_test = "less", cull = "cw", blend = false, pt = false
 }
 
+function m.submit(view, program, depth, preserve_state)
+  if type(view) == "table" then view = view._viewid end
+  bgfx.submit(view, program, depth or 0, not not preserve_state)
+end
+
 function m.create_state(user_options)
   if not user_options then return bgfx.STATE_DEFAULT end
   local state = bgfx.STATE_NONE

@@ -97,7 +97,7 @@ function draw_cube(xpos, ypos, phase)
 
   -- Setting default state is not strictly necessary, but good practice
   gfx.set_state(cubestate)
-  view:submit(program)
+  gfx.submit(view, program)
 end
 
 frametime = 0.0

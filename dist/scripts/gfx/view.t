@@ -83,8 +83,4 @@ function View:set_render_target(tgt)
   end
 end
 
-function View:submit(program, depth, preserve_state)
-  bgfx.submit(self._viewid, program, depth or 0, not not preserve_state)
-end
-
 return m
