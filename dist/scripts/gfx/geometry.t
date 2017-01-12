@@ -273,12 +273,14 @@ DynamicGeometry.release_backing = StaticGeometry.release_backing
 
 function StaticGeometry:set_indices(indices)
   bufferutils.set_indices(self, indices)
+  return self
 end
 DynamicGeometry.set_indices = StaticGeometry.set_indices
 TransientGeometry.set_indices = StaticGeometry.set_indices
 
 function StaticGeometry:set_attribute(attrib_name, attrib_list)
   bufferutils.set_attribute(self, attrib_name, attrib_list)
+  return self
 end
 DynamicGeometry.set_attribute = StaticGeometry.set_attribute
 TransientGeometry.set_attribute = StaticGeometry.set_attribute
