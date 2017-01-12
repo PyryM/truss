@@ -36,8 +36,8 @@ function TransientGeometry:init(name)
   last_geo_idx = last_geo_idx + 1
   self.allocated = false
 
-  self._transient_vb = terralib.new(bgfx.bgfx_transient_vertex_buffer_t)
-  self._transient_ib = terralib.new(bgfx.bgfx_transient_index_buffer_t)
+  self._transient_vb = terralib.new(bgfx.transient_vertex_buffer_t)
+  self._transient_ib = terralib.new(bgfx.transient_index_buffer_t)
 end
 
 function TransientGeometry:allocate(n_verts, n_indices, vertinfo)
@@ -53,7 +53,7 @@ function TransientGeometry:allocate(n_verts, n_indices, vertinfo)
     return false
   end
 
-  local verts_available = bgfx.get_avail_transient_vertex_buffer(n_verts, 
+  local verts_available = bgfx.get_avail_transient_vertex_buffer(n_verts,
                             vertinfo.vdecl)
   if verts_available < n_verts then
     log.error("Not enough space to allocate " .. n_verts .. " vertices.")
@@ -129,10 +129,10 @@ function m.make_fast_transient_quad_func(vinfo)
   local vtype = vinfo.ttype
   local vdecl = vinfo.vdecl
   local terra fastQuad(x0: float, y0: float, x1: float, y1: float, z: float)
-    var vb: bgfx.bgfx_transient_vertex_buffer_t
-    var ib: bgfx.bgfx_transient_index_buffer_t
+    var vb: bgfx.transient_vertex_buffer_t
+    var ib: bgfx.transient_index_buffer_t
 
-    bgfx.bgfx_alloc_transient_buffers(&vb, &vdecl, 4, &ib, 6)
+    bgfx.alloc_transient_buffers(&vb, &vdecl, 4, &ib, 6)
     var vertex: &vtype = [&vtype](vb.data)
 
     vertex[0].position[0] = x0
@@ -168,8 +168,8 @@ function m.make_fast_transient_quad_func(vinfo)
     indexb[4] = 3
     indexb[5] = 0
 
-    bgfx.bgfx_set_transient_vertex_buffer(&vb, 0, 4)
-    bgfx.bgfx_set_transient_index_buffer(&ib, 0, 6)
+    bgfx.set_transient_vertex_buffer(&vb, 0, 4)
+    bgfx.set_transient_index_buffer(&ib, 0, 6)
   end
   return fastQuad
 end
@@ -207,8 +207,8 @@ function TransientGeometry:bind()
     return
   end
 
-  bgfx.bgfx_set_transient_vertex_buffer(self._transient_vb, 0, bgfx.UINT32_MAX)
-  bgfx.bgfx_set_transient_index_buffer(self._transient_ib, 0, bgfx.UINT32_MAX)
+  bgfx.set_transient_vertex_buffer(self._transient_vb, 0, bgfx.UINT32_MAX)
+  bgfx.set_transient_index_buffer(self._transient_ib, 0, bgfx.UINT32_MAX)
 
   self._bound = true
   return self
@@ -292,7 +292,7 @@ function StaticGeometry:from_data(modeldata, vertinfo, no_commit)
   if type(modeldata.indices[1]) ~= "number" then -- list of lists format
     nindices = nindices * 3                      -- assume triangles
   end
-  if not vertinfo then 
+  if not vertinfo then
     vertinfo = require("gfx").guess_vertex_type(modeldata)
   end
   self:allocate(#(modeldata.attributes.position), nindices, vertinfo)
@@ -343,7 +343,7 @@ function StaticGeometry:commit()
 
   -- Create static bgfx buffers
   self:_create_bgfx_buffers(flags)
-  
+
   if not bgfx.check_handle(self._vbh) then truss.error("invalid vbh") end
   if not bgfx.check_handle(self._ibh) then truss.error("invalid ibh") end
   self.committed = true
@@ -389,7 +389,7 @@ function StaticGeometry:bind()
   bgfx.set_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
 end
 
-function StaticGeometry:bind_subset(start_v, n_v, start_i, n_i)
+function StaticGeometry:bind_partial(start_v, n_v, start_i, n_i)
   if not check_committed(self) then return end
 
   bgfx.set_vertex_buffer(self._vbh, start_v, n_v)
@@ -403,7 +403,7 @@ function DynamicGeometry:bind()
   bgfx.set_dynamic_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
 end
 
-function DynamicGeometry:bind_subset(start_v, n_v, start_i, n_i)
+function DynamicGeometry:bind_partial(start_v, n_v, start_i, n_i)
   if not check_committed(self) then return end
 
   bgfx.set_dynamic_vertex_buffer(self._vbh, start_v, n_v)

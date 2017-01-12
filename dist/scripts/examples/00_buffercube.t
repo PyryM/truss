@@ -82,10 +82,10 @@ function init()
   posvec = math.Vector(0.0, 0.0, -10.0)
   rotquat = math.Quaternion():identity()
 
-  cubestate = gfx.create_state()
+  cubestate = gfx.create_state({cull = false})
 end
 
-function draw_cube(xpos, ypos, phase)
+function draw_cube(xpos, ypos, phase, partial)
   -- Compute the cube's transformation
   rotquat:euler({x = time + phase, y = time + phase, z = 0.0})
   posvec:set(xpos, ypos, -10.0)
@@ -93,7 +93,7 @@ function draw_cube(xpos, ypos, phase)
   gfx.set_transform(modelmat)
 
   -- Bind the cube buffers
-  cubegeo:bind()
+  if partial then cubegeo:bind_partial(0, 8, 0, 18) else cubegeo:bind() end
 
   -- Setting default state is not strictly necessary, but good practice
   gfx.set_state(cubestate)
@@ -119,10 +119,10 @@ function update()
   view:set_matrices(viewmat, projmat)
 
   -- draw four cubes
-  draw_cube( 3,  3, 0.0)
-  draw_cube(-3,  3, 1.0)
-  draw_cube(-3, -3, 2.0)
-  draw_cube( 3, -3, 3.0)
+  draw_cube( 3,  3, 0.0, true)
+  draw_cube(-3,  3, 1.0, false)
+  draw_cube(-3, -3, 2.0, true)
+  draw_cube( 3, -3, 3.0, false)
 
   -- Advance to next frame.
   gfx.frame()
