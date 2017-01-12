@@ -35,15 +35,6 @@ local bit = require("bit")
 local ffi = require("ffi")
 local math = require("math")
 
--- Imports --
-local band = bit.band
-local bor = bit.bor
-local bxor = bit.bxor
-local floor = math.floor
-local lshift = bit.lshift
-local max = math.max
-local rshift = bit.rshift
-
 -- switch this to float if you want e.g., float based functions (faster?)
 local scalar_type = double
 
