@@ -92,7 +92,8 @@ function init()
   view:set_viewport(false)
 
   -- init the cube
-  cubegeo = make_cube_geo()
+  --cubegeo = make_cube_geo()
+  cubegeo = require("geometry/icosphere.t").icosphere_geo(1.0, 2, "icosphere")
   cubegeo:release_backing() -- don't keep backing memory around
 
   -- load shader program
@@ -147,9 +148,9 @@ function update()
   view:set_matrices(viewmat, projmat)
 
   -- draw four cubes
-  draw_cube( 3,  3, 0.0, true)
+  draw_cube( 3,  3, 0.0, false)
   draw_cube(-3,  3, 1.0, false)
-  draw_cube(-3, -3, 2.0, true)
+  draw_cube(-3, -3, 2.0, false)
   draw_cube( 3, -3, 3.0, false)
 
   -- Advance to next frame.

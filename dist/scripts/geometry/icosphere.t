@@ -6,7 +6,7 @@ local m = {}
 local math = require("math")
 local Vector = math.Vector
 
-function m.icosahedronData(rad)
+function m.icosahedron_data(rad)
     -- adapted from
     -- http://blog.andreaskahler.com/2009/06/creating-icosphere-mesh-in-code.html
 
@@ -57,11 +57,11 @@ function m.icosahedronData(rad)
     return {indices = indices, attributes = {position = position}}
 end
 
-function m.icosphereData(rad, subdivisions)
+function m.icosphere_data(rad, subdivisions)
     local geoutils = require("geometry/geoutils.t")
 
     subdivisions = subdivisions or 2
-    local data = m.icosahedronData(1.0)
+    local data = m.icosahedron_data(1.0)
 
     for i = 1, subdivisions do
         data = geoutils.subdivide(data)
@@ -73,13 +73,12 @@ end
 
 -- creates a basic icosphere StaticGeometry with a
 -- position + normal vertex layout
-function m.icosphereGeo(rad, subdivisions, gname)
+function m.icosphere_geo(rad, subdivisions, gname)
     local gfx = require("gfx")
     local geoutils = require("geometry/geoutils.t")
-    local sphereData = m.icosphereData(rad, subdivisions)
-    geoutils.computeNormals(sphereData)
-    local vertInfo = gfx.createStandardVertexType({"position", "normal"})
-    return gfx.StaticGeometry(gname):fromData(vertInfo, sphereData)
+    local sphere_data = m.icosphere_data(rad, subdivisions)
+    geoutils.computeNormals(sphere_data)
+    return gfx.StaticGeometry(gname):from_data(sphere_data)
 end
 
 return m

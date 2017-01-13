@@ -33,7 +33,7 @@ function m.colorRGBTriangles(srcdata, destattr)
 end
 
 local function normalizeVertex(v, rad)
-    v:normalize():multiplyScalar(rad)
+    v:normalize():multiply(rad)
 end
 
 -- projects the positions of the srcdata in place onto a sphere
@@ -123,8 +123,8 @@ local function remapMidpoint(srcPositions, idx1, idx2, newpositions, nextidx, vt
         return remappedIdx, nextidx
     end
     local newvert = Vector()
-    newvert:addVecs(srcPositions[idx1+1], srcPositions[idx2+1])
-    newvert:multiplyScalar(0.5)
+    newvert:add(srcPositions[idx1+1], srcPositions[idx2+1])
+    newvert:multiply(0.5)
     newpositions[nextidx+1] = newvert
     vtable[strid] = nextidx
     return nextidx, nextidx+1
@@ -204,9 +204,9 @@ function m.computeNormals(srcdata)
         local idx0 = f[1]+1
         local idx1 = f[2]+1
         local idx2 = f[3]+1
-        tempV0:subVecs(ps[idx1], ps[idx0])
-        tempV1:subVecs(ps[idx2], ps[idx0])
-        tempN:crossVecs(tempV0, tempV1):normalize()
+        tempV0:sub(ps[idx1], ps[idx0])
+        tempV1:sub(ps[idx2], ps[idx0])
+        tempN:cross(tempV0, tempV1):normalize()
         tempN.elem.w = 1.0
         normals[idx0]:add(tempN)
         normals[idx1]:add(tempN)
@@ -215,7 +215,7 @@ function m.computeNormals(srcdata)
 
     -- Average the vertex normals by dividing by the sum (in w)
     for _, v in ipairs(normals) do
-        v:multiplyScalar(1.0 / math.max(v.elem.w, 1))
+        v:divide(math.max(v.elem.w, 1))
         v.elem.w = 0.0
         v:normalize()
     end
