@@ -58,6 +58,29 @@ function update_events()
   end
 end
 
+function create_uniforms()
+  uniforms = gfx.UniformSet()
+  uniforms:add(gfx.VecUniform("u_baseColor"), "diffuse")
+  uniforms:add(gfx.VecUniform("u_pbrParams"), "pbrParams")
+  uniforms:add(gfx.VecUniform("u_lightDir", 4), "lightDirs")
+  uniforms:add(gfx.VecUniform("u_lightRgb", 4), "lightColors")
+
+  uniforms.lightDirs:set_multiple({
+          math.Vector( 1.0,  1.0,  0.0),
+          math.Vector(-1.0,  1.0,  0.0),
+          math.Vector( 0.0, -1.0,  1.0),
+          math.Vector( 0.0, -1.0, -1.0)})
+
+  uniforms.lightColors:set_multiple({
+          math.Vector(0.8, 0.8, 0.8),
+          math.Vector(1.0, 1.0, 1.0),
+          math.Vector(0.1, 0.1, 0.1),
+          math.Vector(0.1, 0.1, 0.1)})
+
+  uniforms.diffuse:set(math.Vector(0.2,0.2,0.1,1.0))
+  uniforms.pbrParams:set(math.Vector(1.0, 1.0, 1.0, 0.6))
+end
+
 function init()
   -- basic init
   sdl.create_window(width, height, '00 buffercube')
@@ -73,7 +96,9 @@ function init()
   cubegeo:release_backing() -- don't keep backing memory around
 
   -- load shader program
-  program = gfx.load_program("vs_cubes", "fs_cubes")
+  --program = gfx.load_program("vs_cubes", "fs_cubes")
+  program = gfx.load_program("vs_basicpbr", "fs_basicpbr_faceted_x4")
+  create_uniforms()
 
   -- create matrices
   projmat = math.Matrix4():perspective_projection(70, width/height, 0.1, 100.0)
@@ -94,6 +119,9 @@ function draw_cube(xpos, ypos, phase, partial)
 
   -- Bind the cube buffers
   if partial then cubegeo:bind_partial(0, 8, 0, 18) else cubegeo:bind() end
+
+  -- uniforms (if they exist)
+  if uniforms then uniforms:bind() end
 
   -- Setting default state is not strictly necessary, but good practice
   gfx.set_state(cubestate)
