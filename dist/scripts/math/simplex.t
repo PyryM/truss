@@ -49,14 +49,32 @@ end
 -- Module table --
 local m = {}
 
-local function create_perms()
+local function create_random_perms(random_func) {
+  if random_func == true then random_func = math.random end
+  local vals = {}
+  for i = 1, 256 do
+    vals[i] = i - 1
+  end
+
+  for i = 1,255 do
+    local r = random_func(i, 256)
+    vals[i], vals[r] = vals[r], vals[i]
+  end
+  return vals
+end
+
+local function create_perms(random_func)
   -- Permutation of 0-255, replicated to allow easy indexing
   -- and also the same permuations mod 12
 
   local perms = terralib.new(uint8[512])
   local perms12 = terralib.new(uint8[512])
 
-  local vals = {
+  local vals = nil
+  if random_func then
+    vals = create_random_perms(random_func)
+  else
+    vals = {
     151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225,
     140, 36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23, 190, 6, 148,
     247, 120, 234, 75, 0, 26, 197, 62, 94, 252, 219, 203, 117, 35, 11, 32,
@@ -72,8 +90,9 @@ local function create_perms()
     218, 246, 97, 228, 251, 34, 242, 193, 238, 210, 144, 12, 191, 179, 162, 241,
     81,	51, 145, 235, 249, 14, 239,	107, 49, 192, 214, 31, 181, 199, 106, 157,
     184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254, 138, 236, 205, 93,
-    222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180
-  }
+    222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180 }
+  end
+
   for i,v in ipairs(vals) do
     perms[i-1]     = v
     perms[i+255]   = v
@@ -133,6 +152,15 @@ local function create_simplex4d()
   { 2, 0, 1, 3 }, {}, {}, {}, { 3, 0, 1, 2 }, { 3, 0, 2, 1 }, {}, { 3, 1, 2 },
   { 2, 1, 0, 3 }, {}, {}, {}, { 3, 1, 0, 2 }, {}, { 3, 2, 0, 1 }, { 3, 2, 1 } }
   copy_nested_lists(simplex4d, vals, 64, 4)
+
+  -- Convert the above indices to masks that can be shifted / anded into offsets
+  for i = 1, 64 do
+    simplex4d[i*4 + 0] = bit.lshift(1, simplex4d[i*4 + 0]) - 1
+    simplex4d[i*4 + 1] = bit.lshift(1, simplex4d[i*4 + 1]) - 1
+    simplex4d[i*4 + 2] = bit.lshift(1, simplex4d[i*4 + 2]) - 1
+    simplex4d[i*4 + 3] = bit.lshift(1, simplex4d[i*4 + 3]) - 1
+  end
+
   return simplex4d
 end
 
@@ -158,6 +186,12 @@ local function create_tables()
   return noisetable_c
 end
 m.noisetable_c = create_tables()
+
+function m.randomize(random_func)
+  m._p, m._p12 = create_perms(random_func)
+  m.noisetable_c.perms   = m._p
+  m.noisetable_c.perms12 = m._p12
+end
 
 -- 2D weight contribution
 local terra getn_2d(bx: int32, by: int32, x: scalar_type, y: scalar_type,
@@ -467,6 +501,114 @@ terra m.simplex_3d_raw_alt(xin: scalar_type, yin: scalar_type, zin: scalar_type,
   -- The result is scaled to stay just inside [-1,1]
   return 32.0 * (n0 + n1 + n2 + n3)
   --return k2
+end
+
+-- 4D weight contribution
+local terra getn_4d(ix: int32, iy: int32, iz: int32, iw: int32,
+              x: scalar_type, y: scalar_type, z: scalar_type, w: scalar_type,
+              perms: &uint8, simplex: &uint8, grads: &scalar_type): scalar_type
+  var t = 0.6 - x * x - y * y - z * z - w * w
+  var index = (perms[ix + perms[iy + perms[iz + perms[iw]]]] and 0x1F) * 4
+
+  return cmax(0.0, (t*t)*(t*t)) *
+    (grads[index]*x + grads[index+1]*y + grads[index+2]*z + grads[index+3]*w)
+end
+
+---
+-- @param x
+-- @param y
+-- @param z
+-- @param w
+-- @return Noise value in the range [-1, +1]
+terra m.simplex_4d_raw(x: scalar_type, y: scalar_type, z: scalar_type, w: scalar_type,
+                        nt: &NoiseTable): scalar_type
+  --[[
+  4D skew factors:
+  F = (math.sqrt(5) - 1) / 4
+  G = (5 - math.sqrt(5)) / 20
+  G2 = 2 * G
+  G3 = 3 * G
+  G4 = 4 * G - 1
+  ]]
+
+  -- Skew the input space to determine which simplex cell we are in.
+  var s = (x + y + z + w) * 0.309016994 -- F
+  var ix: int32, iy: int32 = cfloor(x + s), cfloor(y + s)
+  var iz: int32, iw: int32 = cfloor(z + s), cfloor(w + s)
+
+  -- Unskew the cell origin back to (x, y, z) space.
+  var t: scalar_type = (ix + iy + iz + iw) * 0.138196601 -- G
+  var x0: scalar_type = x + t - ix
+  var y0: scalar_type = y + t - iy
+  var z0: scalar_type = z + t - iz
+  var w0: scalar_type = w + t - iw
+
+  -- For the 4D case, the simplex is a 4D shape I won't even try to describe.
+  -- To find out which of the 24 possible simplices we're in, we need to
+  -- determine the magnitude ordering of x0, y0, z0 and w0.
+  -- The method below is a good way of finding the ordering of x,y,z,w and
+  -- then find the correct traversal order for the simplex we’re in.
+  -- First, six pair-wise comparisons are performed between each possible pair
+  -- of the four coordinates, and the results are used to add up binary bits
+  -- for an integer index.
+  -- (do this with casting from booleans rather than brittle bit-shift trickery)
+  var c1: int32 = [int32](x0 > y0) * 32 --(cfloor(y0 - x0) >> 26) and 32)
+  var c2: int32 = [int32](x0 > z0) * 16 --(cfloor(z0 - x0) >> 27) and 16)
+  var c3: int32 = [int32](y0 > z0) * 8  --(cfloor(z0 - y0) >> 28) and 8)
+  var c4: int32 = [int32](x0 > w0) * 4  --(cfloor(w0 - x0) >> 29) and 4)
+  var c5: int32 = [int32](y0 > w0) * 2  --(cfloor(w0 - y0) >> 30) and 2)
+  var c6: int32 = [int32](z0 > w0)      --(cfloor(w0 - z0) >> 31)
+
+  -- Simplex[c] is a 4-vector with the numbers 0, 1, 2 and 3 in some order.
+  -- Many values of c will never occur, since e.g. x>y>z>w makes x<z, y<w and x<w
+  -- impossible. Only the 24 indices which have non-zero entries make any sense.
+  -- We use a thresholding to set the coordinates in turn from the largest magnitude.
+  var c: int32 = (c1 + c2 + c3 + c4 + c5 + c6) * 4
+  var perms = nt.perms
+  var grads = nt.grads4
+  var simplex = nt.simplex4d
+
+  -- The number 3 (i.e. bit 2) in the "simplex" array is at the position of the largest coordinate.
+  var i1 = simplex[c+0] >> 2
+  var j1 = simplex[c+1] >> 2
+  var k1 = simplex[c+2] >> 2
+  var l1 = simplex[c+3] >> 2
+
+  -- The number 2 (i.e. bit 1) in the "simplex" array is at the second largest coordinate.
+  var i2 = (simplex[c+0] >> 1) and 1
+  var j2 = (simplex[c+1] >> 1) and 1
+  var k2 = (simplex[c+2] >> 1) and 1
+  var l2 = (simplex[c+3] >> 1) and 1
+
+  -- The number 1 (i.e. bit 0) in the "simplex" array is at the second smallest coordinate.
+  var i3 = simplex[c+0] and 1
+  var j3 = simplex[c+1] and 1
+  var k3 = simplex[c+2] and 1
+  var l3 = simplex[c+3] and 1
+
+  -- Work out the hashed gradient indices of the five simplex corners
+  -- Sum up and scale the result to cover the range [-1,1]
+  ix, iy, iz, iw = (ix and 0xFF), (iy and 0xFF), (iz and 0xFF), (iw and 0xFF)
+
+  var n0 = getn_4d(ix, iy, iz, iw, x0, y0, z0, w0, perms, simplex, grads)
+  var n1 = getn_4d(ix + i1, iy + j1, iz + k1, iw + l1,
+    x0 + 0.138196601 - i1, y0 + 0.138196601 - j1, z0 + 0.138196601 - k1, w0 + 0.138196601 - l1,
+    perms, simplex, grads) -- G
+  var n2 = getn_4d(ix + i2, iy + j2, iz + k2, iw + l2, x0 + 0.276393202 - i2,
+    y0 + 0.276393202 - j2, z0 + 0.276393202 - k2, w0 + 0.276393202 - l2,
+    perms, simplex, grads) -- G2
+  var n3 = getn_4d(ix + i3, iy + j3, iz + k3, iw + l3, x0 + 0.414589803 - i3,
+    y0 + 0.414589803 - j3, z0 + 0.414589803 - k3, w0 + 0.414589803 - l3,
+    perms, simplex, grads) -- G3
+  var n4 = getn_4d(ix + 1, iy + 1, iz + 1, iw + 1, x0 - 0.447213595,
+    y0 - 0.447213595, z0 - 0.447213595, w0 - 0.447213595,
+    perms, simplex, grads) -- G4
+
+  return 27.0 * (n0 + n1 + n2 + n3 + n4)
+end
+
+function m.simplex_4d(x, y, z, w)
+  return m.simplex_4d_raw(x, y, z, w, m.noisetable_c)
 end
 
 return m
