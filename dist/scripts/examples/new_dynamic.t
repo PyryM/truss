@@ -57,50 +57,12 @@ end
 
 function create_geo()
   local r = 2.0
-  -- local data = {
-  --   attributes = {
-  --     position = {math.Vector(r * 1.0,  0.0,  0.0),
-  --                 math.Vector(r * -0.5,  0.0,  r * 0.866),
-  --                 math.Vector(r * -0.5,  0.0, r * -0.866)}
-  --   },
-  --   indices   = {{0, 1, 2}}
-  -- }
-  local data = {
-    attributes = {
-      position = {math.Vector(-1.0,  1.0,  1.0),
-                  math.Vector( 1.0,  1.0,  1.0),
-                  math.Vector(-1.0, -1.0,  1.0),
-                  math.Vector( 1.0, -1.0,  1.0),
-                  math.Vector(-1.0,  1.0, -1.0),
-                  math.Vector( 1.0,  1.0, -1.0),
-                  math.Vector(-1.0, -1.0, -1.0),
-                  math.Vector( 1.0, -1.0, -1.0)
-                 },
-    },
-    indices   = { {0, 2, 1},
-                  {1, 2, 3},
-                  {4, 5, 6},
-                  {5, 7, 6},
-                  {0, 4, 2},
-                  {4, 6, 2},
-                  {1, 3, 5},
-                  {5, 3, 7},
-                  {0, 1, 4},
-                  {4, 1, 5},
-                  {2, 6, 3},
-                  {6, 7, 3} }
-  }
+  local data = require("geometry/cube.t").cube_data(r,r,r)
+  data.attributes.texcoord0 = nil
 
   for i = 1,6 do
     data = geoutils.subdivide(data)
   end
-
-  -- local nverts = #(data.attributes.position)
-  -- print(nverts)
-  -- for i = 1,nverts do
-  --   local e = data.attributes.position[i].elem
-  --   e.y = simplex.simplex_2d(e.x, e.z) * 0.1
-  -- end
 
   return gfx.DynamicGeometry("tri"):from_data(data)
 end

@@ -6,7 +6,7 @@ local m = {}
 local math = require("math")
 local gfx = require("gfx")
 
-function m.cubeData(sx, sy, sz)
+function m.cube_data(sx, sy, sz)
     -- half extents
     local hx, hy, hz = sx/2, sy/2, sz/2
     local u0, u1 = 0.0, 1.0
@@ -96,13 +96,13 @@ function m.cubeData(sx, sy, sz)
             attributes = {position = position, texcoord0 = texcoord0}}
 end
 
-function m.cubeGeo(ex, ey, ez, gname)
+function m.cube_geo(ex, ey, ez, gname)
     local gfx = require("gfx")
     local geoutils = require("geometry/geoutils.t")
-    local cubeData = m.cubeData(ex, ey, ez)
+    local cube_data = m.cube_data(ex, ey, ez)
     geoutils.computeNormals(cubeData)
     local vertInfo = gfx.createStandardVertexType({"position", "normal", "texcoord0"})
-    return gfx.StaticGeometry(gname):fromData(vertInfo, cubeData)
+    return gfx.StaticGeometry(gname):fromData(cube_data)
 end
 
 return m

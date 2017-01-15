@@ -253,6 +253,18 @@ function StaticGeometry:allocate(n_verts, n_indices, vertinfo)
 end
 DynamicGeometry.allocate = StaticGeometry.allocate
 
+function StaticGeometry:copy(src)
+  if not src.allocated then truss.error("Cannot copy unallocated geometry") end
+  self:allocate(src.n_verts, src.n_indices, src.vertinfo)
+  for i = 0, (self.n_verts - 1) do
+    self.verts[i] = src.verts[i]
+  end
+  for i = 0, (self.n_indices - 1) do
+    self.indices[i] = src.indices[i]
+  end
+end
+DynamicGeometry.copy = StaticGeometry.copy
+
 -- release the cpu memory backing this geometry
 -- if the geometry has been committed (uploaded to gpu), then the backing memory
 -- will be released only three frames later
