@@ -49,7 +49,7 @@ end
 -- Module table --
 local m = {}
 
-local function create_random_perms(random_func) {
+local function create_random_perms(random_func)
   if random_func == true then random_func = math.random end
   local vals = {}
   for i = 1, 256 do
@@ -154,7 +154,7 @@ local function create_simplex4d()
   copy_nested_lists(simplex4d, vals, 64, 4)
 
   -- Convert the above indices to masks that can be shifted / anded into offsets
-  for i = 1, 64 do
+  for i = 0, 63 do
     simplex4d[i*4 + 0] = bit.lshift(1, simplex4d[i*4 + 0]) - 1
     simplex4d[i*4 + 1] = bit.lshift(1, simplex4d[i*4 + 1]) - 1
     simplex4d[i*4 + 2] = bit.lshift(1, simplex4d[i*4 + 2]) - 1
