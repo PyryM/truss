@@ -18,23 +18,6 @@ local function recursive_apply(object, f, arg)
 end
 m.recursive_apply = recursive_apply
 
--- recursively calculate world matrices from local transforms for
--- object and all its children
-local function recursive_update_world_mat(object, parentmat)
-  if object.enabled == false then return end
-  if not object.matrix then return end
-
-  local worldmat = object.matrix_world or math.Matrix4():identity()
-  object.matrix_world = worldmat
-
-  worldmat:multiplyInto(parentmat, object.matrix)
-
-  for _,child in pairs(object.children) do
-    recursive_update_world_mat(child, worldmat)
-  end
-end
-m.recursive_update_world_mat = recursive_update_world_mat
-
 -- mixins -----------------------------------------------------------
 ---------------------------------------------------------------------
 
@@ -52,8 +35,27 @@ function TransformableMixin:tf_init()
   self.matrix = math.Matrix4():identity()
 end
 
-function TransformableMixin:updateMatrix()
+function TransformableMixin:update_matrix()
   self.matrix:compose(self.position, self.quaternion, self.scale)
+end
+
+-- recursively calculate world matrices from local transforms for
+-- object and all its children
+function TransformableMixin:recursive_update_world_mat(parentmat)
+  if self.enabled == false or (not self.matrix) then return end
+
+  local worldmat = self.matrix_world or math.Matrix4():identity()
+  self.matrix_world = worldmat
+
+  if parentmat then
+    worldmat:multiply(parentmat, self.matrix)
+  else
+    worldmat:copy(self.matrix)
+  end
+
+  for _,child in pairs(self.children) do
+    child:recursive_update_world_mat(worldmat)
+  end
 end
 
 -- mixin for having a tree of children
@@ -68,7 +70,7 @@ end
 -- check whether adding a prospective child to a parent
 -- would cause a cycle (i.e., that our scene tree would
 -- no longer be a tree)
-local function wouldCauseCycle(parent, prospectiveChild)
+local function would_cause_cycle(parent, prospectiveChild)
   -- we would have a cycle if tracing the parent up
   -- to root would encounter the child or itself
   local depth = 0
@@ -90,7 +92,7 @@ local function wouldCauseCycle(parent, prospectiveChild)
 end
 
 function ScenegraphMixin:add(child)
-  if wouldCauseCycle(self, child) then return false end
+  if would_cause_cycle(self, child) then return false end
 
   -- remove child from its previous parent
   if child.parent then
@@ -100,7 +102,25 @@ function ScenegraphMixin:add(child)
   self.children[child] = child
   child.parent = self
 
+  if child._sg_root ~= self._sg_root then
+    child:configure_recursive(self._sg_root)
+  end
+
   return true
+end
+
+-- call a function on this node and its descendents
+function ScenegraphMixin:call_recursive(func_name, ...)
+  if self[func_name] then self[func_name](self, ...) end
+  for _, child in pairs(self.children) do
+    child:call_recursive(func_name, ...)
+  end
+end
+
+function ScenegraphMixin:configure_recursive(sg_root)
+  self._sg_root = sg_root
+  if self.configure then self:configure(sg_root) end
+  for _,child in pairs(self.children) do child:configure_recursive(sg_root) end
 end
 
 function ScenegraphMixin:remove(child)

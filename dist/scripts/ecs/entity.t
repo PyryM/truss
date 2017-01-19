@@ -93,8 +93,34 @@ end
 
 -- send an event to any components that want to handle it
 function Entity:event(event_name, arg)
-  --dispatch_event(self._event_handlers["*"], event_name, arg)
+  dispatch_event(self._event_handlers["*"], event_name, arg)
   dispatch_event(self._event_handlers[event_name], event_name, arg)
+end
+
+-- send an event to this entity and all its descendents
+function Entity:event_recursive(event_name, arg)
+  self:call_recursive("event", event_name, arg)
+end
+
+-- force call a function on every component for which it exists
+function Entity:broadcast(func_name, ...)
+  for _, component in pairs(self._components) do
+    if component[func_name] then component[func_name](component, ...) end
+  end
+end
+
+-- call a function on every component for this entity and its descendents
+function Entity:broadcast_recursive(func_name, ...)
+  self:call_recursive("broadcast", func_name, ...)
+end
+
+local Entity3d = Entity:extend("Entity3d")
+Entity3d:with(sg.TransformableMixin)
+m.Entity3d = Entity3d
+
+function Entity3d:init(name)
+  Entity3d.super.init(self, name)
+  self:tf_init()
 end
 
 return m
