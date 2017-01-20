@@ -14,7 +14,8 @@ function Entity:init(name)
   self._components = {}
   self._event_handlers = {}
   self:sg_init()
-  if name then self.name = name end
+  self.name = name or "entity"
+  self.user_handlers = {} -- a pseudo-component to hold user attached handlers
 end
 
 -- return a string identifying this component for error messages
@@ -30,7 +31,7 @@ end
 -- add a component *instance* to an entity
 -- the name must be unique, and cannot be any of the keys in the entity
 function Entity:add_component(component, component_name)
-  component_name = component_name or component.mount_name
+  component_name = component_name or component.mount_name or component.name
   if self[component_name] then
     self:error("[" .. component_name .. "] is already key in entity!")
   end
@@ -41,7 +42,10 @@ function Entity:add_component(component, component_name)
 
   self._components[component_name] = component
   self[component_name] = component
-  component:mount(self, component_name)
+  if component.mount then component:mount(self, component_name) end
+  if self._sg_root and component.configure then
+    component:configure(self._sg_root)
+  end
 end
 
 -- remove a component by its mounted name
@@ -54,13 +58,17 @@ function Entity:remove_component(component_name)
   end
   self._components[component_name] = nil
   self[component_name] = nil
-  comp:unmount(self)
+  if comp.unmount then comp:unmount(self) end
   self:_remove_handlers(comp)
 end
 
 function Entity:_add_handler(event_name, component)
   self._event_handlers[event_name] = self._event_handlers[event_name] or {}
   self._event_handlers[event_name][component] = component
+end
+
+function Entity:_remove_handler(event_name, component)
+  (self._event_handlers[event_name] or {})[component] = nil
 end
 
 function Entity:_remove_handlers(component)
@@ -100,6 +108,25 @@ end
 -- send an event to this entity and all its descendents
 function Entity:event_recursive(event_name, arg)
   self:call_recursive("event", event_name, arg)
+end
+
+-- attach a function directly as an event handler
+-- gets added to the "user_handlers" pseudo-component
+-- only one such 'user handler' can be attached for any given event
+function Entity:on(event_name, f)
+  event_name = "on_" .. event_name
+  if f then
+    -- want function to be called as f(entity, [args]) not f(comp, [args])
+    -- because the 'component' that it belongs to is a bare table user_handlers
+    local f2 = function(_, ...)
+      f(self, ...)
+    end
+    self.user_handlers[event_name] = f2
+    self:_add_handler(event_name, self.user_handlers)
+  else -- remove existing handlers
+    self.user_handlers[event_name] = nil
+    self:_remove_handler(event_name, self.user_handlers)
+  end
 end
 
 -- force call a function on every component for which it exists
