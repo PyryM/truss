@@ -90,18 +90,18 @@ local function dispatch_event(targets, event_name, arg)
   if not targets then return end
   for _, handler in pairs(targets) do
     -- i.e., for "on_update", first try handler:on_update(arg)
-    -- then fall back to handler:event("on_update", arg)
+    -- then fall back to handler:on_event("on_update", arg)
     if handler[event_name] then
       handler[event_name](handler, arg)
-    elseif handler.event then
-      handler:event(event_name, arg)
+    elseif handler.on_event then
+      handler:on_event(event_name, arg)
     end
   end
 end
 
 -- send an event to any components that want to handle it
 function Entity:event(event_name, arg)
-  dispatch_event(self._event_handlers["*"], event_name, arg)
+  dispatch_event(self._event_handlers["on_event"], event_name, arg)
   dispatch_event(self._event_handlers[event_name], event_name, arg)
 end
 
