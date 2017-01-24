@@ -46,12 +46,7 @@ function TransformableMixin:recursive_update_world_mat(parentmat)
 
   local worldmat = self.matrix_world or math.Matrix4():identity()
   self.matrix_world = worldmat
-
-  if parentmat then
-    worldmat:multiply(parentmat, self.matrix)
-  else
-    worldmat:copy(self.matrix)
-  end
+  worldmat:multiply(parentmat, self.matrix)
 
   for _,child in pairs(self.children) do
     child:recursive_update_world_mat(worldmat)
