@@ -19,15 +19,26 @@ m.UNI_MAT4 = {
 
 local Uniform = class("Uniform")
 function Uniform:init(uni_name, uni_type, num)
+  if not uni_name then return end
+
   num = num or 1
   uni_type = uni_type or m.UNI_VEC
 
+  self._uni_type = uni_type
   self._handle = bgfx.create_uniform(uni_name, uni_type.bgfx_type, num)
   self._num = num
   self._val = terralib.new(uni_type.terra_type[num])
   self._uni_name = uni_name
+end
 
-  return self
+function Uniform:clone()
+  local ret = Uniform()
+  ret._uni_type = self._uni_type
+  ret._handle = self._handle
+  ret._num = self._num
+  ret._val = terralib.new(self._uni_type.terra_type[num])
+  ret._uni_name = self._uni_name
+  return ret
 end
 
 function Uniform:set(v, pos)
@@ -58,10 +69,20 @@ end
 
 local TexUniform = class("TexUniform")
 function TexUniform:init(uni_name, sampler_idx)
+  if not uni_name then return end
   self._handle = bgfx.create_uniform(uni_name, bgfx.UNIFORM_TYPE_INT1, 1)
   self._sampler_idx = sampler_idx
   self._tex_handle = nil
   self._uni_name = uni_name
+end
+
+function TexUniform:clone()
+  local ret = TexUniform()
+  ret._handle = self._handle
+  ret._sampler_idx = self._sampler_idx
+  ret._tex_handle = self._tex_handle
+  ret._uni_name = self._uni_name
+  return ret
 end
 
 function TexUniform:set(tex)
@@ -94,6 +115,16 @@ function UniformSet:add(uniform, alias)
   self._uniforms[newname] = uniform
   self[newname] = uniform
   return self
+end
+
+function UniformSet:clone()
+  local ret = UniformSet()
+  for k,v in pairs(self._uniforms) do
+    local v_clone = v:clone()
+    ret._uniforms[k] = v_clone
+    ret[k] = v_clone
+  end
+  return ret
 end
 
 function UniformSet:bind()

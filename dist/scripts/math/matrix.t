@@ -319,13 +319,13 @@ function Matrix4:to_quaternion(dest)
   return qret
 end
 
-function Matrix4:scale(scaleVec)
-  m.scale_matrix(self.data, scaleVec.elem)
+function Matrix4:scale(scale)
+  m.scale_matrix(self.data, scale.elem)
   return self
 end
 
-function Matrix4:set_translation(posVec)
-  m.set_matrix_position(self.data, posVec.elem)
+function Matrix4:set_translation(pos)
+  m.set_matrix_position(self.data, pos.elem)
   return self
 end
 
@@ -339,7 +339,7 @@ end
 function Matrix4:compose(pos, quat, scale)
   local destmat = self.data
   m.quaternion_to_matrix(quat.elem, destmat)
-  if scale then m.scale_matrix(destmat, scaleVec.elem) end
+  if scale then m.scale_matrix(destmat, scale.elem) end
   m.set_matrix_position(destmat, pos.elem)
   return self
 end

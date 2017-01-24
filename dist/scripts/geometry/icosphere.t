@@ -77,7 +77,7 @@ function m.icosphere_geo(rad, subdivisions, gname)
     local gfx = require("gfx")
     local geoutils = require("geometry/geoutils.t")
     local sphere_data = m.icosphere_data(rad, subdivisions)
-    geoutils.computeNormals(sphere_data)
+    geoutils.compute_normals(sphere_data)
     return gfx.StaticGeometry(gname):from_data(sphere_data)
 end
 

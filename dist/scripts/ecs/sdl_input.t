@@ -10,13 +10,13 @@ local SDLInputComponent = component.Component:extend("SDLInputComponent")
 local SDLInputSystem = class("SDLInputSystem")
 
 function SDLInputComponent:init()
-  self.mount_name = "SDLInput"
+  self.mount_name = "sdl_input"
 end
 
 function SDLInputComponent:configure(ecs_root)
-  self._sdl_system = ecs_root.systems.SDLInput
+  self._sdl_system = ecs_root.systems.sdl_input
   if not self._sdl_system then
-    truss.error("SDLInput component used but no SDLInputSystem in ECS!")
+    truss.error("SDLInput component used but no sdl_input in ECS!")
   end
 end
 
@@ -34,7 +34,7 @@ local EVENT_NAMES = {
 
 function SDLInputComponent:on_update()
   -- make sure the sdl input subsystem exists
-  if not self._sdl_system or not self._entity then return
+  if not self._sdl_system or not self._entity then return end
 
   -- iterate through sdl events and dispatch them to the entity
   for _, evt in ipairs(self._sdl_system.events) do
@@ -43,15 +43,22 @@ function SDLInputComponent:on_update()
   end
 end
 
-function SDLInputSystem:init()
+local sdl = nil
+function SDLInputSystem:init(options)
   self.events = {}
-  self.sdl = require("addons/sdl.t")
+  sdl = sdl or require("addons/sdl.t")
+  self.mount_name = "sdl_input"
+  options = options or {}
+  self._autoclose = (options.autoclose ~= false)
 end
 
 function SDLInputSystem:update()
   -- just store all the events
   self.events = {}
-  for evt in self.sdl.events() do
+  for evt in sdl.events() do
+    if self._autoclose and evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
+      truss.quit()
+    end
     table.insert(self.events, evt)
   end
 end

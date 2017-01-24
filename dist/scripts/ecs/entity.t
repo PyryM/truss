@@ -28,6 +28,12 @@ function Entity:error(error_message)
   truss.error(self:error_name() .. error_message)
 end
 
+function Entity:configure(sg_root)
+  for _,comp in pairs(self._components) do
+    if comp.configure then comp:configure(sg_root) end
+  end
+end
+
 -- add a component *instance* to an entity
 -- the name must be unique, and cannot be any of the keys in the entity
 function Entity:add_component(component, component_name)

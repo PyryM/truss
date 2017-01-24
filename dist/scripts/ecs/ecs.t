@@ -19,6 +19,7 @@ function ECS:init()
 end
 
 function ECS:add_system(system, name)
+  name = name or system.mount_name
   if self.systems[name] then truss.error("System name " .. name .. "taken!") end
   self.systems[name] = system
   self._configuration_dirty = true
