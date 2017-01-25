@@ -265,8 +265,11 @@ local terra getn_3d(ix: int32, iy: int32, iz: int32,
   var t = 0.6 - x*x - y*y - z*z
   var index = perms12[ix + perms[iy + perms[iz]]] * 3
 
-  return cmax(0.0, (t*t)*(t*t) ) *
-        (grads[index+0]*x + grads[index+1]*y + grads[index+2]*z)
+  if t >= 0.0 then
+    return (t*t)*(t*t) * (grads[index+0]*x + grads[index+1]*y + grads[index+2]*z)
+  else
+    return 0.0
+  end
 end
 
 ---
@@ -285,11 +288,11 @@ terra m.simplex_3d_raw(x: scalar_type, y: scalar_type, z: scalar_type,
   ]]
 
   -- Skew the input space to determine which simplex cell we are in.
-  var s = (x + y + z) * 0.333333333 -- F
+  var s = (x + y + z) / 3.0 -- 0.333333333 -- F
   var ix: int32, iy: int32, iz: int32 = cfloor(x + s), cfloor(y + s), cfloor(z + s)
 
   -- Unskew the cell origin back to (x, y, z) space.
-  var t: scalar_type = (ix + iy + iz) * 0.166666667 -- G
+  var t: scalar_type = (ix + iy + iz) / 6.0 -- 0.166666667 -- G
   var x0: scalar_type = x + t - ix
   var y0: scalar_type = y + t - iy
   var z0: scalar_type = z + t - iz
@@ -341,13 +344,14 @@ terra m.simplex_3d_raw(x: scalar_type, y: scalar_type, z: scalar_type,
 
   var i2 = yx or (zy and zx) -- x >= z or (y >= z and x >= z)
   var j2 = (1 - yx) or zy -- x < y or y >= z
-  var k2 = yx ^ zy -- (x >= y and y < z) xor (x < y and y >= z)
+  --var k2 = yx ^ zy -- (x >= y and y < z) xor (x < y and y >= z)
+  var k2 = (1 - zx) or (zx and (1 - zy))
 
   var n1 = getn_3d(ix + i1, iy + j1, iz + k1,
-                   x0 + 0.166666667 - i1, y0 + 0.166666667 - j1, z0 + 0.166666667 - k1,
+                   x0 + (1.0/6.0) - i1, y0 + (1.0/6.0) - j1, z0 + (1.0/6.0) - k1,
                    perms, perms12, grads) -- G
   var n2 = getn_3d(ix + i2, iy + j2, iz + k2,
-                  x0 + 0.333333333 - i2,  y0 + 0.333333333 - j2, z0 + 0.333333333 - k2,
+                  x0 + (1.0/3.0) - i2,  y0 + (1.0/3.0) - j2, z0 + (1.0/3.0) - k2,
                   perms, perms12, grads) -- G2
 
   -- Add contributions from each corner to get the final noise value.
