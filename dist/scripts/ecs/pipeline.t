@@ -50,13 +50,19 @@ m.Stage = Stage
 
 -- initoptions should contain e.g. input render targets (for post-processing),
 -- output render targets, uniform values.
-function Stage:init(initoptions)
+function Stage:init(options)
   self.num_views = 1
-  self._render_ops = {}
+  self._options = options or {}
+  self._render_ops = self._options.render_ops or {}
+  self.filter = self._options.filter
+  self.globals = self._options.globals or {}
 end
 
 function Stage:bind()
-  self.view:set(self.options)
+  self.view:set(self._options)
+  for _,op in ipairs(self._render_ops) do
+    op:set_stage(self)
+  end
 end
 
 function Stage:set_views(views)
@@ -64,8 +70,16 @@ function Stage:set_views(views)
   self:bind()
 end
 
+function Stage:add_render_op(op)
+  table.insert(self._render_ops, op)
+  op:set_stage(self)
+end
+
 function Stage:get_render_ops(component, target)
   target = target or {}
+
+  if self.filter and not (self.filter(component)) then return target end
+
   for _, op in ipairs(self._render_ops) do
     if op:matches(component) then
       table.insert(target, op)
