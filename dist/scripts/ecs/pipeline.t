@@ -1,5 +1,49 @@
 local class = require("class")
+local gfx = require("gfx")
 local m = {}
+
+local Pipeline = class("Pipeline")
+m.Pipeline = Pipeline
+
+function Pipeline:init(initoptions)
+  self._ordered_stages = {}
+  self._next_view = 0
+  self.stages = {}
+end
+
+function Pipeline:add_stage(stage, stage_name)
+  table.insert(self._ordered_stages, stage)
+  if stage_name then self.stages[stage_name] = stage end
+  local nviews = stage.num_views or 1
+  local views = {}
+  for i = 1,nviews do
+    local v = gfx.View(self._next_view)
+    views[i] = v
+    self._next_view = self._next_view + 1
+  end
+  stage:set_views(views)
+  return stage
+end
+
+function Pipeline:bind()
+  for _,stage in ipairs(self._ordered_stages) do
+    stage:bind()
+  end
+end
+
+function Pipeline:get_render_ops(component, target_list)
+  target_list = target_list or {}
+  for _,stage in ipairs(self._ordered_stages) do
+    stage:get_render_ops(component, target_list)
+  end
+  return target_list
+end
+
+function Pipeline:update()
+  for _,stage in ipairs(self._ordered_stages) do
+    if stage.update then stage:update() end
+  end
+end
 
 local Stage = class("Stage")
 m.Stage = Stage
@@ -7,61 +51,28 @@ m.Stage = Stage
 -- initoptions should contain e.g. input render targets (for post-processing),
 -- output render targets, uniform values.
 function Stage:init(initoptions)
-    -- nothing to do
+  self.num_views = 1
+  self._render_ops = {}
 end
 
--- should return the next available view
--- default implementation assumes a single view
-function Stage:setupViews(startView)
-    self.viewId = startView
-    return startView + 1
+function Stage:bind()
+  self.view:set(self.options)
 end
 
--- should render, typically using the objects in context.scene and the camera
--- in context.camera
-function Stage:render(context)
-    -- nothing to do
+function Stage:set_views(views)
+  self.view = views[1]
+  self:bind()
 end
 
-local Pipeline = class("Pipeline")
-m.Pipeline = Pipeline
-
-function Pipeline:init(initoptions)
-    self.orderedStages = {}
-    self.stages = {}
-    self.isSetup = false
-end
-
-function Pipeline:add(stageName, stage, context)
-    table.insert(self.orderedStages, {stage = stage, context = context,
-                                      stageName = stageName})
-    self.stages[stageName] = stage
-    return stage
-end
-
-function Pipeline:setupViews(startView)
-    local curView = startView or 0
-    self.startView = curView
-    for _, stageData in ipairs(self.orderedStages) do
-        curView = stageData.stage:setupViews(curView)
+function Stage:get_render_ops(component, target)
+  target = target or {}
+  for _, op in ipairs(self._render_ops) do
+    if op:matches(component) then
+      table.insert(target, op)
+      if self._exclusive then return target end
     end
-    self.nextAvailableView = curView
-    self.isSetup = true
-    return curView
-end
-
--- renders the pipeline; each stage uses the context it was added with in
--- preference to the provided context
-function Pipeline:render(context)
-    if not self.isSetup then
-        log.warn("Pipeline has not been setup; setting up assuming starting at view 0.")
-        self:setupViews(0)
-    end
-    for _, stageData in ipairs(self.orderedStages) do
-        if stageData.stage.enabled ~= false then
-            stageData.stage:render(stageData.context or context)
-        end
-    end
+  end
+  return target
 end
 
 return m
