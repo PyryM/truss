@@ -78,8 +78,8 @@ function View:set_render_target(tgt)
   self._rendertarget = tgt or self._rendertarget
   tgt = self._rendertarget
 
-  if tgt and tgt._frame_buffer then
-    bgfx.set_view_frame_buffer(self._viewid, tgt._frame_buffer)
+  if tgt and tgt.framebuffer then
+    bgfx.set_view_frame_buffer(self._viewid, tgt.framebuffer)
   end
 end
 
