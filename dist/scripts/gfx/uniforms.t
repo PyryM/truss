@@ -18,9 +18,8 @@ m.UNI_MAT4 = {
 }
 
 local Uniform = class("Uniform")
-function Uniform:init(base_name, uni_type, num)
-  if not base_name then return end
-  local uni_name = "u_" .. base_name
+function Uniform:init(uni_name, uni_type, num)
+  if not uni_name then return end
 
   num = num or 1
   uni_type = uni_type or m.UNI_VEC
@@ -30,7 +29,6 @@ function Uniform:init(base_name, uni_type, num)
   self._num = num
   self._val = terralib.new(uni_type.terra_type[num])
   self._uni_name = uni_name
-  self._base_name = base_name
 end
 
 function Uniform:clone()
@@ -40,7 +38,6 @@ function Uniform:clone()
   ret._num = self._num
   ret._val = terralib.new(self._uni_type.terra_type[num])
   ret._uni_name = self._uni_name
-  ret._base_name = self._base_name
   return ret
 end
 
@@ -71,14 +68,12 @@ function Uniform:bind()
 end
 
 local TexUniform = class("TexUniform")
-function TexUniform:init(base_name, sampler_idx)
-  if not base_name then return end
-  local uni_name = "s_" .. base_name
+function TexUniform:init(uni_name, sampler_idx)
+  if not uni_name then return end
   self._handle = bgfx.create_uniform(uni_name, bgfx.UNIFORM_TYPE_INT1, 1)
   self._sampler_idx = sampler_idx
   self._tex_handle = nil
   self._uni_name = uni_name
-  self._base_name = base_name
 end
 
 function TexUniform:clone()
@@ -87,7 +82,6 @@ function TexUniform:clone()
   ret._sampler_idx = self._sampler_idx
   ret._tex_handle = self._tex_handle
   ret._uni_name = self._uni_name
-  ret._base_name = self._base_name
   return ret
 end
 
@@ -110,10 +104,10 @@ function UniformSet:init()
 end
 
 function UniformSet:add(uniform)
-  local newname = uniform._base_name
+  local newname = uniform._uni_name
   log.debug("Adding " .. newname)
   if self[newname] then
-    log.error("UniformSet.add : uniform named [" .. newname ..
+    truss.error("UniformSet.add : uniform named [" .. newname ..
           "] already exists.")
     return
   end
@@ -141,9 +135,9 @@ function UniformSet:bind()
 end
 
 function UniformSet:merge(other_uniforms)
-  for alias, uniform in pairs(other_uniforms._uniforms) do
-    if not self[alias] then
-      self:add(uniform:clone(), alias)
+  for uni_name, uniform in pairs(other_uniforms._uniforms) do
+    if not self[uni_name] then
+      self:add(uniform:clone())
     end
   end
   return self
