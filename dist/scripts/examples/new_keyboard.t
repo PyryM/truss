@@ -9,24 +9,24 @@ local math = require("math")
 
 function create_uniforms()
   local uniforms = gfx.UniformSet()
-  uniforms:add(gfx.VecUniform("u_baseColor"), "diffuse")
-  uniforms:add(gfx.VecUniform("u_pbrParams"), "pbrParams")
-  uniforms:add(gfx.VecUniform("u_lightDir", 4), "lightDirs")
-  uniforms:add(gfx.VecUniform("u_lightRgb", 4), "lightColors")
+  uniforms:add(gfx.VecUniform("baseColor"))
+  uniforms:add(gfx.VecUniform("pbrParams"))
+  uniforms:add(gfx.VecUniform("lightDir", 4))
+  uniforms:add(gfx.VecUniform("lightRgb", 4))
 
-  uniforms.lightDirs:set_multiple({
+  uniforms.lightDir:set_multiple({
           math.Vector( 1.0,  1.0,  0.0),
           math.Vector(-1.0,  1.0,  0.0),
           math.Vector( 0.0, -1.0,  1.0),
           math.Vector( 0.0, -1.0, -1.0)})
 
-  uniforms.lightColors:set_multiple({
+  uniforms.lightRgb:set_multiple({
           math.Vector(0.8, 0.8, 0.8),
           math.Vector(1.0, 1.0, 1.0),
           math.Vector(0.1, 0.1, 0.1),
           math.Vector(0.1, 0.1, 0.1)})
 
-  uniforms.diffuse:set(math.Vector(0.2,0.2,0.1,1.0))
+  uniforms.baseColor:set(math.Vector(0.2,0.2,0.1,1.0))
   uniforms.pbrParams:set(math.Vector(1.0, 1.0, 1.0, 0.6))
   return uniforms
 end
