@@ -16,6 +16,19 @@ def make_sure_path_exists(path):
         if exception.errno != errno.EEXIST:
             raise
 
+def make_sure_shaderc_exists():
+    filename = "shadercRelease"
+    cp_cmd = "cp"
+    if os.name != "posix":  # windows
+        filename += ".exe"
+        cp_cmd = "copy"
+    if not isfile(filename):
+        print("shaderc not present in directory; trying to copy from truss/bin")
+        srcpath = join("..", "..", "bin", filename)
+        cmd = "{} {} {}".format(cp_cmd, srcpath, filename)
+        print("copy command: " + cmd)
+        os.system(cmd)
+
 def make_cmd(shader_type, platform, input_fn, output_fn):
     if platform == "linux":
         args = ["./shadercRelease"]
@@ -51,7 +64,7 @@ def make_directories():
         print("Making sure directory " + desttype + " exists.")
         make_sure_path_exists(join("..", desttype))
 
-def processFile(prefix, dirname, filename, errdest, errlist):
+def process_file(prefix, dirname, filename, errdest, errlist):
     if prefix == "vs":
         shader_type = "v"
     elif prefix == "fs":
@@ -90,6 +103,7 @@ def pad(s, pad_to):
 
 def main():
     make_directories()
+    make_sure_shaderc_exists()
     dirs = listdirs(".")
     errdest = open("shader_errors.txt", "wt")
     errlist = []
@@ -100,7 +114,7 @@ def main():
             prefix = filename[0:2]
             suffix = filename[-3:]
             if suffix == ".sc" and (prefix == "vs" or prefix == "fs"):
-                nerrs = processFile(prefix, dirname, filename, errdest, errlist)
+                nerrs = process_file(prefix, dirname, filename, errdest, errlist)
                 if nerrs < 0:
                     print("?", end="")
                 elif nerrs == 0:
