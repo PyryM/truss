@@ -154,6 +154,15 @@ function init()
   ECS = ecs.ECS()
   ECS:add_system(sdl_input.SDLInputSystem())
 
+  ECS.scene:add_component(sdl_input.SDLInputComponent())
+  ECS.scene:on("keydown", function(entity, evt)
+    local keyname = ffi.string(evt.keycode)
+    if keyname == "F12" then
+      print("Saving screenshot!")
+      gfx.save_screenshot("screenshot.png")
+    end
+  end)
+
   -- create the scene
   create_scene(geo, mat, ECS.scene)
 end

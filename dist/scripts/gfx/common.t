@@ -59,14 +59,18 @@ function m.init_gfx(options)
     renderer_type = bgfx[rname]
   end
 
-  bgfx.init(renderer_type, 0, 0, cb_ptr, nil)
   if not options.window and (not options.width or not options.height) then
     truss.error("gfx.init_gfx needs to be supplied with width and height.")
   end
   local w, h = options.width, options.height
   if options.window then
     w, h = options.window.get_window_size()
+    if options.window.get_bgfx_callback then
+      cb_ptr = options.window.get_bgfx_callback()
+    end
   end
+
+  bgfx.init(renderer_type, 0, 0, cb_ptr, nil)
   bgfx.reset(w, h, reset)
   gfx.backbuffer_width, gfx.backbuffer_height = w, h
   m._bgfx_initted = true
@@ -170,6 +174,10 @@ end
 
 function m.set_state(state)
   bgfx.set_state(state or bgfx.STATE_DEFAULT, 0)
+end
+
+function m.save_screenshot(filename)
+  bgfx.save_screen_shot(filename)
 end
 
 return m
