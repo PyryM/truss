@@ -9,19 +9,19 @@ local m = {}
 local RenderTarget = class("RenderTarget")
 
 m.color_formats = {
-  default   = bgfx.BGFX_TEXTURE_FORMAT_BGRA8,
-  BGRA8     = bgfx.BGFX_TEXTURE_FORMAT_BGRA8,
-  RGBA8     = bgfx.BGFX_TEXTURE_FORMAT_RGBA8,
-  UINT8     = bgfx.BGFX_TEXTURE_FORMAT_BGRA8,
-  HALFFLOAT = bgfx.BGFX_TEXTURE_FORMAT_RGBA16F,
-  FLOAT     = bgfx.BGFX_TEXTURE_FORMAT_RGBA32F
+  default   = bgfx.TEXTURE_FORMAT_BGRA8,
+  BGRA8     = bgfx.TEXTURE_FORMAT_BGRA8,
+  RGBA8     = bgfx.TEXTURE_FORMAT_RGBA8,
+  UINT8     = bgfx.TEXTURE_FORMAT_BGRA8,
+  HALFFLOAT = bgfx.TEXTURE_FORMAT_RGBA16F,
+  FLOAT     = bgfx.TEXTURE_FORMAT_RGBA32F
 }
 
 m.color_formatSizes = {
-  [bgfx.BGFX_TEXTURE_FORMAT_BGRA8] = 4,
-  [bgfx.BGFX_TEXTURE_FORMAT_RGBA8] = 4,
-  [bgfx.BGFX_TEXTURE_FORMAT_RGBA16F] = 8,
-  [bgfx.BGFX_TEXTURE_FORMAT_RGBA32F] = 16
+  [bgfx.TEXTURE_FORMAT_BGRA8] = 4,
+  [bgfx.TEXTURE_FORMAT_RGBA8] = 4,
+  [bgfx.TEXTURE_FORMAT_RGBA16F] = 8,
+  [bgfx.TEXTURE_FORMAT_RGBA32F] = 16
 }
 
 function RenderTarget:init(width, height)
@@ -68,8 +68,8 @@ function RenderTarget:make_backbuffer()
   self.is_backbuffer = true
   self.has_color = true
   self.has_depth = true
-  self.framebuffer = terralib.new(bgfx.bgfx_frame_buffer_handle_t)
-  self.framebuffer.idx = bgfx.BGFX_INVALID_HANDLE
+  self.framebuffer = terralib.new(bgfx.frame_buffer_handle_t)
+  self.framebuffer.idx = bgfx.INVALID_HANDLE
   self.finalized = true
   return self
 end
@@ -77,8 +77,8 @@ end
 -- need a function that always returns 6 arguments because regular unpack won't
 -- work with embedded nils, and terra/ffi bound functions expect an exact number
 -- of arguments
-local function unpack6(v)
-  return v[1],v[2],v[3],v[4],v[5],v[6]
+local function unpack7(v)
+  return v[1],v[2],v[3],v[4],v[5],v[6],v[7]
 end
 
 function RenderTarget:add_color_attachment(color_format, flags)
@@ -89,9 +89,9 @@ function RenderTarget:add_color_attachment(color_format, flags)
   local color_flags = flags or math.combine_flags(bgfx.TEXTURE_RT,
                      bgfx.TEXTURE_U_CLAMP,
                      bgfx.TEXTURE_V_CLAMP)
-  local tex_args = {self.width, self.height, 1,
+  local tex_args = {self.width, self.height, false, 1,
                    color_format or m.color_formats.default, color_flags, nil}
-  local color = bgfx.create_texture_2d(unpack6(tex_args))
+  local color = bgfx.create_texture_2d(unpack7(tex_args))
   table.insert(self.attachments, color)
   table.insert(self._construction_args, tex_args)
   self.has_color = true
@@ -112,9 +112,9 @@ function RenderTarget:add_depth_attachment(depth_bits, has_stencil, flags, is_fl
     log.error("Depth format " .. fmt_name .. " does not exist.")
     return
   end
-  local tex_args = {self.width, self.height, 1,
+  local tex_args = {self.width, self.height, false, 1,
                    depth_format, flags or bgfx.TEXTURE_RT_WRITE_ONLY, nil}
-  local depth = bgfx.create_texture_2d(unpack6(tex_args))
+  local depth = bgfx.create_texture_2d(unpack7(tex_args))
   table.insert(self.attachments, depth)
   table.insert(self._construction_args, tex_args)
   self.has_depth = true
@@ -130,7 +130,7 @@ end
 
 function RenderTarget:finalize()
   local attachments = self.attachments
-  local cattachments = terralib.new(bgfx.bgfx_attachment_t[#attachments])
+  local cattachments = terralib.new(bgfx.attachment_t[#attachments])
   for i,v in ipairs(attachments) do
     cattachments[i-1].handle = v -- ffi cstructs are zero indexed
     cattachments[i-1].mip = 0
@@ -148,7 +148,7 @@ end
 function RenderTarget:_construct(conargs)
   self._construction_args = {}
   for i,curarg in ipairs(conargs) do
-    local attachment = bgfx.bgfx_create_texture_2d(unpack6(curarg))
+    local attachment = bgfx.create_texture_2d(unpack7(curarg))
     table.insert(self.attachments, attachment)
     table.insert(self._construction_args, curarg)
   end
@@ -187,7 +187,7 @@ function RenderTarget:create_read_back_buffer(idx)
     bgfx.TEXTURE_V_CLAMP )
   log.info("Flags: " .. tostring(flags))
 
-  local dest = bgfx.create_texture_2d(w, h, 1, fmt, flags, nil)
+  local dest = bgfx.create_texture_2d(w, h, false, 1, fmt, flags, nil)
   local buffer = truss.create_message(datasize)
   local src = self.attachments[idx]
 
