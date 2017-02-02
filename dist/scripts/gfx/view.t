@@ -21,7 +21,7 @@ end
 function View:set(options)
   options = options or {}
   self:set_render_target(options.render_target)
-  self:set_matrices(option.view_matrix, options.proj_matrix)
+  self:set_matrices(options.view_matrix, options.proj_matrix)
   self:set_viewport(options.viewport)
   self:set_clear(options.clear)
 end
