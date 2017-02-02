@@ -3,17 +3,17 @@
 -- the base entity for the entity component system
 
 local class = require("class")
-local sg = require("scenegraph/scenegraph.t")
+local math = require("math")
 local event = require("ecs/event.t")
 local m = {}
 
 local Entity = class("Entity")
 m.Entity = Entity
-Entity:with(sg.ScenegraphMixin)
 function Entity:init(name)
   self._components = {}
   self._event_handlers = {}
-  self:sg_init()
+  self.children = {}
+  self.enabled = true
   self.name = name or "entity"
   self.user_handlers = {} -- a pseudo-component to hold user attached handlers
 end
@@ -26,6 +26,70 @@ end
 -- throw an error with convenient formatting
 function Entity:error(error_message)
   truss.error(self:error_name() .. error_message)
+end
+
+-- how deep a scenegraph tree can be
+m.MAX_TREE_DEPTH = 200
+-- check whether adding a prospective child to a parent
+-- would cause a cycle (i.e., that our scene tree would
+-- no longer be a tree)
+local function would_cause_cycle(parent, child)
+  -- we would have a cycle if tracing the parent up
+  -- to root would encounter the child or itself
+  local depth = 0
+  local curnode = parent
+  local MAXD = m.MAX_TREE_DEPTH
+  while curnode ~= nil do
+    curnode = curnode.parent
+    if curnode == parent or curnode == child then
+      log.error("Adding child would have caused cycle!")
+      return true
+    end
+    depth = depth + 1
+    if depth > MAXD then
+      log.error("Adding child would exceed max tree depth!")
+      return true
+    end
+  end
+  return false
+end
+
+function Entity:add(child)
+  if would_cause_cycle(self, child) then return false end
+
+  -- remove child from its previous parent
+  if child.parent then
+    child.parent:remove(child)
+  end
+
+  self.children[child] = child
+  child.parent = self
+
+  if child._sg_root ~= self._sg_root then
+    child:configure_recursive(self._sg_root)
+  end
+
+  return true
+end
+
+-- call a function on this node and its descendents
+function Entity:call_recursive(func_name, ...)
+  if self[func_name] then self[func_name](self, ...) end
+  for _, child in pairs(self.children) do
+    child:call_recursive(func_name, ...)
+  end
+end
+
+function Entity:configure_recursive(sg_root)
+  self._sg_root = sg_root
+  if self.configure then self:configure(sg_root) end
+  for _,child in pairs(self.children) do child:configure_recursive(sg_root) end
+end
+
+function Entity:remove(child)
+  if not self.children[child] then return end
+  self.children[child] = nil
+  child.parent = nil
 end
 
 function Entity:configure(sg_root)
@@ -147,13 +211,39 @@ function Entity:broadcast_recursive(func_name, ...)
   self:call_recursive("broadcast", func_name, ...)
 end
 
+-- plain Entity doesn't have a world mat
+function Entity:recursive_update_world_mat(parentmat)
+  -- do nothing (maybe recurse to children?)
+end
+
+
 local Entity3d = Entity:extend("Entity3d")
-Entity3d:with(sg.TransformableMixin)
 m.Entity3d = Entity3d
 
 function Entity3d:init(name)
   Entity3d.super.init(self, name)
-  self:tf_init()
+  self.position = math.Vector(0.0, 0.0, 0.0, 0.0)
+  self.scale = math.Vector(1.0, 1.0, 1.0, 0.0)
+  self.quaternion = math.Quaternion():identity()
+  self.matrix = math.Matrix4():identity()
+end
+
+function Entity3d:update_matrix()
+  self.matrix:compose(self.position, self.quaternion, self.scale)
+end
+
+-- recursively calculate world matrices from local transforms for
+-- object and all its children
+function Entity3d:recursive_update_world_mat(parentmat)
+  if self.enabled == false or (not self.matrix) then return end
+
+  local worldmat = self.matrix_world or math.Matrix4():identity()
+  self.matrix_world = worldmat
+  worldmat:multiply(parentmat, self.matrix)
+
+  for _,child in pairs(self.children) do
+    child:recursive_update_world_mat(worldmat)
+  end
 end
 
 return m
