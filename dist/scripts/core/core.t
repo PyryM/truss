@@ -32,6 +32,7 @@ log = {}
 log.debug = function(msg) ctruss.truss_log(4, tostring(msg)) end
 log.info = function(msg) ctruss.truss_log(3, tostring(msg)) end
 log.warn = function(msg) ctruss.truss_log(2, tostring(msg)) end
+log.warning = log.warn
 log.error = function(msg) ctruss.truss_log(1, tostring(msg)) end
 log.critical = function(msg) ctruss.truss_log(0, tostring(msg)) end
 truss.log = log
