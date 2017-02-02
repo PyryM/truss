@@ -9,6 +9,7 @@ function Pipeline:init(initoptions)
   self._ordered_stages = {}
   self._next_view = 0
   self.stages = {}
+  self.mount_name = "graphics" -- allow direct use of a pipeline as a system
 end
 
 function Pipeline:add_stage(stage, stage_name)
@@ -50,16 +51,38 @@ m.Stage = Stage
 
 -- initoptions should contain e.g. input render targets (for post-processing),
 -- output render targets, uniform values.
-function Stage:init(options)
+function Stage:init(globals, render_ops)
   self.num_views = 1
-  self._options = options or {}
-  self._render_ops = self._options.render_ops or {}
-  self.filter = self._options.filter
-  self.globals = self._options.globals or {}
+  self._render_ops = render_ops or {}
+  self.filter = globals.filter
+  self.globals = globals or {}
+end
+
+-- copies a table value by value, using val:duplicate() when present
+local function duplicate_copy(t, strict)
+  local ret = {}
+  for k,v in pairs(t) do
+    if type(v) == "table" and v.duplicate then
+      ret[k] = v:duplicate()
+    else
+      if strict then truss.error("Value did not support duplicate!") end
+      ret[k] = v
+    end
+  end
+  return ret
+
+end
+
+function Stage:duplicate()
+  local ret = Stage(duplicate_copy(self.globals),
+                    duplicate_copy(self._render_ops, true))
+  ret.filter = self.filter
+  ret.num_views = self.num_views
+  return ret
 end
 
 function Stage:bind()
-  self.view:set(self._options)
+  self.view:set(self.globals)
   for _,op in ipairs(self._render_ops) do
     op:set_stage(self)
   end
@@ -87,6 +110,75 @@ function Stage:get_render_ops(component, target)
     end
   end
   return target
+end
+
+local RenderOperation = class("RenderOperation")
+m.RenderOperation = RenderOperation
+
+function RenderOperation:init()
+  -- nothing in particular to do
+end
+
+function RenderOperation:set_stage(stage)
+  self.stage = stage
+end
+
+function RenderOperation:duplicate()
+  return self.class()
+end
+
+function RenderOperation:matches(component)
+  log.warn("Base RenderOperation shouldn't actually be added to a stage!")
+  log.warn("Did you forget to implement op:matches()?")
+  return false
+end
+
+local GenericRenderOp = RenderOperation:extend("GenericRenderOp")
+m.GenericRenderOp = GenericRenderOp
+
+function GenericRenderOp:matches(component)
+  return (component.geo ~= nil and component.mat ~= nil)
+end
+
+function GenericRenderOp:draw(component)
+  if not component.geo or not component.mat then return end
+  if not component.mat.program then return end
+  gfx.set_transform(component._entity.matrix_world)
+  component.geo:bind()
+  if component.mat.state then gfx.set_state(component.mat.state) end
+  if component.mat.uniforms then component.mat.uniforms:bind() end
+  if component.mat.globals then
+    local g = self.stage.globals
+    for _,v in ipairs(component.mat.globals) do
+      if g[v] then g[v]:bind() end
+    end
+  end
+  gfx.submit(self.stage.view, component.mat.program)
+end
+
+local Component = require("ecs/component.t").Component
+local MeshShaderComponent = Component:extend("MeshShaderComponent")
+m.MeshShaderComponent = MeshShaderComponent
+
+function MeshShaderComponent:init(geo, mat)
+  self.geo = geo
+  self.mat = mat
+  self._render_ops = {}
+end
+
+function MeshShaderComponent:configure(ecs_root)
+  if not ecs_root.systems.graphics then
+    log.warn("No 'graphics' system present in ecs!")
+    return
+  end
+  self._render_ops = ecs_root.systems.graphics:get_render_ops(self)
+end
+
+function MeshShaderComponent:on_update()
+  -- draw
+  for _, op in ipairs(self._render_ops) do
+    op:draw(self)
+  end
 end
 
 return m
