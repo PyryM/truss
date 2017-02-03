@@ -31,8 +31,8 @@ local function wrap(addon)
   m.rawpointer = addon_pointer
 end
 
-if not truss.addons.sdl then 
-  truss.error("cannot use sdl.t: sdl addon not mounted!") 
+if not truss.addons.sdl then
+  truss.error("cannot use sdl.t: sdl addon not mounted!")
 end
 wrap(truss.addons.sdl)
 
@@ -45,14 +45,17 @@ function m.stop_text_input()
 end
 
 function m.create_window(width, height, name, fullscreen)
+  local t0 = truss.tic()
   raw_create_window(raw_pointer, width, height, name, fullscreen or 0)
+  local dt = truss.toc(t0) * 1000.0
+  log.info(string.format("Took %.2f ms to create window.", dt))
 end
 
 function m.get_window_size()
   local h = raw_window_height(raw_pointer)
-  local w = raw_window_width(raw_pointer) 
+  local w = raw_window_width(raw_pointer)
 
-  return w, h 
+  return w, h
 end
 
 function m.set_clipboard(data)

@@ -156,7 +156,7 @@ function truss.require(filename, force)
     local t0 = truss.tic()
     local funcsource = truss.load_script_from_file(fullpath)
     if not funcsource then
-      truss.error("require [" .. filename .. "%s]: file does not exist.")
+      truss.error("require [" .. filename .. "]: file does not exist.")
       return nil
     end
     local module_def, loaderror = truss.load_named_string(funcsource, filename)
@@ -166,7 +166,8 @@ function truss.require(filename, force)
     end
     setfenv(module_def, create_module_env())
     loaded_libs[filename] = module_def()
-    log.info("Loaded [" .. filename .. "] in " .. truss.toc(t0) * 1000.0 .. " ms")
+    log.info(string.format("Loaded [%s] in %.2f ms",
+                          filename, truss.toc(t0) * 1000.0))
   end
   return loaded_libs[filename]
 end
@@ -284,6 +285,10 @@ extend_table(truss._module_env, _G)
 
 local function load_and_run(fn)
   local script = truss.load_script_from_file(fn)
+  if script == nil then
+    error("File [" .. fn .. "] does not exist or other IO error.")
+    return
+  end
   local scriptfunc, loaderror = truss.load_named_string(script, fn)
   if scriptfunc == nil then
     error("Main script loading error: " .. loaderror)
@@ -312,8 +317,8 @@ function _core_init(argstring)
   if not happy then
     truss.enter_error_state(errmsg)
   end
-  local delta = truss.toc(t0)
-  log.info("Time to init: " .. delta)
+  local delta = truss.toc(t0) * 1000.0
+  log.info(string.format("Time to init: %.2f ms", delta))
 end
 
 function _core_update()

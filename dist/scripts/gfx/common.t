@@ -23,6 +23,7 @@ end
 function m.init_gfx(options)
   local gfx = require("gfx") -- so we can set module level values
 
+  local t0 = truss.tic()
   if m._bgfx_initted then
     truss.error("Tried to init gfx twice.")
     return
@@ -85,6 +86,8 @@ function m.init_gfx(options)
   gfx.short_renderer_name = m._translate_renderer_type(renderer_type)
   log.info("Renderer name: " .. renderer_name)
   log.info("Short renderer name: " .. gfx.short_renderer_name)
+  local dt = truss.toc(t0) * 1000.0
+  log.info(string.format("bgfx init took %.2f ms.", dt))
 end
 
 function m._translate_renderer_type(bgfx_type)
