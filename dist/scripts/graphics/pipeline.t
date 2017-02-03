@@ -5,10 +5,12 @@ local m = {}
 local Pipeline = class("Pipeline")
 m.Pipeline = Pipeline
 
-function Pipeline:init(initoptions)
+function Pipeline:init(options)
+  options = options or {}
   self._ordered_stages = {}
   self._next_view = 0
   self.stages = {}
+  self.verbose = options.verbose
   self.mount_name = "graphics" -- allow direct use of a pipeline as a system
 end
 
@@ -17,6 +19,10 @@ function Pipeline:add_stage(stage, stage_name)
   if stage_name then self.stages[stage_name] = stage end
   local nviews = stage.num_views or 1
   local views = {}
+  if self.verbose then
+    log.debug("Giving stage [" .. tostring(stage) .. "] views " ..
+              self._next_view .. " to " .. (self._next_view + nviews - 1))
+  end
   for i = 1,nviews do
     local v = gfx.View(self._next_view)
     views[i] = v
@@ -56,6 +62,10 @@ function Stage:init(globals, render_ops)
   self._render_ops = render_ops or {}
   self.filter = globals.filter
   self.globals = globals or {}
+end
+
+function Stage:__tostring()
+  return self.globals.name or "Stage"
 end
 
 -- copies a table value by value, using val:duplicate() when present
@@ -135,6 +145,10 @@ end
 
 local GenericRenderOp = RenderOperation:extend("GenericRenderOp")
 m.GenericRenderOp = GenericRenderOp
+
+function GenericRenderOp:init()
+  -- nothing to do
+end
 
 function GenericRenderOp:matches(component)
   return (component.geo ~= nil and component.mat ~= nil)

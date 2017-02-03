@@ -23,11 +23,13 @@ function ECS:add_system(system, name)
   if self.systems[name] then truss.error("System name " .. name .. "taken!") end
   self.systems[name] = system
   self._configuration_dirty = true
+  return system
 end
 
 function ECS:configure()
   self.scene:configure_recursive(self)
   self._configuration_dirty = false
+  return self
 end
 
 function ECS:update()
