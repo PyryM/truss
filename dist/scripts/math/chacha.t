@@ -3,7 +3,6 @@
 -- implementation of the chacha20 symmetric cipher
 
 local m = {}
-local CMath = require("math/cmath.t")
 
 --[[
 Copyright (C) 2014 insane coder (http://insanecoding.blogspot.com/, http://chacha20.insanecoding.org/)
@@ -148,6 +147,10 @@ local function to_hex(s, slen)
   return ret
 end
 
+local terra to_uint8_str(s: &int8): &uint8
+  return [&uint8](s)
+end
+
 function m.test_basic()
   -- test vectors in :
   -- https://tools.ietf.org/html/draft-agl-tls-chacha20poly1305-04#section-7
@@ -172,44 +175,54 @@ function m.test_basic()
 
   local foutput = terralib.cast(&uint8, output)
   print("output: " .. to_hex(foutput, 16*4))
+
+  local plaintext = "hello there this is a secrete message! I am going to try my" ..
+  " best to make this longer than 64 characters so we can see what happens in that" ..
+  " situation because I am unsure of the whole multiple block thing."
+  local nchars = #plaintext
+  print("nchars: " .. nchars)
+  local outtext = terralib.new(int8[nchars])
+  m.setup(ctx, key, 32, nonce)
+  m.encrypt_raw(ctx, to_uint8_str(plaintext), to_uint8_str(outtext), nchars)
+  local cipher = ffi.string(outtext, nchars)
+  print("length of ciper: " .. #cipher)
+  print("hex: " .. to_hex(to_uint8_str(outtext), nchars))
+
+  local outtext2 = terralib.new(int8[nchars])
+  m.setup(ctx, key, 32, nonce)
+  m.encrypt_raw(ctx, to_uint8_str(outtext), to_uint8_str(outtext2), nchars)
+  print("output2: " .. ffi.string(outtext2, nchars))
+end
+
+local terra stream_xor(keystream: &uint8, inptr: &uint8, outptr: &uint8, length: uint64)
+  for i = 0,length do
+    outptr[i] = inptr[i] ^ keystream[i]
+  end
+end
+
+terra m.encrypt_raw(ctx: &chacha20_ctx, inptr: &uint8, outptr: &uint8, length: uint64)
+  if length == 0 then return end
+  var keystream: &uint8 = [&uint8](&(ctx.keystream))
+  var pos: uint64 = 0
+
+  -- First, use any buffered keystream from previous calls
+  if ctx.available > 0 then
+    var amount = MIN(length, ctx.available)
+    stream_xor(keystream + (64 - ctx.available), inptr, outptr, amount)
+    ctx.available = ctx.available - amount
+    length = length - amount
+    pos = pos + amount
+  end
+
+  -- Then, handle new blocks
+  while length > 0 do
+    var amount = MIN(length, 64)
+    m.block(ctx, ctx.keystream)
+    stream_xor(keystream, inptr + pos, outptr + pos, amount)
+    length = length - amount
+    ctx.available = 64 - amount
+    pos = pos + amount
+  end
 end
 
 return m
-
--- static inline void chacha20_xor(uint8_t *keystream, const uint8_t **in, uint8_t **out, size_t length)
--- {
---   uint8_t *end_keystream = keystream + length;
---   do { *(*out)++ = *(*in)++ ^ *keystream++; } while (keystream < end_keystream);
--- }
---
--- void chacha20_encrypt(chacha20_ctx *ctx, const uint8_t *in, uint8_t *out, size_t length)
--- {
---   if (length)
---   {
---     uint8_t *const k = (uint8_t *)ctx->keystream;
---
---     //First, use any buffered keystream from previous calls
---     if (ctx->available)
---     {
---       size_t amount = MIN(length, ctx->available);
---       chacha20_xor(k + (sizeof(ctx->keystream)-ctx->available), &in, &out, amount);
---       ctx->available -= amount;
---       length -= amount;
---     }
---
---     //Then, handle new blocks
---     while (length)
---     {
---       size_t amount = MIN(length, sizeof(ctx->keystream));
---       chacha20_block(ctx, ctx->keystream);
---       chacha20_xor(k, &in, &out, amount);
---       length -= amount;
---       ctx->available = sizeof(ctx->keystream) - amount;
---     }
---   }
--- }
---
--- void chacha20_decrypt(chacha20_ctx *ctx, const uint8_t *in, uint8_t *out, size_t length)
--- {
---   chacha20_encrypt(ctx, in, out, length);
--- }
