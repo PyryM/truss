@@ -7,6 +7,7 @@ local sdl_input = require("ecs/sdl_input.t")
 local sdl = require("addons/sdl.t")
 local math = require("math")
 local pipeline = require("graphics/pipeline.t")
+local framestats = require("graphics/framestats.t")
 
 function create_uniforms()
   local uniforms = gfx.UniformSet()
@@ -56,6 +57,7 @@ end
 
 local ACC = -2.0
 local JUMP_V = 2.0
+local JUMP_P = 0.25
 function Jumper:on_update()
   local dt = 1.0 / 60.0
   self.v = self.v + ACC * dt
@@ -68,9 +70,10 @@ end
 
 function Jumper:on_keydown(evt)
   if self.h > 0.0 then return end
+  if math.random() > JUMP_P then return end
   local keyname = ffi.string(evt.keycode)
   if keyname == self.k then
-    self.v = JUMP_V
+    self.v = (1.0 + math.random()*0.3) * JUMP_V
   end
 end
 
@@ -92,14 +95,14 @@ function create_scene(geo, mat, root)
   root:add(thingy)
 
   local keys = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-  for i = 1,26 do
+  for i = 1,1000 do
     local subthingy = entity.Entity3d()
     subthingy:add_component(pipeline.MeshShaderComponent(geo, mat))
     subthingy:add_component(sdl_input.SDLInputComponent())
     rand_on_sphere(subthingy.position)
-    local k = string.sub(keys, i, i)
+    local k = string.sub(keys, ((i-1) % 26) + 1, ((i-1) % 26) + 1)
     subthingy:add_component(Jumper(k, subthingy.position, subthingy.position))
-    subthingy.scale:set(0.3, 0.3, 0.3)
+    subthingy.scale:set(0.2, 0.2, 0.2)
     subthingy:update_matrix()
     thingy:add(subthingy)
   end
@@ -107,8 +110,6 @@ end
 
 width = 800
 height = 600
-time = 0.0
-frametime = 0.0
 
 function init()
   -- basic init
@@ -135,6 +136,7 @@ function init()
     clear = {color = 0x303050ff, depth = 1.0},
     proj_matrix = projmat
   }, {pipeline.GenericRenderOp()}))
+  ECS:add_system(framestats.DebugTextStats())
 
   ECS.scene:add_component(sdl_input.SDLInputComponent())
   ECS.scene:on("keydown", function(entity, evt)
@@ -150,21 +152,6 @@ function init()
 end
 
 function update()
-  time = time + 1.0 / 60.0
-  local start_time = truss.tic()
-
-  -- Use debug font to print information about this example.
-  bgfx.dbg_text_clear(0, false)
-
-  bgfx.dbg_text_printf(0, 1, 0x4f, "scripts/examples/new_keyboard.t")
-  local ft = string.format("frame time: %.2f ms", frametime*1000.0)
-  bgfx.dbg_text_printf(0, 2, 0x6f, ft)
-
   -- update ecs
   ECS:update()
-
-  -- Advance to next frame.
-  gfx.frame()
-
-  frametime = truss.toc(start_time)
 end
