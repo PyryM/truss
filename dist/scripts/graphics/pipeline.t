@@ -11,7 +11,9 @@ function Pipeline:init(options)
   self._next_view = 0
   self.stages = {}
   self.verbose = options.verbose
+  self.auto_frame_advance = options.auto_frame_advance
   self.mount_name = "graphics" -- allow direct use of a pipeline as a system
+  self.update_priority = 100 -- try to always update last
 end
 
 function Pipeline:add_stage(stage, stage_name)
@@ -46,10 +48,20 @@ function Pipeline:get_render_ops(component, target_list)
   return target_list
 end
 
-function Pipeline:update()
+function Pipeline:update_begin()
   for _,stage in ipairs(self._ordered_stages) do
     if stage.update then stage:update() end
   end
+end
+
+function Pipeline:update_end()
+  if self.auto_frame_advance ~= false then
+    gfx.frame()
+  end
+end
+
+function Pipeline:update()
+  self:update_begin()
 end
 
 local Stage = class("Stage")

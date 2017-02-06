@@ -52,7 +52,7 @@ function SDLInputSystem:init(options)
   self._autoclose = (options.autoclose ~= false)
 end
 
-function SDLInputSystem:update()
+function SDLInputSystem:update_begin()
   -- just store all the events
   self.events = {}
   for evt in sdl.events() do
