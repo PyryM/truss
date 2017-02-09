@@ -381,7 +381,7 @@ end
 -- i.e. v <- M * v
 function Matrix4:multiply_vector(v, dest)
   m.multiply_matrix_vector(self.data, v.elem, (dest or v).elem)
-  return dest
+  return dest or v
 end
 
 function Matrix4:multiply(a, b)

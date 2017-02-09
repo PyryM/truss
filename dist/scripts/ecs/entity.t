@@ -116,6 +116,8 @@ function Entity:add_component(component, component_name)
   if self._sg_root and component.configure then
     component:configure(self._sg_root)
   end
+
+  return component
 end
 
 -- remove a component by its mounted name
