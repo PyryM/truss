@@ -183,7 +183,28 @@ function GenericRenderOp:draw(component)
 end
 
 local Component = require("ecs/component.t").Component
-local MeshShaderComponent = Component:extend("MeshShaderComponent")
+
+local DrawableComponent = Component:extend("DrawableComponent")
+m.DrawableComponent = DrawableComponent
+function DrawableComponent:init()
+  self._render_ops = {}
+end
+
+function DrawableComponent:configure(ecs_root)
+  if not ecs_root.systems.graphics then
+    log.warn("No 'graphics' system present in ecs!")
+    return
+  end
+  self._render_ops = ecs_root.systems.graphics:get_render_ops(self)
+end
+
+function DrawableComponent:draw()
+  for _, op in ipairs(self._render_ops) do
+    op:draw(self)
+  end
+end
+
+local MeshShaderComponent = DrawableComponent:extend("MeshShaderComponent")
 m.MeshShaderComponent = MeshShaderComponent
 
 function MeshShaderComponent:init(geo, mat)
@@ -192,19 +213,6 @@ function MeshShaderComponent:init(geo, mat)
   self._render_ops = {}
 end
 
-function MeshShaderComponent:configure(ecs_root)
-  if not ecs_root.systems.graphics then
-    log.warn("No 'graphics' system present in ecs!")
-    return
-  end
-  self._render_ops = ecs_root.systems.graphics:get_render_ops(self)
-end
-
-function MeshShaderComponent:on_update()
-  -- draw
-  for _, op in ipairs(self._render_ops) do
-    op:draw(self)
-  end
-end
+MeshShaderComponent.on_update = DrawableComponent.draw
 
 return m
