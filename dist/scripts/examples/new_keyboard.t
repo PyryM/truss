@@ -9,6 +9,9 @@ local math = require("math")
 local pipeline = require("graphics/pipeline.t")
 local framestats = require("graphics/framestats.t")
 
+local camera = require("graphics/camera.t")
+local orbitcam = require("gui/orbitcam.t")
+
 function create_uniforms()
   local uniforms = gfx.UniformSet()
   uniforms:add(gfx.VecUniform("u_baseColor"))
@@ -35,13 +38,6 @@ end
 
 function create_geo()
   return require("geometry/icosphere.t").icosphere_geo(1.0, 3, "ico")
-end
-
-local Rotator = component.Component:extend("Rotator")
-function Rotator:on_update()
-  self.t = (self.t or 0.0) + (1.0 / 60.0)
-  self._entity.quaternion:euler({x = 0.0, y = self.t*0.2, z = 0.0})
-  self._entity:update_matrix()
 end
 
 local Jumper = component.Component:extend("Jumper")
@@ -90,8 +86,6 @@ end
 function create_scene(geo, mat, root)
   local thingy = entity.Entity3d()
   thingy:add_component(pipeline.MeshShaderComponent(geo, mat))
-  thingy:add_component(Rotator())
-  thingy.position:set(0.0, 0.0, -4.0)
   root:add(thingy)
 
   local keys = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -124,9 +118,6 @@ function init()
     program = gfx.load_program("vs_basicpbr", "fs_basicpbr_faceted_x4")
   }
 
-  -- create matrices
-  projmat = math.Matrix4():perspective_projection(65, width/height, 0.1, 100.0)
-
   -- create ecs
   ECS = ecs.ECS()
   ECS:add_system(sdl_input.SDLInputSystem())
@@ -134,8 +125,7 @@ function init()
   p:add_stage(pipeline.Stage({
     name = "solid_geo",
     clear = {color = 0x303050ff, depth = 1.0},
-    proj_matrix = projmat
-  }, {pipeline.GenericRenderOp()}))
+  }, {pipeline.GenericRenderOp(), camera.CameraControlOp()}))
   ECS:add_system(framestats.DebugTextStats())
 
   ECS.scene:add_component(sdl_input.SDLInputComponent())
@@ -146,6 +136,11 @@ function init()
       gfx.save_screenshot("screenshot.png")
     end
   end)
+
+  local cam = camera.Camera({fov = 65, aspect = width/height})
+  cam:add_component(sdl_input.SDLInputComponent())
+  cam:add_component(orbitcam.OrbitControl({min_rad = 1.0, max_rad = 15.0}))
+  ECS.scene:add(cam)
 
   -- create the scene
   create_scene(geo, mat, ECS.scene)
