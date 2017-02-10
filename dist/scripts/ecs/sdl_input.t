@@ -32,7 +32,8 @@ local EVENT_NAMES = {
   [8] = "on_textinput"
 }
 
-function SDLInputComponent:on_update()
+-- Note that we use preupdate because might want to change scenegraph
+function SDLInputComponent:on_preupdate()
   -- make sure the sdl input subsystem exists
   if not self._sdl_system or not self._entity then return end
 

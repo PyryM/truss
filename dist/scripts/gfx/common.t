@@ -43,6 +43,8 @@ function m.init_gfx(options)
     reset = reset + bgfx.RESET_MSAA_X8
   end
   if options.lowlatency then
+    log.info("Trying to init bgfx in single-threaded mode...")
+
     -- extra flags that may help with latency
     reset = reset + bgfx.RESET_FLIP_AFTER_RENDER +
           bgfx.RESET_FLUSH_AFTER_RENDER
