@@ -9,13 +9,14 @@ local math = require("math")
 local entity = require("ecs/entity.t")
 local pipeline = require("graphics/pipeline.t")
 
-local function rand_on_sphere(tgt)
+local function rand_on_sphere(tgt, m)
   local ret = tgt or math.Vector()
   ret:set(1.0, 1.0, 1.0, 0.0)
   while ret:length() > 0.5 do
     ret:set(math.random()-0.5, math.random()-0.5, math.random()-0.5)
   end
   ret:normalize3()
+  ret:multiply(m or 1.0)
   return ret
 end
 
@@ -61,7 +62,7 @@ function create_scene(root)
   for i = 1,100 do
     local subthingy = entity.Entity3d()
     subthingy:add_component(pipeline.MeshShaderComponent(geo, mat))
-    rand_on_sphere(subthingy.position)
+    rand_on_sphere(subthingy.position, 1.4)
     subthingy.scale:set(0.2, 0.2, 0.2)
     subthingy:update_matrix()
     thingy:add(subthingy)
