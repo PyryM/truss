@@ -4,48 +4,82 @@
 
 local VRApp = require("vr/vrapp.t").VRApp
 local icosphere = require("geometry/icosphere.t")
-local pbr = require("shaders/pbr.t")
-local Object3D = require('gfx/object3d.t').Object3D
-local orbitcam = require('gui/orbitcam.t')
+local gfx = require("gfx")
+local math = require("math")
+local entity = require("ecs/entity.t")
+local pipeline = require("graphics/pipeline.t")
 
-function randu(magnitude)
-    return (math.random() * 2.0 - 1.0)*(magnitude or 1.0)
+local function rand_on_sphere(tgt)
+  local ret = tgt or math.Vector()
+  ret:set(1.0, 1.0, 1.0, 0.0)
+  while ret:length() > 0.5 do
+    ret:set(math.random()-0.5, math.random()-0.5, math.random()-0.5)
+  end
+  ret:normalize3()
+  return ret
 end
 
-function createGeometry()
-    local geo = icosphere.icosphereGeo(0.5, 3, "sphere")
-    local mat = pbr.PBRMaterial("solid"):roughness(0.8):tint(0.1,0.1,0.1)
+function create_uniforms()
+  local uniforms = gfx.UniformSet()
+  uniforms:add(gfx.VecUniform("u_baseColor"))
+  uniforms:add(gfx.VecUniform("u_pbrParams"))
+  uniforms:add(gfx.VecUniform("u_lightDir", 4))
+  uniforms:add(gfx.VecUniform("u_lightRgb", 4))
 
-    local nspheres = 200
-    for i = 1,nspheres do
-        local sphere = Object3D(geo, mat)
-        sphere.position:set(randu(5), randu(5)-5, randu(5))
-        sphere:updateMatrix()
-        app.scene:add(sphere)
-    end
+  uniforms.u_lightDir:set_multiple({
+          math.Vector( 1.0,  1.0,  0.0),
+          math.Vector(-1.0,  1.0,  0.0),
+          math.Vector( 0.0, -1.0,  1.0),
+          math.Vector( 0.0, -1.0, -1.0)})
+
+  uniforms.u_lightRgb:set_multiple({
+          math.Vector(0.8, 0.8, 0.8),
+          math.Vector(1.0, 1.0, 1.0),
+          math.Vector(0.1, 0.1, 0.1),
+          math.Vector(0.1, 0.1, 0.1)})
+
+  uniforms.u_baseColor:set(math.Vector(0.2,0.03,0.01,1.0))
+  uniforms.u_pbrParams:set(math.Vector(0.001, 0.001, 0.001, 0.7))
+  return uniforms
+end
+
+function create_scene(root)
+  -- create material and geometry
+  local geo = require("geometry/icosphere.t").icosphere_geo(1.0, 3, "ico")
+  local mat = {
+    state = gfx.create_state(),
+    uniforms = create_uniforms(),
+    program = gfx.load_program("vs_basicpbr", "fs_basicpbr_faceted_x4")
+  }
+
+  local thingy = entity.Entity3d()
+  thingy.position:set(0.0, 0.5, 0.0)
+  thingy:update_matrix()
+  thingy:add_component(pipeline.MeshShaderComponent(geo, mat))
+  root:add(thingy)
+
+  for i = 1,100 do
+    local subthingy = entity.Entity3d()
+    subthingy:add_component(pipeline.MeshShaderComponent(geo, mat))
+    rand_on_sphere(subthingy.position)
+    subthingy.scale:set(0.2, 0.2, 0.2)
+    subthingy:update_matrix()
+    thingy:add(subthingy)
+  end
 end
 
 function init()
-    app = VRApp({title = "vr_00_stereo",
-                       width = 1280,
-                       height = 720,
-                       vrWidth = math.floor(1.4 * 1280/2),
-                       vrHeight = math.floor(1.4 * 720),
-                       usenvg = false})
-    app.userEventHandler = onSdlEvent
-    camerarig = orbitcam.OrbitCameraRig(app.camera)
-    camerarig:setZoomLimits(1.0, 30.0)
-    camerarig:set(0, 0, 15.0)
-    createGeometry()
-    log.info(app.stereoCameras[1])
-    log.info("Projection: " .. app.stereoCameras[1].projMat:prettystr())
+  app = VRApp({title = "vr_00_stereo",
+               width = 1280,
+               height = 720})
+  create_scene(app.ECS.scene)
 end
 
-function onSdlEvent(selfapp, evt)
-    camerarig:updateFromSDL(evt)
-end
-
+local printed_projection = false
 function update()
-    camerarig:update(1.0 / 60.0)
-    app:update()
+  app:update()
+  if not printed_projection then
+    log.info("Projection: " .. app.stereo_cams[1].camera.proj_mat:prettystr())
+    printed_projection = true
+  end
 end

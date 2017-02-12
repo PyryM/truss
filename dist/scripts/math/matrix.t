@@ -331,7 +331,7 @@ end
 
 function Matrix4:translation(v)
   self:identity()
-  return self:setTranslation(v)
+  return self:set_translation(v)
 end
 
 -- take a translation (v3), rotation (quat), and optional scale (v) and

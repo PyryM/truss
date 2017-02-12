@@ -919,6 +919,6 @@ typedef enum bgfx_render_frame
 BGFX_C_API bgfx_render_frame_t bgfx_render_frame();
 
 /**/
-BGFX_C_API uintptr_t bgfx_get_internal_texture_ptr(bgfx_texture_handle_t _handle);
+BGFX_C_API void* bgfx_get_internal_texture_ptr(bgfx_texture_handle_t _handle);
 
 #endif // BGFX_C99_H_HEADER_GUARD

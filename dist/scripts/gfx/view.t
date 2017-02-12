@@ -39,7 +39,7 @@ function View:set_viewport(rect)
     self._viewport = rect or self._viewport
   end
   if not self._viewport then
-    if self._rendertarget then
+    if self._rendertarget and self._rendertarget.width then
       local w, h = self._rendertarget.width, self._rendertarget.height
       bgfx.set_view_rect(self._viewid, 0, 0, w, h)
     else

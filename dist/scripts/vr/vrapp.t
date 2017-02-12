@@ -5,188 +5,169 @@
 local class = require("class")
 local math = require("math")
 local gfx = require("gfx")
-local appscaffold = require("utils/appscaffold.t")
-local shaderutils = require("utils/shaderutils.t")
+local sdl = require("addons/sdl.t")
 local openvr = require("vr/openvr.t")
+
+local ecs = require("ecs/ecs.t")
+local component = require("ecs/component.t")
+local entity = require("ecs/entity.t")
+local sdl_input = require("ecs/sdl_input.t")
+
+local pipeline = require("graphics/pipeline.t")
+local framestats = require("graphics/framestats.t")
+local camera = require("graphics/camera.t")
 
 local m = {}
 
-local VRApp = appscaffold.AppScaffold:extend("VRApp")
+local VRApp = class("VRApp")
 
 function VRApp:init(options)
-    openvr.init()
-    local vw, vh = 800, 1280
-    if openvr.available then
-        vw, vh = openvr.getRecommendedTargetSize()
-    end
-    self.extraFlags = true
-    self.vrWidth = math.floor((options.vrWidth or 1.0) * vw)
-    self.vrHeight = math.floor((options.vrHeight or 1.0) * vh)
-    log.info("VRApp insdfdit: w= " .. self.vrWidth .. ", h= " .. self.vrHeight)
+  self.options = options or {}
+  openvr.init()
+  local vw, vh = 800, 1280
+  if openvr.available then
+    vw, vh = openvr.get_target_size()
+  end
 
-    VRApp.super.init(self, options)
-    self.stereoCameras = {
-        gfx.Camera():makeProjection(70, self.vrWidth/self.vrHeight, 0.1, 100.0),
-        gfx.Camera():makeProjection(70, self.vrWidth/self.vrHeight, 0.1, 100.0)
-    }
-    self.roomroot = gfx.Object3D()
-    self.roomroot:add(self.stereoCameras[1])
-    self.roomroot:add(self.stereoCameras[2])
-    self.scene:add(self.roomroot)
+  self.vr_width = math.floor((options.vr_width or 1.0) * vw)
+  self.vr_height = math.floor((options.vr_height or 1.0) * vh)
+  log.info("VRApp init: w= " .. self.vr_width .. ", h= " .. self.vr_height)
 
-    local testprojL = {{0.76, 0.00, -0.06, 0.00},
-                       {0.00, 0.68, -0.00, 0.00},
-                       {0.00, 0.00, -1.00, -0.05},
-                       {0.00, 0.00, -1.00, 0.00}}
-    local testprojR = {{0.76, 0.00, 0.06, 0.00},
-                       {0.00, 0.68, -0.00, 0.00},
-                       {0.00, 0.00, -1.00, -0.05},
-                       {0.00, 0.00, -1.00, 0.00}}
-    self.stereoCameras[1].projMat:fromPrettyArray(testprojL)
-    self.stereoCameras[2].projMat:fromPrettyArray(testprojR)
-    log.info("ProjL: " .. tostring(self.stereoCameras[1].projMat))
+  log.info("gfx init!")
+  self:gfx_init()
 
-    -- controller objects
-    self.controllerObjects = {}
-    self.maxControllers = 0
+  self.stereo_cams = {
+    camera.Camera({tag="left"}),
+    camera.Camera({tag="right"})
+  }
 
-    -- used to draw screen space quads to composite things
-    self.orthocam = gfx.Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
-    self.identitymat = math.Matrix4():identity()
-    self.quadgeo = gfx.TransientGeometry()
-    self.compositeSampler = gfx.TexUniform("s_srcTex", 0)
-    self.compositePgm = shaderutils.loadProgram("vs_fullscreen",
-                                                "fs_fullscreen_copy")
+  local testprojL = {{0.36, 0.00, -0.06, 0.00},
+                     {0.00, 0.68, -0.00, 0.00},
+                     {0.00, 0.00, -1.00, -0.05},
+                     {0.00, 0.00, -1.00, 0.00}}
+  local testprojR = {{0.36, 0.00, 0.06, 0.00},
+                     {0.00, 0.68, -0.00, 0.00},
+                     {0.00, 0.00, -1.00, -0.05},
+                     {0.00, 0.00, -1.00, 0.00}}
+  self.stereo_cams[1].camera.proj_mat:from_table(testprojL)
+  self.stereo_cams[2].camera.proj_mat:from_table(testprojR)
+  log.info("ProjL: " .. tostring(self.stereo_cams[1].camera.proj_mat))
 
-    local hipd = 6.4 / 2.0 -- half ipd
-    self.offsets = {
-        math.Matrix4():makeTranslation(math.Vector(-hipd, 0.0, 0.0)),
-        math.Matrix4():makeTranslation(math.Vector( hipd, 0.0, 0.0))
-    }
+  -- controller objects
+  self.controllerObjects = {}
+  self.maxControllers = 0
+
+  -- used to draw screen space quads to composite things
+  self.composite_proj = math.Matrix4():orthographic_projection(0, 1, 0, 1, -1, 1)
+  self.identitymat = math.Matrix4():identity()
+  self.quadgeo = gfx.TransientGeometry()
+  log.info("got this far?")
+  self.composite_sampler = gfx.TexUniform("s_srcTex", 0)
+  log.info("got this far2?")
+  self.composite_program = gfx.load_program("vs_fullscreen",
+                                            "fs_fullscreen_copy")
+  log.info("got this far3?")
+
+
+  local hipd = 6.4 / 2.0 -- half ipd
+  self.offsets = {
+      math.Matrix4():translation(math.Vector(-hipd, 0.0, 0.0)),
+      math.Matrix4():translation(math.Vector( hipd, 0.0, 0.0))
+  }
+
+  log.info("eh?")
+  self:ecs_init()
 end
 
-function VRApp:initBGFX()
-    -- Basic init
-    -- no anti-aliasing or vsync in VR
-    local reset = 0
-    if self.extraFlags then
-        reset = bgfx_const.BGFX_RESET_FLIP_AFTER_RENDER +
-                  bgfx_const.BGFX_RESET_FLUSH_AFTER_RENDER
-    end
-    if not openvr.available then
-        -- add in vsync if vr is not available to avoid melting gpu
-        reset = reset + bgfx_const.BGFX_RESET_VSYNC
-    end
-    --local cbInterfacePtr = sdl.truss_sdl_get_bgfx_cb(sdlPointer)
-    local cbInterfacePtr = nil
-    bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, cbInterfacePtr, nil)
-    bgfx.bgfx_reset(self.width, self.height, reset)
-    self.bgfxInitted = true
-
-    local debug = 0 --
-    if self.debugtext then
-        debug = debug + bgfx_const.BGFX_DEBUG_TEXT
-    end
-    bgfx.bgfx_set_debug(debug)
-
-    log.info("VRApp: initted bgfx")
-    local rendererType = bgfx.bgfx_get_renderer_type()
-    local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-    log.info("Renderer type: " .. rendererName)
+function VRApp:gfx_init()
+  log.info("gfx init")
+  sdl.create_window(self.options.width or 1280,
+                    self.options.height or 800,
+                    self.options.title or 'title')
+  local gfx_opts = {msaa = true,
+                    debugtext = true,
+                    window = sdl,
+                    lowlatency = true}
+  gfx_opts.vsync = (not openvr.available) -- enable vsync if no openvr
+  gfx.init_gfx(gfx_opts)
+  log.info("gfx init done")
 end
 
-function VRApp:setupTargets()
-    local w,h = self.vrWidth, self.vrHeight
-    self.targets = {gfx.RenderTarget(w,h):makeRGB8(true),
-                    gfx.RenderTarget(w,h):makeRGB8(true)}
-    self.backbuffer = gfx.RenderTarget(self.width, self.height):makeBackbuffer()
-    self.eyeTexes = {self.targets[1].attachments[1],
+function VRApp:ecs_init()
+  -- create ecs
+  local ECS = ecs.ECS()
+  self.ECS = ECS
+  ECS:add_system(sdl_input.SDLInputSystem())
+  ECS:add_system(framestats.DebugTextStats())
+
+  ECS.scene:add_component(sdl_input.SDLInputComponent())
+  ECS.scene:on("keydown", function(entity, evt)
+    local keyname = ffi.string(evt.keycode)
+    if keyname == "F12" then
+      print("Saving screenshot!")
+      gfx.save_screenshot("screenshot.png")
+    end
+  end)
+
+  self:init_pipeline()
+
+  ECS.scene:add(self.stereo_cams[1])
+  ECS.scene:add(self.stereo_cams[2])
+end
+
+function VRApp:setup_targets()
+    local w,h = self.vr_width, self.vr_height
+    self.targets = {gfx.RenderTarget(w,h):make_RGB8(true),
+                    gfx.RenderTarget(w,h):make_RGB8(true)}
+    self.backbuffer = gfx.RenderTarget(self.width, self.height):make_backbuffer()
+    self.eye_texes = {self.targets[1].attachments[1],
                      self.targets[2].attachments[1]}
-    self.eyeContexts = {{}, {}}
 end
 
-function VRApp:initPipeline()
-    self:setupTargets()
-    self.pipeline = gfx.Pipeline()
+function VRApp:init_pipeline()
+  self:setup_targets()
 
-    -- set up individual eye passes by creating one forward pass and then
-    -- duplicating it twice
-    local pbr = require("shaders/pbr.t")
-    local forwardpass = gfx.MultiShaderStage({
-        renderTarget = nil,
-        clear = {color = 0x303030ff},
-        shaders = {solid = pbr.PBRShader()}
-    })
-    self.forwardpass = forwardpass
+  local p = self.ECS:add_system(pipeline.Pipeline({verbose = true}))
+  local left = p:add_stage(pipeline.Stage({
+    name = "solid_geo_left",
+    clear = {color = 0x303050ff, depth = 1.0},
+    render_target = self.targets[1]
+  }, {pipeline.GenericRenderOp(), camera.CameraControlOp("left")}))
+  local right = p:add_stage(pipeline.Stage({
+    name = "solid_geo_right",
+    clear = {color = 0x303050ff, depth = 1.0},
+    render_target = self.targets[2]
+  }, {pipeline.GenericRenderOp(), camera.CameraControlOp("right")}))
+  local composite = p:add_stage(pipeline.Stage({
+    name = "composite",
+    render_target = self.backbuffer
+  }))
 
-    for i = 1,2 do
-        local eyePass = forwardpass:duplicate(self.targets[i])
-        self.pipeline:add("forward_" .. i, eyePass, self.eyeContexts[i])
-    end
+  self.composite_view = composite.view
 
-    -- finalize pipeline
-    self.pipeline:setupViews(0)
-    self.windowView = self.pipeline.nextAvailableView
-    self.backbuffer:setViewClear(self.windowView, {color = 0x303030ff,
-                                                   depth = 1.0})
-
-    self:setDefaultLights()
-end
-
-function VRApp:setDefaultLights()
-    -- set default lights
-    local Vector = math.Vector
-    local forwardpass = self.forwardpass
-    forwardpass.globals.lightDirs:setMultiple({
-            Vector( 1.0,  1.0,  0.0),
-            Vector(-1.0,  1.0,  0.0),
-            Vector( 0.0, -1.0,  1.0),
-            Vector( 0.0, -1.0, -1.0)})
-
-    forwardpass.globals.lightColors:setMultiple({
-            Vector(0.8, 0.8, 0.8),
-            Vector(1.0, 1.0, 1.0),
-            Vector(0.1, 0.1, 0.1),
-            Vector(0.1, 0.1, 0.1)})
+  -- finalize pipeline
+  self.pipeline = p
+  self.pipeline:bind()
 end
 
 function VRApp:composite(rt, x0, y0, x1, y1)
-    bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)
-    bgfx.bgfx_set_transform(self.identitymat.data, 1)
-    self.quadgeo:quad(x0, y0, x1, y1, 0.0):bind()
-    self.compositeSampler:set(rt.attachments[1]):bind()
-    bgfx.bgfx_submit(self.windowView, self.compositePgm, 0, false)
+  gfx.set_state() -- set default state
+  gfx.set_transform(self.identitymat)
+  self.quadgeo:quad(x0, y0, x1, y1, 0.0):bind()
+  self.composite_sampler:set(rt.attachments[1]):bind()
+  gfx.submit(self.composite_view, self.composite_program)
 end
 
-function VRApp:updateCameras_()
-    local cams = self.stereoCameras
-    if openvr.available then
-        --self.camera.matrix:copy(openvr.hmd.pose)
-        for i = 1,2 do
-            cams[i].projMat:copy(openvr.eyeProjections[i])
-            cams[i].matrix:copy(openvr.eyePoses[i])
-        end
-    else
-        local offsets = self.offsets
-        for i = 1,2 do
-            cams[i].matrix:multiply(self.camera.matrix, offsets[i])
-        end
-    end
-end
-
-function VRApp:render()
-    self.orthocam:setViewMatrices(self.windowView)
-    self.backbuffer:bindToView(self.windowView)
-    -- Note: here it looks like we're compositing before we render the eyes,
-    -- but bgfx renders views in order so we can submit them out of order
+function VRApp:_update_cameras()
+  local cams = self.stereo_cams
+  if openvr.available then -- use openvr provided camera positions
     for i = 1,2 do
-        self.eyeContexts[i].scene = self.scene
-        self.eyeContexts[i].camera = self.stereoCameras[i]
-        local x0 = (i-1) * 0.5
-        local x1 = x0 + 0.5
-        self:composite(self.targets[i], x0, 0, x1, 1.0)
+      cams[i].camera:set_projection(openvr.eye_projections[i])
+      cams[i].matrix:copy(openvr.eye_poses[i])
     end
-    self.pipeline:render({scene = self.scene})
+  else                     -- emulate a generic stereo rig
+    -- TODO: fix this
+  end
 end
 
 function VRApp:createPlaceholderControllerObject(controller)
@@ -230,43 +211,26 @@ function VRApp:updateControllers_()
 end
 
 function VRApp:update()
-    self.frame = self.frame + 1
-    self.time = self.time + 1.0 / 60.0
+  if openvr.available then
+      openvr.begin_frame()
+      self:_update_cameras()
+      --self:updateControllers_()
+      --self.controllers = openvr.controllers
+  end
 
-    local scriptToWait = truss.toc(self.startTime)
+  self.composite_view:set_matrices(self.identitymat, self.composite_proj)
+  self.composite_view:set_render_target(self.backbuffer)
 
-    if openvr.available then
-        openvr.beginFrame()
-        self:updateCameras_()
-        self:updateControllers_()
-        self.controllers = openvr.controllers
-    end
+  -- Note: here it looks like we're compositing before we render the eyes,
+  -- but bgfx renders views in order so we can submit them out of order
+  for i = 1,2 do
+    local x0 = (i-1) * 0.5
+    local x1 = x0 + 0.5
+    self:composite(self.targets[i], x0, 0, x1, 1.0)
+  end
 
-    local startTime2 = truss.tic()
-
-    -- Deal with input events
-    self:updateEvents()
-
-    -- Set the window view to take up the entire target
-    --bgfx.bgfx_set_view_rect(self.windowView, 0, 0, self.width, self.height)
-    self:drawDebugText()
-
-    if self.preRender then
-        self:preRender()
-    end
-
-    self:updateScene()
-    self:render()
-
-    local sceneUpdateTime = truss.toc(startTime2)
-    self.scripttime = scriptToWait + sceneUpdateTime
-
-    -- Render frame and submit eye textures
-    bgfx.bgfx_frame(false)
-    openvr.submitFrame(self.eyeTexes)
-
-    self.frametime = truss.toc(self.startTime)
-    self.startTime = truss.tic()
+  self.ECS:update() -- this does main rendering
+  openvr.submit_frame(self.eye_texes)
 end
 
 m.VRApp = VRApp
