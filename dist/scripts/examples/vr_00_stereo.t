@@ -71,8 +71,7 @@ end
 
 function init()
   app = VRApp({title = "vr_00_stereo",
-               width = 1280,
-               height = 720})
+               mirror = "left"})
   create_scene(app.ECS.scene)
 end
 

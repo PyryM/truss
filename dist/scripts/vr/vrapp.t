@@ -30,6 +30,18 @@ function VRApp:init(options)
     vw, vh = openvr.get_target_size()
   end
 
+  if self.options.width and self.options.width < 1.0 then
+    self.window_width = self.options.width * vw
+    self.window_height = self.options.width * vh
+  else
+    self.window_width = self.options.width or (vw / 2)
+    self.window_height = self.options.height or (vh / 2)
+  end
+
+  if self.options.mirror == "both" then
+    self.window_width = self.window_width * 2
+  end
+
   self.vr_width = math.floor((options.vr_width or 1.0) * vw)
   self.vr_height = math.floor((options.vr_height or 1.0) * vh)
   log.info("VRApp init: w= " .. self.vr_width .. ", h= " .. self.vr_height)
@@ -82,8 +94,8 @@ end
 
 function VRApp:gfx_init()
   log.info("gfx init")
-  sdl.create_window(self.options.width or 1280,
-                    self.options.height or 800,
+  sdl.create_window(self.window_width or 1280,
+                    self.window_height or 800,
                     self.options.title or 'title')
   local gfx_opts = {msaa = true,
                     debugtext = true,
@@ -128,6 +140,18 @@ end
 function VRApp:init_pipeline()
   self:setup_targets()
 
+  local composite_ops
+  if self.options.mirror == "left" then
+    composite_ops = {left = {self.targets[1], 0.0, 0.0, 1.0, 1.0}}
+  elseif self.options.mirror == "right" then
+    composite_ops = {right = {self.targets[1], 0.0, 0.0, 1.0, 1.0}}
+  elseif self.options.mirror == "none" then
+    composite_ops = {}
+  else
+    composite_ops = {left =  {self.targets[1], 0.0, 0.0, 0.5, 1.0},
+                     right = {self.targets[2], 0.5, 0.0, 1.0, 1.0}}
+  end
+
   local p = self.ECS:add_system(pipeline.Pipeline({verbose = true}))
   local left = p:add_stage(pipeline.Stage({
     name = "solid_geo_left",
@@ -142,11 +166,7 @@ function VRApp:init_pipeline()
   local composite = p:add_stage(compositestage.CompositeStage({
     name = "composite",
     render_target = self.backbuffer
-  },
-  {
-    left =  {self.targets[1], 0.0, 0.0, 0.5, 1.0},
-    right = {self.targets[2], 0.5, 0.0, 1.0, 1.0}
-  }))
+  }, composite_ops))
 
   -- finalize pipeline
   self.pipeline = p
