@@ -2,16 +2,16 @@ void tr_ovw_GetRecommendedRenderTargetSize(IVRSystem* self, uint32_t * pnWidth, 
     self->GetRecommendedRenderTargetSize(pnWidth, pnHeight);
 }
 
-HmdMatrix44_t tr_ovw_GetProjectionMatrix(IVRSystem* self, EVREye eEye, float fNearZ, float fFarZ, EGraphicsAPIConvention eProjType){
-    return self->GetProjectionMatrix(eEye, fNearZ, fFarZ, eProjType);
+HmdMatrix44_t tr_ovw_GetProjectionMatrix(IVRSystem* self, EVREye eEye, float fNearZ, float fFarZ){
+    return self->GetProjectionMatrix(eEye, fNearZ, fFarZ);
 }
 
 void tr_ovw_GetProjectionRaw(IVRSystem* self, EVREye eEye, float * pfLeft, float * pfRight, float * pfTop, float * pfBottom){
     self->GetProjectionRaw(eEye, pfLeft, pfRight, pfTop, pfBottom);
 }
 
-DistortionCoordinates_t tr_ovw_ComputeDistortion(IVRSystem* self, EVREye eEye, float fU, float fV){
-    return self->ComputeDistortion(eEye, fU, fV);
+bool tr_ovw_ComputeDistortion(IVRSystem* self, EVREye eEye, float fU, float fV, DistortionCoordinates_t * pDistortionCoordinates){
+    return self->ComputeDistortion(eEye, fU, fV, pDistortionCoordinates);
 }
 
 HmdMatrix34_t tr_ovw_GetEyeToHeadTransform(IVRSystem* self, EVREye eEye){
@@ -122,16 +122,16 @@ char * tr_ovw_GetEventTypeNameFromEnum(IVRSystem* self, EVREventType eType){
     return self->GetEventTypeNameFromEnum(eType);
 }
 
-HiddenAreaMesh_t tr_ovw_GetHiddenAreaMesh(IVRSystem* self, EVREye eEye){
-    return self->GetHiddenAreaMesh(eEye);
+HiddenAreaMesh_t tr_ovw_GetHiddenAreaMesh(IVRSystem* self, EVREye eEye, EHiddenAreaMeshType type){
+    return self->GetHiddenAreaMesh(eEye, type);
 }
 
-bool tr_ovw_GetControllerState(IVRSystem* self, TrackedDeviceIndex_t unControllerDeviceIndex, VRControllerState_t * pControllerState){
-    return self->GetControllerState(unControllerDeviceIndex, pControllerState);
+bool tr_ovw_GetControllerState(IVRSystem* self, TrackedDeviceIndex_t unControllerDeviceIndex, VRControllerState_t * pControllerState, uint32_t unControllerStateSize){
+    return self->GetControllerState(unControllerDeviceIndex, pControllerState, unControllerStateSize);
 }
 
-bool tr_ovw_GetControllerStateWithPose(IVRSystem* self, ETrackingUniverseOrigin eOrigin, TrackedDeviceIndex_t unControllerDeviceIndex, VRControllerState_t * pControllerState, TrackedDevicePose_t * pTrackedDevicePose){
-    return self->GetControllerStateWithPose(eOrigin, unControllerDeviceIndex, pControllerState, pTrackedDevicePose);
+bool tr_ovw_GetControllerStateWithPose(IVRSystem* self, ETrackingUniverseOrigin eOrigin, TrackedDeviceIndex_t unControllerDeviceIndex, VRControllerState_t * pControllerState, uint32_t unControllerStateSize, TrackedDevicePose_t * pTrackedDevicePose){
+    return self->GetControllerStateWithPose(eOrigin, unControllerDeviceIndex, pControllerState, unControllerStateSize, pTrackedDevicePose);
 }
 
 void tr_ovw_TriggerHapticPulse(IVRSystem* self, TrackedDeviceIndex_t unControllerDeviceIndex, uint32_t unAxisId, unsigned short usDurationMicroSec){
@@ -186,6 +186,54 @@ void tr_ovw_GetDXGIOutputInfo(IVRExtendedDisplay* self, int32_t * pnAdapterIndex
     self->GetDXGIOutputInfo(pnAdapterIndex, pnAdapterOutputIndex);
 }
 
+char * tr_ovw_GetCameraErrorNameFromEnum(IVRTrackedCamera* self, EVRTrackedCameraError eCameraError){
+    return self->GetCameraErrorNameFromEnum(eCameraError);
+}
+
+EVRTrackedCameraError tr_ovw_HasCamera(IVRTrackedCamera* self, TrackedDeviceIndex_t nDeviceIndex, bool * pHasCamera){
+    return self->HasCamera(nDeviceIndex, pHasCamera);
+}
+
+EVRTrackedCameraError tr_ovw_GetCameraFrameSize(IVRTrackedCamera* self, TrackedDeviceIndex_t nDeviceIndex, EVRTrackedCameraFrameType eFrameType, uint32_t * pnWidth, uint32_t * pnHeight, uint32_t * pnFrameBufferSize){
+    return self->GetCameraFrameSize(nDeviceIndex, eFrameType, pnWidth, pnHeight, pnFrameBufferSize);
+}
+
+EVRTrackedCameraError tr_ovw_GetCameraIntrinsics(IVRTrackedCamera* self, TrackedDeviceIndex_t nDeviceIndex, EVRTrackedCameraFrameType eFrameType, HmdVector2_t * pFocalLength, HmdVector2_t * pCenter){
+    return self->GetCameraIntrinsics(nDeviceIndex, eFrameType, pFocalLength, pCenter);
+}
+
+EVRTrackedCameraError tr_ovw_GetCameraProjection(IVRTrackedCamera* self, TrackedDeviceIndex_t nDeviceIndex, EVRTrackedCameraFrameType eFrameType, float flZNear, float flZFar, HmdMatrix44_t * pProjection){
+    return self->GetCameraProjection(nDeviceIndex, eFrameType, flZNear, flZFar, pProjection);
+}
+
+EVRTrackedCameraError tr_ovw_AcquireVideoStreamingService(IVRTrackedCamera* self, TrackedDeviceIndex_t nDeviceIndex, TrackedCameraHandle_t * pHandle){
+    return self->AcquireVideoStreamingService(nDeviceIndex, pHandle);
+}
+
+EVRTrackedCameraError tr_ovw_ReleaseVideoStreamingService(IVRTrackedCamera* self, TrackedCameraHandle_t hTrackedCamera){
+    return self->ReleaseVideoStreamingService(hTrackedCamera);
+}
+
+EVRTrackedCameraError tr_ovw_GetVideoStreamFrameBuffer(IVRTrackedCamera* self, TrackedCameraHandle_t hTrackedCamera, EVRTrackedCameraFrameType eFrameType, void * pFrameBuffer, uint32_t nFrameBufferSize, CameraVideoStreamFrameHeader_t * pFrameHeader, uint32_t nFrameHeaderSize){
+    return self->GetVideoStreamFrameBuffer(hTrackedCamera, eFrameType, pFrameBuffer, nFrameBufferSize, pFrameHeader, nFrameHeaderSize);
+}
+
+EVRTrackedCameraError tr_ovw_GetVideoStreamTextureSize(IVRTrackedCamera* self, TrackedDeviceIndex_t nDeviceIndex, EVRTrackedCameraFrameType eFrameType, VRTextureBounds_t * pTextureBounds, uint32_t * pnWidth, uint32_t * pnHeight){
+    return self->GetVideoStreamTextureSize(nDeviceIndex, eFrameType, pTextureBounds, pnWidth, pnHeight);
+}
+
+EVRTrackedCameraError tr_ovw_GetVideoStreamTextureD3D11(IVRTrackedCamera* self, TrackedCameraHandle_t hTrackedCamera, EVRTrackedCameraFrameType eFrameType, void * pD3D11DeviceOrResource, void ** ppD3D11ShaderResourceView, CameraVideoStreamFrameHeader_t * pFrameHeader, uint32_t nFrameHeaderSize){
+    return self->GetVideoStreamTextureD3D11(hTrackedCamera, eFrameType, pD3D11DeviceOrResource, ppD3D11ShaderResourceView, pFrameHeader, nFrameHeaderSize);
+}
+
+EVRTrackedCameraError tr_ovw_GetVideoStreamTextureGL(IVRTrackedCamera* self, TrackedCameraHandle_t hTrackedCamera, EVRTrackedCameraFrameType eFrameType, glUInt_t * pglTextureId, CameraVideoStreamFrameHeader_t * pFrameHeader, uint32_t nFrameHeaderSize){
+    return self->GetVideoStreamTextureGL(hTrackedCamera, eFrameType, pglTextureId, pFrameHeader, nFrameHeaderSize);
+}
+
+EVRTrackedCameraError tr_ovw_ReleaseVideoStreamTextureGL(IVRTrackedCamera* self, TrackedCameraHandle_t hTrackedCamera, glUInt_t glTextureId){
+    return self->ReleaseVideoStreamTextureGL(hTrackedCamera, glTextureId);
+}
+
 EVRApplicationError tr_ovw_AddApplicationManifest(IVRApplications* self, char * pchApplicationManifestFullPath, bool bTemporary){
     return self->AddApplicationManifest(pchApplicationManifestFullPath, bTemporary);
 }
@@ -216,6 +264,10 @@ EVRApplicationError tr_ovw_LaunchApplication(IVRApplications* self, char * pchAp
 
 EVRApplicationError tr_ovw_LaunchTemplateApplication(IVRApplications* self, char * pchTemplateAppKey, char * pchNewAppKey, AppOverrideKeys_t * pKeys, uint32_t unKeys){
     return self->LaunchTemplateApplication(pchTemplateAppKey, pchNewAppKey, pKeys, unKeys);
+}
+
+EVRApplicationError tr_ovw_LaunchApplicationFromMimeType(IVRApplications* self, char * pchMimeType, char * pchArgs){
+    return self->LaunchApplicationFromMimeType(pchMimeType, pchArgs);
 }
 
 EVRApplicationError tr_ovw_LaunchDashboardOverlay(IVRApplications* self, char * pchAppKey){
@@ -258,6 +310,26 @@ bool tr_ovw_GetApplicationAutoLaunch(IVRApplications* self, char * pchAppKey){
     return self->GetApplicationAutoLaunch(pchAppKey);
 }
 
+EVRApplicationError tr_ovw_SetDefaultApplicationForMimeType(IVRApplications* self, char * pchAppKey, char * pchMimeType){
+    return self->SetDefaultApplicationForMimeType(pchAppKey, pchMimeType);
+}
+
+bool tr_ovw_GetDefaultApplicationForMimeType(IVRApplications* self, char * pchMimeType, char * pchAppKeyBuffer, uint32_t unAppKeyBufferLen){
+    return self->GetDefaultApplicationForMimeType(pchMimeType, pchAppKeyBuffer, unAppKeyBufferLen);
+}
+
+bool tr_ovw_GetApplicationSupportedMimeTypes(IVRApplications* self, char * pchAppKey, char * pchMimeTypesBuffer, uint32_t unMimeTypesBuffer){
+    return self->GetApplicationSupportedMimeTypes(pchAppKey, pchMimeTypesBuffer, unMimeTypesBuffer);
+}
+
+uint32_t tr_ovw_GetApplicationsThatSupportMimeType(IVRApplications* self, char * pchMimeType, char * pchAppKeysThatSupportBuffer, uint32_t unAppKeysThatSupportBuffer){
+    return self->GetApplicationsThatSupportMimeType(pchMimeType, pchAppKeysThatSupportBuffer, unAppKeysThatSupportBuffer);
+}
+
+uint32_t tr_ovw_GetApplicationLaunchArguments(IVRApplications* self, uint32_t unHandle, char * pchArgs, uint32_t unArgs){
+    return self->GetApplicationLaunchArguments(unHandle, pchArgs, unArgs);
+}
+
 EVRApplicationError tr_ovw_GetStartingApplication(IVRApplications* self, char * pchAppKeyBuffer, uint32_t unAppKeyBufferLen){
     return self->GetStartingApplication(pchAppKeyBuffer, unAppKeyBufferLen);
 }
@@ -280,6 +352,10 @@ bool tr_ovw_IsQuitUserPromptRequested(IVRApplications* self){
 
 EVRApplicationError tr_ovw_LaunchInternalProcess(IVRApplications* self, char * pchBinaryPath, char * pchArguments, char * pchWorkingDirectory){
     return self->LaunchInternalProcess(pchBinaryPath, pchArguments, pchWorkingDirectory);
+}
+
+uint32_t tr_ovw_GetCurrentSceneProcessId(IVRApplications* self){
+    return self->GetCurrentSceneProcessId();
 }
 
 ChaperoneCalibrationState tr_ovw_GetCalibrationState(IVRChaperone* self){
@@ -430,16 +506,32 @@ bool tr_ovw_GetFrameTiming(IVRCompositor* self, Compositor_FrameTiming * pTiming
     return self->GetFrameTiming(pTiming, unFramesAgo);
 }
 
+uint32_t tr_ovw_GetFrameTimings(IVRCompositor* self, Compositor_FrameTiming * pTiming, uint32_t nFrames){
+    return self->GetFrameTimings(pTiming, nFrames);
+}
+
 float tr_ovw_GetFrameTimeRemaining(IVRCompositor* self){
     return self->GetFrameTimeRemaining();
+}
+
+void tr_ovw_GetCumulativeStats(IVRCompositor* self, Compositor_CumulativeStats * pStats, uint32_t nStatsSizeInBytes){
+    self->GetCumulativeStats(pStats, nStatsSizeInBytes);
 }
 
 void tr_ovw_FadeToColor(IVRCompositor* self, float fSeconds, float fRed, float fGreen, float fBlue, float fAlpha, bool bBackground){
     self->FadeToColor(fSeconds, fRed, fGreen, fBlue, fAlpha, bBackground);
 }
 
+HmdColor_t tr_ovw_GetCurrentFadeColor(IVRCompositor* self, bool bBackground){
+    return self->GetCurrentFadeColor(bBackground);
+}
+
 void tr_ovw_FadeGrid(IVRCompositor* self, float fSeconds, bool bFadeIn){
     self->FadeGrid(fSeconds, bFadeIn);
+}
+
+float tr_ovw_GetCurrentGridAlpha(IVRCompositor* self){
+    return self->GetCurrentGridAlpha();
 }
 
 EVRCompositorError tr_ovw_SetSkyboxOverride(IVRCompositor* self, Texture_t * pTextures, uint32_t unTextureCount){
@@ -510,6 +602,38 @@ void tr_ovw_SuspendRendering(IVRCompositor* self, bool bSuspend){
     self->SuspendRendering(bSuspend);
 }
 
+EVRCompositorError tr_ovw_GetMirrorTextureD3D11(IVRCompositor* self, EVREye eEye, void * pD3D11DeviceOrResource, void ** ppD3D11ShaderResourceView){
+    return self->GetMirrorTextureD3D11(eEye, pD3D11DeviceOrResource, ppD3D11ShaderResourceView);
+}
+
+void tr_ovw_ReleaseMirrorTextureD3D11(IVRCompositor* self, void * pD3D11ShaderResourceView){
+    self->ReleaseMirrorTextureD3D11(pD3D11ShaderResourceView);
+}
+
+EVRCompositorError tr_ovw_GetMirrorTextureGL(IVRCompositor* self, EVREye eEye, glUInt_t * pglTextureId, glSharedTextureHandle_t * pglSharedTextureHandle){
+    return self->GetMirrorTextureGL(eEye, pglTextureId, pglSharedTextureHandle);
+}
+
+bool tr_ovw_ReleaseSharedGLTexture(IVRCompositor* self, glUInt_t glTextureId, glSharedTextureHandle_t glSharedTextureHandle){
+    return self->ReleaseSharedGLTexture(glTextureId, glSharedTextureHandle);
+}
+
+void tr_ovw_LockGLSharedTextureForAccess(IVRCompositor* self, glSharedTextureHandle_t glSharedTextureHandle){
+    self->LockGLSharedTextureForAccess(glSharedTextureHandle);
+}
+
+void tr_ovw_UnlockGLSharedTextureForAccess(IVRCompositor* self, glSharedTextureHandle_t glSharedTextureHandle){
+    self->UnlockGLSharedTextureForAccess(glSharedTextureHandle);
+}
+
+uint32_t tr_ovw_GetVulkanInstanceExtensionsRequired(IVRCompositor* self, char * pchValue, uint32_t unBufferSize){
+    return self->GetVulkanInstanceExtensionsRequired(pchValue, unBufferSize);
+}
+
+uint32_t tr_ovw_GetVulkanDeviceExtensionsRequired(IVRCompositor* self, VkPhysicalDevice_T * pPhysicalDevice, char * pchValue, uint32_t unBufferSize){
+    return self->GetVulkanDeviceExtensionsRequired(pPhysicalDevice, pchValue, unBufferSize);
+}
+
 EVROverlayError tr_ovw_FindOverlay(IVROverlay* self, char * pchOverlayKey, VROverlayHandle_t * pOverlayHandle){
     return self->FindOverlay(pchOverlayKey, pOverlayHandle);
 }
@@ -576,6 +700,22 @@ EVROverlayError tr_ovw_SetOverlayAlpha(IVROverlay* self, VROverlayHandle_t ulOve
 
 EVROverlayError tr_ovw_GetOverlayAlpha(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, float * pfAlpha){
     return self->GetOverlayAlpha(ulOverlayHandle, pfAlpha);
+}
+
+EVROverlayError tr_ovw_SetOverlayTexelAspect(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, float fTexelAspect){
+    return self->SetOverlayTexelAspect(ulOverlayHandle, fTexelAspect);
+}
+
+EVROverlayError tr_ovw_GetOverlayTexelAspect(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, float * pfTexelAspect){
+    return self->GetOverlayTexelAspect(ulOverlayHandle, pfTexelAspect);
+}
+
+EVROverlayError tr_ovw_SetOverlaySortOrder(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, uint32_t unSortOrder){
+    return self->SetOverlaySortOrder(ulOverlayHandle, unSortOrder);
+}
+
+EVROverlayError tr_ovw_GetOverlaySortOrder(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, uint32_t * punSortOrder){
+    return self->GetOverlaySortOrder(ulOverlayHandle, punSortOrder);
 }
 
 EVROverlayError tr_ovw_SetOverlayWidthInMeters(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, float fWidthInMeters){
@@ -718,12 +858,16 @@ EVROverlayError tr_ovw_SetOverlayFromFile(IVROverlay* self, VROverlayHandle_t ul
     return self->SetOverlayFromFile(ulOverlayHandle, pchFilePath);
 }
 
-EVROverlayError tr_ovw_GetOverlayTexture(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, void ** pNativeTextureHandle, void * pNativeTextureRef, uint32_t * pWidth, uint32_t * pHeight, uint32_t * pNativeFormat, EGraphicsAPIConvention * pAPI, EColorSpace * pColorSpace){
-    return self->GetOverlayTexture(ulOverlayHandle, pNativeTextureHandle, pNativeTextureRef, pWidth, pHeight, pNativeFormat, pAPI, pColorSpace);
+EVROverlayError tr_ovw_GetOverlayTexture(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, void ** pNativeTextureHandle, void * pNativeTextureRef, uint32_t * pWidth, uint32_t * pHeight, uint32_t * pNativeFormat, ETextureType * pAPIType, EColorSpace * pColorSpace, VRTextureBounds_t * pTextureBounds){
+    return self->GetOverlayTexture(ulOverlayHandle, pNativeTextureHandle, pNativeTextureRef, pWidth, pHeight, pNativeFormat, pAPIType, pColorSpace, pTextureBounds);
 }
 
 EVROverlayError tr_ovw_ReleaseNativeOverlayHandle(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, void * pNativeTextureHandle){
     return self->ReleaseNativeOverlayHandle(ulOverlayHandle, pNativeTextureHandle);
+}
+
+EVROverlayError tr_ovw_GetOverlayTextureSize(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, uint32_t * pWidth, uint32_t * pHeight){
+    return self->GetOverlayTextureSize(ulOverlayHandle, pWidth, pHeight);
 }
 
 EVROverlayError tr_ovw_CreateDashboardOverlay(IVROverlay* self, char * pchOverlayKey, char * pchOverlayFriendlyName, VROverlayHandle_t * pMainHandle, VROverlayHandle_t * pThumbnailHandle){
@@ -776,6 +920,18 @@ void tr_ovw_SetKeyboardTransformAbsolute(IVROverlay* self, ETrackingUniverseOrig
 
 void tr_ovw_SetKeyboardPositionForOverlay(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, HmdRect2_t avoidRect){
     self->SetKeyboardPositionForOverlay(ulOverlayHandle, avoidRect);
+}
+
+EVROverlayError tr_ovw_SetOverlayIntersectionMask(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, VROverlayIntersectionMaskPrimitive_t * pMaskPrimitives, uint32_t unNumMaskPrimitives, uint32_t unPrimitiveSize){
+    return self->SetOverlayIntersectionMask(ulOverlayHandle, pMaskPrimitives, unNumMaskPrimitives, unPrimitiveSize);
+}
+
+EVROverlayError tr_ovw_GetOverlayFlags(IVROverlay* self, VROverlayHandle_t ulOverlayHandle, uint32_t * pFlags){
+    return self->GetOverlayFlags(ulOverlayHandle, pFlags);
+}
+
+VRMessageOverlayResponse tr_ovw_ShowMessageOverlay(IVROverlay* self, char * pchText, char * pchCaption, char * pchButton0Text, char * pchButton1Text, char * pchButton2Text, char * pchButton3Text){
+    return self->ShowMessageOverlay(pchText, pchCaption, pchButton0Text, pchButton1Text, pchButton2Text, pchButton3Text);
 }
 
 EVRRenderModelError tr_ovw_LoadRenderModel_Async(IVRRenderModels* self, char * pchRenderModelName, RenderModel_t ** ppRenderModel){
@@ -838,6 +994,18 @@ bool tr_ovw_RenderModelHasComponent(IVRRenderModels* self, char * pchRenderModel
     return self->RenderModelHasComponent(pchRenderModelName, pchComponentName);
 }
 
+uint32_t tr_ovw_GetRenderModelThumbnailURL(IVRRenderModels* self, char * pchRenderModelName, char * pchThumbnailURL, uint32_t unThumbnailURLLen, EVRRenderModelError * peError){
+    return self->GetRenderModelThumbnailURL(pchRenderModelName, pchThumbnailURL, unThumbnailURLLen, peError);
+}
+
+uint32_t tr_ovw_GetRenderModelOriginalPath(IVRRenderModels* self, char * pchRenderModelName, char * pchOriginalPath, uint32_t unOriginalPathLen, EVRRenderModelError * peError){
+    return self->GetRenderModelOriginalPath(pchRenderModelName, pchOriginalPath, unOriginalPathLen, peError);
+}
+
+char * tr_ovw_GetRenderModelErrorNameFromEnum(IVRRenderModels* self, EVRRenderModelError error){
+    return self->GetRenderModelErrorNameFromEnum(error);
+}
+
 EVRNotificationError tr_ovw_CreateNotification(IVRNotifications* self, VROverlayHandle_t ulOverlayHandle, uint64_t ulUserValue, EVRNotificationType type, char * pchText, EVRNotificationStyle style, NotificationBitmap_t * pImage, VRNotificationId * pNotificationId){
     return self->CreateNotification(ulOverlayHandle, ulUserValue, type, pchText, style, pImage, pNotificationId);
 }
@@ -854,36 +1022,36 @@ bool tr_ovw_Sync(IVRSettings* self, bool bForce, EVRSettingsError * peError){
     return self->Sync(bForce, peError);
 }
 
-bool tr_ovw_GetBool(IVRSettings* self, char * pchSection, char * pchSettingsKey, bool bDefaultValue, EVRSettingsError * peError){
-    return self->GetBool(pchSection, pchSettingsKey, bDefaultValue, peError);
-}
-
 void tr_ovw_SetBool(IVRSettings* self, char * pchSection, char * pchSettingsKey, bool bValue, EVRSettingsError * peError){
     self->SetBool(pchSection, pchSettingsKey, bValue, peError);
-}
-
-int32_t tr_ovw_GetInt32(IVRSettings* self, char * pchSection, char * pchSettingsKey, int32_t nDefaultValue, EVRSettingsError * peError){
-    return self->GetInt32(pchSection, pchSettingsKey, nDefaultValue, peError);
 }
 
 void tr_ovw_SetInt32(IVRSettings* self, char * pchSection, char * pchSettingsKey, int32_t nValue, EVRSettingsError * peError){
     self->SetInt32(pchSection, pchSettingsKey, nValue, peError);
 }
 
-float tr_ovw_GetFloat(IVRSettings* self, char * pchSection, char * pchSettingsKey, float flDefaultValue, EVRSettingsError * peError){
-    return self->GetFloat(pchSection, pchSettingsKey, flDefaultValue, peError);
-}
-
 void tr_ovw_SetFloat(IVRSettings* self, char * pchSection, char * pchSettingsKey, float flValue, EVRSettingsError * peError){
     self->SetFloat(pchSection, pchSettingsKey, flValue, peError);
 }
 
-void tr_ovw_GetString(IVRSettings* self, char * pchSection, char * pchSettingsKey, char * pchValue, uint32_t unValueLen, char * pchDefaultValue, EVRSettingsError * peError){
-    self->GetString(pchSection, pchSettingsKey, pchValue, unValueLen, pchDefaultValue, peError);
-}
-
 void tr_ovw_SetString(IVRSettings* self, char * pchSection, char * pchSettingsKey, char * pchValue, EVRSettingsError * peError){
     self->SetString(pchSection, pchSettingsKey, pchValue, peError);
+}
+
+bool tr_ovw_GetBool(IVRSettings* self, char * pchSection, char * pchSettingsKey, EVRSettingsError * peError){
+    return self->GetBool(pchSection, pchSettingsKey, peError);
+}
+
+int32_t tr_ovw_GetInt32(IVRSettings* self, char * pchSection, char * pchSettingsKey, EVRSettingsError * peError){
+    return self->GetInt32(pchSection, pchSettingsKey, peError);
+}
+
+float tr_ovw_GetFloat(IVRSettings* self, char * pchSection, char * pchSettingsKey, EVRSettingsError * peError){
+    return self->GetFloat(pchSection, pchSettingsKey, peError);
+}
+
+void tr_ovw_GetString(IVRSettings* self, char * pchSection, char * pchSettingsKey, char * pchValue, uint32_t unValueLen, EVRSettingsError * peError){
+    self->GetString(pchSection, pchSettingsKey, pchValue, unValueLen, peError);
 }
 
 void tr_ovw_RemoveSection(IVRSettings* self, char * pchSection, EVRSettingsError * peError){
@@ -892,5 +1060,41 @@ void tr_ovw_RemoveSection(IVRSettings* self, char * pchSection, EVRSettingsError
 
 void tr_ovw_RemoveKeyInSection(IVRSettings* self, char * pchSection, char * pchSettingsKey, EVRSettingsError * peError){
     self->RemoveKeyInSection(pchSection, pchSettingsKey, peError);
+}
+
+EVRScreenshotError tr_ovw_RequestScreenshot(IVRScreenshots* self, ScreenshotHandle_t * pOutScreenshotHandle, EVRScreenshotType type, char * pchPreviewFilename, char * pchVRFilename){
+    return self->RequestScreenshot(pOutScreenshotHandle, type, pchPreviewFilename, pchVRFilename);
+}
+
+EVRScreenshotError tr_ovw_HookScreenshot(IVRScreenshots* self, EVRScreenshotType * pSupportedTypes, int numTypes){
+    return self->HookScreenshot(pSupportedTypes, numTypes);
+}
+
+EVRScreenshotType tr_ovw_GetScreenshotPropertyType(IVRScreenshots* self, ScreenshotHandle_t screenshotHandle, EVRScreenshotError * pError){
+    return self->GetScreenshotPropertyType(screenshotHandle, pError);
+}
+
+uint32_t tr_ovw_GetScreenshotPropertyFilename(IVRScreenshots* self, ScreenshotHandle_t screenshotHandle, EVRScreenshotPropertyFilenames filenameType, char * pchFilename, uint32_t cchFilename, EVRScreenshotError * pError){
+    return self->GetScreenshotPropertyFilename(screenshotHandle, filenameType, pchFilename, cchFilename, pError);
+}
+
+EVRScreenshotError tr_ovw_UpdateScreenshotProgress(IVRScreenshots* self, ScreenshotHandle_t screenshotHandle, float flProgress){
+    return self->UpdateScreenshotProgress(screenshotHandle, flProgress);
+}
+
+EVRScreenshotError tr_ovw_TakeStereoScreenshot(IVRScreenshots* self, ScreenshotHandle_t * pOutScreenshotHandle, char * pchPreviewFilename, char * pchVRFilename){
+    return self->TakeStereoScreenshot(pOutScreenshotHandle, pchPreviewFilename, pchVRFilename);
+}
+
+EVRScreenshotError tr_ovw_SubmitScreenshot(IVRScreenshots* self, ScreenshotHandle_t screenshotHandle, EVRScreenshotType type, char * pchSourcePreviewFilename, char * pchSourceVRFilename){
+    return self->SubmitScreenshot(screenshotHandle, type, pchSourcePreviewFilename, pchSourceVRFilename);
+}
+
+uint32_t tr_ovw_LoadSharedResource(IVRResources* self, char * pchResourceName, char * pchBuffer, uint32_t unBufferLen){
+    return self->LoadSharedResource(pchResourceName, pchBuffer, unBufferLen);
+}
+
+uint32_t tr_ovw_GetResourceFullPath(IVRResources* self, char * pchResourceName, char * pchResourceTypeDirectory, char * pchPathBuffer, uint32_t unBufferLen){
+    return self->GetResourceFullPath(pchResourceName, pchResourceTypeDirectory, pchPathBuffer, unBufferLen);
 }
 

@@ -239,7 +239,7 @@ function m.submit_frame(eyeTexes)
   for eye = 1,2 do
     m.texPtrs[eye] = bgfx.get_internal_texture_ptr(eyeTexes[eye])
     m.eyeSubmitTexes[eye].handle = m.texPtrs[eye]
-    m.eyeSubmitTexes[eye].eType = openvr_c.EGraphicsAPIConvention_API_DirectX
+    m.eyeSubmitTexes[eye].eType = openvr_c.ETextureType_TextureType_DirectX
     m.eyeSubmitTexes[eye].eColorSpace = openvr_c.EColorSpace_ColorSpace_Auto
     openvr_c.tr_ovw_Submit(m.compositorptr,
                            m.eyeIDs[eye], m.eyeSubmitTexes[eye],
@@ -339,9 +339,8 @@ end
 function m.updateProjections_()
   local near = m.nearClip or 0.05
   local far = m.farClip or 100.0
-  local api = openvr_c.EGraphicsAPIConvention_API_DirectX
   for i, eyeID in ipairs(m.eyeIDs) do
-    local m44 = openvr_c.tr_ovw_GetProjectionMatrix(m.sysptr, eyeID, near, far, api)
+    local m44 = openvr_c.tr_ovw_GetProjectionMatrix(m.sysptr, eyeID, near, far)
     m.openvrMatrix4x4ToMatrix(m44, m.eye_projections[i])
   end
 end
