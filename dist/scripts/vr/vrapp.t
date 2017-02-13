@@ -16,6 +16,7 @@ local sdl_input = require("ecs/sdl_input.t")
 local pipeline = require("graphics/pipeline.t")
 local framestats = require("graphics/framestats.t")
 local camera = require("graphics/camera.t")
+local compositestage = require("graphics/compositestage.t")
 
 local m = {}
 
@@ -138,24 +139,18 @@ function VRApp:init_pipeline()
     clear = {color = 0x303050ff, depth = 1.0},
     render_target = self.targets[2]
   }, {pipeline.GenericRenderOp(), camera.CameraControlOp("right")}))
-  local composite = p:add_stage(pipeline.Stage({
+  local composite = p:add_stage(compositestage.CompositeStage({
     name = "composite",
     render_target = self.backbuffer
+  },
+  {
+    left =  {self.targets[1], 0.0, 0.0, 0.5, 1.0},
+    right = {self.targets[2], 0.5, 0.0, 1.0, 1.0}
   }))
-
-  self.composite_view = composite.view
 
   -- finalize pipeline
   self.pipeline = p
   self.pipeline:bind()
-end
-
-function VRApp:composite(rt, x0, y0, x1, y1)
-  gfx.set_state() -- set default state
-  gfx.set_transform(self.identitymat)
-  self.quadgeo:quad(x0, y0, x1, y1, 0.0):bind()
-  self.composite_sampler:set(rt.attachments[1]):bind()
-  gfx.submit(self.composite_view, self.composite_program)
 end
 
 function VRApp:_update_cameras()
@@ -216,17 +211,6 @@ function VRApp:update()
       self:_update_cameras()
       --self:updateControllers_()
       --self.controllers = openvr.controllers
-  end
-
-  self.composite_view:set_matrices(self.identitymat, self.composite_proj)
-  self.composite_view:set_render_target(self.backbuffer)
-
-  -- Note: here it looks like we're compositing before we render the eyes,
-  -- but bgfx renders views in order so we can submit them out of order
-  for i = 1,2 do
-    local x0 = (i-1) * 0.5
-    local x1 = x0 + 0.5
-    self:composite(self.targets[i], x0, 0, x1, 1.0)
   end
 
   self.ECS:update() -- this does main rendering
