@@ -70,6 +70,7 @@ end
 
 function NVGContext:begin_frame(view)
   local w,h = view:get_dimensions()
+  self.width, self.height = w, h
   self:BeginFrame(w, h, 1.0)
 end
 
