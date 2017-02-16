@@ -40,7 +40,7 @@ function CompositeStage:composite(rt, x0, y0, x1, y1)
   gfx.submit(self.view, self._program)
 end
 
-function CompositeStage:update()
+function CompositeStage:update_begin()
   for _, op in pairs(self.composite_ops) do
     self:composite(unpack(op))
   end

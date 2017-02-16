@@ -8,6 +8,7 @@ local sdl = require("addons/sdl.t")
 local math = require("math")
 local pipeline = require("graphics/pipeline.t")
 local framestats = require("graphics/framestats.t")
+local nvg = require("graphics/nanovg.t")
 
 local camera = require("graphics/camera.t")
 local orbitcam = require("gui/orbitcam.t")
@@ -126,9 +127,20 @@ function init()
     name = "solid_geo",
     clear = {color = 0x303050ff, depth = 1.0},
   }, {pipeline.GenericRenderOp(), camera.CameraControlOp()}))
+  p:add_stage(nvg.NanoVGStage({
+    name = "nanovg_overlay",
+    clear = {color = false, depth = false}
+  }))
+
   ECS:add_system(framestats.DebugTextStats())
 
   ECS.scene:add_component(sdl_input.SDLInputComponent())
+  ECS.scene:add_component(nvg.NanoVGDrawable(function(comp, stage, ctx)
+    comp.color = comp.color or ctx:RGBA(255,0,0,128)
+    ctx:FillColor(comp.color)
+    ctx:Ellipse(100, 100, 50, 50)
+    ctx:Fill()
+  end))
   ECS.scene:on("keydown", function(entity, evt)
     local keyname = ffi.string(evt.keycode)
     if keyname == "F12" then

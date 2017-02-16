@@ -177,6 +177,12 @@ function m.create_state(user_options)
   return state
 end
 
+function m.invalid_handle(ttype)
+  local ret = terralib.new(ttype)
+  ret.idx = bgfx.INVALID_HANDLE
+  return ret
+end
+
 function m.set_state(state)
   bgfx.set_state(state or bgfx.STATE_DEFAULT, 0)
 end

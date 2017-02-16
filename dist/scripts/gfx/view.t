@@ -83,4 +83,13 @@ function View:set_render_target(tgt)
   end
 end
 
+function View:get_dimensions()
+  if self._rendertarget and self._rendertarget.width then
+    return self._rendertarget.width, self._rendertarget.height
+  else
+    local gfx = require("gfx")
+    return gfx.backbuffer_width, gfx.backbuffer_height
+  end
+end
+
 return m

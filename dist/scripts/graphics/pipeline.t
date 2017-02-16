@@ -50,18 +50,18 @@ end
 
 function Pipeline:update_begin()
   for _,stage in ipairs(self._ordered_stages) do
-    if stage.update then stage:update() end
+    if stage.update_begin then stage:update_begin() end
   end
 end
 
 function Pipeline:update_end()
+  for _,stage in ipairs(self._ordered_stages) do
+    if stage.update_end then stage:update_end() end
+  end
+
   if self.auto_frame_advance ~= false then
     gfx.frame()
   end
-end
-
-function Pipeline:update()
-  self:update_begin()
 end
 
 local Stage = class("Stage")
@@ -77,7 +77,7 @@ function Stage:init(globals, render_ops)
 end
 
 function Stage:__tostring()
-  return self.globals.name or "Stage"
+  return self.globals.name or self.name or "Stage"
 end
 
 -- copies a table value by value, using val:duplicate() when present
@@ -211,6 +211,7 @@ function MeshShaderComponent:init(geo, mat)
   self.geo = geo
   self.mat = mat
   self._render_ops = {}
+  self.mount_name = "mesh_shader"
 end
 
 MeshShaderComponent.on_update = DrawableComponent.draw
