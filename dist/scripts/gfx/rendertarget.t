@@ -65,11 +65,12 @@ function RenderTarget:make_backbuffer()
     log.error("Cannot convert finalized rendertarget to backbuffer!")
     return
   end
+  local gfx = require("gfx")
   self.width, self.height = gfx.backbuffer_width, gfx.backbuffer_height
   self.is_backbuffer = true
   self.has_color = true
   self.has_depth = true
-  self.framebuffer = require("gfx").invalid_handle(bgfx.frame_buffer_handle_t)
+  self.framebuffer = gfx.invalid_handle(bgfx.frame_buffer_handle_t)
   self.finalized = true
   return self
 end
