@@ -72,9 +72,7 @@ end
 
 -- convenience function to create an entity with the vr camera component
 function m.VRCamera(name)
-  local ret = Entity3d(name)
-  ret:add_component(VRCameraComponent())
-  return ret
+  return Entity3d(name, VRCameraComponent())
 end
 
 return m

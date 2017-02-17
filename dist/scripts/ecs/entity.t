@@ -9,13 +9,17 @@ local m = {}
 
 local Entity = class("Entity")
 m.Entity = Entity
-function Entity:init(name)
+function Entity:init(name, ...)
   self._components = {}
   self._event_handlers = {}
   self.children = {}
   self.enabled = true
   self.name = name or "entity"
   self.user_handlers = {} -- a pseudo-component to hold user attached handlers
+
+  for _, comp in ipairs({...}) do
+    self:add_component(comp)
+  end
 end
 
 -- return a string identifying this component for error messages
@@ -222,12 +226,14 @@ end
 local Entity3d = Entity:extend("Entity3d")
 m.Entity3d = Entity3d
 
-function Entity3d:init(name)
-  Entity3d.super.init(self, name)
+function Entity3d:init(name, ...)
   self.position = math.Vector(0.0, 0.0, 0.0, 0.0)
   self.scale = math.Vector(1.0, 1.0, 1.0, 0.0)
   self.quaternion = math.Quaternion():identity()
   self.matrix = math.Matrix4():identity()
+  -- call super.init after adding these fields, because some component might
+  -- need to have e.g. .matrix available in its :mount
+  Entity3d.super.init(self, name, ...)
 end
 
 function Entity3d:update_matrix()
