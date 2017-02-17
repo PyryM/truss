@@ -75,11 +75,6 @@ function init()
   create_scene(app.ECS.scene)
 end
 
-local printed_projection = false
 function update()
   app:update()
-  if not printed_projection then
-    log.info("Projection: " .. app.stereo_cams[1].camera.proj_mat:prettystr())
-    printed_projection = true
-  end
 end

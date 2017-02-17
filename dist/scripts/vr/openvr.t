@@ -227,9 +227,9 @@ function m.begin_frame()
     return false
   end
 
-  m.updateTrackables_()
-  m.updateProjections_()
-  m.updateeye_poses_()
+  m._update_trackables()
+  m._update_projections()
+  m._update_eye_poses()
   --modelloader.update()
 end
 
@@ -279,7 +279,7 @@ function m.deviceIndexToController(idx)
   return m.controllers[controllerIdx]
 end
 
-function m.updateTrackables_()
+function m._update_trackables()
   m.hasInputFocus = openvr_c.tr_ovw_IsInputFocusCapturedByAnotherProcess(m.sysptr)
 
   local referenceIdx = 0
@@ -336,7 +336,7 @@ local terra derefInt(x: &uint32) : uint32
   return @x
 end
 
-function m.updateProjections_()
+function m._update_projections()
   local near = m.nearClip or 0.05
   local far = m.farClip or 100.0
   for i, eyeID in ipairs(m.eyeIDs) do
@@ -345,7 +345,7 @@ function m.updateProjections_()
   end
 end
 
-function m.updateeye_poses_()
+function m._update_eye_poses()
   for i, eyeID in ipairs(m.eyeIDs) do
     local m34 = openvr_c.tr_ovw_GetEyeToHeadTransform(m.sysptr, eyeID)
     m.openvrMatrix3x4ToMatrix(m34, m.eyeOffsets[i])
@@ -367,8 +367,8 @@ function m.get_target_size()
 end
 
 function m.printDebugInfo()
-  m.updateProjections_()
-  m.updateeye_poses_()
+  m._update_projections()
+  m._update_eye_poses()
   local w,h = m.get_target_size()
   log.info("--------------openvr.printDebugInfo()--------------")
   log.info("Recommended target size: " .. w .. " x " .. h)

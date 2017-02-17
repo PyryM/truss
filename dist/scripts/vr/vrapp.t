@@ -7,6 +7,7 @@ local math = require("math")
 local gfx = require("gfx")
 local sdl = require("addons/sdl.t")
 local openvr = require("vr/openvr.t")
+local vrcomps = require("vr/components.t")
 
 local ecs = require("ecs/ecs.t")
 local component = require("ecs/component.t")
@@ -49,46 +50,11 @@ function VRApp:init(options)
   log.info("gfx init!")
   self:gfx_init()
 
-  self.stereo_cams = {
-    camera.Camera({tag="left"}),
-    camera.Camera({tag="right"})
-  }
-
-  local testprojL = {{0.36, 0.00, -0.06, 0.00},
-                     {0.00, 0.68, -0.00, 0.00},
-                     {0.00, 0.00, -1.00, -0.05},
-                     {0.00, 0.00, -1.00, 0.00}}
-  local testprojR = {{0.36, 0.00, 0.06, 0.00},
-                     {0.00, 0.68, -0.00, 0.00},
-                     {0.00, 0.00, -1.00, -0.05},
-                     {0.00, 0.00, -1.00, 0.00}}
-  self.stereo_cams[1].camera.proj_mat:from_table(testprojL)
-  self.stereo_cams[2].camera.proj_mat:from_table(testprojR)
-  log.info("ProjL: " .. tostring(self.stereo_cams[1].camera.proj_mat))
-
   -- controller objects
   self.controllerObjects = {}
   self.maxControllers = 0
 
-  -- used to draw screen space quads to composite things
-  self.composite_proj = math.Matrix4():orthographic_projection(0, 1, 0, 1, -1, 1)
-  self.identitymat = math.Matrix4():identity()
-  self.quadgeo = gfx.TransientGeometry()
-  log.info("got this far?")
-  self.composite_sampler = gfx.TexUniform("s_srcTex", 0)
-  log.info("got this far2?")
-  self.composite_program = gfx.load_program("vs_fullscreen",
-                                            "fs_fullscreen_copy")
   log.info("got this far3?")
-
-
-  local hipd = 6.4 / 2.0 -- half ipd
-  self.offsets = {
-      math.Matrix4():translation(math.Vector(-hipd, 0.0, 0.0)),
-      math.Matrix4():translation(math.Vector( hipd, 0.0, 0.0))
-  }
-
-  log.info("eh?")
   self:ecs_init()
 end
 
@@ -124,17 +90,17 @@ function VRApp:ecs_init()
 
   self:init_pipeline()
 
-  ECS.scene:add(self.stereo_cams[1])
-  ECS.scene:add(self.stereo_cams[2])
+  self.hmd_cam = vrcomps.VRCamera("hmd_camera")
+  ECS.scene:add(self.hmd_cam)
 end
 
 function VRApp:setup_targets()
-    local w,h = self.vr_width, self.vr_height
-    self.targets = {gfx.RenderTarget(w,h):make_RGB8(true),
-                    gfx.RenderTarget(w,h):make_RGB8(true)}
-    self.backbuffer = gfx.RenderTarget(self.width, self.height):make_backbuffer()
-    self.eye_texes = {self.targets[1].attachments[1],
-                     self.targets[2].attachments[1]}
+  local w,h = self.vr_width, self.vr_height
+  self.targets = {gfx.RenderTarget(w,h):make_RGB8(true),
+                  gfx.RenderTarget(w,h):make_RGB8(true)}
+  self.backbuffer = gfx.RenderTarget(self.width, self.height):make_backbuffer()
+  self.eye_texes = {self.targets[1].attachments[1],
+                   self.targets[2].attachments[1]}
 end
 
 function VRApp:init_pipeline()
@@ -155,14 +121,16 @@ function VRApp:init_pipeline()
   local p = self.ECS:add_system(pipeline.Pipeline({verbose = true}))
   local left = p:add_stage(pipeline.Stage({
     name = "solid_geo_left",
+    eye = "left",
     clear = {color = 0x303050ff, depth = 1.0},
     render_target = self.targets[1]
-  }, {pipeline.GenericRenderOp(), camera.CameraControlOp("left")}))
+  }, {pipeline.GenericRenderOp(), vrcomps.VRCameraControl()}))
   local right = p:add_stage(pipeline.Stage({
     name = "solid_geo_right",
+    eye = "right",
     clear = {color = 0x303050ff, depth = 1.0},
     render_target = self.targets[2]
-  }, {pipeline.GenericRenderOp(), camera.CameraControlOp("right")}))
+  }, {pipeline.GenericRenderOp(), vrcomps.VRCameraControl()}))
   local composite = p:add_stage(compositestage.CompositeStage({
     name = "composite",
     render_target = self.backbuffer
@@ -171,18 +139,6 @@ function VRApp:init_pipeline()
   -- finalize pipeline
   self.pipeline = p
   self.pipeline:bind()
-end
-
-function VRApp:_update_cameras()
-  local cams = self.stereo_cams
-  if openvr.available then -- use openvr provided camera positions
-    for i = 1,2 do
-      cams[i].camera:set_projection(openvr.eye_projections[i])
-      cams[i].matrix:copy(openvr.eye_poses[i])
-    end
-  else                     -- emulate a generic stereo rig
-    -- TODO: fix this
-  end
 end
 
 function VRApp:createPlaceholderControllerObject(controller)
@@ -227,10 +183,9 @@ end
 
 function VRApp:update()
   if openvr.available then
-      openvr.begin_frame()
-      self:_update_cameras()
-      --self:updateControllers_()
-      --self.controllers = openvr.controllers
+    openvr.begin_frame()
+    --self:updateControllers_()
+    --self.controllers = openvr.controllers
   end
 
   self.ECS:update() -- this does main rendering
