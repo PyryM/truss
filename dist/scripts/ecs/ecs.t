@@ -64,7 +64,7 @@ function ECS:insert_timing_event(evt_type, evt_info)
 end
 
 function ECS:update()
-  self:insert_timing_event("unaccounted")
+  self:insert_timing_event("frame_start")
 
   -- reconfigure if dirty
   if self._configuration_dirty then self:configure() end
