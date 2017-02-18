@@ -62,12 +62,6 @@ function m.init()
     terralib.new(openvr_c.Texture_t)
   }
 
-  m.hmd = {
-    pose = math.Matrix4():identity(),
-    velocity = math.Vector():zero(),
-    connected = false,
-    pose_valid = false
-  }
   m.eye_ids = {openvr_c.EVREye_Eye_Left, openvr_c.EVREye_Eye_Right}
 
   m.vrEvent = terralib.new(openvr_c.VREvent_t)
@@ -164,6 +158,7 @@ function m._update_trackables()
       local ttype = openvr_c.tr_ovw_GetTrackedDeviceClass(m.sysptr, i)
       if not target or target.device_class ~= ttype then
         if target then target:on_disconnect() end
+        log.info("New trackable " .. tostring(ttype))
         target = trackable_types[ttype].constructor(i, ttype)
         if m.on_trackable_connect then m.on_trackable_connect(target) end
         m.trackables[i+1] = target

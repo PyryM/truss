@@ -8,6 +8,7 @@ local gfx = require("gfx")
 local math = require("math")
 local entity = require("ecs/entity.t")
 local pipeline = require("graphics/pipeline.t")
+local openvr = require("vr/openvr.t")
 
 local function rand_on_sphere(tgt, m)
   local ret = tgt or math.Vector()
@@ -69,12 +70,26 @@ function create_scene(root)
   end
 end
 
+function dump_props(trackable)
+  local trackables = require("vr/trackables.t")
+  for propname, _ in pairs(trackables.trackable_props) do
+    local pval, perr = trackable:get_prop(propname)
+    log.info(propname .. " = " .. tostring(pval)
+             .. " [err:  " .. tostring(perr) .. "]")
+  end
+end
+
 function init()
   app = VRApp({title = "vr_00_stereo",
                mirror = "left"})
   create_scene(app.ECS.scene)
 end
 
+local props_dumped = false
 function update()
   app:update()
+  if not props_dumped and openvr.hmd then
+    dump_props(openvr.hmd)
+    props_dumped = true
+  end
 end

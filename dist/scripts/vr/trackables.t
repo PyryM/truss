@@ -28,11 +28,17 @@ function m.init(parent_openvr)
   }
 end
 
+local function find_prop_error_name(prop_error)
+  local cname = openvr.c_api.tr_ovw_GetPropErrorNameFromEnum(openvr.sysptr,
+                                                             prop_error)
+  return ffi.string(cname)
+end
+
 local function check_prop_error(val, prop_error)
   if prop_error == openvr.c_api.ETrackedPropertyError_TrackedProp_Success then
     return val
   else
-    return nil, prop_error
+    return nil, find_prop_error_name(prop_error)
   end
 end
 
@@ -45,7 +51,7 @@ end
 
 local function get_matrix34_prop(device_idx, prop_id)
   local mat = openvr.c_api.tr_ovw_GetMatrix34TrackedDeviceProperty(openvr.sysptr, device_idx, prop_id, m.prop_error)
-  truss_mat = math.Matrix4()
+  local truss_mat = math.Matrix4()
   openvr.openvr_mat34_to_mat(mat, truss_mat)
   return check_prop_error(truss_mat, m.prop_error[0])
 end
@@ -57,7 +63,7 @@ local function get_string_prop(device_idx, prop_id)
   local retsize = openvr.c_api.tr_ovw_GetStringTrackedDeviceProperty(openvr.sysptr,
     device_idx, prop_id, m.string_buff, m.string_buff_size, m.prop_error)
   if retsize < 1 then return nil end
-  local ret = ffi.string(string_buff, retsize-1) -- strip null terminator
+  local ret = ffi.string(m.string_buff, retsize-1) -- strip null terminator
   return check_prop_error(ret, m.prop_error[0])
 end
 
@@ -79,9 +85,13 @@ function m._parse_props()
 
     local found, _, prop_name, prop_type = string.find(k, patt)
     if found then
-      log.debug("Prop: " .. prop_name .. " " .. prop_type)
-      m.trackable_props[prop_name] = {prop_id = prop_enum_val,
-                                      getter_func = prop_funcs[prop_type]}
+      local gfunc = prop_funcs[prop_type]
+      if gfunc then
+        m.trackable_props[prop_name] = {prop_id = prop_enum_val,
+                                        getter_func = gfunc}
+      else
+        log.warning("No getter for " .. prop_name .. ":" .. prop_type)
+      end
     end
   end
 end
@@ -154,6 +164,7 @@ local HMD = Trackable:extend("HMD")
 m.HMD = HMD
 function HMD:init(device_idx, device_class)
   HMD.super.init(self, device_idx, device_class)
+  log.info("Creating HMD class thing")
 end
 
 function HMD:update(src)
