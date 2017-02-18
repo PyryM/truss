@@ -177,6 +177,7 @@ m.Controller = Controller
 function Controller:init(device_idx, device_class)
   Controller.super.init(self, device_idx, device_class)
   self._has_vibrated = false
+  self:_parse_axes_and_buttons()
 end
 
 function Controller:vibrate(strength)
@@ -190,7 +191,7 @@ end
 
 -- query openvr to turn its unlabeled list of five axes into named fields like
 -- "trigger1", "joystick1", etc.
-function Controller:_parse_axes()
+function Controller:_parse_axes_and_buttons()
   self.axes = {}
   local openvr_c = openvr.c_api
 
@@ -201,49 +202,56 @@ function Controller:_parse_axes()
   }
 
   for i = 0, const.k_unControllerStateAxisCount - 1 do
-    local axisEnum = openvr_c.tr_ovw_GetInt32TrackedDeviceProperty(openvr.sysptr, self.device_idx,
-      openvr_c.ETrackedDeviceProperty_Prop_Axis0Type_Int32 + i, m.prop_error)
-    local axisinfo = axislabels[tonumber(axisEnum)]
-    if axisinfo ~= nil then
-      axisinfo[2] = axisinfo[2] + 1
-      local axisName = axisinfo[1] .. axisinfo[2]
-      self.axes[i] = axisName
-      self[axisName] = {x = 0.0, y = 0.0}
+    local axis_type = self:get_prop("Axis" .. i .. "Type")
+    local axis_info = axislabels[tonumber(axis_type)]
+    if axis_info ~= nil then
+      axis_info[2] = axis_info[2] + 1 -- how many of this axis type we've seen
+      local axis_name = axis_info[1] .. axis_info[2] -- e.g., "joystick3"
+      self.axes[axis_name] = {x = 0.0, y = 0.0, idx = i}
+      self.axes[i] = self.axes[axis_name]
+    end
+  end
+
+  self.buttons = {}
+  self._buttons = {}
+  local supported_buttons = self:get_prop("SupportedButtons")
+  for bname, bmask in pairs(m.button_masks) do
+    if math.ulland(supported_buttons, bmask) > 0 then
+      self.buttons[bname] = 0
+      self._buttons[bname] = bmask
     end
   end
 end
 
--- function Controller:update(src)
---   self:update_pose(src)
---
---   if self.rawstate == nil then
---     self.rawstate = terralib.new(openvr_c.VRControllerState_t)
---     self.pressed = {}
---     self.touched = {}
---     self.lastpacket = 0
---   end
---   local rawstate = self.rawstate
---   local lastpacket = rawstate.unPacketNum
---   openvr_c.tr_ovw_GetControllerState(openvr.sysptr, self.device_idx, rawstate)
---   -- if rawstate.unPacketNum == lastpacket then
---   --     log.debug("Skipping " .. self.device_idx ..
---   --              " packet @ " .. lastpacket)
---   --     return
---   -- end
---   local bpressed = rawstate.ulButtonPressed
---   local btouched = rawstate.ulButtonTouched
---   for bname, bmask in pairs(m.button_masks) do
---     self.pressed[bname] = math.ulland(bpressed, bmask) > 0
---     self.touched[bname] = math.ulland(btouched, bmask) > 0
---   end
---   if self.axes == nil then self:_parse_axes() end
---   for i = 0, const.k_unControllerStateAxisCount - 1 do
---     local axisName = self.axes[i]
---     if axisName ~= nil then
---       self[axisName] = {x = rawstate.rAxis[i].x, y = rawstate.rAxis[i].y}
---     end
---   end
---   self._has_vibrated = false
--- end
+function Controller:update(src)
+  self:update_pose(src)
+
+  local openvr_c = openvr.c_api
+  if self.rawstate == nil then
+    self.rawstate = terralib.new(openvr_c.VRControllerState_t)
+    self.statesize = terralib.sizeof(openvr_c.VRControllerState_t)
+    self.pressed = {}
+    self.touched = {}
+  end
+
+  local rawstate = self.rawstate
+  local statesize = self.statesize
+  openvr_c.tr_ovw_GetControllerState(openvr.sysptr, self.device_idx, rawstate,
+                                     statesize)
+
+  for bname, bmask in pairs(self._buttons) do
+    local v = 0 -- 0 = none, 1 = touched, 2 = pressed, 3 = touched+pressed
+    if math.ulland(rawstate.ulButtonTouched, bmask) > 0 then v = v + 1 end
+    if math.ulland(rawstate.ulButtonPressed, bmask) > 0 then v = v + 2 end
+    self.buttons[bname] = v
+  end
+
+  for _, axis in pairs(self.axes) do
+    axis.x = rawstate.rAxis[axis.idx].x
+    axis.y = rawstate.rAxis[axis.idx].y
+  end
+
+  self._has_vibrated = false
+end
 
 return m

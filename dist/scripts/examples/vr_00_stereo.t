@@ -71,25 +71,34 @@ function create_scene(root)
 end
 
 function dump_props(trackable)
+  log.info(trackable.device_class_name .. "-----------------------------------")
   local trackables = require("vr/trackables.t")
   for propname, _ in pairs(trackables.trackable_props) do
     local pval, perr = trackable:get_prop(propname)
     log.info(propname .. " = " .. tostring(pval)
              .. " [err:  " .. tostring(perr) .. "]")
   end
+
+  if trackable.device_class_name == "Controller" then
+    log.info("Axes: ")
+    for k,v in pairs(trackable.axes) do
+      log.info(k)
+    end
+    log.info("Buttons: ")
+    for k,v in pairs(trackable.buttons) do
+      log.info(k)
+    end
+  end
+  log.info("-------------------------------------------------------------")
 end
 
 function init()
   app = VRApp({title = "vr_00_stereo",
                mirror = "left"})
   create_scene(app.ECS.scene)
+  openvr.on("trackable_connected", dump_props)
 end
 
-local props_dumped = false
 function update()
   app:update()
-  if not props_dumped and openvr.hmd then
-    dump_props(openvr.hmd)
-    props_dumped = true
-  end
 end

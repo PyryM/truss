@@ -68,6 +68,7 @@ function m.init()
   m.MAX_TRACKABLES = const.k_unMaxTrackedDeviceCount
   m.trackable_poses = terralib.new(openvr_c.TrackedDevicePose_t[m.MAX_TRACKABLES])
   m.trackables = {}
+  m._event_handlers = {}
   --modelloader.init(m)
 
   log.info("Finished Vr init")
@@ -146,6 +147,17 @@ function m.device_idxToController(idx)
   return m.controllers[controllerIdx]
 end
 
+function m.on(evt_name, f)
+  m._event_handlers[evt_name] = m._event_handlers[evt_name] or {}
+  table.insert(m._event_handlers[evt_name], f)
+end
+
+function m._event(evt_name, ...)
+  for _, f in ipairs(m._event_handlers[evt_name] or {}) do
+    f(...)
+  end
+end
+
 function m._update_trackables()
   m.has_input_focus = openvr_c.tr_ovw_IsInputFocusCapturedByAnotherProcess(m.sysptr)
   local trackable_types = trackables.trackable_types
@@ -157,11 +169,14 @@ function m._update_trackables()
     if trackable_pose.bPoseIsValid > 0 then
       local ttype = openvr_c.tr_ovw_GetTrackedDeviceClass(m.sysptr, i)
       if not target or target.device_class ~= ttype then
-        if target then target:on_disconnect() end
+        if target then
+          target:on_disconnect()
+          m._event("trackable_disconnected", target)
+        end
         log.info("New trackable " .. tostring(ttype))
         target = trackable_types[ttype].constructor(i, ttype)
-        if m.on_trackable_connect then m.on_trackable_connect(target) end
         m.trackables[i+1] = target
+        m._event("trackable_connected", target)
       end
       target:update(trackable_pose)
     elseif target then
