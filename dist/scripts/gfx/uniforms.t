@@ -36,21 +36,17 @@ function Uniform:clone()
   ret._uni_type = self._uni_type
   ret._handle = self._handle
   ret._num = self._num
-  ret._val = terralib.new(self._uni_type.terra_type[num])
+  ret._val = terralib.new(self._uni_type.terra_type[ret._num])
+  for i = 1, ret._num do
+    ret._val[i-1] = self._val[i-1]
+  end
   ret._uni_name = self._uni_name
   return ret
 end
 
 function Uniform:set(v, pos)
   if not v.elem then truss.error("Uniform:set:: v is not a Vector!") end
-
-  if self._num == 1 then
-    -- no need to copy to an intermediate if we only have one value
-    self._val = v.elem
-  else
-    self._val[pos or 0] = v.elem
-  end
-
+  self._val[pos or 0] = v.elem
   return self
 end
 
