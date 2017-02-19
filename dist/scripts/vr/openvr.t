@@ -8,7 +8,7 @@ local math = require("math")
 local openvr_c = nil
 local const = require("vr/constants.t")
 local trackables = require("vr/trackables.t")
---local modelloader = require("vr/modelloader.t")
+local modelloader = require("vr/modelloader.t")
 
 if truss.addons.openvr ~= nil then
   log.info("OpenVR support is available.")
@@ -69,7 +69,7 @@ function m.init()
   m.trackable_poses = terralib.new(openvr_c.TrackedDevicePose_t[m.MAX_TRACKABLES])
   m.trackables = {}
   m._event_handlers = {}
-  --modelloader.init(m)
+  modelloader.init(m)
 
   log.info("Finished Vr init")
   -- normally I would not care overly much about shutting down stuff on
@@ -100,7 +100,7 @@ function m.begin_frame()
   m._update_trackables()
   m._update_projections()
   m._update_eye_poses()
-  --modelloader.update()
+  modelloader.update()
 end
 
 function m.submit_frame(eye_texes)

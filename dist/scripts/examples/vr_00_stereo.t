@@ -88,6 +88,7 @@ function add_controller(trackable)
   local controller = entity.Entity3d()
   controller:add_component(pipeline.MeshShaderComponent(geo, m2))
   controller:add_component(vrcomps.VRControllerComponent(trackable))
+  controller.vr_controller:load_geo_to_component("mesh_shader")
 
   app.ECS.scene:add(controller)
 end

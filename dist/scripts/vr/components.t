@@ -85,6 +85,24 @@ function VRControllerComponent:init(trackable)
   self._trackable = trackable
 end
 
+local function print_failure(task, msg)
+  log.error("Loading failure: " .. msg)
+end
+
+function VRControllerComponent:load_geo_to_component(target_comp_name)
+  target_comp_name = target_comp_name or "mesh_shader"
+  local target = self
+  local function on_load(task)
+    target._entity[target_comp_name].geo = task.geo
+    --target._entity[target_comp_name]:configure()
+  end
+  self:load_model(on_load, print_failure, false)
+end
+
+function VRControllerComponent:load_model(on_load, on_fail, load_textures)
+  self._trackable:load_model(on_load, on_fail, load_textures)
+end
+
 function VRControllerComponent:on_preupdate()
   self.axes = self._trackable.axes
   self.buttons = self._trackable.buttons

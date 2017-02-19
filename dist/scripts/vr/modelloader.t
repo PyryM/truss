@@ -7,6 +7,7 @@ local m = {}
 local openvr_c = nil
 local parent = nil
 local Queue = require("utils/queue.t").Queue
+local gfx = require("gfx")
 
 function m.init(_parent)
   openvr_c = _parent.c_api
@@ -49,11 +50,11 @@ end
 
 local function load_model_task(task)
   -- check if the model is already in the cache
-  local geoName = "geo_" .. task.model_name
-  local cached_val = m.cache[geoName]
+  local geo_name = "geo_" .. task.model_name
+  local cached_val = m.cache[geo_name]
   if cached_val ~= nil then
     log.debug("Cache Fetched " .. task.model_name .. " from cache.")
-    task.model = cached_val
+    task.geo = cached_val
     m._dispatch_success(task)
     return true
   end
@@ -65,8 +66,9 @@ local function load_model_task(task)
     log.debug("Async load returned for model " .. task.model_name)
     local geo = m._ovr_model_to_geo(task.model_name, m.targets.model)
     local texid = m.targets.model.diffuse_tex_id
-    task.model = {geo = geo, texid = texid}
-    m.cache[geoName] = task.model
+    task.geo = geo
+    task.texid = texid
+    m.cache[geo_name] = task.geo
     m._dispatch_success(task)
     openvr_c.tr_ovw_FreeRenderModel(m.rendermodelsptr, m.targets.model)
     return true
@@ -77,19 +79,19 @@ local function load_model_task(task)
     -- an actual error
     log.error("Error loading model " .. tostring(m.model_name) ..
               ": " .. tostring(loaderr))
-    if task.on_model_load_fail then
-      task:on_model_load_fail(loaderr)
+    if task.on_fail then
+      task:on_fail(loaderr)
     end
     return false
   end
 end
 
 local function load_texture_task(task)
-  if task.model == nil or task.model.texid == nil then
+  if task.geo == nil or task.texid == nil then
     log.error("modelloader: Invalid texture id on task!")
     return true
   end
-  local tex_name = "tex_" .. task.model.texid
+  local tex_name = "tex_" .. task.texid
   local cached_val = m.cache[tex_name]
   if cached_val ~= nil then
     log.debug("Fetched texture for " .. task.model_name .. " from cache.")
@@ -98,11 +100,11 @@ local function load_texture_task(task)
     return true
   end
 
-  local loaderr = m.ovr_load_tex(m.rendermodelsptr, task.model.texid, m.targets)
+  local loaderr = m.ovr_load_tex(m.rendermodelsptr, task.texid, m.targets)
   if loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_None then
     -- loaded
     log.debug("Async texture returned for model " .. task.model_name)
-    local tex = m._ovr_tex_to_tex(task.model.texid, m.targets.texture)
+    local tex = m._ovr_tex_to_tex(task.texid, m.targets.texture)
     task.texture = tex
     m.cache[tex_name] = tex
     m._dispatch_success(task)
@@ -115,60 +117,63 @@ local function load_texture_task(task)
     -- an actual error
     log.error("Error loading texture for " .. tostring(m.model_name) ..
               ": " .. tostring(loaderr))
-    if task.on_model_load_fail then
-        task.on_model_load_fail(task, loaderr)
+    if task.on_fail then
+        task:on_fail(loaderr)
     end
     return false
   end
 end
 
 function m._dispatch_success(task)
-  if not m.options.load_textures or task.texture ~= nil then
-    task.model_loaded = true
-    if task.on_model_load then task.on_model_load(task) end
+  if not task.load_textures or task.texture ~= nil then
+    task:on_load()
   else -- load_textures and task.texture == nil
     task.execute = load_texture_task
     m.task_queue:push(task)
   end
 end
 
-function m.load_device_model(device, cb_success, cb_failure)
-  if device.model_loaded then return end
-
-  device.on_model_load = cb_success
-  device.on_model_load_fail = cb_failure
-  if device.deviceIndex == nil then
+function m.load_device_model(trackable, cb_success, cb_fail, load_textures)
+  if trackable.device_idx == nil then
     log.error("Nil device index???")
+    cb_fail({trackable = trackable}, "Nil device index.")
     return
   end
-  log.debug("Requesting model for " .. device.deviceIndex)
-  device.model_name = parent.getTrackableStringProp(device.deviceIndex,
-      openvr_c.ETrackedDeviceProperty_Prop_model_name_String)
-  log.debug("Starting to load device model " .. device.model_name)
-  local task = device
-  task.execute = load_model_task
+  log.debug("Requesting model for " .. trackable.device_idx .. " | " ..
+                                       trackable.device_class_name)
+  local model_name = trackable:get_prop("RenderModelName")
+  if not model_name then
+    log.error("No render model available for " .. trackable.device_class_name)
+    cb_fail({trackable = trackable}, "No render model available.")
+    return
+  end
+
+  log.debug("Starting to load device model " .. model_name)
+  local task = {trackable = trackable,
+                on_load = cb_success,
+                on_fail = cb_fail,
+                execute = load_model_task,
+                model_name = model_name,
+                load_textures = load_textures}
   m.task_queue:push(task)
 end
 
 function m._ovr_tex_to_tex(texid, data)
-    local texture = require("gfx/texture.t")
     local flags = 0 -- default texture flags
     local w, h = data.unWidth, data.unHeight
     log.debug("modelloader got tex of size " .. w .. " x " .. h)
     local datalen = w * h * 4
-    return texture.create_texture_from_data(w, h, data.rubTextureMapData,
+    return gfx.create_texture_from_data(w, h, data.rubTextureMapData,
                                             datalen, flags)
 end
 
 function m._ovr_model_to_geo(name, data)
-  local StaticGeometry = require("gfx/geometry.t").StaticGeometry
-  local vdefs = require("gfx/vertexdefs.t")
   local vertinfo = m.options.vertinfo or
-          vdefs.create_basic_vertex_type({"position", "normal", "texcoord0"})
+          gfx.create_basic_vertex_type({"position", "normal", "texcoord0"})
   local nverts, nindices = data.unVertexCount, data.unTriangleCount*3
   log.debug("modelloader got " .. nverts .. " vertices, and " ..
             nindices .. " indices.")
-  local geo = StaticGeometry(name)
+  local geo = gfx.StaticGeometry(name)
   geo:allocate(nverts, nindices, vertinfo)
 
   -- copy over vertex and index data

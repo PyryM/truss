@@ -141,6 +141,11 @@ function Trackable:get_prop(propname)
   return p.getter_func(self.device_idx, p.prop_id)
 end
 
+function Trackable:load_model(on_load, on_fail, load_textures)
+  local modelloader = require("vr/modelloader.t")
+  modelloader.load_device_model(self, on_load, on_fail, load_textures)
+end
+
 function Trackable:on_lost_pose()
 --  log.info("Trackable " .. self.device_class_name .. " lost pose.")
 end

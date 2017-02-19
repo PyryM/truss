@@ -97,6 +97,7 @@ function Entity:remove(child)
 end
 
 function Entity:configure(sg_root)
+  sg_root = sg_root or self._sg_root
   for _,comp in pairs(self._components) do
     if comp.configure then comp:configure(sg_root) end
   end
