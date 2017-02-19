@@ -142,7 +142,7 @@ function Trackable:get_prop(propname)
 end
 
 function Trackable:on_lost_pose()
-  log.info("Trackable " .. self.device_class_name .. " lost pose.")
+--  log.info("Trackable " .. self.device_class_name .. " lost pose.")
 end
 
 function Trackable:on_disconnect()

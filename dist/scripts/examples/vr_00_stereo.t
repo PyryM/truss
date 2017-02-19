@@ -9,6 +9,7 @@ local math = require("math")
 local entity = require("ecs/entity.t")
 local pipeline = require("graphics/pipeline.t")
 local openvr = require("vr/openvr.t")
+local vrcomps = require("vr/components.t")
 
 local function rand_on_sphere(tgt, m)
   local ret = tgt or math.Vector()
@@ -53,6 +54,8 @@ function create_scene(root)
     uniforms = create_uniforms(),
     program = gfx.load_program("vs_basicpbr", "fs_basicpbr_faceted_x4")
   }
+  sphere_geo = geo
+  sphere_mat = mat
 
   local thingy = entity.Entity3d()
   thingy.position:set(0.0, 0.5, 0.0)
@@ -70,33 +73,30 @@ function create_scene(root)
   end
 end
 
-function dump_props(trackable)
-  log.info(trackable.device_class_name .. "-----------------------------------")
-  local trackables = require("vr/trackables.t")
-  for propname, _ in pairs(trackables.trackable_props) do
-    local pval, perr = trackable:get_prop(propname)
-    log.info(propname .. " = " .. tostring(pval)
-             .. " [err:  " .. tostring(perr) .. "]")
-  end
+function add_controller(trackable)
+  if trackable.device_class_name ~= "Controller" then return end
 
-  if trackable.device_class_name == "Controller" then
-    log.info("Axes: ")
-    for k,v in pairs(trackable.axes) do
-      log.info(k)
-    end
-    log.info("Buttons: ")
-    for k,v in pairs(trackable.buttons) do
-      log.info(k)
-    end
-  end
-  log.info("-------------------------------------------------------------")
+  local geo = require("geometry/icosphere.t").icosphere_geo(0.1, 3, "cico")
+  local m2 = {
+    state = sphere_mat.state,
+    program = sphere_mat.program,
+    uniforms = sphere_mat.uniforms:clone()
+  }
+  m2.uniforms.u_baseColor:set(math.Vector(0.03,0.03,0.03,1.0))
+  m2.uniforms.u_pbrParams:set(math.Vector(0.001, 0.001, 0.001, 0.7))
+
+  local controller = entity.Entity3d()
+  controller:add_component(pipeline.MeshShaderComponent(geo, m2))
+  controller:add_component(vrcomps.VRControllerComponent(trackable))
+
+  app.ECS.scene:add(controller)
 end
 
 function init()
   app = VRApp({title = "vr_00_stereo",
                mirror = "left"})
   create_scene(app.ECS.scene)
-  openvr.on("trackable_connected", dump_props)
+  openvr.on("trackable_connected", add_controller)
 end
 
 function update()

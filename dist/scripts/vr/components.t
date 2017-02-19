@@ -7,6 +7,7 @@ local math = require("math")
 local pipeline = require("graphics/pipeline.t")
 local openvr = require("vr/openvr.t")
 local Entity3d = require("ecs/entity.t").Entity3d
+local Component = require("ecs/component.t").Component
 local m = {}
 
 local EYES = {left = 1, right = 2}
@@ -73,6 +74,21 @@ end
 -- convenience function to create an entity with the vr camera component
 function m.VRCamera(name)
   return Entity3d(name, VRCameraComponent())
+end
+
+local VRControllerComponent = Component:extend("VRControllerComponent")
+m.VRControllerComponent = VRControllerComponent
+
+function VRControllerComponent:init(trackable)
+  VRControllerComponent.super.init(self)
+  self.mount_name = "vr_controller"
+  self._trackable = trackable
+end
+
+function VRControllerComponent:on_preupdate()
+  self.axes = self._trackable.axes
+  self.buttons = self._trackable.buttons
+  self._entity.matrix:copy(self._trackable.pose)
 end
 
 return m
