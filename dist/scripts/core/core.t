@@ -265,9 +265,9 @@ log.debug("Loaded " .. idx .. " args.")
 local function add_paths()
   local nargs = #(truss.args)
   for i = 3,nargs do
-    if execArgs[i] == "--addpath" and i+2 <= nargs then
-      local physicalPath = execArgs[i+1]
-      local mountPath = execArgs[i+2]
+    if truss.args[i] == "--addpath" and i+2 <= nargs then
+      local physicalPath = truss.args[i+1]
+      local mountPath = truss.args[i+2]
       log.info("Adding path " .. physicalPath ..
        " => " .. mountPath)
       truss.C.add_fs_path(physicalPath,
