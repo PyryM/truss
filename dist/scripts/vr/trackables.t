@@ -147,11 +147,13 @@ function Trackable:load_model(on_load, on_fail, load_textures)
 end
 
 function Trackable:on_lost_pose()
---  log.info("Trackable " .. self.device_class_name .. " lost pose.")
+  --  log.info("Trackable " .. self.device_class_name .. " lost pose.")
+  self.pose_valid = false
 end
 
 function Trackable:on_disconnect()
   log.info("Trackable "  .. self.device_class_name .. "disconnected.")
+  self.connected = false
 end
 
 function Trackable:update_pose(src)
