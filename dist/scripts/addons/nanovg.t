@@ -62,7 +62,8 @@ function NVGContext:load_font(filename, alias)
 
   -- final 0 argument indicates that nanovg should not free the data
   local font_id = nvg_c_funcs.CreateFontMem(self._ctx, alias,
-                                           data.data, data.data_length, 0)
+                                            data.data, data.data_length, 0)
+  log.debug("Created font with id " .. font_id)
   self._fonts[filename] = {id = font_id, data = data}
   self._font_aliases[alias] = self._fonts[filename]
   return font_id
