@@ -29,6 +29,7 @@ end
 function NanoVGStage:set_views(views)
   NanoVGStage.super.set_views(self, views)
   self._ctx = nanovg.NVGContext(self.view._viewid, self.options.edge_aa)
+  bgfx.set_view_seq(self.view._viewid, true)
   if self.nvg_setup then self:nvg_setup(self._ctx) end
 end
 
