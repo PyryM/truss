@@ -457,7 +457,14 @@ namespace
 				return 0;
 			}
 			frag->type = NSVG_SHADER_FILLIMG;
-			frag->texType = tex->type == NVG_TEXTURE_RGBA ? 0.0f : 1.0f;
+			if (tex->type == NVG_TEXTURE_RGBA)
+			{
+				frag->texType = (tex->flags & NVG_IMAGE_PREMULTIPLIED) ? 0.0f : 1.0f;
+			} 
+			else
+			{
+				frag->texType = 2.0f;
+			}
 			gl->th = tex->id;
 		}
 		else
