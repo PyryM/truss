@@ -224,10 +224,10 @@ function m.compute_normals(srcdata)
 end
 
 -- creates a geometry from a geometry data using the default vertex type
-function m.to_basic_geo(geoName, data)
+function m.to_basic_geo(geo_name, data)
     local gfx = require("gfx")
     if not data.attributes.normal then m.compute_normals(data) end
-    return gfx.StaticGeometry(geoName):fromData(data)
+    return gfx.StaticGeometry(geo_name):from_data(data)
 end
 
 local function push_tri_verts(src, dest, tri)
@@ -260,40 +260,40 @@ end
 -- merge geometry data together into a single data block
 -- input: a list of {geometryData, mat4 pose} lists
 function m.merge_data(datalist, attributes)
-    local ret = {indices = {}, attributes = {}}
-    for _,v in ipairs(attributes) do ret.attributes[v] = {} end
+  local ret = {indices = {}, attributes = {}}
+  for _,v in ipairs(attributes) do ret.attributes[v] = {} end
 
-    local idxOffset = 0
-    for _,v in ipairs(datalist) do
-        local data, pose = v[1], v[2]
-        local nverts = #(data.attributes.position)
-        -- copy attributes (assume vector attributes)
-        for attrName,vertexList in pairs(ret.attributes) do
-            local srcAttr = data.attributes[attrName]
-            local ntarget = (srcAttr ~= nil) and #(srcAttr)
-            if ntarget ~= nverts then
-                log.error("geometryutils.mergeData: attribute " .. attrName ..
-                          " expected " .. nverts .. ", had " .. tostring(ntarget))
-                return nil
-            end
-            for _,attrVal in ipairs(srcAttr) do
-                local newVal = Vector():copy(attrVal)
-                if pose then
-                    if attrName == "position" then newVal.elem.w = 1.0 end
-                    pose:multiplyVector(newVal)
-                end
-                table.insert(vertexList, newVal)
-            end
+  local idxOffset = 0
+  for _,v in ipairs(datalist) do
+    local data, pose = v[1], v[2]
+    local nverts = #(data.attributes.position)
+    -- copy attributes (assume vector attributes)
+    for attrName,vertexList in pairs(ret.attributes) do
+      local srcAttr = data.attributes[attrName]
+      local ntarget = (srcAttr ~= nil) and #(srcAttr)
+      if ntarget ~= nverts then
+        log.error("geometryutils.mergeData: attribute " .. attrName ..
+                  " expected " .. nverts .. ", had " .. tostring(ntarget))
+        return nil
+      end
+      for _,attrVal in ipairs(srcAttr) do
+        local newVal = Vector():copy(attrVal)
+        if pose then
+          if attrName == "position" then newVal.elem.w = 1.0 end
+          pose:multiply_vector(newVal)
         end
-        -- copy indices (assume list-of-lists format)
-        for _,triangle in ipairs(data.indices) do
-            local s0,s1,s2 = triangle[1], triangle[2], triangle[3]
-            local i0,i1,i2 = s0+idxOffset, s1+idxOffset, s2+idxOffset
-            table.insert(ret.indices, {i0, i1, i2})
-        end
-        idxOffset = idxOffset + nverts
+        table.insert(vertexList, newVal)
+      end
     end
-    return ret
+    -- copy indices (assume list-of-lists format)
+    for _,triangle in ipairs(data.indices) do
+      local s0,s1,s2 = triangle[1], triangle[2], triangle[3]
+      local i0,i1,i2 = s0+idxOffset, s1+idxOffset, s2+idxOffset
+      table.insert(ret.indices, {i0, i1, i2})
+    end
+    idxOffset = idxOffset + nverts
+  end
+  return ret
 end
 
 return m
