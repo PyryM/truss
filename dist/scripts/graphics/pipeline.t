@@ -216,4 +216,10 @@ end
 
 MeshShaderComponent.on_update = DrawableComponent.draw
 
+-- convenience function to create an Entity3d that just renders a mesh
+function m.Mesh(name, geo, mat)
+  local entity = require("ecs/entity.t")
+  return entity.Entity3d(name, MeshShaderComponent(geo, mat))
+end
+
 return m
