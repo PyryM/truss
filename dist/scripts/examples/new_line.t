@@ -9,6 +9,7 @@ local math = require("math")
 local pipeline = require("graphics/pipeline.t")
 local framestats = require("graphics/framestats.t")
 local line = require("graphics/line.t")
+local grid = require("graphics/grid.t")
 
 local camera = require("graphics/camera.t")
 local orbitcam = require("gui/orbitcam.t")
@@ -49,6 +50,13 @@ function init()
   -- create the scene
   lineobj = create_line()
   ECS.scene:add(lineobj)
+
+  local thegrid = grid.Grid({numlines = 0, numcircles = 20, spacing = 1.0,
+                             color = {0.8, 0.8, 0.8}, thickness = 0.03})
+  thegrid.position:set(0.0, -5.0, 0.0)
+  thegrid.quaternion:euler({x= -math.pi / 2.0, y=0, z=0}, 'ZYX')
+  thegrid:update_matrix()
+  ECS.scene:add(thegrid)
 end
 
 function update()
@@ -109,19 +117,12 @@ function create_line()
   end
 
   linecomp:set_points({linedata})
-  linecomp.mat.uniforms.u_color:set(math.Vector(0.8,0.8,0.8))
-  linecomp.mat.uniforms.u_thickness:set(math.Vector(0.1))
+  linecomp.mat.uniforms.u_color:set({0.8,0.3,0.3})
+  linecomp.mat.uniforms.u_thickness:set({0.05})
 
   local ret = entity.Entity3d("line")
   ret:add_component(linecomp)
   ret:add_component(Twiddler(initial_data, linedata))
-
-  -- create a grid
-  -- local thegrid = grid.Grid({numlines = 0, numcircles = 20, spacing = 1.0})
-  -- thegrid.position:set(0.0, -5.0, 0.0)
-  -- thegrid.quaternion:fromEuler({x= -math.pi / 2.0, y=0, z=0}, 'ZYX')
-  -- thegrid:updateMatrix()
-  -- rootobj:add(thegrid)
 
   return ret
 end

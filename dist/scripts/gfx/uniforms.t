@@ -45,8 +45,15 @@ function Uniform:clone()
 end
 
 function Uniform:set(v, pos)
-  if not v.elem then truss.error("Uniform:set:: v is not a Vector!") end
-  self._val[pos or 0] = v.elem
+  if v.elem then
+    self._val[pos or 0] = v.elem
+  else
+    local dv = self._val[pos or 0]
+    dv.x = v[1] or 0.0
+    dv.y = v[2] or 0.0
+    dv.z = v[3] or 0.0
+    dv.w = v[4] or 0.0
+  end
   return self
 end
 

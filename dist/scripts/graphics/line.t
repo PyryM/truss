@@ -165,7 +165,7 @@ function LineShaderComponent:set_points(lines)
     vertidx, idxidx = self:_append_segment(lines[i], vertidx, idxidx)
   end
 
-  self.geo:update()
+  if self.dynamic then self.geo:update() else self.geo:commit() end
 end
 
 return m
