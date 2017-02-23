@@ -50,10 +50,6 @@ function VRApp:init(options)
   log.info("gfx init!")
   self:gfx_init()
 
-  -- controller objects
-  self.controllerObjects = {}
-  self.maxControllers = 0
-
   log.info("got this far3?")
   self:ecs_init()
 end
@@ -64,7 +60,7 @@ function VRApp:gfx_init()
                     self.window_height or 800,
                     self.options.title or 'title')
   local gfx_opts = {msaa = true,
-                    debugtext = true,
+                    debugtext = self.options.debugtext,
                     window = sdl,
                     lowlatency = true}
   gfx_opts.vsync = (not openvr.available) -- enable vsync if no openvr
@@ -77,7 +73,10 @@ function VRApp:ecs_init()
   local ECS = ecs.ECS()
   self.ECS = ECS
   ECS:add_system(sdl_input.SDLInputSystem())
-  ECS:add_system(framestats.DebugTextStats())
+
+  if self.options.debugtext then
+    ECS:add_system(framestats.DebugTextStats())
+  end
 
   ECS.scene:add_component(sdl_input.SDLInputComponent())
   ECS.scene:on("keydown", function(entity, evt)
@@ -135,59 +134,22 @@ function VRApp:init_pipeline()
     name = "composite",
     render_target = self.backbuffer
   }, composite_ops))
+  if self.options.nvg then
+    local nvg = require("graphics/nanovg.t")
+    p:add_stage(nvg.NanoVGStage({
+      name = "nanovg_overlay",
+      render_target = self.backbuffer,
+      clear = {color = false, depth = false}
+    }))
+  end
 
   -- finalize pipeline
   self.pipeline = p
   self.pipeline:bind()
 end
 
-function VRApp:createPlaceholderControllerObject(controller)
-    log.debug("Creating placeholder controller!")
-    if self.controllerGeo == nil then
-        self.controllerGeo = require("geometry/icosphere.t").icosphereGeo(0.1, 3, "controller_sphere")
-    end
-    if self.controllerMat == nil then
-        self.controllerMat = require("shaders/pbr.t").PBRMaterial("solid"):roughness(0.8):tint(0.05,0.05,0.05):diffuse(0.005,0.005,0.005)
-    end
-    return gfx.Object3D(self.controllerGeo, self.controllerMat)
-end
-
-function VRApp:onControllerModelLoaded(data, target)
-    log.debug("Controller model loaded!")
-    target:setGeometry(data.model.geo)
-    -- ignore texture for now
-end
-
-function VRApp:updateControllers_()
-    self.maxControllers = openvr.maxControllers
-    for i = 1,self.maxControllers do
-        local controller = openvr.controllers[i]
-        if controller and controller.connected then
-            if self.controllerObjects[i] == nil then
-                self.controllerObjects[i] = self:createPlaceholderControllerObject(controller)
-                self.controllerObjects[i].controller = controller
-                self.roomroot:add(self.controllerObjects[i])
-                local targetself = self
-                local targetobj = self.controllerObjects[i]
-                openvr.loadModel(controller, function(loadresult)
-                    targetself:onControllerModelLoaded(loadresult, targetobj)
-                end)
-                if self.onControllerConnected then
-                    self:onControllerConnected(i, self.controllerObjects[i])
-                end
-            end
-            self.controllerObjects[i].matrix:copy(controller.pose)
-        end
-    end
-end
-
 function VRApp:update()
-  if openvr.available then
-    openvr.begin_frame()
-    --self:updateControllers_()
-    --self.controllers = openvr.controllers
-  end
-
+  openvr.begin_frame()
   self.ECS:update() -- this does main rendering
   openvr.submit_frame(self.eye_texes)
 end
