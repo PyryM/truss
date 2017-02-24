@@ -52,6 +52,7 @@ function m.init_gfx(options)
     -- put bgfx into single-threaded mode by calling render_frame before init
     m._safe_wait_frames = 1
     bgfx.render_frame()
+    gfx.single_threaded = true
   end
 
   local cb_ptr = nil
