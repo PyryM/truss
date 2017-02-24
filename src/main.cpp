@@ -6,6 +6,7 @@
 #include "addons/wsclient/wsclient_addon.h"
 #if defined(WIN32)
 #include "addons/openvr/openvr_addon.h"
+#include "addons/screencap/screencap_addon.h"
 #endif
 #include <iostream>
 #include <sstream>
@@ -63,6 +64,7 @@ int main(int argc, char** argv) {
 	interpreter->attachAddon(new WSClientAddon);
 #if defined(WIN32)
 	interpreter->attachAddon(new OpenVRAddon);
+	interpreter->attachAddon(new ScreencapAddon);
 #endif
 	truss_log(0, "Starting interpreter!");
 	// startUnthreaded starts the interpreter in the current thread,
