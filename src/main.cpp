@@ -6,6 +6,7 @@
 #include "addons/wsclient/wsclient_addon.h"
 #if defined(WIN32)
 #include "addons/openvr/openvr_addon.h"
+#include "addons/screencap/screencap_addon.h"
 #endif
 #include <iostream>
 #include <sstream>
@@ -54,7 +55,7 @@ int main(int argc, char** argv) {
 	truss::core().extractLibraries();				// extract currently loaded C libraries
 	setupRPath();									// set windows RPATH if necessary
 
-	truss::core().setWriteDir("save");              // write into basedir/save/
+	truss::core().setWriteDir("");              	// write into basedir/
 
 	truss::Interpreter* interpreter = truss::core().spawnInterpreter("interpreter_0");
 	interpreter->setDebug(0); // want most verbose debugging output
@@ -63,20 +64,19 @@ int main(int argc, char** argv) {
 	interpreter->attachAddon(new WSClientAddon);
 #if defined(WIN32)
 	interpreter->attachAddon(new OpenVRAddon);
+	interpreter->attachAddon(new ScreencapAddon);
 #endif
 	truss_log(0, "Starting interpreter!");
 	// startUnthreaded starts the interpreter in the current thread,
 	// which means the call will block until the interpreter is stopped
-	//interpreter->startUnthreaded("examples/dart_gui_test.t");
 	if (argc > 1) {
 		interpreter->startUnthreaded(argv[1]);
-		int retval = truss::core().getError();
-		if (retval != 0) {
-			std::cout << "Quit with error code: " << retval << std::endl;
-		}
-		return retval;
 	} else {
-		std::cout << "Usage: truss [script]" << std::endl;
+		interpreter->startUnthreaded("scripts/main.t");
 	}
-	return 0;
+	int retval = truss::core().getError();
+	if (retval != 0) {
+		std::cout << "Quit with error code: " << retval << std::endl;
+	}
+	return retval;
 }

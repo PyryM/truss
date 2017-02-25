@@ -10,8 +10,8 @@ local WebSocketConnection = class("WebSocketConnection")
 
 local numsockets = 0
 
-local wsAddon = truss.rawAddons.wsclient.functions
-local wsAddonPointer = truss.rawAddons.wsclient.pointer
+local wsAddon = truss.addons.wsclient.functions
+local wsAddonPointer = truss.addons.wsclient.pointer
 
 function WebSocketConnection:init()
     self.open = false

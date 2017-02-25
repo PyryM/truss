@@ -34,10 +34,14 @@ set(truss_SOURCES
     src/addons/nanovg/nanovg_bgfx_c99.cpp
 )
 if (${WIN32})
-    set(truss_HEADERS ${truss_HEADERS} src/addons/openvr/openvr_addon.h)
+    set(truss_HEADERS ${truss_HEADERS}
+        src/addons/openvr/openvr_addon.h
+        src/addons/screencap/screencap_addon.h
+    )
     set(truss_SOURCES ${truss_SOURCES}
         src/addons/openvr/openvr_addon.cpp
         src/addons/openvr/openvr_wrapper.cpp
+        src/addons/screencap/screencap_addon.cpp
     )
 endif()
 
@@ -74,7 +78,7 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     # Fix obscure LuaJIT issue on OSX.
     # http://www.freelists.org/post/luajit/luaL-newstate-fails-on-64bit-Mac-cant-set-linker-flags
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000")
-    
+
     # Fix linking error with missing core libraries on OSX.
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework CoreFoundation -framework Carbon -framework IOKit")
 endif()

@@ -23,7 +23,7 @@ function Ros:init()
 end
 
 function Ros:connect(url)
-    self.socket:connect(url)
+    return self.socket:connect(url)
 end
 
 function Ros:disconnect()

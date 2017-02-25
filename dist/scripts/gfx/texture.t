@@ -3,60 +3,114 @@
 -- various texture utilities
 
 local class = require('class')
+local math = require("math")
 local m = {}
+
+-- utils for creating static textures from files, memory
+local m = {}
+m._textures = {}
+local nvg_utils = truss.addons.nanovg.functions
+local nvg_pointer = truss.addons.nanovg.pointer
+
+local terra load_texture_mem(filename: &int8, flags: uint32)
+  var w: int32 = -1
+  var h: int32 = -1
+  var n: int32 = -1
+  var msg: &truss.C.Message = nvg_utils.truss_nanovg_load_image(nvg_pointer, filename, &w, &h, &n)
+  --return msg
+  var bmem: &bgfx.memory_t = nil
+  if msg ~= nil then
+  bmem = bgfx.copy(msg.data, msg.data_length)
+  else
+  truss.C.log(truss.C.LOG_ERROR, "Error loading texture!")
+  end
+  truss.C.release_message(msg)
+  truss.C.log(truss.C.LOG_INFO, "Creating texture...")
+  var ret = bgfx.create_texture_2d(w, h, false, 1, bgfx.TEXTURE_FORMAT_RGBA8,
+                                  flags, bmem)
+  return ret
+end
+
+local function load_texture_bgfx(filename, flags)
+  local msg = truss.C.load_file(filename)
+  if msg == nil then return nil end
+  local bmem = bgfx.copy(msg.data, msg.data_length)
+  truss.C.release_message(msg)
+  return bgfx.create_texture(bmem, flags, 0, nil)
+end
+
+terra m.create_texture_from_data(w: int32, h: int32, src: &uint8, srclen: uint32, flags: uint32) : bgfx.texture_handle_t
+  var bmem: &bgfx.memory_t = nil
+  if src ~= nil then
+    bmem = bgfx.copy(src, srclen)
+  else
+    truss.C.log(truss.C.LOG_ERROR, "Error creating texture: null pointer")
+    var ret : bgfx.texture_handle_t
+    ret.idx = bgfx.INVALID_HANDLE
+    return ret
+  end
+  var ret = bgfx.create_texture_2d(w, h, false, 1, bgfx.TEXTURE_FORMAT_RGBA8,
+                                   flags, bmem)
+  return ret
+end
+
+m._texture_loaders = {
+  [".png"] = load_texture_mem,
+  [".jpg"] = load_texture_mem,
+  [".ktx"] = load_texture_bgfx,
+  [".dds"] = load_texture_bgfx,
+  [".pvr"] = load_texture_bgfx
+}
+
+function m.load_texture(filename, flags)
+  if m._textures[filename] == nil then
+    local extension = string.lower(string.sub(filename, -4, -1))
+    local loader = m._texture_loaders[extension]
+    if loader then
+      m._textures[filename] = loader(filename, flags or 0)
+    else
+      log.error("Unknown texture type " .. extension)
+    end
+  end
+  return m._textures[filename]
+end
 
 -- for when you need to create a texture in memory
 local MemTexture = class("MemTexture")
 m.MemTexture = MemTexture
 
 local formats = {
-    RGBA8 = {uint8, bgfx.BGFX_TEXTURE_FORMAT_BGRA8, 4, 4},
-    RG16  = {uint16, bgfx.BGFX_TEXTURE_FORMAT_RG16, 2, 4}
+  R8 = {uint8, bgfx.TEXTURE_FORMAT_R8, 1, 1},
+  RGBA8 = {uint8, bgfx.TEXTURE_FORMAT_BGRA8, 4, 4},
+  RG16  = {uint16, bgfx.TEXTURE_FORMAT_RG16, 2, 4}
 }
 
-function MemTexture:init(w,h,fmt)
-    self.width = w or 64
-    self.height = h or 64
-    self.fmt = fmt or "RGBA8"
-    local fmtinfo = formats[self.fmt]
-    local datatype, bgfxformat, nchannels, psize =
-          fmtinfo[1], fmtinfo[2], fmtinfo[3], fmtinfo[4]
-    self.data = terralib.new(datatype[w*h*nchannels])
-    self.datasize = w*h*psize
-    self.pitch = self.width * psize
+function MemTexture:init(w,h,fmt,flags)
+  self.width = w or 64
+  self.height = h or 64
+  self.fmt = fmt or "RGBA8"
+  local fmtinfo = formats[self.fmt]
+  local datatype, bgfxformat, nchannels, psize =
+        fmtinfo[1], fmtinfo[2], fmtinfo[3], fmtinfo[4]
+  self.data = terralib.new(datatype[w*h*nchannels])
+  self.datasize = w*h*psize
+  self.pitch = self.width * psize
 
-    local bc = bgfx_const
-    --local flags = 0
-    local flags = bc.BGFX_TEXTURE_MIN_POINT +
-                  bc.BGFX_TEXTURE_MAG_POINT +
-                  bc.BGFX_TEXTURE_MIP_POINT
+  flags = flags or math.combine_flags(bgfx.TEXTURE_MIN_POINT,
+                                      bgfx.TEXTURE_MAG_POINT,
+                                      bgfx.TEXTURE_MIP_POINT)
 
-    -- Note that we pass in nil as the data to allow us to update this texture
-    -- later
-    self.tex = bgfx.bgfx_create_texture_2d(w, h, 1, bgfxformat, flags, nil)
-    -- allow a MemTexture to directly be used as a uniform value
-    self.rawTex = self.tex
+  -- Pass in nil as the data to allow us to update this texture later
+  self.tex = bgfx.create_texture_2d(w, h, false, 1, bgfxformat, flags, nil)
+  -- allow a MemTexture to directly be used as a uniform value
+  self.raw_tex = self.tex
 end
 
 function MemTexture:update()
-    bgfx.bgfx_update_texture_2d(self.tex, 0,
-                                0, 0, self.width, self.height,
-                                bgfx.bgfx_make_ref(self.data, self.datasize),
-                                self.pitch)
-end
-
-terra m.createTextureFromData(w: int32, h: int32, src: &uint8, srclen: uint32, flags: uint32) : bgfx.bgfx_texture_handle_t
-    var bmem: &bgfx.bgfx_memory = nil
-    if src ~= nil then
-        bmem = bgfx.bgfx_copy(src, srclen)
-    else
-        truss.C.log(truss.C.LOG_ERROR, "Error creating texture: null pointer")
-        var ret : bgfx.bgfx_texture_handle_t
-        ret.idx = bgfx.BGFX_INVALID_HANDLE
-        return ret
-    end
-    var ret = bgfx.bgfx_create_texture_2d(w, h, 0, bgfx.BGFX_TEXTURE_FORMAT_RGBA8, flags, bmem)
-    return ret
+  bgfx.update_texture_2d(self.tex, 0,
+                          0, 0, self.width, self.height,
+                          bgfx.make_ref(self.data, self.datasize),
+                          self.pitch)
 end
 
 return m

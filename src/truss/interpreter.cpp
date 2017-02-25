@@ -134,21 +134,29 @@ void Interpreter::threadEntry() {
     lua_setglobal(terraState_, "TRUSS_INTERPRETER_ID");
 
     // load and execute the bootstrap script
-    truss_message* bootstrap = core().loadFile("scripts/core/bootstrap.t");
+    truss_message* bootstrap = core().loadFile("scripts/core/core.t");
     if (!bootstrap) {
-        core().logMessage(TRUSS_LOG_ERROR, "Error loading bootstrap script.");
+        core().logMessage(TRUSS_LOG_ERROR, "Error loading core script.");
         core().setError(1000);
         running_ = false;
         return;
     }
-    terra_loadbuffer(terraState_,
+    int res = terra_loadbuffer(terraState_,
                      (char*)bootstrap->data,
                      bootstrap->data_length,
-                     "bootstrap.t");
+                     "core.t");
     truss_release_message(bootstrap);
-    int res = lua_pcall(terraState_, 0, 0, 0);
     if(res != 0) {
-        core().logPrint(TRUSS_LOG_ERROR, "Error bootstrapping interpreter: %s",
+        core().logPrint(TRUSS_LOG_ERROR, "Error parsing core.t: %s",
+                        lua_tostring(terraState_, -1));
+        core().setError(1001);
+        running_ = false;
+        return;        
+    }
+
+    res = lua_pcall(terraState_, 0, 0, 0);
+    if(res != 0) {
+        core().logPrint(TRUSS_LOG_ERROR, "Error in core.t: %s",
                         lua_tostring(terraState_, -1));
         core().setError(1001);
         running_ = false;
@@ -161,8 +169,8 @@ void Interpreter::threadEntry() {
     }
 
     // Call init
-    if (!call("_coreInit", arg_.c_str())) {
-        core().logPrint(TRUSS_LOG_ERROR, "Error in coreInit, stopping interpreter [%d].", id_);
+    if (!call("_core_init", arg_.c_str())) {
+        core().logPrint(TRUSS_LOG_ERROR, "Error in core_init, stopping interpreter [%d].", id_);
         core().setError(1002);
         running_ = false;
     }
@@ -177,7 +185,7 @@ void Interpreter::threadEntry() {
         }
 
         // update lua
-        if (!call("_coreUpdate")) {
+        if (!call("_core_update")) {
             core().logPrint(TRUSS_LOG_ERROR, "Uncaught error reached C++, quitting.");
             core().setError(2000);
             running_ = false;

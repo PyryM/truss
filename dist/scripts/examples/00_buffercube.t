@@ -2,158 +2,159 @@
 --
 -- manually create a cube mesh and use it to draw multiple cubes spinning
 
-local sdl = truss.addons.sdl
+local sdl = require("addons/sdl.t")
+local math = require("math")
+local gfx = require("gfx")
 
-local Vector = require("math/vec.t").Vector
-local Matrix4 = require("math/matrix.t").Matrix4
-local Quaternion = require("math/quat.t").Quaternion
-local StaticGeometry = require("gfx/geometry.t").StaticGeometry
-local vertexInfo = require("gfx/vertexdefs.t").createPosColorVertexInfo()
-local shaderutils = require('utils/shaderutils.t')
-
-width = 800
-height = 600
+width = 1280
+height = 720
 time = 0.0
 
-function makeCubeGeometry()
-    local data = {
-        attributes = {
-            position = {{-1.0,  1.0,  1.0},
-                        { 1.0,  1.0,  1.0},
-                        {-1.0, -1.0,  1.0},
-                        { 1.0, -1.0,  1.0},
-                        {-1.0,  1.0, -1.0},
-                        { 1.0,  1.0, -1.0},
-                        {-1.0, -1.0, -1.0},
-                        { 1.0, -1.0, -1.0}},
-            color0   = {{ 0.0, 0.0, 0.0, 255},
-                        { 255, 0.0, 0.0, 255},
-                        { 0.0, 255, 0.0, 255},
-                        { 255, 255, 0.0, 255},
-                        { 0.0, 0.0, 255, 255},
-                        { 255, 0.0, 255, 255},
-                        { 0.0, 255, 255, 255},
-                        { 255, 255, 255, 255}}
-        },
-        indices   = { 0, 2, 1,
-                      1, 2, 3,
-                      4, 5, 6,
-                      5, 7, 6,
-                      0, 4, 2,
-                      4, 6, 2,
-                      1, 3, 5,
-                      5, 3, 7,
-                      0, 1, 4,
-                      4, 1, 5,
-                      2, 6, 3,
-                      6, 7, 3 }
-    }
+function make_cube_geo()
+  local gray = {20, 20, 20, 255}
+  local grey = {40, 40, 40, 255}
+  local data = {
+    attributes = {
+      position = {{-1.0,  1.0,  1.0},
+                  { 1.0,  1.0,  1.0},
+                  {-1.0, -1.0,  1.0},
+                  { 1.0, -1.0,  1.0},
+                  {-1.0,  1.0, -1.0},
+                  { 1.0,  1.0, -1.0},
+                  {-1.0, -1.0, -1.0},
+                  { 1.0, -1.0, -1.0}
+                 },
+      color0   = {{ 0.0, 0.0, 0.0, 255},
+                  { 255, 0.0, 0.0, 255},
+                  { 0.0, 255, 0.0, 255},
+                  { 255, 255, 0.0, 255},
+                  { 0.0, 0.0, 255, 255},
+                  { 255, 0.0, 255, 255},
+                  { 0.0, 255, 255, 255},
+                  { 255, 255, 255, 255}}
+    },
+    indices   = { 0, 2, 1,
+                  1, 2, 3,
+                  4, 5, 6,
+                  5, 7, 6,
+                  0, 4, 2,
+                  4, 6, 2,
+                  1, 3, 5,
+                  5, 3, 7,
+                  0, 1, 4,
+                  4, 1, 5,
+                  2, 6, 3,
+                  6, 7, 3 }
+  }
 
+  return gfx.StaticGeometry("cube"):from_data(data)
+end
 
-    local cubegeo = StaticGeometry("cube"):fromData(vertexInfo, data)
-    return cubegeo
+function update_events()
+  for evt in sdl.events() do
+    if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
+      truss.quit()
+    end
+  end
+end
+
+function create_uniforms()
+  uniforms = gfx.UniformSet()
+  uniforms:add(gfx.VecUniform("u_baseColor"), "diffuse")
+  uniforms:add(gfx.VecUniform("u_pbrParams"), "pbrParams")
+  uniforms:add(gfx.VecUniform("u_lightDir", 4), "lightDirs")
+  uniforms:add(gfx.VecUniform("u_lightRgb", 4), "lightColors")
+
+  uniforms.lightDirs:set_multiple({
+          math.Vector( 1.0,  1.0,  0.0),
+          math.Vector(-1.0,  1.0,  0.0),
+          math.Vector( 0.0, -1.0,  1.0),
+          math.Vector( 0.0, -1.0, -1.0)})
+
+  uniforms.lightColors:set_multiple({
+          math.Vector(0.8, 0.8, 0.8),
+          math.Vector(1.0, 1.0, 1.0),
+          math.Vector(0.1, 0.1, 0.1),
+          math.Vector(0.1, 0.1, 0.1)})
+
+  uniforms.diffuse:set(math.Vector(0.2,0.2,0.1,1.0))
+  uniforms.pbrParams:set(math.Vector(1.0, 1.0, 1.0, 0.6))
 end
 
 function init()
-    log.info("cube.t init")
-    sdl:createWindow(width, height, '00 buffercube')
-    log.info("created window")
-    initBGFX()
+  -- basic init
+  sdl.create_window(width, height, '00 buffercube')
+  gfx.init_gfx({msaa = true, debugtext = true, window = sdl})
+
+  -- set up our one view (rendering directly to backbuffer)
+  view = gfx.View(0)
+  view:set_clear({color = 0x403030ff, depth = 1.0})
+  view:set_viewport(false)
+
+  -- init the cube
+  --cubegeo = make_cube_geo()
+  cubegeo = require("geometry/icosphere.t").icosphere_geo(1.0, 2, "icosphere")
+  cubegeo:release_backing() -- don't keep backing memory around
+
+  -- load shader program
+  --program = gfx.load_program("vs_cubes", "fs_cubes")
+  program = gfx.load_program("vs_basicpbr", "fs_basicpbr_faceted_x4")
+  create_uniforms()
+
+  -- create matrices
+  projmat = math.Matrix4():perspective_projection(70, width/height, 0.1, 100.0)
+  viewmat = math.Matrix4():identity()
+  modelmat = math.Matrix4():identity()
+  posvec = math.Vector(0.0, 0.0, -10.0)
+  rotquat = math.Quaternion():identity()
+
+  cubestate = gfx.create_state({cull = false})
 end
 
-function updateEvents()
-    for evt in sdl:events() do
-        if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
-            log.info("Received window close, stopping interpreter...")
-            truss.quit()
-        end
-    end
-end
+function draw_cube(xpos, ypos, phase, partial)
+  -- Compute the cube's transformation
+  rotquat:euler({x = time + phase, y = time + phase, z = 0.0})
+  posvec:set(xpos, ypos, -10.0)
+  modelmat:compose(posvec, rotquat)
+  gfx.set_transform(modelmat)
 
-function initBGFX()
-    -- basic init
-    local resetFlags = bgfx_const.BGFX_RESET_VSYNC +
-                       bgfx_const.BGFX_RESET_MSAA_X8
+  -- Bind the cube buffers
+  if partial then cubegeo:bind_partial(0, 8, 0, 18) else cubegeo:bind() end
 
-    bgfx.bgfx_init(bgfx.BGFX_RENDERER_TYPE_COUNT, 0, 0, nil, nil)
-    bgfx.bgfx_reset(width, height, resetFlags)
+  -- uniforms (if they exist)
+  if uniforms then uniforms:bind() end
 
-    -- Enable debug text.
-    bgfx.bgfx_set_debug(bgfx_const.BGFX_DEBUG_TEXT)
-
-    log.info("Basic BGFX init complete!")
-    local rendererType = bgfx.bgfx_get_renderer_type()
-    local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-    log.info("Renderer type: " .. rendererName)
-
-    bgfx.bgfx_set_view_clear(0, -- viewid 0
-    bgfx_const.BGFX_CLEAR_COLOR + bgfx_const.BGFX_CLEAR_DEPTH,
-    0x303030ff, -- clearcolor (gray)
-    1.0, -- cleardepth (in normalized space: 1.0 = max depth)
-    0)
-
-    -- init the cube
-    cubegeo = makeCubeGeometry()
-
-    -- load shader program
-    log.info("Loading program")
-    program = shaderutils.loadProgram("vs_cubes", "fs_cubes")
-
-    -- create matrices
-    projmat = Matrix4():makeProjection(70, 800/600, 0.1, 100.0)
-    viewmat = Matrix4():identity()
-    modelmat = Matrix4():identity()
-    posvec = Vector(0.0, 0.0, -10.0)
-    scalevec = Vector(1.0, 1.0, 1.0)
-    rotquat = Quaternion():identity()
-end
-
-function drawCube(xpos, ypos, phase)
-    -- Compute the cube's transformation
-    rotquat:fromEuler({x = time + phase, y = time + phase, z = 0.0})
-    posvec:set(xpos, ypos, -10.0)
-    modelmat:composeRigid(posvec, rotquat)
-    bgfx.bgfx_set_transform(modelmat.data, 1) -- only one matrix in array
-
-    -- Bind the cube buffers
-    cubegeo:bind()
-
-    -- Setting default state is not strictly necessary, but good practice
-    bgfx.bgfx_set_state(bgfx_const.BGFX_STATE_DEFAULT, 0)
-    bgfx.bgfx_submit(0, program, 0, false)
+  -- Setting default state is not strictly necessary, but good practice
+  gfx.set_state(cubestate)
+  gfx.submit(view, program)
 end
 
 frametime = 0.0
 
 function update()
-    time = time + 1.0 / 60.0
+  time = time + 1.0 / 60.0
+  local start_time = truss.tic()
 
-    local startTime = truss.tic()
+  -- Deal with input events
+  update_events()
 
-    -- Deal with input events
-    updateEvents()
+  -- Use debug font to print information about this example.
+  bgfx.dbg_text_clear(0, false)
 
-    -- Set view 0 default viewport.
-    bgfx.bgfx_set_view_rect(0, 0, 0, width, height)
+  bgfx.dbg_text_printf(0, 1, 0x4f, "scripts/examples/cube.t")
+  bgfx.dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
 
-    -- Use debug font to print information about this example.
-    bgfx.bgfx_dbg_text_clear(0, false)
+  -- Set viewprojection matrix
+  view:set_matrices(viewmat, projmat)
 
-    bgfx.bgfx_dbg_text_printf(0, 1, 0x4f, "scripts/examples/cube.t")
-    bgfx.bgfx_dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
+  -- draw four cubes
+  draw_cube( 3,  3, 0.0, false)
+  draw_cube(-3,  3, 1.0, false)
+  draw_cube(-3, -3, 2.0, false)
+  draw_cube( 3, -3, 3.0, false)
 
-    -- Set viewprojection matrix
-    bgfx.bgfx_set_view_transform(0, viewmat.data, projmat.data)
+  -- Advance to next frame.
+  gfx.frame()
 
-    -- draw four cubes
-    drawCube( 3,  3, 0.0)
-    drawCube(-3,  3, 1.0)
-    drawCube(-3, -3, 2.0)
-    drawCube( 3, -3, 3.0)
-
-    -- Advance to next frame. Rendering thread will be kicked to
-    -- process submitted rendering primitives.
-    bgfx.bgfx_frame(false)
-
-    frametime = truss.toc(startTime)
+  frametime = truss.toc(start_time)
 end
