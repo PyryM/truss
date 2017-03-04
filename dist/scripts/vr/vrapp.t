@@ -74,7 +74,7 @@ function VRApp:ecs_init()
   self.ECS = ECS
   ECS:add_system(sdl_input.SDLInputSystem())
 
-  if self.options.debugtext then
+  if self.options.debugtext or self.options.stats then
     ECS:add_system(framestats.DebugTextStats())
   end
 
