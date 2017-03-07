@@ -232,6 +232,7 @@ function Entity3d:init(name, ...)
   self.scale = math.Vector(1.0, 1.0, 1.0, 0.0)
   self.quaternion = math.Quaternion():identity()
   self.matrix = math.Matrix4():identity()
+  self.matrix_world = math.Matrix4():identity()
   -- call super.init after adding these fields, because some component might
   -- need to have e.g. .matrix available in its :mount
   Entity3d.super.init(self, name, ...)
@@ -245,10 +246,8 @@ end
 -- object and all its children
 function Entity3d:recursive_update_world_mat(parentmat)
   if self.enabled == false or (not self.matrix) then return end
-
-  local worldmat = self.matrix_world or math.Matrix4():identity()
-  self.matrix_world = worldmat
-  worldmat:multiply(parentmat, self.matrix)
+  
+  self.matrix_world:multiply(parentmat, self.matrix)
 
   for _,child in pairs(self.children) do
     child:recursive_update_world_mat(worldmat)
