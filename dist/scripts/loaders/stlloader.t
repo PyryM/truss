@@ -137,12 +137,11 @@ function m.parse_binary_stl(databuf, datalength, invert)
 			local vertexstart = start + i * 12
 
 			-- vertices and normals are normal lua arrays and hence 1-indexed
-			vertices[ offset + 1 ] =  Vector(m.read_f32(databuf, vertexstart ),
-												   					   m.read_f32(databuf, vertexstart + 4 ),
-												   				 		 m.read_f32(databuf, vertexstart + 8 ),
-																		   1.0)
+			vertices[ offset + 1 ] =  {m.read_f32(databuf, vertexstart ),
+									   					   m.read_f32(databuf, vertexstart + 4 ),
+									   				 		 m.read_f32(databuf, vertexstart + 8 )}
 
-			normals[ offset + 1 ] = Vector(nx, ny, nz, 0.0)
+			normals[ offset + 1 ] = {nx, ny, nz}
 			offset = offset + 1
 		end
 	end -- face loop
