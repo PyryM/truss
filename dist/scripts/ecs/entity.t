@@ -246,11 +246,11 @@ end
 -- object and all its children
 function Entity3d:recursive_update_world_mat(parentmat)
   if self.enabled == false or (not self.matrix) then return end
-  
+
   self.matrix_world:multiply(parentmat, self.matrix)
 
   for _,child in pairs(self.children) do
-    child:recursive_update_world_mat(worldmat)
+    child:recursive_update_world_mat(self.matrix_world)
   end
 end
 
