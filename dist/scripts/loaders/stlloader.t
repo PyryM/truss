@@ -9,23 +9,25 @@ m.verbose = false
 m.MAXFACES = 21845 -- each face needs 3 vertices, to fit into 16 bit index
  				   -- buffer we can have at most floor(2^16 / 3) faces
 
-function m.loadSTL(filename, invert)
+local tic, toc = truss.tic, truss.toc
+
+function m.load_stl(filename, invert)
 	local starttime = tic()
-	local srcMessage = truss.truss_load_file(filename)
-	if srcMessage == nil then
+	local src_message = truss.C.load_file(filename)
+	if src_message == nil then
 		log.error("Error: unable to open file " .. filename)
 		return nil
 	end
 
-	local ret = m.parseBinarySTL(srcMessage.data, srcMessage.data_length, invert)
-	truss.truss_release_message(srcMessage)
+	local ret = m.parse_binary_stl(src_message.data, src_message.data_length, invert)
+	truss.C.release_message(src_message)
 	local dtime = toc(starttime)
 	log.info("Loaded " .. filename .. " in " .. (dtime*1000.0) .. " ms")
 	return ret
 end
 
 -- read a little endian uint32
-terra m.readUint32LE(buffer: &uint8, startpos: uint32)
+terra m.read_uint32_le(buffer: &uint8, startpos: uint32)
 	var ret: uint32 = [uint32](buffer[startpos  ])       or
 					  [uint32](buffer[startpos+1]) << 8  or
 					  [uint32](buffer[startpos+2]) << 16 or
@@ -34,18 +36,18 @@ terra m.readUint32LE(buffer: &uint8, startpos: uint32)
 end
 
 -- read a little endian uint16
-terra m.readUint16LE(buffer: &uint8, startpos: uint32)
+terra m.read_uint16_le(buffer: &uint8, startpos: uint32)
 	var ret: uint16 = [uint16](buffer[startpos  ]) or
 					  [uint16](buffer[startpos+1]) << 8
 	return ret
 end
 
 -- read a uint8
-terra m.readUint8(buffer: &uint8, startpos: uint32)
+terra m.read_uint8(buffer: &uint8, startpos: uint32)
 	return buffer[startpos]
 end
 
-terra santizeNaN(v: float)
+local terra sanitize_nan(v: float)
 	if v == v then
 		return v
 	else
@@ -53,22 +55,22 @@ terra santizeNaN(v: float)
 	end
 end
 
-terra m.readFloat32(buffer: &uint8, startpos: uint32)
+terra m.read_f32(buffer: &uint8, startpos: uint32)
 	var retptr: &float = [&float](&(buffer[startpos]))
-	return santizeNaN(@retptr)
+	return sanitize_nan(@retptr)
 end
 
-terra m.stringToUint8Ptr(src: &int8)
+terra m.str_to_uint8_ptr(src: &int8)
 	var ret: &uint8 = [&uint8](src)
 	return ret
 end
 
-function m.parseBinarySTL(databuf, datalength, invert)
+function m.parse_binary_stl(databuf, datalength, invert)
 	if m.verbose then
 		log.debug("Going to parse a binary stl of length " .. datalength)
 	end
 
-	local faces = m.readUint32LE( databuf, 80 )
+	local faces = m.read_uint32_le( databuf, 80 )
 	if m.verbose then
 		log.debug("STL contains " .. faces .. " faces.")
 	end
@@ -84,16 +86,16 @@ function m.parseBinarySTL(databuf, datalength, invert)
 	-- check for default color in header ("COLOR=rgba" sequence)
 	-- by brute-forcing over the entire header space (80 bytes)
 	for index = 0, 69 do -- for(index = 0; index < 80-10; ++index)
-		if m.readUint32LE(databuf, index) == 0x434F4C4F and -- COLO
-		   m.readUint8(databuf, index + 4) == 0x52 and      -- R
-		   m.readUint8(databuf, index + 5) == 0x3D then     -- =
+		if m.read_uint32_le(databuf, index) == 0x434F4C4F and -- COLO
+		   m.read_uint8(databuf, index + 4) == 0x52 and       -- R
+		   m.read_uint8(databuf, index + 5) == 0x3D then      -- =
 
 			log.warn("Warning: .stl has face colors but color parsing not implemented yet.")
 
-			defaultR = m.readUint8(databuf, index + 6)
-			defaultG = m.readUint8(databuf, index + 7)
-			defaultB = m.readUint8(databuf, index + 8)
-			alpha    = m.readUint8(databuf, index + 9)
+			defaultR = m.read_uint8(databuf, index + 6)
+			defaultG = m.read_uint8(databuf, index + 7)
+			defaultB = m.read_uint8(databuf, index + 8)
+			alpha    = m.read_uint8(databuf, index + 9)
 		end
 	end
 
@@ -120,9 +122,9 @@ function m.parseBinarySTL(databuf, datalength, invert)
 	for face = 0, faces-1 do
 		local start = dataOffset + face * faceLength
 
-		local normalX = normalMult * m.readFloat32(databuf, start)
-		local normalY = normalMult * m.readFloat32(databuf, start + 4)
-		local normalZ = normalMult * m.readFloat32(databuf, start + 8)
+		local nx = normalMult * m.read_f32(databuf, start)
+		local ny = normalMult * m.read_f32(databuf, start + 4)
+		local nz = normalMult * m.read_f32(databuf, start + 8)
 
 		-- indices is a normal lua array and 1-indexed
 		if invert then
@@ -135,22 +137,17 @@ function m.parseBinarySTL(databuf, datalength, invert)
 			local vertexstart = start + i * 12
 
 			-- vertices and normals are normal lua arrays and hence 1-indexed
-			vertices[ offset + 1 ] =  {m.readFloat32(databuf, vertexstart ),
-									   m.readFloat32(databuf, vertexstart + 4 ),
-									   m.readFloat32(databuf, vertexstart + 8 )}
+			vertices[ offset + 1 ] =  Vector(m.read_f32(databuf, vertexstart ),
+												   					   m.read_f32(databuf, vertexstart + 4 ),
+												   				 		 m.read_f32(databuf, vertexstart + 8 ),
+																		   1.0)
 
-			normals[ offset + 1 ] = {normalX,
-								     normalY,
-								     normalZ}
-
+			normals[ offset + 1 ] = Vector(nx, ny, nz, 0.0)
 			offset = offset + 1
 		end
 	end -- face loop
 
-	return {attributes = {
-				position = vertices,
-	        	normal = normals
-	        	},
+	return {attributes = {position = vertices, normal = normals},
 	        indices = indices,
 	        color = {defaultR, defaultG, defaultB, alpha}}
 end
