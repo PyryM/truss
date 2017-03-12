@@ -1,82 +1,51 @@
--- postprocessingstage.t
+-- fullscreenstage.t
 --
 -- a stage for applying fullscreen shaders/postprocessing effects to
 -- render targets
 
-local class = require("class")
+local gfx = require("gfx")
+local math = require("math")
+local pipeline = require("graphics/pipeline.t")
 local m = {}
 
-local PostProcessingStage = class("PostProcessingStage")
-function PostProcessingStage:init(options)
-    local math = require("math")
-    local gfx = require("gfx")
-    local shader = options.shader or {}
-    self.identitymat_ = math.Matrix4():identity()
-    self.quadgeo_ = gfx.TransientGeometry()
-    self.options_ = options
-    self.inputs = options.inputs or {}
-    self.target = options.target or options.renderTarget
-    self.uniforms_ = options.uniforms or shader.uniforms
-    self.program_ = options.program or shader.program
-    self.camera_ = gfx.Camera():makeOrthographic(0, 1, 0, 1, -1, 1)
-    self.state_ = options.state or shader.state
-    self.drawQuad_ = options.drawQuad
-    if not self.program_ then
-        local vshader = options.vshader or "vs_fullscreen"
-        local fshader = options.fshader or "fs_fullscreen_copy"
-        local shaderutils = require("utils/shaderutils.t")
-        self.program_ = shaderutils.loadProgram(vshader, fshader)
-    end
-    if not self.uniforms_ then
-        self.uniforms_ = gfx.UniformSet()
-        local uniName = options.uniformName or "s_srcTex"
-        self.uniforms_:add(gfx.TexUniform(uniName, 0), "tex")
-    end
+local FullscreenStage = pipeline.Stage:extend("FullscreenStage")
+m.FullscreenStage = FullscreenStage
+function FullscreenStage:init(options)
+  self.mat = options.mat or options.material or {}
+  self.num_views = 1
+  self._render_ops = {}
+  -- self.globals is used by the parent class Stage to set view parameters
+  self.globals = options or {}
+  self.globals.proj_matrix = math.Matrix4():orthographic_projection(0, 1, 0, 1, -1, 1)
+  self.globals.view_matrix = math.Matrix4():identity()
+  self._identity_mat = math.Matrix4():identity()
+  self._quad_geo = gfx.TransientGeometry()
+  if not self.mat.program then
+    local vshader = options.vshader or "vs_fullscreen"
+    local fshader = options.fshader or "fs_fullscreen_copy"
+    log.info("PostProcessing using pgm [" .. vshader .. " | " .. fshader .. "]")
+    self.mat.program = gfx.load_program(vshader, fshader)
+  end
+  if not self.mat.uniforms then
+    self.mat.uniforms = gfx.UniformSet()
+    self.mat.uniforms:add(gfx.TexUniform("s_srcTex", 0))
+  end
 end
 
-function PostProcessingStage:setupViews(startView)
-    self.viewid_ = startView
-    if self.options_.clear ~= false and self.target then
-        self.target:setViewClear(self.viewid_, self.options_.clear or {})
-    end
-    return startView+1
+function FullscreenStage:draw_fullscreen()
+  gfx.set_state(self.mat.state)
+  gfx.set_transform(self._identity_mat)
+  self._quad_geo:quad(0.0, 0.0, 1.0, 1.0, 0.0):bind()
+  self.mat.uniforms:bind()
+  gfx.submit(self.view, self.mat.program)
 end
 
-function PostProcessingStage:bindUniforms(ctx)
-    if ctx.uniforms then
-        if ctx.inputs[1] then ctx.inputs.tex = ctx.inputs[1] end
-        ctx.uniforms:tableSet(ctx.inputs):bind()
-    end
+function FullscreenStage:update_begin()
+  self:draw_fullscreen()
 end
 
-function PostProcessingStage:submitFullscreenQuad(ctx)
-    bgfx.bgfx_set_state(ctx.state or bgfx_const.BGFX_STATE_DEFAULT, 0)
-    bgfx.bgfx_set_transform(self.identitymat_.data, 1)
-    if ctx.drawQuad then
-        self.quadgeo_:quad(ctx.x0 or 0.0, ctx.y0 or 0.0,
-                           ctx.x1 or 1.0, ctx.y1 or 1.0,
-                           ctx.z or 0.0):bind()
-    else
-        self.quadgeo_:fullScreenTri(1.0, 1.0):bind()
-    end
-    self:bindUniforms(ctx)
-    bgfx.bgfx_submit(self.viewid_, ctx.program, 0, false)
+function FullscreenStage:duplicate()
+  truss.error("FullscreenStage does not implement duplicate.")
 end
 
-function PostProcessingStage:render(context)
-    if not self.program_ then return end
-    if self.target then
-        self.target:bindToView(self.viewid_)
-    end
-    self.camera_:setViewMatrices(self.viewid_)
-    local ctx = {drawQuad = self.drawQuad_,
-                state = self.state_, program = self.program_,
-                uniforms = self.uniforms_, inputs = self.inputs}
-    self:submitFullscreenQuad(ctx)
-end
-
---local CompositeStage = PostProcessingStage:extend("CompositeStage")
-
-m.PostProcessingStage = PostProcessingStage
---m.CompositeStage = CompositeStage
 return m
