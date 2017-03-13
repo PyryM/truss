@@ -20,8 +20,8 @@ function Material:init(src, clone)
   end
 end
 
-function Material:clone(src)
-  return Material(src, true)
+function Material:clone()
+  return self.class(self, true)
 end
 
 return m

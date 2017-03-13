@@ -9,33 +9,10 @@ local math = require("math")
 local pipeline = require("graphics/pipeline.t")
 local framestats = require("graphics/framestats.t")
 local nvg = require("graphics/nanovg.t")
+local pbr = require("shaders/pbr.t")
 
 local camera = require("graphics/camera.t")
 local orbitcam = require("gui/orbitcam.t")
-
-function create_uniforms()
-  local uniforms = gfx.UniformSet()
-  uniforms:add(gfx.VecUniform("u_baseColor"))
-  uniforms:add(gfx.VecUniform("u_pbrParams"))
-  uniforms:add(gfx.VecUniform("u_lightDir", 4))
-  uniforms:add(gfx.VecUniform("u_lightRgb", 4))
-
-  uniforms.u_lightDir:set_multiple({
-          math.Vector( 1.0,  1.0,  0.0),
-          math.Vector(-1.0,  1.0,  0.0),
-          math.Vector( 0.0, -1.0,  1.0),
-          math.Vector( 0.0, -1.0, -1.0)})
-
-  uniforms.u_lightRgb:set_multiple({
-          math.Vector(0.8, 0.8, 0.8),
-          math.Vector(1.0, 1.0, 1.0),
-          math.Vector(0.1, 0.1, 0.1),
-          math.Vector(0.1, 0.1, 0.1)})
-
-  uniforms.u_baseColor:set(math.Vector(0.2,0.03,0.01,1.0))
-  uniforms.u_pbrParams:set(math.Vector(0.001, 0.001, 0.001, 0.7))
-  return uniforms
-end
 
 function create_geo()
   return require("geometry/icosphere.t").icosphere_geo(1.0, 3, "ico")
@@ -113,11 +90,8 @@ function init()
 
   -- create material and geometry
   local geo = create_geo()
-  local mat = {
-    state = gfx.create_state(),
-    uniforms = create_uniforms(),
-    program = gfx.load_program("vs_basicpbr", "fs_basicpbr_faceted_x4")
-  }
+  local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0},
+                                     {0.001, 0.001, 0.001}, 0.7)
 
   -- create ecs
   ECS = ecs.ECS()
