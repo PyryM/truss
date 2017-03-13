@@ -17,6 +17,12 @@ m.UNI_MAT4 = {
   terra_type = float[16]
 }
 
+-- should not be used directly! create a TexUniform!
+m.UNI_TEX = {
+  bgfx_type = bgfx.UNIFORM_TYPE_INT1,
+  terra_type = nil -- no terra type!
+}
+
 local Uniform = class("Uniform")
 function Uniform:init(uni_name, uni_type, num)
   if not uni_name then return end
@@ -25,7 +31,7 @@ function Uniform:init(uni_name, uni_type, num)
   uni_type = uni_type or m.UNI_VEC
 
   self._uni_type = uni_type
-  self._handle = bgfx.create_uniform(uni_name, uni_type.bgfx_type, num)
+  self._handle = m._create_uniform(uni_name, uni_type, num)
   self._num = num
   self._val = terralib.new(uni_type.terra_type[num])
   self._uni_name = uni_name
@@ -73,7 +79,7 @@ end
 local TexUniform = class("TexUniform")
 function TexUniform:init(uni_name, sampler_idx)
   if not uni_name then return end
-  self._handle = bgfx.create_uniform(uni_name, bgfx.UNIFORM_TYPE_INT1, 1)
+  self._handle = m._create_uniform(uni_name, m.UNI_TEX, 1)
   self._sampler_idx = sampler_idx
   self._tex_handle = nil
   self._uni_name = uni_name
@@ -154,6 +160,28 @@ function UniformSet:set(vals)
     if target then target:set(v) end
   end
   return self
+end
+
+-- in bgfx, uniforms are in some sense global, so keep a cache of uniforms and
+-- their types so we can give a useful error if a user tries to define the same
+-- uniform with two different types
+
+m._uniform_cache = {}
+function m._create_uniform(uni_name, uni_type, num)
+  local v = m._uniform_cache[uni_name]
+  if v then
+    if v.uni_type ~= uni_type or v.num ~= num then
+      truss.error("Tried to recreate uniform " .. uni_name
+             .. " with different type or count!")
+      return nil
+    end
+    return v.handle
+  else -- not registered
+    v = {uni_type = uni_type, num = num}
+    v.handle = bgfx.create_uniform(uni_name, uni_type.bgfx_type, num)
+    m._uniform_cache[uni_name] = v
+    return v.handle
+  end
 end
 
 -- Export the class
