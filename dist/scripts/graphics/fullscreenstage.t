@@ -26,6 +26,7 @@ function FullscreenStage:init(options)
     log.info("PostProcessing using pgm [" .. vshader .. " | " .. fshader .. "]")
     self.mat.program = gfx.load_program(vshader, fshader)
   end
+  self.mat.uniforms = self.mat.uniforms or options.uniforms
   if not self.mat.uniforms then
     self.mat.uniforms = gfx.UniformSet()
     self.mat.uniforms:add(gfx.TexUniform("s_srcTex", 0))

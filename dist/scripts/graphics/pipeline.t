@@ -11,6 +11,7 @@ function Pipeline:init(options)
   self._next_view = 0
   self.stages = {}
   self.verbose = options.verbose
+  self.targets = {}
   self.auto_frame_advance = options.auto_frame_advance
   self.mount_name = "graphics" -- allow direct use of a pipeline as a system
   self.update_priority = 100 -- try to always update last

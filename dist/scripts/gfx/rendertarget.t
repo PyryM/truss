@@ -162,7 +162,6 @@ function RenderTarget:clone(finalize)
   ret.has_color = self.has_color
   ret.has_depth = self.has_depth
   ret.is_backbuffer = self.is_backbuffer
-  ret.viewport = self.viewport
   ret:_construct(self._construction_args)
   if finalize ~= false then ret:finalize() end
   return ret
