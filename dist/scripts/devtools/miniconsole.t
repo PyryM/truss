@@ -24,10 +24,11 @@ end
 -- take over view 0
 function m.hijack_bgfx()
   local gfx = require("gfx")
-  local window_h, window_w = gfx.backbuffer_width, gfx.backbuffer_height
+  local window_w, window_h = gfx.backbuffer_width, gfx.backbuffer_height
+  m.width, m.height = window_w, window_h
 
   m.fb_backbuffer = terralib.new(bgfx.frame_buffer_handle_t)
-  m.fb_backbuffer.idx = bgfx.BGFX_INVALID_HANDLE
+  m.fb_backbuffer.idx = bgfx.INVALID_HANDLE
   bgfx.set_view_rect(0, 0, 0, window_w or 640, window_h or 480)
   bgfx.set_view_clear(0, -- viewid 0
           bgfx.CLEAR_COLOR + bgfx.CLEAR_DEPTH,
@@ -119,7 +120,7 @@ end
 m.downkeys = {}
 
 function m.handle_inputs()
-  local sdl = truss.addons.sdl
+  local sdl = require("addons/sdl.t")
   for evt in sdl:events() do
     local etype = evt.event_type
     if etype == sdl.EVENT_WINDOW and evt.flags == 14 then
@@ -264,7 +265,7 @@ function m.divider()
   m.print(string.rep("-", m.width-1))
 end
 
-function m.printMiniHelp()
+function m.print_mini_help()
   m.print("Miniconsole")
   m.divider()
   m.print("help() for help [this message]")
@@ -308,7 +309,7 @@ function m.create_env()
   m.env.info = m.ct:wrap("info")
   m.env.colors = m.print_colors
   m.env.chars = m.print_chars
-  m.env.help = m.printMiniHelp
+  m.env.help = m.print_mini_help
   m.env.rc = m.attach_webconsole
   m.env.remote = m.attach_webconsole
   m.env.resume = truss.resumeFromError
@@ -366,7 +367,7 @@ function m.save_console_buffer(filename)
   truss.C.save_data(filename, str, str:len())
 end
 
-function m.execute_()
+function m._execute()
   m.print("=>" .. m._editline, m.colors.command)
   m._buffer_pos = math.max(0, #m._linebuffer - m.height + 1)
   if m.exec_callback then
@@ -396,12 +397,40 @@ function m.init(width, height)
   m._cursor_pos = 0
   local padding = ""
   for i = 0,m.width do
-      m._paddings[i] = padding
-      padding = padding .. " "
+    m._paddings[i] = padding
+    padding = padding .. " "
   end
   m.create_env()
   local sdl = require("addons/sdl.t")
   sdl.start_text_input()
+end
+
+function m.install()
+  if truss.mainenv.fallback_update then
+    log.info("miniconsole.install : fallback already present.")
+    return
+  end
+
+  truss.mainenv.fallback_update = m.fallback_update
+end
+
+function m.fallback_update()
+  local gfx = require('gfx')
+  if not gfx.renderer_name then
+    log.info("No graphics initted, no choice but to quit.")
+    truss.quit()
+    return
+  end
+
+  if not m._booted then
+    m.hijack_bgfx()
+    m.init(math.floor(m.width / 8), math.floor(m.height / 16))
+    m.set_header("Something broke: " .. truss.crash_message, 0x83)
+    m.print_mini_help()
+    m._booted = true
+  end
+
+  m.update()
 end
 
 return m
