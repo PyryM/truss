@@ -60,6 +60,21 @@ function RenderTarget:make_shadow(shadowbits, has_stencil)
   return self
 end
 
+function RenderTarget:make_gbuffer(color_formats, depth_bits, has_stencil)
+  if depth_bits == true or depth_bits == nil then depth_bits = 24 end
+  if depth_bits == false then depth_bits = 0 end
+  local has_depth = depth_bits > 0
+  for _, color_format in ipairs(color_formats) do
+    self:add_color_attachment(color_format)
+  end
+  if has_depth then
+    log.debug("Creating render target with depth buffer.")
+    self:add_depth_attachment(depth_bits, has_stencil)
+  end
+  self:finalize()
+  return self
+end
+
 function RenderTarget:make_backbuffer()
   if self.finalized then
     log.error("Cannot convert finalized rendertarget to backbuffer!")
