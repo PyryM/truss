@@ -28,8 +28,16 @@ function FullscreenStage:init(options)
   end
   self.mat.uniforms = self.mat.uniforms or options.uniforms
   if not self.mat.uniforms then
-    self.mat.uniforms = gfx.UniformSet()
-    self.mat.uniforms:add(gfx.TexUniform("s_srcTex", 0))
+    self:_create_uniforms(options.inputs or {{"s_srcTex", options.input}})
+  end
+end
+
+function FullscreenStage:_create_uniforms(inputlist)
+  self.mat.uniforms = gfx.UniformSet()
+  for idx, unipair in ipairs(inputlist) do
+    local u = gfx.TexUniform(unipair[1], idx-1)
+    self.mat.uniforms:add(u)
+    if unipair[2] then u:set(unipair[2]) end
   end
 end
 
