@@ -4,26 +4,27 @@
 
 local m = {}
 
-function m.subkey(keylist)
-  return function(t)
-    for _, k in ipairs(keylist) do
-      t = t[k]
-      if not t then return false end
-    end
-    return t
+local function subkey(keylist, t)
+  for _, k in ipairs(keylist) do
+    t = t[k]
+    if not t then return t end -- returns nil or false
   end
+  return t
 end
 
 -- e.g., tagged("mat", "transparent")
 function m.tagged(k1, k2)
-  return m.subkey({k1, "tags", k2})
+  return function(t)
+    local v = subkey({k1, "tags", k2}, t)
+    return v == nil or v
+  end
 end
 
 -- e.g., not_tagged("mat", "transparent")
 function m.not_tagged(k1, k2)
-  local f = m.tagged(k1, k2)
   return function(t)
-    return not f(t)
+    local v = subkey({k1, "tags", k2}, t)
+    return v == nil or (not v)
   end
 end
 
