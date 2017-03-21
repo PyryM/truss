@@ -62,17 +62,43 @@ m._texture_loaders = {
   [".pvr"] = load_texture_bgfx
 }
 
+function m._load_texture(filename, flags)
+  local extension = string.lower(string.sub(filename, -4, -1))
+  local loader = m._texture_loaders[extension]
+  if loader then
+    return loader(filename, flags or 0)
+  else
+    log.error("Unknown texture type " .. extension)
+  end
+end
+
 function m.load_texture(filename, flags)
-  if m._textures[filename] == nil then
-    local extension = string.lower(string.sub(filename, -4, -1))
-    local loader = m._texture_loaders[extension]
-    if loader then
-      m._textures[filename] = loader(filename, flags or 0)
-    else
-      log.error("Unknown texture type " .. extension)
-    end
+  if not m._textures[filename] then
+    m._textures[filename] = m.Texture(filename, flags)
   end
   return m._textures[filename]
+end
+
+local Texture = class("Texture")
+m.Texture = Texture
+function Texture:init(filename, flags)
+  if filename then self:load(filename, flags) end
+end
+
+function Texture:is_valid()
+  return self._handle ~= nil
+end
+
+function Texture:load(filename, flags)
+  self:release()
+  self._handle = m._load_texture(filename, flags)
+end
+
+function Texture:release()
+  if self._handle ~= nil then
+    bgfx.destroy_texture(self._handle)
+    self._handle = nil
+  end
 end
 
 -- for when you need to create a texture in memory
@@ -101,13 +127,11 @@ function MemTexture:init(w,h,fmt,flags)
                                       bgfx.TEXTURE_MIP_POINT)
 
   -- Pass in nil as the data to allow us to update this texture later
-  self.tex = bgfx.create_texture_2d(w, h, false, 1, bgfxformat, flags, nil)
-  -- allow a MemTexture to directly be used as a uniform value
-  self.raw_tex = self.tex
+  self._handle = bgfx.create_texture_2d(w, h, false, 1, bgfxformat, flags, nil)
 end
 
 function MemTexture:update()
-  bgfx.update_texture_2d(self.tex, 0,
+  bgfx.update_texture_2d(self._handle, 0,
                           0, 0, self.width, self.height,
                           bgfx.make_ref(self.data, self.datasize),
                           self.pitch)

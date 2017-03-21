@@ -81,7 +81,7 @@ function TexUniform:init(uni_name, sampler_idx)
   if not uni_name then return end
   self._handle = m._create_uniform(uni_name, m.UNI_TEX, 1)
   self._sampler_idx = sampler_idx
-  self._tex_handle = nil
+  self._tex = nil
   self._uni_name = uni_name
 end
 
@@ -89,20 +89,26 @@ function TexUniform:clone()
   local ret = TexUniform()
   ret._handle = self._handle
   ret._sampler_idx = self._sampler_idx
-  ret._tex_handle = self._tex_handle
+  ret._tex = self._tex
   ret._uni_name = self._uni_name
   return ret
 end
 
 function TexUniform:set(tex)
-  self._tex_handle = tex.raw_tex or tex
+  self._tex = tex
   return self
 end
 
 function TexUniform:bind()
-  if self._tex_handle then
-    bgfx.set_texture(self._sampler_idx, self._handle,
-                     self._tex_handle, bgfx.UINT32_MAX)
+  if not self._tex then return self end
+  local texhandle
+  if type(self._tex) == "cdata" then
+    texhandle = self._tex
+  else
+    texhandle = self._tex._handle or self._tex.raw_tex
+  end
+  if texhandle then
+    bgfx.set_texture(self._sampler_idx, self._handle, texhandle, bgfx.UINT32_MAX)
   end
   return self
 end
