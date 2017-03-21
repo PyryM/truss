@@ -36,7 +36,7 @@ function CompositeStage:composite(rt, x0, y0, x1, y1)
   gfx.set_state() -- set default state
   gfx.set_transform(self._identity_mat) -- not strictly necessary
   self._quad_geo:quad(x0, y0, x1, y1, 0.0):bind()
-  self._sampler:set(rt.attachments[1]):bind()
+  self._sampler:set(rt):bind()
   gfx.submit(self.view, self._program)
 end
 

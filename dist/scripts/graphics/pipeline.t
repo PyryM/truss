@@ -200,6 +200,7 @@ function DrawableComponent:configure(ecs_root)
 end
 
 function DrawableComponent:draw()
+  if self.visible == false then return end
   for _, op in ipairs(self._render_ops) do
     op:draw(self)
   end
