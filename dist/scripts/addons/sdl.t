@@ -93,4 +93,13 @@ function m.events()
   return event_iterator, {idx=0, n=n}
 end
 
+-- convenience function to just check for window close
+function m.handle_basic_events()
+  for evt in m.events() do
+    if evt.event_type == m.EVENT_WINDOW and evt.flags == 14 then
+      truss.quit()
+    end
+  end
+end
+
 return m
