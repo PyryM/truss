@@ -76,12 +76,12 @@ function m.VRCamera(name)
   return Entity3d(name, VRCameraComponent())
 end
 
-local VRControllerComponent = Component:extend("VRControllerComponent")
-m.VRControllerComponent = VRControllerComponent
+local VRTrackableComponent = Component:extend("VRTrackableComponent")
+m.VRTrackableComponent = VRTrackableComponent
 
-function VRControllerComponent:init(trackable)
-  VRControllerComponent.super.init(self)
-  self.mount_name = "vr_controller"
+function VRTrackableComponent:init(trackable)
+  VRTrackableComponent.super.init(self)
+  self.mount_name = "vr_trackable"
   self._trackable = trackable
 end
 
@@ -89,7 +89,7 @@ local function print_failure(task, msg)
   log.error("Loading failure: " .. msg)
 end
 
-function VRControllerComponent:load_geo_to_component(target_comp_name)
+function VRTrackableComponent:load_geo_to_component(target_comp_name)
   target_comp_name = target_comp_name or "mesh_shader"
   local target = self
   local function on_load(task)
@@ -99,8 +99,22 @@ function VRControllerComponent:load_geo_to_component(target_comp_name)
   self:load_model(on_load, print_failure, false)
 end
 
-function VRControllerComponent:load_model(on_load, on_fail, load_textures)
+function VRTrackableComponent:load_model(on_load, on_fail, load_textures)
   self._trackable:load_model(on_load, on_fail, load_textures)
+end
+
+function VRTrackableComponent:on_preupdate()
+  self.axes = self._trackable.axes
+  self.buttons = self._trackable.buttons
+  self._entity.matrix:copy(self._trackable.pose)
+end
+
+local VRControllerComponent = VRTrackableComponent:extend("VRControllerComponent")
+m.VRControllerComponent = VRControllerComponent
+
+function VRControllerComponent:init(trackable)
+  VRControllerComponent.super.init(self, trackable)
+  self.mount_name = "vr_controller"
 end
 
 function VRControllerComponent:on_preupdate()
