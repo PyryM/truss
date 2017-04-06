@@ -43,7 +43,7 @@ function m.FacetedPBRMaterial(diffuse, tint, roughness)
   }
   mat.uniforms.u_baseColor:set(diffuse or {0.2,0.02,0.02,1.0})
   tint = tint or {0.001, 0.001, 0.001}
-  mat.uniforms.u_pbrParams:set({tint[1], tint[2], tint[3], roughness})
+  mat.uniforms.u_pbrParams:set({tint[1], tint[2], tint[3], roughness or 0.7})
   return Material(mat)
 end
 

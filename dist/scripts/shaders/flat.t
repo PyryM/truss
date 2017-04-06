@@ -6,43 +6,44 @@ local m = {}
 local class = require("class")
 local math = require("math")
 local gfx = require("gfx")
-local shaderutils = require("utils/shaderutils.t")
+local Material = require("graphics/material.t").Material
 
-local FlatShader = class("FlatShader")
-function FlatShader:init(options)
-    local opts = options or {}
-    local matUniforms = gfx.UniformSet()
-    matUniforms:add(gfx.Uniform("u_baseColor", gfx.VECTOR, 1), "diffuse")
-    local fragmentShaderName = "fs_flatsolid"
-    if options.texture then
-        matUniforms:add(gfx.TexUniform("s_texAlbedo", 0), "diffuseMap")
-        fragmentShaderName = "fs_flattextured"
-    end
-    local vertexShaderName = "vs_flat"
-    if options.skybox then
-        vertexShaderName = "vs_flat_skybox"
-    end
+function m.create_flat_uniforms(has_texture)
+  if m._flat_uniforms then return m._flat_uniforms end
 
-    self.uniforms = matUniforms
-    self.globals = nil
-    self.program = shaderutils.loadProgram(vertexShaderName, fragmentShaderName)
+  local uniforms = gfx.UniformSet()
+
+  uniforms:add(gfx.VecUniform("u_baseColor"))
+  if has_texture then
+    uniforms:add(gfx.TexUniform("s_texAlbedo", 0))
+  end
+
+  m._flat_uniforms = uniforms
+  return uniforms
 end
 
-function FlatMaterial(options)
-    local ret = {}
-    if options.diffuseMap then
-        ret.shadername = "flatTextured"
-    else
-        ret.shadername = "flatSolid"
-    end
-    if options.skybox then
-        ret.shadername = ret.shadername .. "Skybox"
-    end
-    ret.diffuse = options.diffuse or math.Vector(1.0,1.0,1.0,1.0)
-    ret.diffuseMap = options.diffuseMap
-    return ret
+function m.FlatMaterial(options)
+  local vs_name = "vs_flat"
+  local fs_name = "fs_flat"
+  if options.skybox then
+    vs_name = "vs_flat_skybox"
+  end
+  if options.texture then
+    fs_name = "fs_flattextured"
+  end
+
+  local mat = {
+    state = gfx.create_state(),
+    program = gfx.load_program(vs_name, fs_name),
+    uniforms = m.create_flat_uniforms(options.texture):clone()
+  }
+
+  mat.uniforms.u_baseColor:set(options.color or {1.0,1.0,1.0,1.0})
+  if options.texture and type(options.texture) == "table" then
+    mat.uniforms.s_texAlbedo:set(options.texture)
+  end
+
+  return Material(mat)
 end
 
-m.FlatShader = FlatShader
-m.FlatMaterial = FlatMaterial
 return m

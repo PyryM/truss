@@ -63,7 +63,7 @@ end
 function m.plane_geo(width, height, wdivs, hdivs, gname)
   local gfx = require("gfx")
   local plane_data = m.plane_data(width, height, wdivs, hdivs)
-  return gfx.StaticGeometry(gname):fromData(plane_data)
+  return gfx.StaticGeometry(gname):from_data(plane_data)
 end
 
 return m
