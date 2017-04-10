@@ -15,6 +15,9 @@ function update_events()
   for evt in sdl.events() do
     if evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
       truss.quit()
+    elseif evt.event_type == sdl.EVENT_KEYDOWN and ffi.string(evt.keycode) == "F12" then
+      print("Saving screenshot!")
+      gfx.save_screenshot("screenshot.png")
     end
   end
 end
@@ -42,22 +45,41 @@ function create_uniforms()
   uniforms.u_pbrParams:set(math.Vector(1.0, 1.0, 1.0, 0.6))
 end
 
+local function chained_simplex(x, y, z, mults)
+  for _, m in ipairs(mults) do
+    local nx = simplex.simplex_3d(x*m, y*m, z*m)
+    local ny = simplex.simplex_3d((x+0.2)*m, (y+0.2)*m, (z+0.2)*m)
+    local nz = simplex.simplex_3d((x+0.3)*m, (y+0.3)*m, (z+0.3)*m)
+    x, y, z = nx, ny, nz
+  end
+  return x, y, z
+end
+
 function update_geo(geo)
   local nverts = geo.n_verts
+  local mult = 0.00001
   for i = 0,(nverts-1) do
     local pos = geo.verts[i].position
     local x, y, z = pos[0], pos[1], pos[2]
-    local dx = simplex.simplex_3d(x*2, y*2, z*2) * 0.0001
-    local dy = simplex.simplex_3d(x*2+5,y*2+5,z*2+5) * 0.0001
-    local dz = simplex.simplex_3d(x*2-5,y*2-5,z*2-5) * 0.0001
-    pos[0], pos[1], pos[2] = x+dx, y+dy, z+dz
+    -- local dx = simplex.simplex_3d(x*2, y*2, z*2)
+    -- dx = dx * dx * mult
+    -- dx = dx * simplex.simplex_3d(x*7, y*7, z*7)
+    -- local dy = simplex.simplex_3d(x*2+5,y*2+5,z*2+5)
+    -- dy = dy * dy * mult
+    -- dy = dy * simplex.simplex_3d(x*7+10, y*7-5, z*7+9)
+    -- local dz = simplex.simplex_3d(x*2-5,y*2-5,z*2-5)
+    -- dz = dz * dz * mult
+    -- dz = dz * simplex.simplex_3d(x*7-3, y*7+3, z*7-5)
+    local dx, dy, dz = chained_simplex(x, y, z, {1,1.1})
+    pos[0], pos[1], pos[2] = x+(dx*mult), y+(dy*mult), z+(dz*mult)
   end
   geo:update_vertices() -- could also do geo:update()
 end
 
 function create_geo()
-  local r = 2.0
-  local data = require("geometry/cube.t").cube_data(r,r,r)
+  local r = 0.75
+  --local data = require("geometry/cube.t").cube_data(r,r,r)
+  local data = require("geometry/icosphere.t").icosahedron_data(r)
   data.attributes.texcoord0 = nil
 
   for i = 1,6 do
@@ -97,7 +119,7 @@ end
 
 function draw_stuff(xpos, ypos, phase)
   -- Compute the cube's transformation
-  rotquat:euler({x = 0.5, y = time*0.2 + phase, z = 0.0})
+  rotquat:euler({x = 0.0, y = time*0.2 + phase, z = 0.0}, 'ZYX')
   posvec:set(xpos, ypos, -4.0)
   modelmat:compose(posvec, rotquat)
   gfx.set_transform(modelmat)
@@ -127,7 +149,7 @@ function update()
   -- Use debug font to print information about this example.
   bgfx.dbg_text_clear(0, false)
 
-  bgfx.dbg_text_printf(0, 1, 0x4f, "scripts/examples/cube.t")
+  bgfx.dbg_text_printf(0, 1, 0x4f, "scripts/examples/new_dynamic.t")
   bgfx.dbg_text_printf(0, 2, 0x6f, "frame time: " .. frametime*1000.0 .. " ms")
 
   -- Set viewprojection matrix
