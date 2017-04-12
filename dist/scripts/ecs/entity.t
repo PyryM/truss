@@ -46,20 +46,26 @@ local function would_cause_cycle(parent, child)
   while curnode ~= nil do
     curnode = curnode.parent
     if curnode == parent or curnode == child then
-      log.error("Adding child would have caused cycle!")
-      return true
+      return true, "Adding child would have caused cycle!"
     end
     depth = depth + 1
     if depth > MAXD then
-      log.error("Adding child would exceed max tree depth!")
-      return true
+      return true, "Adding child would exceed max tree depth!"
     end
   end
   return false
 end
 
 function Entity:add(child)
-  if would_cause_cycle(self, child) then return false end
+  if not child then
+    truss.error("Cannot add nil as child.")
+    return false
+  end
+  if would_cause_cycle(self, child) then
+    local _, errmsg = would_cause_cycle(self, child)
+    truss.error("Cyclic add: " .. errmsg)
+    return false
+  end
 
   -- remove child from its previous parent
   if child.parent then
