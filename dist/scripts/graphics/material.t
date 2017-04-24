@@ -13,8 +13,9 @@ function Material:init(src, clone)
   src = src or {}
   self.program = src.program
   self.state   = src.state
-  for k,v in pairs(src.tags or {}) do
-    self.tags[k] = src.tags[k]
+  if src.tags then
+    self.tags = {}
+    for k,v in pairs(src.tags) do self.tags[k] = src.tags[k] end
   end
   if clone and src.uniforms then
     self.uniforms = src.uniforms:clone()
