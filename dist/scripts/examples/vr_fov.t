@@ -20,11 +20,14 @@ function init()
                mirror = "both", debugtext = true})
   create_scene(app.ECS.scene)
   openvr.on("trackable_connected", add_trackable)
-  openvr.print_debug_info()
 end
 
 function update()
   app:update()
+  if not debug_printed then
+    openvr.print_debug_info()
+    debug_printed = true
+  end
 end
 
 function add_trackable(trackable)
