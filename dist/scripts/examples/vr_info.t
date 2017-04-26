@@ -3,16 +3,13 @@
 -- logs some openvr information (recommended target size, projection matrices)
 -- and quits
 
-terralib = core.terralib
-truss = core.truss
-
 local openvr = require("vr/openvr.t")
 
 function init()
-    openvr.init()
-    openvr.printDebugInfo()
+  openvr.init()
+  openvr.print_debug_info()
 end
 
 function update()
-    truss.truss_stop_interpreter(core.TRUSS_ID)
+  truss.quit()
 end

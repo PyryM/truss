@@ -247,11 +247,11 @@ function m.get_target_size()
   return m.target_size.w, m.target_size.h
 end
 
-function m.printDebugInfo()
+function m.print_debug_info()
   m._update_projections()
   m._update_eye_poses()
   local w,h = m.get_target_size()
-  log.info("--------------openvr.printDebugInfo()--------------")
+  log.info("--------------openvr.print_debug_info()------------")
   log.info("Recommended target size: " .. w .. " x " .. h)
   log.info("ProjectionL: " .. m.eye_projections[1]:prettystr())
   log.info("ProjectionR: " .. m.eye_projections[2]:prettystr())
