@@ -4,7 +4,6 @@
 
 local class = require("class")
 local math = require("math")
-local event = require("ecs/event.t")
 local m = {}
 
 local Entity = class("Entity")
