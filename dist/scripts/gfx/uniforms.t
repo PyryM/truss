@@ -120,24 +120,33 @@ end
 
 function UniformSet:add(uniform)
   local newname = uniform._uni_name
-  log.debug("Adding " .. newname)
   if self[newname] then
     truss.error("UniformSet.add : uniform named [" .. newname ..
           "] already exists.")
     return
   end
-
-  self._uniforms[newname] = uniform
-  self[newname] = uniform
+  self:_raw_add(newname, uniform)
   return self
+end
+
+function UniformSet:_raw_add(uni_name, uniform)
+  self._uniforms[uni_name] = uniform
+  self[uni_name] = uniform
 end
 
 function UniformSet:clone()
   local ret = UniformSet()
   for k,v in pairs(self._uniforms) do
     local v_clone = v:clone()
-    ret._uniforms[k] = v_clone
-    ret[k] = v_clone
+    ret:_raw_add(k, v_clone)
+  end
+  return ret
+end
+
+function UniformSet:create_view(selection)
+  local ret = UniformSet()
+  for _, uni_name in ipairs(selection) do
+    ret:_raw_add(uni_name, self._uniforms[uni_name])
   end
   return ret
 end
