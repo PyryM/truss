@@ -21,6 +21,14 @@ function ECS:init()
   self._current_timings = {}
   self._t0 = truss.tic()
   self._lastdt = 0
+  self._global_events = {on_update = {}, on_preupdate = {}}
+end
+
+function ECS:add_global_event(evt_name)
+  if not self._global_events[evt_name] then
+    self._global_events[evt_name] = {}
+  end
+  self._configuration_dirty = true
 end
 
 function ECS:add_system(system, name, priority)
@@ -42,6 +50,32 @@ function ECS:configure()
   self.scene:configure_recursive(self)
   self._configuration_dirty = false
   return self
+end
+
+function ECS:event(evt_name, evt)
+  local targets = self._global_events[evt_name]
+  if not targets then
+    truss.error("ECS has no global event named " .. evt_name
+                 .. "; global events must be pre-registered"
+                 .. " with ECS:add_global_event()")
+    return
+  end
+  for entity, _ in pairs(targets) do
+    entity:event(evt_name, evt)
+  end
+end
+
+function ECS:_register_for_global_event(evt_name, entity)
+  local targets = self._global_events[evt_name]
+  if targets then
+    targets[entity] = true
+  end
+end
+
+function ECS:_remove_from_global_events(entity)
+  for _, targets in pairs(self._global_events) do
+    targets[entity] = nil
+  end
 end
 
 function ECS:_start_timing()
@@ -79,13 +113,13 @@ function ECS:update()
   end
 
   -- preupdate
-  self.scene:event_recursive("on_preupdate")
+  self:event("on_preupdate")
   self:insert_timing_event("preupdate")
   -- scenegraph transform update
   self.scene:recursive_update_world_mat(self._identity_mat)
   self:insert_timing_event("scenegraph")
   -- update
-  self.scene:event_recursive("on_update")
+  self:event("on_update")
   self:insert_timing_event("update")
 
   -- update systems first

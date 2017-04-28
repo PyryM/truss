@@ -90,7 +90,7 @@ end
 
 function Entity:configure_recursive(sg_root)
   self._sg_root = sg_root
-  if self.configure then self:configure(sg_root) end
+  self:configure(sg_root)
   for _,child in pairs(self.children) do child:configure_recursive(sg_root) end
 end
 
@@ -98,6 +98,7 @@ function Entity:remove(child)
   if not self.children[child] then return end
   self.children[child] = nil
   child.parent = nil
+  child:configure_recursive(nil)
 end
 
 function Entity:configure(sg_root)
@@ -105,6 +106,23 @@ function Entity:configure(sg_root)
   for _,comp in pairs(self._components) do
     if comp.configure then comp:configure(sg_root) end
   end
+  if sg_root then
+    self:_register_global_events()
+  else
+    self:_remove_global_events()
+  end
+end
+
+function Entity:_register_global_events()
+  if not self._sg_root then return end
+  for evt_name, _ in pairs(self._event_handlers) do
+    self._sg_root:_register_for_global_event(evt_name, self)
+  end
+end
+
+function Entity:_remove_global_events()
+  if not self._sg_root then return end
+  self._sg_root:_remove_from_global_events(self)
 end
 
 -- add a component *instance* to an entity
@@ -146,10 +164,18 @@ end
 function Entity:_add_handler(event_name, component)
   self._event_handlers[event_name] = self._event_handlers[event_name] or {}
   self._event_handlers[event_name][component] = component
+  if self._sg_root then
+    self._sg_root:_register_for_global_event(event_name, self)
+  end
 end
 
 function Entity:_remove_handler(event_name, component)
   (self._event_handlers[event_name] or {})[component] = nil
+  local count = 0
+  for _, _ in pairs(self._event_handlers[event_name] or {}) do
+    count = count + 1
+  end
+  if count == 0 then self._event_handlers[event_name] = nil end
 end
 
 function Entity:_remove_handlers(component)
@@ -214,7 +240,6 @@ end
 function Entity:recursive_update_world_mat(parentmat)
   -- do nothing (maybe recurse to children?)
 end
-
 
 local Entity3d = Entity:extend("Entity3d")
 m.Entity3d = Entity3d
