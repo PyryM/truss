@@ -12,7 +12,6 @@ function Entity:init(name, ...)
   self._components = {}
   self._event_handlers = {}
   self.children = {}
-  self.enabled = true
   self.name = name or "entity"
   self.user_handlers = {} -- a pseudo-component to hold user attached handlers
 
@@ -211,18 +210,6 @@ function Entity:on(event_name, f)
   end
 end
 
--- force call a function on every component for which it exists
-function Entity:broadcast(func_name, ...)
-  for _, component in pairs(self._components) do
-    if component[func_name] then component[func_name](component, ...) end
-  end
-end
-
--- call a function on every component for this entity and its descendents
-function Entity:broadcast_recursive(func_name, ...)
-  self:call_recursive("broadcast", func_name, ...)
-end
-
 -- plain Entity doesn't have a world mat
 function Entity:recursive_update_world_mat(parentmat)
   -- do nothing (maybe recurse to children?)
@@ -250,10 +237,8 @@ end
 -- recursively calculate world matrices from local transforms for
 -- object and all its children
 function Entity3d:recursive_update_world_mat(parentmat)
-  if self.enabled == false or (not self.matrix) then return end
-
+  if not self.matrix then return end
   self.matrix_world:multiply(parentmat, self.matrix)
-
   for _,child in pairs(self.children) do
     child:recursive_update_world_mat(self.matrix_world)
   end
