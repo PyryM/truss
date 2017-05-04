@@ -4,6 +4,7 @@
 
 local m = {}
 local stringutils = require("utils/stringutils.t")
+local class = require("class")
 
 m.colors = {
   default = 0x8f,
@@ -312,7 +313,7 @@ function m.create_env()
   m.env.help = m.print_mini_help
   m.env.rc = m.attach_webconsole
   m.env.remote = m.attach_webconsole
-  m.env.resume = truss.resumeFromError
+  m.env.resume = truss.resume_from_error
   m.env.quit = truss.quit
   m.env.printlog = m.dumplog
   m.env.log = m.dumplog
@@ -321,8 +322,8 @@ function m.create_env()
   m.env.divider = m.divider
   m.env.trace = m.trace
   m.env.save = m.save_console_buffer
-  m.env.m = truss.mainEnv
-  m.env.app = (truss.mainEnv or {}).app
+  m.env.m = truss.mainenv
+  m.env.app = (truss.mainenv or {}).app
   m.env.minicon = m
 end
 
@@ -430,6 +431,30 @@ function m.fallback_update()
     m._booted = true
   end
 
+  m.update()
+end
+
+local ConsoleApp = class("ConsoleApp")
+m.ConsoleApp = ConsoleApp
+
+function ConsoleApp:init(options)
+  options = options or {}
+  local sdl = require("addons/sdl.t")
+  local gfx = require("gfx")
+
+  sdl.create_window(options.width or 1280,
+                    options.height or 720,
+                    options.title or "Console")
+  gfx.init_gfx({msaa = true, debugtext = true, window = sdl})
+  m.hijack_bgfx()
+  m.init(math.floor(m.width / 8), math.floor(m.height / 16))
+  m.set_header(options.title or "Console", options.header_color or 0x83)
+  if options.print_help ~= false then m.print_mini_help() end
+  self.env = m.env
+  self.print = m.print
+end
+
+function ConsoleApp:update()
   m.update()
 end
 

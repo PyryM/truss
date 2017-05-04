@@ -38,14 +38,11 @@ function ConsoleTools:_updateBlacklist()
     -- builds a list of tables that shouldn't be recursed, but instead just
     -- printed as a name
     self.blacklist = {}
-    for k,v in pairs(truss.loadedLibs) do
+    for k,v in pairs(truss._loaded_libs) do
         self.blacklist[v] = "module [" .. k .. "]"
     end
     for k,v in pairs(truss.addons) do
         self.blacklist[v] = "addon [" .. k .. "]"
-    end
-    for k,v in pairs(truss.rawAddons) do
-        self.blacklist[v] = "raw addon [" .. k .. "]"
     end
 end
 
