@@ -159,8 +159,10 @@ end
 function Trackable:update_pose(src)
   if self.pose == nil then self.pose = math.Matrix4():identity() end
   if self.velocity == nil then self.velocity = math.Vector():zero() end
+  if self.angular_velocity == nil then self.angular_velocity = math.Vector():zero() end
   openvr.openvr_mat34_to_mat(src.mDeviceToAbsoluteTracking, self.pose)
   openvr.openvr_v3_to_vector(src.vVelocity, self.velocity)
+  openvr.openvr_v3_to_vector(src.vAngularVelocity, self.angular_velocity)
   self.connected = (src.bDeviceIsConnected > 0)
   self.pose_valid = (src.bPoseIsValid > 0)
 end
