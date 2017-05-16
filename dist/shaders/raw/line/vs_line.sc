@@ -1,15 +1,15 @@
 $input a_position, a_normal, a_color0
-$output v_wpos
+$output v_wpos, v_uv
 
 /* Adapted from https://github.com/mattdesl/webgl-lines
- * The MIT License (MIT) 
+ * The MIT License (MIT)
  * Copyright (c) 2015 Matt DesLauriers
  * Modifications to work with bgfx copyright 2015 Pyry Matikainen
 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
 
@@ -17,10 +17,10 @@ $output v_wpos
  * all copies or substantial portions of the Software.
 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
@@ -43,13 +43,14 @@ void main() {
   vec2 nextScreen = nextProjected.xy / nextProjected.w * aspectVec;
 
   float len = u_thickness.x;
-  float orientation = a_color0.w;
+  float orientation = sign(a_color0.w);
+  v_uv = vec2(abs(a_color0.w), orientation*0.5 + 0.5);
 
   //starting point uses (next - current)
   vec2 dir = vec2(0.0, 0.0);
   if (currentScreen.x == previousScreen.x && currentScreen.y == previousScreen.y) {
     dir = normalize(nextScreen - currentScreen);
-  } 
+  }
   //ending point and middle uses (current - previous)
   else {
     dir = normalize(currentScreen - previousScreen);

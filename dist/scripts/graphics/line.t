@@ -88,9 +88,10 @@ function LineShaderComponent:_append_segment(segpoints, vertidx, idxidx)
     --                line end   if nextpoint==curpoint
     local prevpoint = segpoints[i-1] or curpoint
     local nextpoint = segpoints[i+1] or curpoint
+    local u = i / npts
 
-    pack_vertex(vbuf[vertidx]  , curpoint, prevpoint, nextpoint,  1.0)
-    pack_vertex(vbuf[vertidx+1], curpoint, prevpoint, nextpoint, -1.0)
+    pack_vertex(vbuf[vertidx]  , curpoint, prevpoint, nextpoint,  u)
+    pack_vertex(vbuf[vertidx+1], curpoint, prevpoint, nextpoint, -u)
 
     vertidx = vertidx + 2
   end
