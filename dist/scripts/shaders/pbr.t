@@ -38,7 +38,7 @@ end
 function m.PBRMaterial(diffuse, tint, roughness, fshader)
   local mat = {
     state = gfx.create_state(),
-    program = gfx.load_program("vs_basicpbr", fhsader or "fs_basicpbr_x4"),
+    program = gfx.load_program("vs_basicpbr", fshader or "fs_basicpbr_x4"),
     uniforms = m.create_pbr_uniforms():clone()
   }
   mat.uniforms.u_baseColor:set(diffuse or {0.2,0.02,0.02,1.0})
