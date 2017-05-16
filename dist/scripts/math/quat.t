@@ -1,7 +1,7 @@
 -- quat.t
 --
 -- quaternion math
--- mostly copied from threejs 
+-- mostly copied from threejs
 --  (https://github.com/mrdoob/three.js/blob/master/src/math/Quaternion.js)
 
 local m = {}
@@ -19,6 +19,7 @@ end
 
 function Quaternion:euler(euler, order)
   -- handle either {x=..., y=..., z=...} or {x,y,z} style
+  if euler.elem then euler = euler.elem end -- handle passing in vectors
   local x = euler.x or euler[1]
   local y = euler.y or euler[2]
   local z = euler.z or euler[3]
@@ -132,9 +133,9 @@ end
 
 function Quaternion:prettystr()
   local e = self.elem
-  return "{" .. e.x .. ", " 
-         .. e.y .. ", " 
-         .. e.z .. ", " 
+  return "{" .. e.x .. ", "
+         .. e.y .. ", "
+         .. e.z .. ", "
          .. e.w .. "}"
 end
 
