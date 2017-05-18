@@ -72,11 +72,43 @@ function m._load_texture(filename, flags)
   end
 end
 
+-- load a texture as a texture object
 function m.load_texture(filename, flags)
   if not m._textures[filename] then
     m._textures[filename] = m.Texture(filename, flags)
   end
   return m._textures[filename]
+end
+
+local struct texture_data {
+	w: int32;
+	h: int32;
+	n: int32;
+	data: &truss.C.Message;
+}
+
+local terra load_texture_data(filename: &int8, dest: &texture_data)
+	dest.data = nvg_utils.truss_nanovg_load_image(nvg_pointer, filename,
+												 &dest.w, &dest.h, &dest.n)
+end
+
+-- load just the raw pixel data of a texture
+function m.load_texture_data(filename)
+	local temp = terralib.new(texture_data)
+	load_texture_data(filename, temp)
+	if temp.w <= 0 or temp.h <=0 or temp.n <= 0 then
+		log.error("couldn't load tex data: " .. temp.w .. " " .. temp.h .. " "
+				  .. temp.n)
+		truss.C.release_message(temp.data)
+		return nil
+	end
+	local dsize = temp.w*temp.h*temp.n
+	local ndata = terralib.new(uint8[temp.w*temp.h*temp.n])
+	for i = 0,dsize-1 do
+		ndata[i] = temp.data.data[i]
+	end
+	truss.C.release_message(temp.data)
+	return {w = temp.w, h = temp.h, n = temp.n, data = ndata}
 end
 
 local Texture = class("Texture")
