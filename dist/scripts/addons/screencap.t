@@ -56,11 +56,6 @@ function m._update_tex()
 end
 
 function m.capture_screen()
-  if m._rbcallback then
-    m._rbcallback(m.texw, m.texh, m._readbackbuffer)
-    m._rbcallback = nil
-  end
-
   if m.has_frame then
     m.rawfunctions.truss_scap_release_frame(m.rawpointer)
   end
@@ -95,11 +90,6 @@ function m._create_read_back_tex()
 end
 
 function m.get_data(onsuccess)
-  if m._rbcallback then
-    log.error("Can't read screencap data when a read is already queued!")
-    return
-  end
-
   local viewid = 0
   local dMip, dX, dY, dZ = 0, 0, 0, 0
   local sMip, sX, sY, sZ = 0, 0, 0, 0
@@ -112,7 +102,9 @@ function m.get_data(onsuccess)
   bgfx.blit(viewid, m._read_back_tex, dMip, dX, dY, dZ,
                     m.tex,            sMip, sX, sY, sZ, w, h, d)
   bgfx.read_texture(m._read_back_tex, m._readbackbuffer.data)
-  m._rbcallback = onsuccess
+  gfx.schedule(function()
+    onsuccess(m.texw, m.texh, m._readbackbuffer)
+  end)
 end
 
 function m.get_tex()
