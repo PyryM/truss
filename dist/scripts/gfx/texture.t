@@ -126,6 +126,26 @@ function Texture:load(filename, flags)
   self._handle = m._load_texture(filename, flags)
 end
 
+function Texture:blit_copy(src, options)
+  if not self.blit_dest then
+    truss.error("Cannot blit: texture does not have bgfx.blit_dest flag!")
+    return
+  end
+  truss.error("Not implemented yet!")
+  -- TODO
+end
+
+function Texture:read_data(options, onsuccess)
+  truss.error("Not implemented yet!")
+  -- TODO
+  -- bgfx.blit(viewid, m._read_back_tex, dMip, dX, dY, dZ,
+  --                   m.tex,            sMip, sX, sY, sZ, w, h, d)
+  -- bgfx.read_texture(m._read_back_tex, m._readbackbuffer.data, 0)
+  -- gfx.schedule(function()
+  --   onsuccess(m.texw, m.texh, m._readbackbuffer)
+  -- end)
+end
+
 function Texture:release()
   if self._handle ~= nil then
     bgfx.destroy_texture(self._handle)
