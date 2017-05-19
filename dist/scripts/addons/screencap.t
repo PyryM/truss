@@ -43,7 +43,6 @@ function m._update_backing_tex()
   m.tex = bgfx.create_texture_2d(tw, th, false, 1, fmt, flags, nil)
   m.texw = m.rawinfo.width
   m.texh = m.rawinfo.height
-  log.info("Texptr? " .. tostring(m.texptr))
 end
 
 function m._update_tex()
@@ -84,7 +83,8 @@ function m._create_read_back_tex()
       bgfx.TEXTURE_MIP_POINT,
       bgfx.TEXTURE_U_CLAMP,
       bgfx.TEXTURE_V_CLAMP )
-  m._read_back_tex = bgfx.create_texture_2d(m.texw, m.texh, 1,
+
+  m._read_back_tex = bgfx.create_texture_2d(m.texw, m.texh, false, 1,
                                   bgfx.TEXTURE_FORMAT_BGRA8, flags, nil)
   m._readbackbuffer = truss.C.create_message(m.texw * m.texh * 4)
 end
@@ -101,8 +101,8 @@ function m.get_data(onsuccess)
 
   bgfx.blit(viewid, m._read_back_tex, dMip, dX, dY, dZ,
                     m.tex,            sMip, sX, sY, sZ, w, h, d)
-  bgfx.read_texture(m._read_back_tex, m._readbackbuffer.data)
-  gfx.schedule(function()
+  bgfx.read_texture(m._read_back_tex, m._readbackbuffer.data, 0)
+  require("gfx").schedule(function()
     onsuccess(m.texw, m.texh, m._readbackbuffer)
   end)
 end
