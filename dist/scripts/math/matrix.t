@@ -490,6 +490,7 @@ function Matrix4:look_at(point, up)
   self:set_column(1, tx)
   self:set_column(2, ty)
   self:set_column(3, tz)
+  return self
 end
 
 function Matrix4:prettystr()
@@ -517,6 +518,7 @@ function Matrix4:from_table(parr)
     local src = parr[p+1]
     data[p], data[p+4], data[p+8], data[p+12] = src[1],src[2],src[3],src[4]
   end
+  return self
 end
 
 function Matrix4:__tostring()
