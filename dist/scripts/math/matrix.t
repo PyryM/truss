@@ -87,6 +87,28 @@ terra m.scale_matrix(mat: &scalar_, s: &vec4_)
   mat[ 11 ] = mat[11] * s.z
 end
 
+-- get the (possibly non-uniform) scale of a matrix
+terra m.get_matrix_scale(mat: &scalar_, s: &vec4_)
+  var a11, a12, a13 = mat[ 0 ], mat[ 4 ], mat[ 8 ]
+  var a21, a22, a23 = mat[ 1 ], mat[ 5 ], mat[ 9 ]
+  var a31, a32, a33 = mat[ 2 ], mat[ 6 ], mat[ 10 ]
+
+  s.x = CMath.sqrt(a11*a11 + a21*a21 + a31*a31)
+  s.y = CMath.sqrt(a12*a12 + a22*a22 + a32*a32)
+  s.z = CMath.sqrt(a13*a13 + a23*a23 + a33*a33)
+end
+
+-- makes each column of the upper 3x3 be a unit vector
+-- doesn't orthogonalize columns
+terra m.remove_matrix_scale(mat: &scalar_)
+  var s: vec4_
+  m.get_matrix_scale(mat, &s)
+  s.x = 1.0 / s.x
+  s.y = 1.0 / s.y
+  s.z = 1.0 / s.z
+  m.scale_matrix(mat, &s)
+end
+
 terra m.set_matrix_position(mat: &scalar_, p: &vec4_)
   mat[ 12 ] = p.x
   mat[ 13 ] = p.y
@@ -324,6 +346,17 @@ function Matrix4:scale(scale)
   return self
 end
 
+function Matrix4:get_scale(s)
+  s = s or require("math/vec.t").Vector()
+  m.get_matrix_scale(self.data, s.elem)
+  return s
+end
+
+function Matrix4:remove_scaling()
+  m.remove_matrix_scale(self.data)
+  return self
+end
+
 function Matrix4:set_translation(pos)
   m.set_matrix_position(self.data, pos.elem)
   return self
@@ -334,6 +367,10 @@ function Matrix4:translation(v)
   return self:set_translation(v)
 end
 
+function Matrix4:get_translation(v)
+  return self:get_column(4, v)
+end
+
 -- take a translation (v3), rotation (quat), and optional scale (v) and
 -- and composes them together into this 4x4 transformation
 function Matrix4:compose(pos, quat, scale)
@@ -342,6 +379,14 @@ function Matrix4:compose(pos, quat, scale)
   if scale then m.scale_matrix(destmat, scale.elem) end
   m.set_matrix_position(destmat, pos.elem)
   return self
+end
+
+-- decompose a matrix, assumed to be rigid + scale, into a translation,
+-- rotation quaternion, and scale
+function Matrix4:decompose(pos, quat, scale)
+  if pos then self:get_column(4, pos) end
+  if quat then self:to_quaternion(quat) end
+  if scale then self:get_scale(scale) end
 end
 
 -- if src==nil (or not provided), then inverts the matrix
