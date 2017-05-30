@@ -19,16 +19,75 @@ function m.create_cylinder_line(y0, y1, radius, segs, target, parentmat)
   table.insert(target, {data, mat})
 end
 
+function m.geo_from_rotated_lines(lines, positions, rotations, rad, segs)
+  local components = {}
+  local q0 = math.Quaternion():identity()
+  local p0 = math.Vector():zero()
+
+  for i = 1, #lines do
+    local mat = math.Matrix4():compose(positions[i] or p0, rotations[i] or q0)
+    for _,s in ipairs(lines[i]) do
+        m.create_cylinder_line(s[1], s[2], rad, segs, components, mat)
+    end
+  end
+
+  return geoutils.merge_data(components, {"position", "normal"})
+end
+
+function m.box_widget_data(side_length, radius, gap_frac, segments)
+  side_length = side_length or 1.0
+  radius = radius or (side_length * 0.025)
+  gap_frac = gap_frac or 0.5
+  segments = segments or 6
+  local hs = side_length / 2.0
+
+  local Q = math.Quaternion
+  local V = math.Vector
+  local base_rotations = {Q():euler{0,0,-math.pi/2},
+                          Q():euler{0,0,0},
+                          Q():euler{math.pi/2,0,0}}
+  local base_positions = {V(-hs, 0.0, -hs), V(hs, 0.0,  hs),
+                          V(-hs, 0.0,  hs), V(hs, 0.0, -hs)}
+  local base_lines
+  local yp = hs + radius --/ 2.0
+  if gap_frac > 0.0 then
+    base_lines = {{-yp, -yp * gap_frac}, {yp * gap_frac, yp}}
+  else
+    base_lines = {{-yp, yp}}
+  end
+
+  local temp_mat = math.Matrix4():identity()
+
+  local lines, rotations, positions = {}, {}, {}
+  for _, r in ipairs(base_rotations) do
+    for _, p in ipairs(base_positions) do
+      table.insert(lines, base_lines)
+      table.insert(rotations, r)
+      temp_mat:from_quaternion(r)
+      local p_rotated = p:clone()
+      temp_mat:multiply_vector(p_rotated)
+      table.insert(positions, p_rotated)
+    end
+  end
+
+  return m.geo_from_rotated_lines(lines, positions, rotations, radius, segments)
+end
+
+function m.box_widget_geo(side_length, radius, gap_frac, segments, gname)
+  return geoutils.to_basic_geo(gname or "box_widget",
+                    m.box_widget_data(side_length, radius, gap_frac, segments))
+end
+
 function m.axis_widget_data(scale, length, segments)
   scale = scale or 1.0
   segments = segments or 12
   local radius = scale * 0.02
   length = length or scale
 
-  local q = math.Quaternion()
-  local p = math.Vector():zero()
-
-  local rotations = {{0,0,-math.pi/2}, {0,0,0}, {math.pi/2,0,0}}
+  local Q = math.Quaternion
+  local rotations = {Q():euler{0,0,-math.pi/2},
+                     Q():euler{0,0,0},
+                     Q():euler{math.pi/2,0,0}}
   local bsize = scale * 0.1
   local lines = {
     {{-length*0.25, length}},
@@ -36,21 +95,12 @@ function m.axis_widget_data(scale, length, segments)
     {{-length*0.25, length-bsize*4}, {length-bsize*3,length-bsize*2}, {length-bsize, length}}
   }
 
-  local components = {}
-
-  for i = 1,3 do
-    q:euler(rotations[i])
-    local mat = math.Matrix4():compose(p, q)
-    for _,s in ipairs(lines[i]) do
-        m.create_cylinder_line(s[1], s[2], radius, segments, components, mat)
-    end
-  end
-
-  return geoutils.merge_data(components, {"position", "normal"})
+  return m.geo_from_rotated_lines(lines, {}, rotations, radius, segments)
 end
 
-function m.axis_widget_geo(gname, scale, length, segments)
-    return geoutils.to_basic_geo(gname, m.axis_widget_data(scale, length, segments))
+function m.axis_widget_geo(scale, length, segments, gname)
+    return geoutils.to_basic_geo(gname or "axis_widget",
+                                 m.axis_widget_data(scale, length, segments))
 end
 
 return m
