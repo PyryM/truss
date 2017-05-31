@@ -12,23 +12,40 @@ m._textures = {}
 local nvg_utils = truss.addons.nanovg.functions
 local nvg_pointer = truss.addons.nanovg.pointer
 
-local terra load_texture_mem(filename: &int8, flags: uint32)
+local terra load_texture_mem_raw(filename: &int8, flags: uint32, info: &bgfx.texture_info_t)
   var w: int32 = -1
   var h: int32 = -1
   var n: int32 = -1
-  var msg: &truss.C.Message = nvg_utils.truss_nanovg_load_image(nvg_pointer, filename, &w, &h, &n)
+  var msg: &truss.C.Message = nvg_utils.truss_nanovg_load_image(nvg_pointer,
+                                                          filename, &w, &h, &n)
   --return msg
   var bmem: &bgfx.memory_t = nil
   if msg ~= nil then
-  bmem = bgfx.copy(msg.data, msg.data_length)
+    bmem = bgfx.copy(msg.data, msg.data_length)
   else
-  truss.C.log(truss.C.LOG_ERROR, "Error loading texture!")
+    truss.C.log(truss.C.LOG_ERROR, "Error loading texture!")
   end
   truss.C.release_message(msg)
   truss.C.log(truss.C.LOG_INFO, "Creating texture...")
   var ret = bgfx.create_texture_2d(w, h, false, 1, bgfx.TEXTURE_FORMAT_RGBA8,
                                   flags, bmem)
+  if info ~= nil then
+    info.width = w
+    info.height = h
+    info.depth = 1
+    info.numMips = 1
+    info.numLayers = 1
+    info.bitsPerPixel = 32 -- always force 32 bit textures
+    info.cubeMap = false
+    info.format = bgfx.TEXTURE_FORMAT_RGBA8
+  end
   return ret
+end
+
+local function load_texture_mem(filename, flags)
+  local info = terralib.new(bgfx.texture_info_t)
+  local handle = load_texture_mem_raw(filename, flags, info)
+  return handle, info
 end
 
 local function load_texture_bgfx(filename, flags)
@@ -36,7 +53,9 @@ local function load_texture_bgfx(filename, flags)
   if msg == nil then return nil end
   local bmem = bgfx.copy(msg.data, msg.data_length)
   truss.C.release_message(msg)
-  return bgfx.create_texture(bmem, flags, 0, nil)
+  local info = terralib.new(bgfx.texture_info_t)
+  local handle = bgfx.create_texture(bmem, flags, 0, info)
+  return handle, info
 end
 
 terra m.create_texture_from_data(w: int32, h: int32, src: &uint8, srclen: uint32, flags: uint32) : bgfx.texture_handle_t
@@ -81,15 +100,15 @@ function m.load_texture(filename, flags)
 end
 
 local struct texture_data {
-	w: int32;
-	h: int32;
-	n: int32;
-	data: &truss.C.Message;
+  w: int32;
+  h: int32;
+  n: int32;
+  data: &truss.C.Message;
 }
 
 local terra load_texture_data(filename: &int8, dest: &texture_data)
-	dest.data = nvg_utils.truss_nanovg_load_image(nvg_pointer, filename,
-												 &dest.w, &dest.h, &dest.n)
+  dest.data = nvg_utils.truss_nanovg_load_image(nvg_pointer, filename,
+                                                &dest.w, &dest.h, &dest.n)
 end
 
 -- load just the raw pixel data of a texture
@@ -123,16 +142,27 @@ end
 
 function Texture:load(filename, flags)
   self:release()
-  self._handle = m._load_texture(filename, flags)
+  self._handle, self._info = m._load_texture(filename, flags)
 end
 
-function Texture:blit_copy(src, options)
-  if not self.blit_dest then
-    truss.error("Cannot blit: texture does not have bgfx.blit_dest flag!")
+function Texture:create_copy_target(src, options)
+  if not src._info then
+    truss.error("Texture does not have any info!")
     return
   end
-  truss.error("Not implemented yet!")
-  -- TODO
+end
+
+function Texture:copy(src, options)
+  if not self._handle then
+    self:create_copy_target(src, options)
+  end
+
+  if not self._blit_dest then
+    truss.error("Cannot blit: texture is not blittable!")
+    return
+  end
+
+  return self
 end
 
 function Texture:read_data(options, onsuccess)
