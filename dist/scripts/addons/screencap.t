@@ -43,15 +43,17 @@ function m._update_backing_tex()
   m.tex = bgfx.create_texture_2d(tw, th, false, 1, fmt, flags, nil)
   m.texw = m.rawinfo.width
   m.texh = m.rawinfo.height
+  m.tex_info = {width = m.texw, height = m.texh, format = fmt}
 end
 
 function m._update_tex()
   --log.info("updating tex?")
-  if m.texptr == nil then return end
+  local texptr = bgfx.get_internal_texture_ptr(m.tex)
+  if texptr == nil then return false end
   local success = m.rawfunctions.truss_scap_copy_frame_tex_d3d11(m.rawpointer,
-                                                                 m.texptr)
+                                                                 texptr)
   --log.info("success? " .. tostring(success))
-  if success then return m.tex else return nil end
+  return success
 end
 
 function m.capture_screen()
@@ -64,8 +66,11 @@ function m.capture_screen()
   m.has_frame = has_frame
 
   if m.tex then
-    m.texptr = bgfx.get_internal_texture_ptr(m.tex)
-    return m._update_tex()
+    if m._update_tex() then
+      return m.get_tex()
+    else
+      return nil
+    end
   else
     m.rawinfo = m.rawfunctions.truss_scap_get_frame_info(m.rawpointer)
     m._update_backing_tex()
@@ -107,8 +112,16 @@ function m.get_data(onsuccess)
   end)
 end
 
-function m.get_tex()
+function m.get_tex_handle()
   return m.tex
+end
+
+function m.get_tex()
+  if not m.tex then return nil end
+  if not m.wrapped_tex then m.wrapped_tex = {} end
+  m.wrapped_tex._handle = m.tex
+  m.wrapped_tex._info = m.tex_info
+  return m.wrapped_tex
 end
 
 return m
