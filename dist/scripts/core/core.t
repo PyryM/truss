@@ -5,6 +5,19 @@
 -- dev tools can still use truss (e.g., windows without VS installed)
 terralib.includepath = "include;include/compat"
 
+local use_ryzen_hack = false
+if use_ryzen_hack then
+  print("Using Ryzen hack. Unclear on performance implications.")
+  -- AMD Ryzen incorrectly reports its CPU as "generic" somehow, so manually set
+  -- the default compile target
+  local triple = "x86_64-pc-win32"
+  terralib.nativetarget = terralib.newtarget{Triple = triple}
+
+  -- this is completely undocumented, but needs to be derived from the newly made
+  -- native target or else linking structures will break things for some reason
+  terralib.jitcompilationunit = terralib.newcompilationunit(terralib.nativetarget, true)
+end
+
 -- Link in truss api
 local ctruss = terralib.includec("truss_api.h")
 
