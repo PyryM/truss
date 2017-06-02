@@ -65,7 +65,7 @@ function ECS:reconfigure()
   return self
 end
 
-function ECS:event(evt_name, evt)
+function ECS:emit(evt_name, evt)
   local targets = self._global_events[evt_name]
   if not targets then
     truss.error("ECS has no global event named " .. evt_name
@@ -74,7 +74,7 @@ function ECS:event(evt_name, evt)
     return
   end
   for entity, _ in pairs(targets) do
-    entity:event(evt_name, evt)
+    if entity._in_tree then entity:event(evt_name, evt) end
   end
 end
 
