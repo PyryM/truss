@@ -8,7 +8,8 @@ local m = {}
 
 local Entity = class("Entity")
 m.Entity = Entity
-function Entity:init(name, ...)
+function Entity:init(ecs, name, ...)
+  self.ecs = ecs
   self._components = {}
   self._event_handlers = {}
   self.children = {}
@@ -18,6 +19,16 @@ function Entity:init(name, ...)
   for _, comp in ipairs({...}) do
     self:add_component(comp)
   end
+end
+
+-- create an entity in the same ecs as this entity
+function Entity:create(constructor, ...)
+  return self.ecs:create(constructor, ...)
+end
+
+-- create an entity as a child of this entity
+function Entity:create_child(constructor, ...)
+  return self:add(self:create(constructor, ...))
 end
 
 -- return a string identifying this component for error messages
@@ -35,7 +46,7 @@ m.MAX_TREE_DEPTH = 200
 -- check whether adding a prospective child to a parent
 -- would cause a cycle (i.e., that our scene tree would
 -- no longer be a tree)
-local function would_cause_cycle(parent, child)
+local function assert_cycle_free(parent, child, err_on_failure)
   -- we would have a cycle if tracing the parent up
   -- to root would encounter the child or itself
   local depth = 0
@@ -44,40 +55,53 @@ local function would_cause_cycle(parent, child)
   while curnode ~= nil do
     curnode = curnode.parent
     if curnode == parent or curnode == child then
-      return true, "Adding child would have caused cycle!"
+      if err_on_failure then truss.error("Cyclical reparent.") end
+      return false
     end
     depth = depth + 1
     if depth > MAXD then
-      return true, "Adding child would exceed max tree depth!"
+      if err_on_failure then truss.error("Max tree depth exceeded.") end
+      return false
     end
   end
-  return false
+  return true
 end
 
-function Entity:add(child)
-  if not child then
-    truss.error("Cannot add nil as child.")
-    return false
+-- internal function to set an entity's parent
+-- used for adding, removing, and moving
+function Entity:_set_parent(parent)
+  if self.parent then
+    self.parent.children[self] = nil
   end
-  if would_cause_cycle(self, child) then
-    local _, errmsg = would_cause_cycle(self, child)
-    truss.error("Cyclic add: " .. errmsg)
-    return false
+  if parent then
+    if not assert_cycle_free(parent, self, true) then return false end
+    parent.children[self] = self
+    self.parent = parent
+    if self._in_tree ~= parent._in_tree then
+      self:_set_in_tree(parent._in_tree)
+    end
+  else
+    self.parent = nil
+    self:_set_in_tree(false)
   end
+end
 
-  -- remove child from its previous parent
-  if child.parent then
-    child.parent:remove(child)
-  end
+function Entity:_set_in_tree(in_tree)
+  self._in_tree = in_tree
+  for _, child in pairs(self.children) do child:_set_in_tree(in_tree) end
+end
 
-  self.children[child] = child
-  child.parent = self
+function Entity:reparent(new_parent)
+  self.ecs:move_entity(self, new_parent)
+end
 
-  if child._sg_root ~= self._sg_root then
-    child:configure_recursive(self._sg_root)
-  end
+function Entity:add_child(child)
+  self.ecs:move_entity(child, self)
+end
+Entity.add = Entity.add_child -- alias for backwards compatibility
 
-  return true
+function Entity:remove_child(child)
+  self.ecs:move_entity(child, nil)
 end
 
 -- call a function on this node and its descendents
@@ -88,41 +112,11 @@ function Entity:call_recursive(func_name, ...)
   end
 end
 
-function Entity:configure_recursive(sg_root)
-  self._sg_root = sg_root
-  self:configure(sg_root)
-  for _,child in pairs(self.children) do child:configure_recursive(sg_root) end
-end
-
-function Entity:remove(child)
-  if not self.children[child] then return end
-  self.children[child] = nil
-  child.parent = nil
-  child:configure_recursive(nil)
-end
-
-function Entity:configure(sg_root)
-  sg_root = sg_root or self._sg_root
-  for _,comp in pairs(self._components) do
-    if comp.configure then comp:configure(sg_root) end
+-- reconfigure this entity (call configure on every component)
+function Entity:reconfigure()
+  for _, comp in pairs(self._components) do
+    if comp.configure then comp:configure(self.ecs) end
   end
-  if sg_root then
-    self:_register_global_events()
-  else
-    self:_remove_global_events()
-  end
-end
-
-function Entity:_register_global_events()
-  if not self._sg_root then return end
-  for evt_name, _ in pairs(self._event_handlers) do
-    self._sg_root:_register_for_global_event(evt_name, self)
-  end
-end
-
-function Entity:_remove_global_events()
-  if not self._sg_root then return end
-  self._sg_root:_remove_from_global_events(self)
 end
 
 -- add a component *instance* to an entity
@@ -139,9 +133,12 @@ function Entity:add_component(component, component_name)
 
   self._components[component_name] = component
   self[component_name] = component
-  if component.mount then component:mount(self, component_name) end
-  if self._sg_root and component.configure then
-    component:configure(self._sg_root)
+  component.ent = self
+  if component.mount then
+    component:mount(self, component_name, self.ecs)
+  end
+  if component.configure then
+    component:configure(self.ecs)
   end
 
   return component
@@ -164,8 +161,7 @@ end
 function Entity:_add_handler(event_name, component)
   self._event_handlers[event_name] = self._event_handlers[event_name] or {}
   self._event_handlers[event_name][component] = component
-  if self._sg_root then
-    self._sg_root:_register_for_global_event(event_name, self)
+  self.ecs:_register_for_global_event(event_name, self)
   end
 end
 
@@ -176,12 +172,6 @@ function Entity:_remove_handler(event_name, component)
     count = count + 1
   end
   if count == 0 then self._event_handlers[event_name] = nil end
-end
-
-function Entity:_remove_handlers(component)
-  for _, handlers in pairs(self._event_handlers) do
-    handlers[component] = nil
-  end
 end
 
 function Entity:_auto_add_handlers(component)

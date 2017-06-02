@@ -12,14 +12,13 @@ function Component:init()
   -- actually nothing to do
 end
 
-function Component:mount(entity)
-  self._entity = entity
+function Component:mount(entity, mount_name, ecs)
   entity:_auto_add_handlers(self)
 end
 
 function Component:unmount()
-  if self._entity then self._entity:_remove_handlers(self) end
-  self._entity = nil
+  if self.ent then self.ent:_remove_handlers(self) end
+  self.ent = nil
 end
 
 return m

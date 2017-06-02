@@ -46,8 +46,8 @@ function ECS:add_system(system, name, priority)
   return system
 end
 
-function ECS:configure()
-  self.scene:configure_recursive(self)
+function ECS:reconfigure()
+  self.scene:call_recursive("reconfigure")
   self._configuration_dirty = false
   return self
 end
@@ -101,7 +101,7 @@ function ECS:update()
   self:insert_timing_event("frame_start")
 
   -- reconfigure if dirty
-  if self._configuration_dirty then self:configure() end
+  if self._configuration_dirty then self:reconfigure() end
 
   -- update systems first
   self:insert_timing_event("configure")
