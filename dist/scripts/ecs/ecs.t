@@ -5,6 +5,7 @@
 local class = require("class")
 local entity = require("ecs/entity.t")
 local math = require("math")
+local queue = require("utils/queue.t")
 
 local m = {}
 
@@ -13,8 +14,7 @@ m.ECS = ECS
 function ECS:init()
   self.systems = {}
   self._ordered_systems = {}
-  self.scene = entity.Entity3d("ROOT")
-  self.scene._sg_root = self
+  self.scene = entity.Entity3d(self, "ROOT")
   self._identity_mat = math.Matrix4():identity()
   self._configuration_dirty = false
   self.timings = {}
@@ -22,6 +22,19 @@ function ECS:init()
   self._t0 = truss.tic()
   self._lastdt = 0
   self._global_events = {on_update = {}, on_preupdate = {}}
+  self._sg_updates = queue.Queue()
+end
+
+function ECS:move_entity(entity, newparent)
+  self._sg_updates:push_right({entity, newparent})
+end
+
+function ECS:resolve_graph_changes()
+  local q = self._sg_updates
+  while q:length() > 0 do
+    local op = q:pop_left()
+    op[1]:_set_parent(op[2])
+  end
 end
 
 function ECS:add_global_event(evt_name)
