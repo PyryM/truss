@@ -104,6 +104,21 @@ function Entity:remove_child(child)
   self.ecs:move_entity(child, nil)
 end
 
+function Entity:destroy()
+  -- sever this subtree at just this node,
+  -- and then mark every entity+component as dead
+  self:reparent(nil)
+  self:call_recursive("_mark_dead")
+end
+
+function Entity:_mark_dead()
+  self._dead = true
+  for _, comp in pairs(self._components) do
+    comp._dead = true
+    if comp.destroy then comp:destroy() end
+  end
+end
+
 -- call a function on this node and its descendents
 function Entity:call_recursive(func_name, ...)
   if self[func_name] then self[func_name](self, ...) end
@@ -234,7 +249,7 @@ end
 local Entity3d = Entity:extend("Entity3d")
 m.Entity3d = Entity3d
 
-function Entity3d:init(name, ...)
+function Entity3d:init(ecs, name, ...)
   self.position = math.Vector(0.0, 0.0, 0.0, 0.0)
   self.scale = math.Vector(1.0, 1.0, 1.0, 0.0)
   self.quaternion = math.Quaternion():identity()
@@ -242,7 +257,7 @@ function Entity3d:init(name, ...)
   self.matrix_world = math.Matrix4():identity()
   -- call super.init after adding these fields, because some component might
   -- need to have e.g. .matrix available in its :mount
-  Entity3d.super.init(self, name, ...)
+  Entity3d.super.init(self, ecs, name, ...)
 end
 
 function Entity3d:update_matrix()

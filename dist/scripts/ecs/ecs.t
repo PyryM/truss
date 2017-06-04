@@ -13,15 +13,13 @@ local ECS = class("ECS")
 m.ECS = ECS
 function ECS:init()
   self.systems = {}
-  self._ordered_systems = {}
+  self._update_stages = {}
   self.scene = entity.Entity3d(self, "ROOT")
   self._identity_mat = math.Matrix4():identity()
-  self._configuration_dirty = false
   self.timings = {}
   self._current_timings = {}
   self._t0 = truss.tic()
   self._lastdt = 0
-  self._global_events = {on_update = {}, on_preupdate = {}}
   self._sg_updates = queue.Queue()
 end
 
@@ -37,58 +35,25 @@ function ECS:resolve_graph_changes()
   end
 end
 
-function ECS:add_global_event(evt_name)
-  if not self._global_events[evt_name] then
-    self._global_events[evt_name] = {}
-  end
-  self._configuration_dirty = true
+function ECS:_sort_stages()
+  table.sort(self._update_stages, function(a,b)
+    return (a.priority or 0) < (b.priority or 0)
+  end)
 end
 
-function ECS:add_system(system, name, priority)
+function ECS:add_system(system, name, stages)
   name = name or system.mount_name
-  system.mount_name = name
+  stages = stages or system.stages
   system.ecs = self
   if self.systems[name] then truss.error("System name " .. name .. "taken!") end
   self.systems[name] = system
-  if priority then system.update_priority = priority end
-  self._configuration_dirty = true
-  table.insert(self._ordered_systems, system)
-  table.sort(self._ordered_systems, function(a,b)
-    return (a.update_priority or 0) < (b.update_priority or 0)
-  end)
+  for stagename, priority in pairs(stages) do
+    table.insert(self._update_stages, {system = system,
+                                       call_name = stagename,
+                                       priority = priority})
+  end
+  self:_sort_stages()
   return system
-end
-
-function ECS:reconfigure()
-  self.scene:call_recursive("reconfigure")
-  self._configuration_dirty = false
-  return self
-end
-
-function ECS:emit(evt_name, evt)
-  local targets = self._global_events[evt_name]
-  if not targets then
-    truss.error("ECS has no global event named " .. evt_name
-                 .. "; global events must be pre-registered"
-                 .. " with ECS:add_global_event()")
-    return
-  end
-  for entity, _ in pairs(targets) do
-    if entity._in_tree then entity:event(evt_name, evt) end
-  end
-end
-
-function ECS:_register_for_global_event(evt_name, entity)
-  local targets = self._global_events[evt_name]
-  if targets then
-    targets[entity] = true
-  end
-end
-
-function ECS:_remove_from_global_events(entity)
-  for _, targets in pairs(self._global_events) do
-    targets[entity] = nil
-  end
 end
 
 function ECS:_start_timing()
@@ -113,34 +78,11 @@ end
 function ECS:update()
   self:insert_timing_event("frame_start")
 
-  -- reconfigure if dirty
-  if self._configuration_dirty then self:reconfigure() end
-
-  -- update systems first
+  -- update systems
   self:insert_timing_event("configure")
-  for _, system in ipairs(self._ordered_systems) do
-    if system.update_begin then
-      system:update_begin()
-      self:insert_timing_event("subsystem_update_begin", system.mount_name)
-    end
-  end
-
-  -- preupdate
-  self:event("on_preupdate")
-  self:insert_timing_event("preupdate")
-  -- scenegraph transform update
-  self.scene:recursive_update_world_mat(self._identity_mat)
-  self:insert_timing_event("scenegraph")
-  -- update
-  self:event("on_update")
-  self:insert_timing_event("update")
-
-  -- update systems first
-  for _, system in ipairs(self._ordered_systems) do
-    if system.update_end then
-      system:update_end()
-      self:insert_timing_event("subsystem_update_end", system.mount_name)
-    end
+  for _, stage in ipairs(self._update_stages) do
+    self:insert_timing_event(stage.system.mount_name, stage.call_name)
+    stage.system[stage.call_name](stage.system, self)
   end
 
   self:insert_timing_event("frame_end")
