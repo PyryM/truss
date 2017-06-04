@@ -15,12 +15,19 @@ function ECS:init()
   self.systems = {}
   self._update_stages = {}
   self.scene = entity.Entity3d(self, "ROOT")
+  self.orphans = {}
   self._identity_mat = math.Matrix4():identity()
   self.timings = {}
   self._current_timings = {}
   self._t0 = truss.tic()
   self._lastdt = 0
   self._sg_updates = queue.Queue()
+end
+
+function ECS:create(entity_constructor, ...)
+  local ret = entity_constructor(self, ...)
+  self.orphans[ret] = ret
+  return ret
 end
 
 function ECS:move_entity(entity, newparent)
@@ -31,7 +38,13 @@ function ECS:resolve_graph_changes()
   local q = self._sg_updates
   while q:length() > 0 do
     local op = q:pop_left()
-    op[1]:_set_parent(op[2])
+    local child, parent = op[1], op[2]
+    child:_set_parent(parent)
+    if parent then
+      self.orphans[child] = nil
+    else
+      self.orphans[child] = child
+    end
   end
 end
 

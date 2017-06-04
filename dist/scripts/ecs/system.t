@@ -9,14 +9,14 @@ local System = class("System")
 m.System = System
 
 function System:init(mount_name, evtname, priority)
-  self._listeners = {}
+  self._components = {}
   self.stages = {}
   self.mount_name = mount_name
   if evtname then
     self.stages["update"] = priority or 1
     self._evtname = evtname
   end
-  setmetatable(self._listeners, { __mode = 'v' })
+  setmetatable(self._components, { __mode = 'v' })
 end
 
 function System:register_component(component, callback)
@@ -25,18 +25,18 @@ function System:register_component(component, callback)
       component[evtname](...)
     end
   end
-  self._listeners[component.ent] = callback
+  self._components[component] = callback
 end
 
 function System:unregister_component(component)
-  self._listeners[component.ent] = nil
+  self._components[component] = nil
 end
 
 function System:emit(evtname, ...)
-  for owner, callback in pairs(self._listeners) do
+  for owner, callback in pairs(self._components) do
     if owner._dead then
-      self._listeners[owner] = nil
-    elseif owner._in_tree ~= false then
+      self._components[owner] = nil
+    elseif owner.ent._in_tree ~= false then
       callback(evtname, ...)
     end
   end
