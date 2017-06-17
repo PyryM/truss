@@ -19,31 +19,27 @@ function System:init(mount_name, evtname, priority)
   setmetatable(self._components, { __mode = 'v' })
 end
 
-function System:register_component(component, callback)
-  if not callback then
-    callback = function(evtname, ...)
-      component[evtname](...)
-    end
-  end
-  self._components[component] = callback
+function System:register_component(component)
+  self._components[component] = true
 end
 
 function System:unregister_component(component)
   self._components[component] = nil
 end
 
-function System:emit(evtname, ...)
-  for owner, callback in pairs(self._components) do
-    if owner._dead then
-      self._components[owner] = nil
-    elseif owner.ent._in_tree ~= false then
-      callback(evtname, ...)
+function System:call_on_components(funcname, ...)
+  for comp, _ in pairs(self._components) do
+    if comp._dead then
+      self._components[comp] = nil
+    else
+      -- e.g., if funcname = "update" call comp:update(...)
+      comp[funcname](comp, ...)
     end
   end
 end
 
-function GenericSystem:update()
-  if self._evtname then self:emit(self._evtname) end
+function System:update()
+  if self.funcname then self:call_on_components(self.funcname) end
 end
 
 local ScenegraphSystem = class("ScenegraphSystem")

@@ -11,10 +11,9 @@ m.Entity = Entity
 function Entity:init(ecs, name, ...)
   self.ecs = ecs
   self._components = {}
-  self._event_handlers = {}
   self.children = {}
   self.name = name or "entity"
-  self.user_handlers = {} -- a pseudo-component to hold user attached handlers
+  self.event = false -- to prevent overriding of this
 
   for _, comp in ipairs({...}) do
     self:add_component(comp)
@@ -127,18 +126,11 @@ function Entity:call_recursive(func_name, ...)
   end
 end
 
--- reconfigure this entity (call configure on every component)
-function Entity:reconfigure()
-  for _, comp in pairs(self._components) do
-    if comp.configure then comp:configure(self.ecs) end
-  end
-end
-
 -- add a component *instance* to an entity
 -- the name must be unique, and cannot be any of the keys in the entity
 function Entity:add_component(component, component_name)
   component_name = component_name or component.mount_name or component.name
-  if self[component_name] then
+  if self[component_name] ~= nil then
     self:error("[" .. component_name .. "] is already key in entity!")
   end
 
@@ -151,9 +143,6 @@ function Entity:add_component(component, component_name)
   component.ent = self
   if component.mount then
     component:mount(self, component_name, self.ecs)
-  end
-  if component.configure then
-    component:configure(self.ecs)
   end
 
   return component
@@ -170,75 +159,23 @@ function Entity:remove_component(component_name)
   self._components[component_name] = nil
   self[component_name] = nil
   if comp.unmount then comp:unmount(self) end
-  self:_remove_handlers(comp)
 end
 
-function Entity:_add_handler(event_name, component)
-  self._event_handlers[event_name] = self._event_handlers[event_name] or {}
-  self._event_handlers[event_name][component] = component
-  self.ecs:_register_for_global_event(event_name, self)
-  end
-end
-
-function Entity:_remove_handler(event_name, component)
-  (self._event_handlers[event_name] or {})[component] = nil
-  local count = 0
-  for _, _ in pairs(self._event_handlers[event_name] or {}) do
-    count = count + 1
-  end
-  if count == 0 then self._event_handlers[event_name] = nil end
-end
-
-function Entity:_auto_add_handlers(component)
-  local c = component.class or component
-  for k,v in pairs(c) do
-    if type(v) == "function" and k:sub(1, 3) == "on_" then
-      self:_add_handler(k, component)
-    end
-  end
-end
-
-local function dispatch_event(targets, event_name, arg)
-  if not targets then return end
-  for _, handler in pairs(targets) do
-    -- i.e., for "on_update", first try handler:on_update(arg)
-    -- then fall back to handler:on_event("on_update", arg)
-    if handler[event_name] then
-      handler[event_name](handler, arg)
-    elseif handler.on_event then
-      handler:on_event(event_name, arg)
-    end
-  end
-end
-
--- send an event to any components that want to handle it
-function Entity:event(event_name, arg)
-  dispatch_event(self._event_handlers["on_event"], event_name, arg)
-  dispatch_event(self._event_handlers[event_name], event_name, arg)
+function Entity:emit(event_name, evt)
+  if not self.event then return end
+  self.event:emit(event_name, evt)
 end
 
 -- send an event to this entity and all its descendents
-function Entity:event_recursive(event_name, arg)
-  self:call_recursive("event", event_name, arg)
+function Entity:emit_recursive(event_name, evt)
+  self:call_recursive("emit", event_name, evt)
 end
 
--- attach a function directly as an event handler
--- gets added to the "user_handlers" pseudo-component
--- only one such 'user handler' can be attached for any given event
-function Entity:on(event_name, f)
-  event_name = "on_" .. event_name
-  if f then
-    -- want function to be called as f(entity, [args]) not f(comp, [args])
-    -- because the 'component' that it belongs to is a bare table user_handlers
-    local f2 = function(_, ...)
-      f(self, ...)
-    end
-    self.user_handlers[event_name] = f2
-    self:_add_handler(event_name, self.user_handlers)
-  else -- remove existing handlers
-    self.user_handlers[event_name] = nil
-    self:_remove_handler(event_name, self.user_handlers)
+function Entity:on(event_name, receiver, callback)
+  if not self.event then
+    self.event = require("ecs/event.t").EventEmitter()
   end
+  self.event:on(event_name, receiver, callback)
 end
 
 -- plain Entity doesn't have a world mat
