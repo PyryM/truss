@@ -14,8 +14,7 @@ function EventEmitter:init()
 end
 
 local function create_weak_table()
-  -- TODO
-  return {}
+  return setmetatable({}, {__mode="k"})
 end
 
 -- Note that we weak key by the 'receiver' so that if it

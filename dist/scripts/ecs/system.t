@@ -16,7 +16,7 @@ function System:init(mount_name, evtname, priority)
     self.stages["update"] = priority or 1
     self._evtname = evtname
   end
-  setmetatable(self._components, { __mode = 'v' })
+  setmetatable(self._components, { __mode = 'k' })
 end
 
 function System:register_component(component)
