@@ -149,7 +149,11 @@ end
 
 -- allow iteration over this entity and all its descendents
 function Entity:iter_tree()
-  -- TODO
+  local co = coroutine.create(function() self:traverse(coroutine.yield) end)
+  return function()   -- iterator
+    local code, res = coroutine.resume(co)
+    return res
+  end
 end
 
 -- add a component *instance* to an entity
