@@ -7,12 +7,16 @@
 local m = {}
 
 local function TERMINAL_HANDLER(e, test, msg)
+	local esc = string.char(27)
+	local grn = esc .. "[32m"
+	local red = esc .. "[31m"
+	local blk = esc .. "[0m"
 	if e == 'pass' then
-		print("[32mâœ”[0m "..test..': '..msg)
+		print(grn .. "✔ " .. blk .. test .. ': ' .. msg)
 	elseif e == 'fail' then
-		print("[31mâœ˜[0m "..test..': '..msg)
+		print(red .. "✖ " .. blk .. test .. ': ' .. msg)
 	elseif e == 'except' then
-		print("[31mâœ˜[0m "..test..': '..msg)
+		print(red .. "✖✖ " .. blk .. test .. ': ' .. msg)
 	end
 end
 
@@ -74,6 +78,11 @@ local function runpending()
 end
 
 function m.test(name, f, async)
+	if type(name) == 'function' then
+		gambiarrahandler = name
+		return
+	end
+
 	local testfn = function(next)
 		local finish_test = function()
 			gambiarrahandler('end', name)
@@ -112,6 +121,16 @@ function m.test(name, f, async)
 			runpending()
 		end
 	end
+end
+
+-- running this directly as a module will automatically run tests
+function m.init()
+	-- TODO
+end
+
+function m.update()
+	print("Tests completed.")
+	truss.quit()
 end
 
 return m
