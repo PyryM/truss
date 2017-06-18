@@ -14,7 +14,8 @@ moduleutils.include_submodules({
   "gfx/view.t",
   "gfx/uniforms.t",
   "gfx/rendertarget.t",
-  "gfx/texture.t"
+  "gfx/texture.t",
+  "gfx/resource.t"
 }, gfx)
 
 return gfx
