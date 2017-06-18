@@ -14,7 +14,7 @@ local function TERMINAL_HANDLER(e, test, msg)
 	if e == 'pass' then
 		print(grn .. "✔ " .. blk .. test .. ': ' .. msg)
 	elseif e == 'fail' then
-		print(red .. "✖ " .. blk .. test .. ': ' .. msg)
+		print(red .. "✘ " .. blk .. test .. ': ' .. msg)
 	elseif e == 'except' then
 		print(red .. "✖✖ " .. blk .. test .. ': ' .. msg)
 	end
