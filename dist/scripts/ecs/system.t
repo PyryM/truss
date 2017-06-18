@@ -20,7 +20,11 @@ function System:init(mount_name, evtname, priority)
 end
 
 function System:register_component(component)
-  self._components[component] = true
+  if self._iterating then
+    self._added_components[component] = true
+  else
+    self._components[component] = true
+  end
 end
 
 function System:unregister_component(component)
@@ -28,6 +32,11 @@ function System:unregister_component(component)
 end
 
 function System:call_on_components(funcname, ...)
+  -- adding a key to a table while iterating it with pairs() is undefined
+  -- so if a component is registered during this call, it gets added to a
+  -- temporary table which we then merge after the main iteration
+  self._iterating = true
+  self._added_components = {}
   for comp, _ in pairs(self._components) do
     if comp._dead then
       self._components[comp] = nil
@@ -36,6 +45,12 @@ function System:call_on_components(funcname, ...)
       comp[funcname](comp, ...)
     end
   end
+  -- merge in any components registered during iteration
+  for comp, _ in pairs(self._added_components) do
+    self._components[comp] = true
+  end
+  self._iterating = false
+  self._added_components = nil
 end
 
 function System:update()

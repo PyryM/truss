@@ -13,6 +13,7 @@ function Entity:init(ecs, name, ...)
   self._components = {}
   self.children = {}
   self.name = name or "entity"
+  self.unique_name = ecs:get_unique_name(self.name)
   self.event = false -- to prevent overriding of this
 
   for _, comp in ipairs({...}) do
@@ -31,13 +32,18 @@ function Entity:create_child(constructor, ...)
 end
 
 -- return a string identifying this component for error messages
-function Entity:error_name(funcname)
-  return "Entity[" .. (self.name or "?") .. "]: "
+function Entity:log_name(funcname)
+  return "Entity[" .. (self.unique_name) .. "]: "
 end
 
 -- throw an error with convenient formatting
-function Entity:error(error_message)
-  truss.error(self:error_name() .. error_message)
+function Entity:error(message)
+  truss.error(self:log_name() .. message)
+end
+
+-- throw a warning with convenient formatting
+function Entity:warning(message)
+  truss.warning(self:log_name() .. message)
 end
 
 -- how deep a scenegraph tree can be
@@ -66,9 +72,11 @@ local function assert_cycle_free(parent, child, err_on_failure)
   return true
 end
 
--- internal function to set an entity's parent
--- used for adding, removing, and moving
-function Entity:_set_parent(parent)
+-- set an entity's parent
+-- the entity is removed from its previous parent (if any)
+-- setting a nil parent removes it from the tree
+-- if the operation would cause a cycle, an error is thrown
+function Entity:set_parent(parent)
   if self.parent then
     self.parent.children[self] = nil
   end
@@ -90,23 +98,28 @@ function Entity:_set_in_tree(in_tree)
   for _, child in pairs(self.children) do child:_set_in_tree(in_tree) end
 end
 
-function Entity:reparent(new_parent)
-  self.ecs:move_entity(self, new_parent)
-end
-
 function Entity:add_child(child)
-  self.ecs:move_entity(child, self)
+  child:set_parent(self)
 end
 Entity.add = Entity.add_child -- alias for backwards compatibility
 
 function Entity:remove_child(child)
-  self.ecs:move_entity(child, nil)
+  if not self.children[child] then
+    self:error("Entity does not have child " .. tostring(child))
+    return
+  end
+  child:set_parent(nil)
+end
+Entity.remove = Entity.remove_child
+
+function Entity:detach()
+  self:set_parent(nil)
 end
 
 function Entity:destroy()
   -- sever this subtree at just this node,
   -- and then mark every entity+component as dead
-  self:reparent(nil)
+  self:set_parent(nil)
   self:call_recursive("_mark_dead")
 end
 
@@ -124,6 +137,19 @@ function Entity:call_recursive(func_name, ...)
   for _, child in pairs(self.children) do
     child:call_recursive(func_name, ...)
   end
+end
+
+-- call f(ent) on this entity and all its descendents
+function Entity:traverse(f)
+  f(self)
+  for _, child in pairs(self.children) do
+    child:traverse(f)
+  end
+end
+
+-- allow iteration over this entity and all its descendents
+function Entity:iter_tree()
+  -- TODO
 end
 
 -- add a component *instance* to an entity
@@ -152,8 +178,7 @@ end
 function Entity:remove_component(component_name)
   local comp = self._components[component_name]
   if not comp then
-    log.warning(self:error_name() .. "tried to remove component ["
-                .. component_name .. "] that doesn't exist.")
+    self:warning("can't remove nonexistent comp [" .. component_name .. "]")
     return
   end
   self._components[component_name] = nil
