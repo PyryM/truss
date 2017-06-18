@@ -4,9 +4,8 @@
 
 local m = {}
 
-function listDirectory(dirname)
-    -- TODO: need to add physfs bindings for directory listing in order to
-    -- actually implement this
+function m.list_directory(dirpath)
+  -- TODO: implement the physfs bindings for this
 end
 
 return m
