@@ -4,8 +4,6 @@
 
 local class = require("class")
 local entity = require("ecs/entity.t")
-local math = require("math")
-local queue = require("utils/queue.t")
 
 local m = {}
 
@@ -15,37 +13,15 @@ function ECS:init()
   self.systems = {}
   self._update_stages = {}
   self.scene = entity.Entity3d(self, "ROOT")
-  self.orphans = {}
-  self._identity_mat = math.Matrix4():identity()
   self.timings = {}
   self._current_timings = {}
   self._t0 = truss.tic()
   self._lastdt = 0
-  self._sg_updates = queue.Queue()
 end
 
 function ECS:create(entity_constructor, ...)
   local ret = entity_constructor(self, ...)
-  self.orphans[ret] = ret
   return ret
-end
-
-function ECS:move_entity(entity, newparent)
-  self._sg_updates:push_right({entity, newparent})
-end
-
-function ECS:resolve_graph_changes()
-  local q = self._sg_updates
-  while q:length() > 0 do
-    local op = q:pop_left()
-    local child, parent = op[1], op[2]
-    child:_set_parent(parent)
-    if parent then
-      self.orphans[child] = nil
-    else
-      self.orphans[child] = child
-    end
-  end
 end
 
 function ECS:_sort_stages()
@@ -92,7 +68,6 @@ function ECS:update()
   self:insert_timing_event("frame_start")
 
   -- update systems
-  self:insert_timing_event("configure")
   for _, stage in ipairs(self._update_stages) do
     self:insert_timing_event(stage.system.mount_name, stage.call_name)
     stage.system[stage.call_name](stage.system, self)
