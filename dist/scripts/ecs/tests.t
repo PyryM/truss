@@ -24,6 +24,47 @@ local function make_test_ecs()
   return ECS
 end
 
+local function test_events(t)
+  local evt = ecs.EventEmitter()
+  local receiver = {_dead = false}
+  local callcount = 0
+  local f = function(recv, evtname, evt)
+    recv.evtname = evtname
+    recv.evt = evt
+    callcount = callcount + 1
+  end
+  evt:emit("ping") -- just make sure this doesn't crash
+  evt:on("ping", receiver, f)
+  evt:emit("ping", 12)
+  t.ok(callcount == 1, "receiver had function called")
+  t.ok(receiver.evtname == "ping", "receiever was called with 'ping'")
+  t.ok(receiver.evt == 12, "receiver was called with correct arg")
+  callcount = 0
+  evt:emit("pong")
+  t.ok(callcount == 0, "receiver was not called for pong")
+  evt:remove_all(receiver)
+  callcount = 0
+  evt:emit("ping")
+  t.ok(callcount == 0, "removed receiver was not called")
+  evt:on("pingping", receiver, f)
+  evt:emit("pingping")
+  t.ok(callcount == 1, "pingping was called")
+  receiver._dead = true
+  callcount = 0
+  evt:emit("pingping")
+  t.ok(callcount == 0, "_dead receiver was not called")
+  receiver._dead = false
+  callcount = 0
+  evt:on("ping2", receiver, f)
+  evt:emit("ping2")
+  t.ok(callcount == 1, "ping2 was called")
+  receiver = nil
+  callcount = 0
+  collectgarbage("collect") -- receiver should be garbage collected
+  evt:emit("ping2")
+  t.ok(callcount == 0, "gc'ed receiver was not called")
+end
+
 local function test_descent(t)
   local Entity3d = ecs.Entity3d
   local ECS = make_test_ecs()
@@ -42,6 +83,7 @@ end
 
 function m.run()
   test("ECS scenegraph descent", test_descent)
+  test("ECS events", test_events)
 end
 
 return m

@@ -42,4 +42,15 @@ function EventEmitter:on(evtname, receiver, callback)
   self._listeners[evtname][receiver] = callback
 end
 
+function EventEmitter:remove(evtname, receiver)
+  if not self._listeners[evtname] then return end
+  self._listeners[evtname] = nil
+end
+
+function EventEmitter:remove_all(receiver)
+  for _, ll in pairs(self._listeners) do
+    ll[receiver] = nil
+  end
+end
+
 return m
