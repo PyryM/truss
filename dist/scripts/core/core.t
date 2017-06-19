@@ -136,6 +136,18 @@ local disallow_globals_mt = {
   end
 }
 
+function truss.list_directory(path)
+  local nresults = truss.C.list_directory(TRUSS_ID, path)
+  if nresults < 0 then return nil end
+  local ret = {}
+  for i = 1, nresults do
+    -- C api is 0 indexed
+    ret[i] = ffi.string(truss.C.get_string_result(TRUSS_ID, i - 1))
+  end
+  truss.C.clear_string_results(TRUSS_ID)
+  return ret
+end
+
 local function create_module_env()
   local modenv = extend_table({}, truss._module_env)
   setmetatable(modenv, disallow_globals_mt)
