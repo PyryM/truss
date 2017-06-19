@@ -70,6 +70,19 @@ int truss_set_fs_savedir(const char* path) {
     return 0;
 }
 
+int truss_list_directory(truss_interpreter_id interpreter, const char* path) {
+    return Core::instance().listDirectory(interpreter, path);
+}
+
+const char* truss_get_string_result(truss_interpreter_id interpreter, int idx) {
+    return Core::instance().getStringResult(interpreter, idx);
+}
+
+void truss_clear_string_results(truss_interpreter_id interpreter) {
+    Core::instance().clearStringResults(interpreter);
+}
+
+
 /* Datastore functions */
 truss_message* truss_get_store_value(const char* key) {
     std::string tempkey(key);

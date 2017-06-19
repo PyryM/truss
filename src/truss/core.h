@@ -55,6 +55,9 @@ public:
     void saveFileRaw(const char* filename, truss_message* data);
     void saveData(const char* filename, const char* data, unsigned int datalength);
     void saveDataRaw(const char* filename, const char* data, unsigned int datalength);
+    int listDirectory(int interpreter, const char* dirpath);
+    const char* getStringResult(int interpreter, int idx);
+    void clearStringResults(int interpreter);
 
     truss_message* getStoreValue(const std::string& key);
     int setStoreValue(const std::string& key, truss_message* val);
@@ -71,6 +74,7 @@ private:
     tthread::mutex coreLock_;
     bool physFSInitted_;
     std::vector<Interpreter*> interpreters_;
+    std::vector<std::vector<std::string>> stringResults_;
     std::map<std::string, truss_message*> store_;
     std::ofstream logfile_;
 

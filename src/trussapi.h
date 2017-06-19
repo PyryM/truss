@@ -1,5 +1,5 @@
 /* trussapi.h
- * 
+ *
  * Defines the c api of truss for inclusion by Terra
  */
 
@@ -47,6 +47,9 @@ typedef struct {
 	unsigned int refcount;
 } truss_message;
 
+/* Interpreter IDs are just ints for now */
+typedef int truss_interpreter_id;
+
 /* Info */
 TRUSS_C_API const char* truss_get_version();
 
@@ -69,14 +72,14 @@ TRUSS_C_API int truss_save_file(const char* filename, truss_message* data);
 TRUSS_C_API int truss_save_data(const char* filename, const char* data, unsigned int datalength);
 TRUSS_C_API int truss_add_fs_path(const char* path, const char* mountpath, int append);
 TRUSS_C_API int truss_set_fs_savedir(const char* path);
+TRUSS_C_API int truss_list_directory(truss_interpreter_id interpreter, const char* path);
+TRUSS_C_API const char* truss_get_string_result(truss_interpreter_id interpreter, int idx);
+TRUSS_C_API void truss_clear_string_results(truss_interpreter_id interpreter);
 
 /* Datastore functions */
 TRUSS_C_API truss_message* truss_get_store_value(const char* key);
 TRUSS_C_API int truss_set_store_value(const char* key, truss_message* val);
 TRUSS_C_API int truss_set_store_value_str(const char* key, const char* msg);
-
-/* Interpreter IDs are just ints for now */
-typedef int truss_interpreter_id;
 
 /* Interpreter management functions */
 TRUSS_C_API int truss_spawn_interpreter(const char* name);
