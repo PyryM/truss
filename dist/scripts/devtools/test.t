@@ -180,7 +180,8 @@ function m.run_tests(dirpath, verbose)
 	print("PASSED: " .. test_stats.total_passed)
 	print("FAILED: " .. test_stats.total_failed)
 	if test_stats.total_failed == 0 then
-		print("🍒 🍒 🍒  Good job! 🍒 🍒 🍒")
+		local slots = require("devtools/slots.t")
+		print("Good job! " .. slots.do_slots(true))
 	end
 end
 
