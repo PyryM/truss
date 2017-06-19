@@ -55,7 +55,7 @@ function test_list_dir()
 end
 
 function init()
-  testlib.run_tests("")
+  testlib.run_tests("", false)
   --test_list_dir()
   --run_tests()
 end

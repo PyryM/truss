@@ -6,17 +6,37 @@
 
 local m = {}
 
+local test_stats = {passed = 0, failed = 0,
+										total_passed = 0, total_failed = 0,
+									  verbose = false}
+
 local function TERMINAL_HANDLER(e, test, msg)
 	local esc = string.char(27)
 	local grn = esc .. "[32m"
 	local red = esc .. "[31m"
 	local blk = esc .. "[0m"
 	if e == 'pass' then
-		print(grn .. "✔ " .. blk .. test .. ': ' .. msg)
+		test_stats.passed = test_stats.passed + 1
+		if test_stats.verbose then
+			print(grn .. "✔ " .. blk .. test .. ': ' .. msg)
+		end
 	elseif e == 'fail' then
-		print(red .. "✘ " .. blk .. test .. ': ' .. msg)
+		test_stats.failed = test_stats.failed + 1
+		if test_stats.verbose then
+			print(red .. "✘ " .. blk .. test .. ': ' .. msg)
+		end
 	elseif e == 'except' then
 		print(red .. "✖✖ " .. blk .. test .. ': ' .. msg)
+	elseif e == 'begin' then
+    test_stats.passed = 0
+    test_stats.failed = 0
+  elseif e == 'end' then
+		local p, f = test_stats.passed, test_stats.failed
+		local color = grn
+		if f > 0 then color = red end
+		print(color .. "[" .. p .. " / " .. (p+f) .. "] " .. test .. blk)
+		test_stats.total_passed = test_stats.total_passed + test_stats.passed
+		test_stats.total_failed = test_stats.total_failed + test_stats.failed
 	end
 end
 
@@ -132,7 +152,7 @@ end
 
 -- this recursively iterates through a directory structure, looking for
 -- tests.t
-function m.run_tests(dirpath)
+local function _run_tests(dirpath)
 	-- check if path/tests.t exists and if so run it
 	if truss.is_file("scripts/" .. dirpath .. "/tests.t") then
 		print(make_header(dirpath))
@@ -142,15 +162,38 @@ function m.run_tests(dirpath)
 		local subfiles = truss.list_directory("scripts/" .. dirpath)
 		for _, fn in ipairs(subfiles) do
 			if truss.is_directory("scripts/" .. dirpath .. "/" .. fn) then
-				m.run_tests(dirpath .. "/" .. fn)
+				_run_tests(dirpath .. "/" .. fn)
 			end
 		end
 	end
 end
 
--- running this directly as a module will automatically run tests
+function m.run_tests(dirpath, verbose)
+	test_stats.total_failed = 0
+	test_stats.total_passed = 0
+	test_stats.failed = 0
+	test_stats.passed = 0
+	test_stats.verbose = verbose
+	print("verbose? " .. tostring(verbose))
+	_run_tests(dirpath)
+	print(make_header("TOTAL"))
+	print("PASSED: " .. test_stats.total_passed)
+	print("FAILED: " .. test_stats.total_failed)
+	if test_stats.total_failed == 0 then
+		print("🍒 🍒 🍒  Good job! 🍒 🍒 🍒")
+	end
+end
+
 function m.init()
-	-- TODO
+	-- horrible hack: the main script is not loaded as a real module,
+	-- which causes issues, so we need to require *ourself*
+	-- TODO: figure out best way to deal with this
+	local tt = require("devtools/test.t")
+	if truss.args[3] then
+		tt.run_tests(truss.args[3], true)
+	else -- if no path specified, run all tests, but non-verbose
+		tt.run_tests("", false)
+	end
 end
 
 function m.update()
