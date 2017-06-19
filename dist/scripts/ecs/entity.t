@@ -46,30 +46,30 @@ function Entity:warning(message)
   truss.warning(self:log_name() .. message)
 end
 
--- how deep a scenegraph tree can be
-m.MAX_TREE_DEPTH = 200
 -- check whether adding a prospective child to a parent
 -- would cause a cycle (i.e., that our scene tree would
 -- no longer be a tree)
 local function assert_cycle_free(parent, child, err_on_failure)
-  -- we would have a cycle if tracing the parent up
-  -- to root would encounter the child or itself
-  local depth = 0
-  local curnode = parent
-  local MAXD = m.MAX_TREE_DEPTH
-  while curnode ~= nil do
-    curnode = curnode.parent
-    if curnode == parent or curnode == child then
-      if err_on_failure then truss.error("Cyclical reparent.") end
-      return false
+  if parent:is_in_subtree(child) then
+    if err_on_failure then
+      truss.error("Cyclical reparent.")
     end
-    depth = depth + 1
-    if depth > MAXD then
-      if err_on_failure then truss.error("Max tree depth exceeded.") end
-      return false
-    end
+    return false
+  else
+    return true
   end
-  return true
+end
+
+-- check if this entity is in a subtree rooted at a given entity
+function Entity:is_in_subtree(other)
+  if not other then return false end
+  local curnode = self
+  while curnode ~= nil do
+    if curnode == other then return true end
+    curnode = curnode.parent
+  end
+  -- got to root without hitting other
+  return false
 end
 
 -- set an entity's parent
@@ -100,6 +100,7 @@ end
 
 function Entity:add_child(child)
   child:set_parent(self)
+  return child
 end
 Entity.add = Entity.add_child -- alias for backwards compatibility
 
@@ -109,6 +110,7 @@ function Entity:remove_child(child)
     return
   end
   child:set_parent(nil)
+  return child
 end
 Entity.remove = Entity.remove_child
 
@@ -131,7 +133,7 @@ function Entity:_mark_dead()
   end
 end
 
--- call a function on this node and its descendents
+-- call a function on this node and its descendants
 function Entity:call_recursive(func_name, ...)
   if self[func_name] then self[func_name](self, ...) end
   for _, child in pairs(self.children) do
@@ -139,7 +141,7 @@ function Entity:call_recursive(func_name, ...)
   end
 end
 
--- call f(ent) on this entity and all its descendents
+-- call f(ent) on this entity and all its descendants
 function Entity:traverse(f)
   f(self)
   for _, child in pairs(self.children) do
@@ -147,7 +149,7 @@ function Entity:traverse(f)
   end
 end
 
--- allow iteration over this entity and all its descendents
+-- allow iteration over this entity and all its descendants
 function Entity:iter_tree()
   local co = coroutine.create(function() self:traverse(coroutine.yield) end)
   return function()   -- iterator
@@ -195,7 +197,7 @@ function Entity:emit(event_name, evt)
   self.event:emit(event_name, evt)
 end
 
--- send an event to this entity and all its descendents
+-- send an event to this entity and all its descendants
 function Entity:emit_recursive(event_name, evt)
   self:call_recursive("emit", event_name, evt)
 end

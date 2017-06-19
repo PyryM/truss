@@ -55,7 +55,7 @@ function test_list_dir()
 end
 
 function init()
-  testlib.run_tests("gfx")
+  testlib.run_tests("")
   --test_list_dir()
   --run_tests()
 end

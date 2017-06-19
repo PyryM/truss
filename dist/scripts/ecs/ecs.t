@@ -12,11 +12,17 @@ m.ECS = ECS
 function ECS:init()
   self.systems = {}
   self._update_stages = {}
-  self.scene = entity.Entity3d(self, "ROOT")
   self.timings = {}
   self._current_timings = {}
   self._t0 = truss.tic()
   self._lastdt = 0
+  self._nextid = 0
+  self.scene = entity.Entity3d(self, "ROOT")
+end
+
+function ECS:get_unique_name(basename)
+  self._nextid = self._nextid + 1
+  return (basename or "entity_") .. self._nextid
 end
 
 function ECS:create(entity_constructor, ...)

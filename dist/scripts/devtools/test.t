@@ -123,12 +123,19 @@ function m.test(name, f, async)
 	end
 end
 
+local function make_header(dirpath)
+	local npad = 70 - #dirpath
+	local t = {}
+	for i = 1, npad do t[i] = "=" end
+	return "==== " .. dirpath .. " " .. table.concat(t)
+end
+
 -- this recursively iterates through a directory structure, looking for
 -- tests.t
 function m.run_tests(dirpath)
-	print("Running tests on " .. dirpath)
 	-- check if path/tests.t exists and if so run it
 	if truss.is_file("scripts/" .. dirpath .. "/tests.t") then
+		print(make_header(dirpath))
 		local tt = require(dirpath .. "/tests.t")
 		tt.run()
 	else -- otherwise, recurse on subdirectories
