@@ -2,6 +2,7 @@
 --
 -- tests for the entity-component-system framework
 
+local class = require("class")
 local ecs = require("ecs")
 local testlib = require("devtools/test.t")
 local test = testlib.test
@@ -63,6 +64,16 @@ local function test_events(t)
   collectgarbage("collect") -- receiver should be garbage collected
   evt:emit("ping2")
   t.ok(callcount == 0, "gc'ed receiver was not called")
+
+  -- test using a class as a receiver
+  local Foo = class("Foo")
+  function Foo:update(evtname, evt)
+    self.was_called = true
+  end
+  local myfoo = Foo()
+  evt:on("mupdate", myfoo, myfoo.update)
+  evt:emit("mupdate")
+  t.ok(myfoo.was_called, "class :update was called")
 end
 
 local function test_descent(t)
