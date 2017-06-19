@@ -2,7 +2,8 @@
 --
 -- tests the testing framework
 
-local test = require("devtools/test.t").test
+local testlib = require("devtools/test.t")
+local test = testlib.test
 
 function run_tests()
   local passed = 0
@@ -46,8 +47,17 @@ function run_tests()
   end)
 end
 
+function test_list_dir()
+  local dlist = truss.list_directory("scripts/gfx")
+  for _, fn in ipairs(dlist) do
+    print(fn)
+  end
+end
+
 function init()
-  run_tests()
+  testlib.run_tests("gfx")
+  --test_list_dir()
+  --run_tests()
 end
 
 function update()

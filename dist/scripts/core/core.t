@@ -148,6 +148,14 @@ function truss.list_directory(path)
   return ret
 end
 
+function truss.is_file(path)
+  return truss.C.check_file(path) == 1
+end
+
+function truss.is_directory(path)
+  return truss.C.check_file(path) == 2
+end
+
 local function create_module_env()
   local modenv = extend_table({}, truss._module_env)
   setmetatable(modenv, disallow_globals_mt)

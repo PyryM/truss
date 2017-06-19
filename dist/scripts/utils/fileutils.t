@@ -4,7 +4,7 @@
 
 local m = {}
 
-function m.list_directory(dirpath)
+function m.iter_directory(dirpath)
   -- TODO: implement the physfs bindings for this
 end
 

@@ -123,6 +123,24 @@ function m.test(name, f, async)
 	end
 end
 
+-- this recursively iterates through a directory structure, looking for
+-- tests.t
+function m.run_tests(dirpath)
+	print("Running tests on " .. dirpath)
+	-- check if path/tests.t exists and if so run it
+	if truss.is_file("scripts/" .. dirpath .. "/tests.t") then
+		local tt = require(dirpath .. "/tests.t")
+		tt.run()
+	else -- otherwise, recurse on subdirectories
+		local subfiles = truss.list_directory("scripts/" .. dirpath)
+		for _, fn in ipairs(subfiles) do
+			if truss.is_directory("scripts/" .. dirpath .. "/" .. fn) then
+				m.run_tests(dirpath .. "/" .. fn)
+			end
+		end
+	end
+end
+
 -- running this directly as a module will automatically run tests
 function m.init()
 	-- TODO
