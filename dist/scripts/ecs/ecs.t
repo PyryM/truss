@@ -11,7 +11,7 @@ local ECS = class("ECS")
 m.ECS = ECS
 function ECS:init()
   self.systems = {}
-  self._update_stages = {}
+  self._update_order = {}
   self.timings = {}
   self._current_timings = {}
   self._t0 = truss.tic()
@@ -30,24 +30,13 @@ function ECS:create(entity_constructor, ...)
   return ret
 end
 
-function ECS:_sort_stages()
-  table.sort(self._update_stages, function(a,b)
-    return (a.priority or 0) < (b.priority or 0)
-  end)
-end
-
-function ECS:add_system(system, name, stages)
+function ECS:add_system(system, name)
   name = name or system.mount_name
-  stages = stages or system.stages
   system.ecs = self
+  system.mount_name = name
   if self.systems[name] then truss.error("System name " .. name .. "taken!") end
   self.systems[name] = system
-  for stagename, priority in pairs(stages) do
-    table.insert(self._update_stages, {system = system,
-                                       call_name = stagename,
-                                       priority = priority})
-  end
-  self:_sort_stages()
+  table.insert(self._update_order, system)
   return system
 end
 
@@ -74,9 +63,9 @@ function ECS:update()
   self:insert_timing_event("frame_start")
 
   -- update systems
-  for _, stage in ipairs(self._update_stages) do
-    self:insert_timing_event(stage.system.mount_name, stage.call_name)
-    stage.system[stage.call_name](stage.system, self)
+  for _, system in ipairs(self._update_order) do
+    self:insert_timing_event(system.mount_name)
+    system:update(self)
   end
 
   self:insert_timing_event("frame_end")

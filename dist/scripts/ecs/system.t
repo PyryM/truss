@@ -8,14 +8,10 @@ local m = {}
 local System = class("System")
 m.System = System
 
-function System:init(mount_name, funcname, priority)
+function System:init(mount_name, funcname)
   self._components = {}
-  self.stages = {}
   self.mount_name = mount_name
-  if funcname then
-    self.stages["update"] = priority or 1
-    self.funcname = funcname
-  end
+  self.funcname = funcname or self.mount_name
   setmetatable(self._components, { __mode = 'k' })
 end
 
