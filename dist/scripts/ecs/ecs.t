@@ -26,6 +26,7 @@ function ECS:get_unique_name(basename)
 end
 
 function ECS:create(entity_constructor, ...)
+  entity_constructor = entity_constructor or entity.Entity3d
   local ret = entity_constructor(self, ...)
   return ret
 end

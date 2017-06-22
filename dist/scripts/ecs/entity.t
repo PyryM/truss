@@ -133,15 +133,23 @@ function Entity:_mark_dead()
   end
 end
 
-function Entity:sleep()
-  for _, comp in pairs(self._components) do
-    comp:sleep()
+function Entity:sleep(recursive)
+  if recursive then
+    self:call_recursive("sleep", false)
+  else
+    for _, comp in pairs(self._components) do
+      comp:sleep()
+    end
   end
 end
 
-function Entity:wake()
-  for _, comp in pairs(self._components) do
-    comp:wake()
+function Entity:wake(recursive)
+  if recursive then
+    self:call_recursive("wake", false)
+  else
+    for _, comp in pairs(self._components) do
+      comp:wake()
+    end
   end
 end
 

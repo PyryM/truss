@@ -11,8 +11,6 @@ local m = {}
 -- test that adding to system during iteration/update works
 -- test that removing an entity during update works
 -- test self:destroy()
--- test that sleeping works
--- test that waking works
 -- test that sleeping an entity applies recursively
 -- test that removing (but not sleeping) an entity still gets updates
 -- test that creating a cycle throws an error
@@ -116,19 +114,24 @@ local function test_systems(t)
   local f = e:add_component(FooComp())
   local f2 = e:add_component(FooComp(), "bar")
   t.ok(ECS.systems.update1:num_components() == 2, "Sys should have 2 components")
-
+  local e2 = e:create_child()
+  local f3 = e2:add_component(FooComp())
   ECS:update()
   ECS:update()
   t.ok(t.eq(f.call_order, {1, 2, 3, 1, 2, 3}), "Sys updates correctly ordered")
   t.ok(#(f2.call_order) == 6, "Multiple components to same system")
   f.call_order = {}
-  e:sleep()
+  f3.call_order = {}
+  e:sleep(true) -- recursive
   ECS:update()
   t.ok(#(f.call_order) == 0, "Sleeping entity not updated")
+  t.ok(#(f3.call_order) == 0, "Recursive sleep works")
   f.call_order = {}
-  e:wake()
+  f3.call_order = {}
+  e:wake(true) -- recursive
   ECS:update()
   t.ok(#(f.call_order) == 3, "Woken entity updated again.")
+  t.ok(#(f3.call_order) == 3, "Recursive wake works")
 end
 
 local function test_descent(t)
