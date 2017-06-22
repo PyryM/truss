@@ -59,6 +59,16 @@ local function test_events(t)
   evt:on("ping2", receiver, f)
   evt:emit("ping2")
   t.ok(callcount == 1, "ping2 was called")
+
+  -- test using an entity as an emitter
+  local ECS = make_test_ecs()
+  local e = ECS:create(ecs.Entity3d)
+  callcount = 0
+  e:on("blurgh", receiver, f)
+  e:emit("blurgh")
+  t.ok(callcount == 1, "entity used for events")
+
+  -- test removing callbacks on gc
   receiver = nil
   callcount = 0
   collectgarbage("collect") -- receiver should be garbage collected
