@@ -22,9 +22,7 @@ local function TERMINAL_HANDLER(e, test, msg)
 		end
 	elseif e == 'fail' then
 		test_stats.failed = test_stats.failed + 1
-		if test_stats.verbose then
-			print(red .. "✘ " .. blk .. test .. ': ' .. msg)
-		end
+		print(red .. "✘ " .. blk .. test .. ': ' .. msg)
 	elseif e == 'except' then
 		print(red .. "✖✖ " .. blk .. test .. ': ' .. msg)
 	elseif e == 'begin' then

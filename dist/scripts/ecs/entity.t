@@ -133,6 +133,18 @@ function Entity:_mark_dead()
   end
 end
 
+function Entity:sleep()
+  for _, comp in pairs(self._components) do
+    comp:sleep()
+  end
+end
+
+function Entity:wake()
+  for _, comp in pairs(self._components) do
+    comp:wake()
+  end
+end
+
 -- call a function on this node and its descendants
 function Entity:call_recursive(func_name, ...)
   if self[func_name] then self[func_name](self, ...) end

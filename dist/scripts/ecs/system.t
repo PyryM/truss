@@ -8,13 +8,13 @@ local m = {}
 local System = class("System")
 m.System = System
 
-function System:init(mount_name, evtname, priority)
+function System:init(mount_name, funcname, priority)
   self._components = {}
   self.stages = {}
   self.mount_name = mount_name
-  if evtname then
+  if funcname then
     self.stages["update"] = priority or 1
-    self._evtname = evtname
+    self.funcname = funcname
   end
   setmetatable(self._components, { __mode = 'k' })
 end
@@ -25,6 +25,12 @@ function System:register_component(component)
   else
     self._components[component] = true
   end
+end
+
+function System:num_components()
+  local n = 0
+  for _, comp in pairs(self._components) do n = n + 1 end
+  return n
 end
 
 function System:unregister_component(component)

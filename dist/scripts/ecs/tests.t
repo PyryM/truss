@@ -76,6 +76,51 @@ local function test_events(t)
   t.ok(myfoo.was_called, "class :update was called")
 end
 
+local function test_systems(t)
+  local ECS = ecs.ECS()
+  ECS:add_system(ecs.System("update1", "update1", 1))
+  ECS:add_system(ecs.System("update3", "update3", 3))
+  ECS:add_system(ecs.System("update2", "update2", 2))
+
+  local FooComp = ecs.Component:extend("FooComp")
+  function FooComp:init()
+    self.mount_name = "foo"
+  end
+  function FooComp:mount()
+    FooComp.super.mount(self)
+    self.call_order = {}
+    self:add_to_systems({"update1", "update2", "update3"})
+    self:wake() -- should this happen automatically?
+  end
+  function FooComp:update1()
+    table.insert(self.call_order, 1)
+  end
+  function FooComp:update2()
+    table.insert(self.call_order, 2)
+  end
+  function FooComp:update3()
+    table.insert(self.call_order, 3)
+  end
+
+  local e = ECS:create(ecs.Entity3d)
+  local f = e:add_component(FooComp())
+  local f2 = e:add_component(FooComp(), "bar")
+  t.ok(ECS.systems.update1:num_components() == 2, "Sys should have 2 components")
+
+  ECS:update()
+  ECS:update()
+  t.ok(t.eq(f.call_order, {1, 2, 3, 1, 2, 3}), "Sys updates correctly ordered")
+  t.ok(t.eq(f2.call_order, {1,2,3,1,2,3}), "Multiple components to same system")
+  f.call_order = {}
+  e:sleep()
+  ECS:update()
+  t.ok(#(f.call_order) == 0, "Sleeping entity not updated")
+  f.call_order = {}
+  e:wake()
+  ECS:update()
+  t.ok(t.eq(f.call_order, {1,2,3}), "Woken entity updated again.")
+end
+
 local function test_descent(t)
   local Entity3d = ecs.Entity3d
   local ECS = make_test_ecs()
@@ -95,6 +140,7 @@ end
 function m.run()
   test("ECS scenegraph descent", test_descent)
   test("ECS events", test_events)
+  test("ECS systems", test_systems)
 end
 
 return m

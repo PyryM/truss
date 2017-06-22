@@ -22,21 +22,25 @@ function Component:unmount()
   self.ent = nil
 end
 
-function Component:wake()
-  if not self._system then
-    if not self.system_name then
-      truss.error("Components using default :wake() must "
-                  .. "set self.system_name!")
-      return
-    end
-    self._system = self.ent.ecs.systems[self.system_name]
+function Component:add_to_systems(syslist)
+  self._systems = self._systems or {}
+  local ecs_systems = self.ent.ecs.systems
+  for _, sysname in ipairs(syslist) do
+    self._systems[sysname] = ecs_systems[sysname]
   end
-  self._system:register_component(self)
+end
+
+function Component:wake()
+  if not self._systems then return end
+  for _, sys in pairs(self._systems) do
+    sys:register_component(self)
+  end
 end
 
 function Component:sleep()
-  if self._system then
-    self._system:unregister_component(self)
+  if not self._systems then return end
+  for _, sys in pairs(self._systems) do
+    sys:unregister_component(self)
   end
 end
 
