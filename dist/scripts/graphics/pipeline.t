@@ -1,20 +1,20 @@
 local class = require("class")
 local gfx = require("gfx")
+local ecs = require("ecs")
 local m = {}
 
-local Pipeline = class("Pipeline")
+local Pipeline = ecs.System:extend("Pipeline")
 m.Pipeline = Pipeline
 
 function Pipeline:init(options)
+  Pipeline.super.init(self)
   options = options or {}
   self._ordered_stages = {}
   self._next_view = 0
-  self.stages = {}
   self.verbose = options.verbose
   self.targets = {}
   self.auto_frame_advance = options.auto_frame_advance
-  self.mount_name = "graphics" -- allow direct use of a pipeline as a system
-  self.update_priority = 100 -- try to always update last
+  self.mount_name = "render" -- allow direct use of a pipeline as a system
 end
 
 function Pipeline:add_stage(stage, stage_name)
@@ -49,13 +49,13 @@ function Pipeline:get_render_ops(component, target_list)
   return target_list
 end
 
-function Pipeline:update_begin()
+function Pipeline:update()
   for _,stage in ipairs(self._ordered_stages) do
     if stage.update_begin then stage:update_begin() end
   end
-end
 
-function Pipeline:update_end()
+  self:call_on_components("draw")
+
   for _,stage in ipairs(self._ordered_stages) do
     if stage.update_end then stage:update_end() end
   end
