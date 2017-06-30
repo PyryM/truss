@@ -126,7 +126,7 @@ function UniformSet:add(uniform)
     return
   end
   self:_raw_add(newname, uniform)
-  return self
+  return uniform
 end
 
 function UniformSet:_raw_add(uni_name, uniform)
