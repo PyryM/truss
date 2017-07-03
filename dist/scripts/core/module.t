@@ -25,15 +25,31 @@ function m.include_submodules(srclist, dest)
   end
 end
 
+-- (hmmmm)
+
 -- copy values in srctable with prefix into desttable without prefix
 -- useful when including a C api that has library_ prefix names on everything
 function m.reexport_without_prefix(srctable, prefix, desttable)
   for k,v in pairs(srctable) do
     -- only copy entries that have prefix
     if k:sub(1, prefix:len()) == prefix then
-      desttable[k:sub(prefix:len() + 1)] = v 
+      desttable[k:sub(prefix:len() + 1)] = v
     end
   end
+end
+
+-- create a table that will for the specified keys lazily load the value
+function m.create_lazy_loader(loadertable, target)
+  local ret = target or {}
+  local rmeta = {
+    __index = function(t, k)
+      if not loadertable[k] then return nil end
+      t[k] = loadertable[k](k)
+      return t[k]
+    end
+  }
+  setmetatable(ret, rmeta)
+  return ret
 end
 
 return m
