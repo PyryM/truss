@@ -19,6 +19,7 @@ local m = {}
 
 local function make_test_ecs()
   local ECS = ecs.ECS()
+  ECS:add_system(ecs.ScenegraphSystem())
   ECS:add_system(ecs.System("update", "update"))
   return ECS
 end
@@ -82,6 +83,10 @@ local function test_events(t)
   evt:on("mupdate", myfoo, myfoo.update)
   evt:emit("mupdate")
   t.ok(myfoo.was_called, "class :update was called")
+end
+
+local function test_scenegraph(t)
+  local ECS = make_test_ecs()
 end
 
 local function test_systems(t)

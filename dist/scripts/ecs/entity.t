@@ -126,11 +126,13 @@ function Entity:destroy()
 end
 
 function Entity:_mark_dead()
+  if self._dead then return end
   self._dead = true
   for _, comp in pairs(self._components) do
     comp._dead = true
     if comp.destroy then comp:destroy() end
   end
+  self._components = nil
 end
 
 function Entity:sleep(recursive)
