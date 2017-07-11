@@ -124,6 +124,18 @@ function m.test(name, f, async)
 				handler('fail', name, msg)
 			end
 		end
+		funcs.err = function(f2, msg)
+			if not msg then
+				msg = debug.getinfo(2, 'S').short_src .. ":"
+					 .. debug.getinfo(2, 'l').currentline
+			end
+			local ok, err = pcall(f2)
+			if not ok then
+				handler('pass', name, msg)
+			else
+				handler('fail', name, msg)
+			end
+		end
 
 		handler('begin', name)
 		local ok, err = pcall(f, funcs, finish_test)
