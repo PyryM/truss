@@ -84,6 +84,23 @@ local function spy(f)
 	return s
 end
 
+
+-- a weak-valued table for testing memory management
+local handle_table = {}
+local next_handle = 1
+setmetatable(handle_table, {__mode = "v"})
+
+local function table_exists(self)
+	return handle_table[self.handle] ~= nil
+end
+
+local function mem_spy(t)
+	local handle_idx = next_handle
+	next_handle = next_handle + 1
+	handle_table[handle_idx] = t
+	return {handle = handle_idx, exists = table_exists}
+end
+
 local pendingtests = {}
 local gambiarrahandler = TERMINAL_HANDLER
 
@@ -113,6 +130,7 @@ function m.test(name, f, async)
 		local funcs = {}
 		funcs.eq = deepeq
 		funcs.spy = spy
+		funcs.mem_spy = mem_spy
 		funcs.ok = function(cond, msg)
 			if not msg then
 				msg = debug.getinfo(2, 'S').short_src .. ":"
@@ -160,19 +178,31 @@ local function make_header(dirpath)
 	return "==== " .. dirpath .. " " .. table.concat(t)
 end
 
--- this recursively iterates through a directory structure, looking for
--- tests.t
-local function _run_tests(dirpath)
-	-- check if path/tests.t exists and if so run it
+-- this runs a specific file as tests
+local function _run_test_file(dirpath, fn)
+	print(make_header(dirpath))
+	local tt = require(dirpath .. "/" .. fn)
+	tt.run()
+end
+
+-- recursively iterate through a directory structure, looking for
+-- either tests.t or subdirectory tests/
+local function _run_tests(dirpath, force)
 	if truss.is_file("scripts/" .. dirpath .. "/tests.t") then
-		print(make_header(dirpath))
-		local tt = require(dirpath .. "/tests.t")
-		tt.run()
-	else -- otherwise, recurse on subdirectories
+		-- if path/tests.t exists run it
+		_run_test_file(dirpath, "tests.t")
+	elseif truss.is_directory("scripts/" .. dirpath .. "/tests") then
+		-- otherwise, if path/tests/ exists, run all scripts in it
+		_run_tests(dirpath .. "/tests", true)
+  else
+		-- otherwise, recurse on subdirectories
 		local subfiles = truss.list_directory("scripts/" .. dirpath)
 		for _, fn in ipairs(subfiles) do
-			if truss.is_directory("scripts/" .. dirpath .. "/" .. fn) then
+			local full_fn = "scripts/" .. dirpath .. "/" .. fn
+			if (not force) and truss.is_directory(full_fn) then
 				_run_tests(dirpath .. "/" .. fn)
+			elseif force and truss.is_file(full_fn) then
+				_run_test_file(dirpath, fn)
 			end
 		end
 	end

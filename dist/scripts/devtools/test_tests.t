@@ -37,6 +37,16 @@ function run_tests()
     f(nil)
     t.ok(f.errors[3] ~= nil)
   end)
+  test('Memory spy', function(t)
+    local retained = {bla = 12}
+    local collected = {bla = 13}
+    local h_ret = t.mem_spy(retained)
+    local h_col = t.mem_spy(collected)
+    collected = nil
+    collectgarbage("collect")
+    t.ok(h_ret:exists(), 'retained table is retained')
+    t.ok(not h_col:exists(), 'collected table was collected')
+  end)
 end
 
 function test_list_dir()
