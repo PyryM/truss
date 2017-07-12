@@ -85,10 +85,6 @@ local function test_events(t)
   t.ok(myfoo.was_called, "class :update was called")
 end
 
-local function test_scenegraph(t)
-  local ECS = make_test_ecs()
-end
-
 local function test_systems(t)
   local ECS = ecs.ECS()
   ECS:add_system(ecs.System("update1"))
@@ -139,13 +135,16 @@ local function test_systems(t)
   t.ok(#(f3.call_order) == 3, "Recursive wake works")
 end
 
-local function test_descent(t)
+local function test_scenegraph(t)
   local Entity3d = ecs.Entity3d
   local ECS = make_test_ecs()
   local parent = ECS.scene:create_child(Entity3d, "blah")
   local child = parent:create_child(Entity3d, "foo")
   local grandchild = child:create_child(Entity3d, "feh")
   local brother = ECS.scene:create_child(Entity3d, "meh")
+  local stranger = ECS.scene:create(Entity3d, "stranger")
+
+  -- basic relationships work
   t.ok(child:is_in_subtree(parent), "child is descendant of parent")
   t.ok(grandchild:is_in_subtree(parent), "grandchild is descendant of parent")
   t.ok(not parent:is_in_subtree(child), "parent is not descendant of child")
@@ -153,10 +152,37 @@ local function test_descent(t)
   t.ok(not parent:is_in_subtree(brother), "parent and brother not descendants")
   t.ok(parent:is_in_subtree(parent), "parent is in its own subtree")
   t.ok(not parent:is_in_subtree(nil), "nothing is in subtree of nil")
+  t.ok(not stranger:is_in_subtree(ECS.scene), "stranger is not in tree")
+
+  -- moving entities
+  brother:add_child(child)
+  t.ok(not child:is_in_subtree(parent), "child moved out of parent")
+  t.ok(child:is_in_subtree(brother), "child moved into brother")
+  t.ok(grandchild:is_in_subtree(brother), "grandchild moved as well")
+
+  -- removing entities
+  child:detach()
+  t.ok(not child:is_in_subtree(ECS.scene), "child no longer in tree")
+  t.ok(not grandchild:is_in_subtree(ECS.scene), "grandchild no longer in tree")
+
+  -- adding back entities
+  parent:add_child(child)
+  parent:add_child(child) -- setting the same parent shouldn't cause an issue
+  t.ok(child:is_in_subtree(parent), "child back under parent")
+  grandchild:set_parent(parent) -- move grandchild directly under parent
+  t.ok(grandchild:is_in_subtree(parent), "grandchild back under parent")
+  t.ok(not grandchild:is_in_subtree(child), "grandchild directly under parent")
+
+  -- memory management
+
+  -- creating a cycle should throw an error
+  t.err(function()
+    grandchild:add_child(ECS.scene)
+  end, "creating a cycle throws an error")
 end
 
 function m.run()
-  test("ECS scenegraph descent", test_descent)
+  test("ECS scenegraph", test_scenegraph)
   test("ECS events", test_events)
   test("ECS systems", test_systems)
 end
