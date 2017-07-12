@@ -108,21 +108,23 @@ function Entity:detach()
   self:set_parent(nil)
 end
 
-function Entity:destroy()
-  -- sever this subtree at just this node,
-  -- and then mark every entity+component as dead
-  self:set_parent(nil)
-  self:call_recursive("_mark_dead")
+function Entity:destroy(recursive)
+  if recursive then
+    self:call_recursive("destroy", false)
+  else
+    self:set_parent(nil)
+    self._dead = true
+    self:destroy_components()
+  end
 end
 
-function Entity:_mark_dead()
-  if self._dead then return end
-  self._dead = true
-  for _, comp in pairs(self._components) do
+function Entity:destroy_components()
+  for mount_name, comp in pairs(self._components) do
     comp._dead = true
     if comp.destroy then comp:destroy() end
+    self[mount_name] = nil
   end
-  self._components = nil
+  self._components = {}
 end
 
 function Entity:sleep(recursive)

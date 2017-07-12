@@ -11,11 +11,6 @@ local m = {}
 -- test that adding to system during iteration/update works
 -- test that removing an entity during update works
 -- test self:destroy()
--- test that sleeping an entity applies recursively
--- test that removing (but not sleeping) an entity still gets updates
--- test that creating a cycle throws an error
--- test adding children to a detached subtree
--- test that _in_tree is set in various weird conditions
 
 local function make_test_ecs()
   local ECS = ecs.ECS()
@@ -144,6 +139,17 @@ local function test_systems(t)
   collectgarbage("collect") -- need to do this twice for reasons
   t.ok(not e2_handle:exists(), "Entity was garbage collected")
   t.ok(not f3_handle:exists(), "Component was garbage collected")
+
+  -- test that :destroy() works
+  f.call_order = {}
+  ECS:update()
+  t.ok(#(f.call_order) > 0, "Setup for next test v.")
+  f.call_order = {}
+  e:destroy()
+  ECS:update()
+  t.ok(#(f.call_order) == 0, "Destroyed entity's component not updated.")
+  t.ok(f._dead, "Destroyed entity's component is marked dead.")
+  t.ok(not e:is_in_subtree(ECS.scene), "Destroyed entity not in scene.")
 end
 
 local function test_scenegraph(t)

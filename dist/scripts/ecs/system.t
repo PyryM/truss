@@ -16,6 +16,7 @@ function System:init(mount_name, funcname)
 end
 
 function System:register_component(component)
+  if not self._added_components then self._added_components = {} end
   if self._iterating then
     self._added_components[component] = true
   else
@@ -38,7 +39,6 @@ function System:call_on_components(funcname, ...)
   -- so if a component is registered during this call, it gets added to a
   -- temporary table which we then merge after the main iteration
   self._iterating = true
-  self._added_components = {}
   for comp, _ in pairs(self._components) do
     if comp._dead then
       self._components[comp] = nil
@@ -48,11 +48,13 @@ function System:call_on_components(funcname, ...)
     end
   end
   -- merge in any components registered during iteration
-  for comp, _ in pairs(self._added_components) do
-    self._components[comp] = true
+  if self._added_components then
+    for comp, _ in pairs(self._added_components) do
+      self._components[comp] = true
+    end
+    self._added_components = nil
   end
   self._iterating = false
-  self._added_components = nil
 end
 
 function System:update()
@@ -68,7 +70,7 @@ function ScenegraphSystem:init()
 end
 
 function ScenegraphSystem:update(ecs)
-  if not ecs.scene then return end 
+  if not ecs.scene then return end
   ecs.scene:recursive_update_world_mat(self._identity_mat)
 end
 
