@@ -149,7 +149,7 @@ function m.test(name, f, async)
 			end
 			local ok, err = pcall(f2)
 			if not ok then
-				handler('pass', name, msg)
+				handler('pass', name, msg .. ": " .. err)
 			else
 				handler('fail', name, msg)
 			end
