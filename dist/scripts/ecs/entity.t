@@ -77,25 +77,15 @@ end
 -- setting a nil parent removes it from the tree
 -- if the operation would cause a cycle, an error is thrown
 function Entity:set_parent(parent)
+  if parent == self.parent then return end
   if self.parent then
     self.parent.children[self] = nil
   end
   if parent then
     if not assert_cycle_free(parent, self, true) then return false end
     parent.children[self] = self
-    self.parent = parent
-    if self._in_tree ~= parent._in_tree then
-      self:_set_in_tree(parent._in_tree)
-    end
-  else
-    self.parent = nil
-    self:_set_in_tree(false)
   end
-end
-
-function Entity:_set_in_tree(in_tree)
-  self._in_tree = in_tree
-  for _, child in pairs(self.children) do child:_set_in_tree(in_tree) end
+  self.parent = parent
 end
 
 function Entity:add_child(child)
