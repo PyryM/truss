@@ -6,7 +6,7 @@
 
 local m = {}
 
-local test_stats = {passed = 0, failed = 0,
+local test_stats = {passed = 0, failed = 0, errors = 0,
 										total_passed = 0, total_failed = 0,
 									  verbose = false}
 
@@ -24,6 +24,7 @@ local function TERMINAL_HANDLER(e, test, msg)
 		test_stats.failed = test_stats.failed + 1
 		print(red .. "✘ " .. blk .. test .. ': ' .. msg)
 	elseif e == 'except' then
+		test_stats.errors = test_stats.errors + 1
 		print(red .. "✖✖ " .. blk .. test .. ': ' .. msg)
 	elseif e == 'begin' then
     test_stats.passed = 0
@@ -213,15 +214,18 @@ function m.run_tests(dirpath, verbose)
 	test_stats.total_passed = 0
 	test_stats.failed = 0
 	test_stats.passed = 0
+	test_stats.errors = 0
 	test_stats.verbose = verbose
 	print("verbose? " .. tostring(verbose))
 	_run_tests(dirpath)
 	print(make_header("TOTAL"))
 	print("PASSED: " .. test_stats.total_passed)
 	print("FAILED: " .. test_stats.total_failed)
-	if test_stats.total_failed == 0 then
+	if test_stats.total_failed == 0 and test_stats.errors == 0 then
 		local slots = require("devtools/slots.t")
 		print("Good job! " .. slots.do_slots(true))
+	elseif test_stats.errors > 0 then
+		print("Tests had errors!!!!")
 	end
 end
 
