@@ -133,6 +133,17 @@ local function test_systems(t)
   ECS:update()
   t.ok(#(f.call_order) == 3, "Woken entity updated again.")
   t.ok(#(f3.call_order) == 3, "Recursive wake works")
+
+  -- test that a system will not keep an entity/component alive that otherwise
+  -- has no references
+  local e2_handle = t.mem_spy(e2)
+  local f3_handle = t.mem_spy(f3)
+  e2:detach() -- otherwise will still live on as child of e
+  e2, f3 = nil, nil
+  collectgarbage("collect")
+  collectgarbage("collect") -- need to do this twice for reasons
+  t.ok(not e2_handle:exists(), "Entity was garbage collected")
+  t.ok(not f3_handle:exists(), "Component was garbage collected")
 end
 
 local function test_scenegraph(t)
@@ -164,6 +175,10 @@ local function test_scenegraph(t)
   child:detach()
   t.ok(not child:is_in_subtree(ECS.scene), "child no longer in tree")
   t.ok(not grandchild:is_in_subtree(ECS.scene), "grandchild no longer in tree")
+  t.err(function()
+    stranger:remove_child(child)
+  end, "trying to remove child from wrong parent throws error")
+  -- (to remove child from whatever its parent actually is, use :detach())
 
   -- adding back entities
   parent:add_child(child)
@@ -174,6 +189,17 @@ local function test_scenegraph(t)
   t.ok(not grandchild:is_in_subtree(child), "grandchild directly under parent")
 
   -- memory management
+  grandchild:set_parent(child)
+  local g_handle = t.mem_spy(grandchild)
+  grandchild = nil
+  collectgarbage("collect")
+  collectgarbage("collect")
+  t.ok(g_handle:exists(), "grandchild not collected (still in tree)")
+  parent:remove_child(child)
+  child = nil
+  collectgarbage("collect")
+  collectgarbage("collect")
+  t.ok(not g_handle:exists(), "grandchild collected")
 
   -- creating a cycle should throw an error
   t.err(function()
