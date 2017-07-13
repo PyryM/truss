@@ -12,9 +12,8 @@ function Component:init()
   -- actually nothing to do
 end
 
-function Component:mount(compname, ecs)
+function Component:mount(compname)
   self.mounted_name = compname
-  self.ecs = ecs
 end
 
 function Component:unmount()
@@ -24,7 +23,7 @@ end
 
 function Component:add_to_systems(syslist)
   self._systems = self._systems or {}
-  local ecs_systems = self.ent.ecs.systems
+  local ecs_systems = self.ecs.systems
   for _, sysname in ipairs(syslist) do
     self._systems[sysname] = ecs_systems[sysname]
   end

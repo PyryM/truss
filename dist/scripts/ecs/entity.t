@@ -187,9 +187,8 @@ function Entity:add_component(component, component_name)
   self._components[component_name] = component
   self[component_name] = component
   component.ent = self
-  if component.mount then
-    component:mount(self, component_name, self.ecs)
-  end
+  component.ecs = self.ecs
+  if component.mount then component:mount(component_name) end
 
   return component
 end

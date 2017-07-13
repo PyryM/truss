@@ -185,43 +185,49 @@ end
 
 local Component = require("ecs/component.t").Component
 
-local DrawableComponent = Component:extend("DrawableComponent")
-m.DrawableComponent = DrawableComponent
-function DrawableComponent:init()
+local RenderComponent = Component:extend("RenderComponent")
+m.RenderComponent = RenderComponent
+function RenderComponent:init()
   self._render_ops = {}
 end
 
-function DrawableComponent:configure(ecs_root)
-  if not ecs_root.systems.graphics then
-    log.warn("No 'graphics' system present in ecs!")
+function RenderComponent:mount()
+  RenderComponent.super.mount(self)
+  self:add_to_systems({"render"})
+  self:wake()
+  self:configure()
+end
+
+function RenderComponent:configure()
+  local render = self.ecs.systems.render
+  if not render then
+    log.warn("No 'render' system present in ecs!")
     return
   end
-  self._render_ops = ecs_root.systems.graphics:get_render_ops(self)
+  self._render_ops = render:get_render_ops(self)
 end
 
-function DrawableComponent:draw()
+function RenderComponent:render()
   if self.visible == false then return end
   for _, op in ipairs(self._render_ops) do
-    op:draw(self)
+    op:render(self)
   end
 end
 
-local MeshShaderComponent = DrawableComponent:extend("MeshShaderComponent")
-m.MeshShaderComponent = MeshShaderComponent
+local MeshRenderComponent = RenderComponent:extend("MeshRenderComponent")
+m.MeshRenderComponent = MeshRenderComponent
 
-function MeshShaderComponent:init(geo, mat)
+function MeshRenderComponent:init(geo, mat)
   self.geo = geo
   self.mat = mat
   self._render_ops = {}
-  self.mount_name = "mesh_shader"
+  self.mount_name = "mesh"
 end
 
-MeshShaderComponent.on_update = DrawableComponent.draw
-
 -- convenience function to create an Entity3d that just renders a mesh
-function m.Mesh(name, geo, mat)
+function m.Mesh(ecs, name, geo, mat)
   local entity = require("ecs/entity.t")
-  return entity.Entity3d(name, MeshShaderComponent(geo, mat))
+  return entity.Entity3d(ecs, name, MeshRenderComponent(geo, mat))
 end
 
 return m
