@@ -17,17 +17,25 @@ function ECS:init()
   self._t0 = truss.tic()
   self._lastdt = 0
   self._nextid = 0
+  self.entities = {}
+  setmetatable(self.entities, {__mode = "v"})
   self.scene = entity.Entity3d(self, "ROOT")
 end
 
-function ECS:get_unique_name(basename)
-  self._nextid = self._nextid + 1
-  return (basename or "entity_") .. self._nextid
+function ECS:_get_unique_name(ent)
+  local basename = ent.name or "entity"
+  if not self.entities[basename] then
+    return basename
+  else
+    self._nextid = self._nextid + 1
+    return basename .. "_" .. self._nextid .. "_"
+  end
 end
 
 function ECS:create(entity_constructor, ...)
   entity_constructor = entity_constructor or entity.Entity3d
   local ret = entity_constructor(self, ...)
+  self.entities[ret.unique_name] = ret
   return ret
 end
 

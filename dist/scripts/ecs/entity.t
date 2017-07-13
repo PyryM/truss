@@ -13,7 +13,7 @@ function Entity:init(ecs, name, ...)
   self._components = {}
   self.children = {}
   self.name = name or "entity"
-  self.unique_name = ecs:get_unique_name(self.name)
+  self.unique_name = ecs:_get_unique_name(self)
   self.event = false -- to prevent overriding of this
 
   for _, comp in ipairs({...}) do
@@ -33,7 +33,7 @@ end
 
 -- return a string identifying this component for error messages
 function Entity:log_name(funcname)
-  return "Entity[" .. (self.unique_name) .. "]: "
+  return "Entity[" .. (self.unique_name or self.name or "?") .. "]: "
 end
 
 -- throw an error with convenient formatting
