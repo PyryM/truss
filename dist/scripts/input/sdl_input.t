@@ -1,4 +1,4 @@
--- ecs/sdl_input.t
+-- input/sdl_input.t
 --
 -- sdl input components
 
