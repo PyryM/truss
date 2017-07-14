@@ -74,14 +74,7 @@ function GenericRenderOp:render(component)
   if not mat.program then return end
   gfx.set_transform(component.ent.matrix_world)
   geo:bind()
-  if mat.state then gfx.set_state(mat.state) end
-  if mat.uniforms then mat.uniforms:bind() end
-  if mat.globals then
-    local g = self.stage.globals
-    for _, v in ipairs(mat.globals) do
-      if g[v] then g[v]:bind() end
-    end
-  end
+  mat:bind()
   gfx.submit(self.stage.view, mat.program)
 end
 

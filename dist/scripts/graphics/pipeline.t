@@ -4,6 +4,7 @@
 
 local m = {}
 local class = require("class")
+local gfx = require("gfx")
 
 local Pipeline = class("Pipeline")
 m.Pipeline = Pipeline
@@ -14,6 +15,7 @@ function Pipeline:init(options)
   self._ordered_stages = {}
   self._next_view = 0
   self.verbose = options.verbose
+  self.globals = options.globals or gfx.UniformSet()
 end
 
 function Pipeline:bind()

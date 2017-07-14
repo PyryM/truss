@@ -134,10 +134,15 @@ function UniformSet:_raw_add(uni_name, uniform)
   self[uni_name] = uniform
 end
 
-function UniformSet:clone()
+function UniformSet:clone(force_clone_shared)
   local ret = UniformSet()
-  for k,v in pairs(self._uniforms) do
-    local v_clone = v:clone()
+  for k, v in pairs(self._uniforms) do
+    local v_clone
+    if v.is_shared and not force_clone_shared then
+      v_clone = v
+    else
+      v_clone = v:clone()
+    end
     ret:_raw_add(k, v_clone)
   end
   return ret
@@ -152,8 +157,17 @@ function UniformSet:create_view(selection)
 end
 
 function UniformSet:bind()
-  for _,v in pairs(self._uniforms) do
+  for _, v in pairs(self._uniforms) do
     v:bind()
+  end
+  return self
+end
+
+function UniformSet:bind_as_fallbacks(globals)
+  if not globals then return self:bind() end
+  -- preferentially bind uniforms in globals, but fall back to ones in this set
+  for uni_name, uni in pairs(self._uniforms) do
+    (globals[uni_name] or uni):bind()
   end
   return self
 end

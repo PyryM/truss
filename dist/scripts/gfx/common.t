@@ -61,10 +61,15 @@ function m.init_gfx(options)
   if options.renderer then
     local rname = "RENDERER_TYPE_" .. options.renderer
     renderer_type = bgfx[rname]
+    if not renderer_type then
+      truss.error("Nonexistent backend " .. rname)
+      return false
+    end
   end
 
   if not options.window and (not options.width or not options.height) then
     truss.error("gfx.init_gfx needs to be supplied with width and height.")
+    return false
   end
   local w, h = options.width, options.height
   if options.window then

@@ -1,276 +1,212 @@
--- appscaffold.t
+-- App.t
 --
--- a basic app scaffold that does setup, event handling, etc.
+-- a convenience class for handling a lot of boilerplate
 
 local class = require('class')
-local sdl = truss.addons.sdl
+local sdl = require("addons/sdl.t")
 
 local math = require("math")
 local gfx = require("gfx")
+local ecs = require("ecs")
+local sdl_input = require("ecs/sdl_input.t")
+local graphics = require("graphics")
 
-local AppScaffold = class('AppScaffold')
+local App = class('App')
 
-function AppScaffold:init(options)
-    options = options or {}
-    self.width = options.width or 1280
-    self.height = options.height or 720
-    self.quality = options.quality or 1.0 -- highest quality by default
-    self.title = options.title or 'truss'
-    self.fullscreen = options.fullscreen
-    self.debugtext = options.debugtext ~= false
-    self.vsync = options.vsync ~= false
-    self.msaa = options.msaa ~= false
-    self.clearcolor = options.clearcolor or 0x303030ff
-    self.consoleOnError = options.consoleOnError
-    if self.consoleOnError ~= false then
-        self:installFallback()
+function App:init(options)
+  log.debug("App: init")
+  options = options or {}
+  sdl.create_window(options.width or 1280, options.height or 720,
+                    options.title or 'truss',
+                    options.fullscreen and 1)
+  self.width, self.height = sdl.get_window_size()
+  gfx.init_gfx({msaa = options.msaa,
+                debugtext = options.stats,
+                vsync = options.vsync,
+                renderer = options.backend,
+                window = sdl})
+  log.debug("App: window+gfx initialized")
+  self.clear_color = options.clear_color or 0x303030ff
+  if options.error_console ~= false then
+    self:install_console()
+  end
+
+  self.frame = 0
+  self.time = 0.0
+
+  self:init_ecs()
+  self:init_pipeline()
+end
+
+function App:install_console()
+  -- TODO
+end
+
+function App:init_ecs()
+  -- create ecs
+  local ECS = ecs.ECS()
+  self.ECS = ECS
+  ECS:add_system(sdl_input.SDLInputSystem())
+  ECS:add_system(ecs.System("preupdate", "preupdate"))
+  ECS:add_system(ecs.ScenegraphSystem())
+  ECS:add_system(ecs.System("update", "update"))
+  ECS:add_system(graphics.RenderSystem())
+  ECS:add_system(framestats.DebugTextStats())
+
+  ECS.scene:add_component(sdl_input.SDLInputComponent())
+  ECS.scene:add_component(nvg.NanoVGDrawable(function(comp, stage, ctx)
+    local font = ctx:load_font("font/VeraMono.ttf", "sans")
+    comp.color = comp.color or ctx:RGB(255,255,0)
+    comp.color2 = comp.color2 or ctx:RGBA(0,255,255,128)
+
+    ctx:FillColor(comp.color)
+    ctx:Ellipse(ctx.width/2, ctx.height/2, 50, 50)
+    ctx:Fill()
+
+    ctx:FillColor(comp.color2)
+    ctx:FontFaceId(font)
+    ctx:FontSize(32.0)
+    ctx:Text(ctx.width/2, ctx.height/2, "Hello nvg!", nil)
+  end))
+  ECS.scene:on("keydown", function(entity, evt)
+    local keyname = ffi.string(evt.keycode)
+    if keyname == "F12" then
+      print("Saving screenshot!")
+      gfx.save_screenshot("screenshot.png")
     end
-    if options.renderer then
-        self.requestedRenderer = string.upper(options.renderer)
-    end
-    self.nvgoptions = options.nvgoptions
-
-    self.frame = 0
-    self.time = 0.0
-
-    self.scripttime = 0.0
-    self.frametime = 0.0
-
-    self.downkeys = {}
-    self.keybindings = {}
-
-    log.info("AppScaffold init")
-    if self.fullscreen then
-        sdl:createWindow(320, 320, self.title, 1)
-        self.width = sdl:windowWidth()
-        self.height = sdl:windowHeight()
-        log.info("Fullscreen dimensions: " .. self.width .. " x " .. self.height)
-    else
-        sdl:createWindow(self.width, self.height, self.title, 0)
-    end
-
-    self:initBGFX()
-    self:initPipeline()
-    self:initScene()
-
-    self.startTime = truss.tic()
+  end)
 end
 
-function AppScaffold:installFallback()
-    if truss.mainEnv.fallbackUpdate then
-        log.info("AppScaffold:installFallback : fallback already present.")
-        return
-    end
-
-    local closureSelf = self
-    truss.mainEnv.fallbackUpdate = function()
-        closureSelf:fallbackUpdate()
-    end
+function App:init_pipeline()
+  local p = graphics.Pipeline({verbose = true})
+  p:add_stage(graphics.Stage{
+    name = "forward",
+    clear = {color = 0x303050ff, depth = 1.0},
+    globals = p.globals,
+    render_ops = {graphics.GenericRenderOp(), graphics.CameraControlOp()}
+  })
+  self.pipeline = p
+  self.ecs.systems.render:set_pipeline(p)
 end
 
-function AppScaffold:initBGFX()
-    -- Basic init
-    local debug = 0
-    if self.debugtext then
-        debug = debug + bgfx_const.BGFX_DEBUG_TEXT
-    end
-    local reset = 0
-    if self.vsync then
-        reset = reset + bgfx_const.BGFX_RESET_VSYNC
-    end
-    if self.msaa then
-        reset = reset + bgfx_const.BGFX_RESET_MSAA_X8
-    end
-    --local reset = bgfx_const.BGFX_RESET_MSAA_X8
+function App:set_default_lights()
+  -- set default lights
+  local Vector = math.Vector
+  self.pipeline.globals.u_lightDir:set_multiple({
+          Vector( 1.0,  1.0,  0.0),
+          Vector(-1.0,  1.0,  0.0),
+          Vector( 0.0, -1.0,  1.0),
+          Vector( 0.0, -1.0, -1.0)})
 
-    local cbInterfacePtr = sdl:getBGFXCallback()
-    local rendererType = bgfx.BGFX_RENDERER_TYPE_COUNT
-    if self.requestedRenderer then
-        local rname = "BGFX_RENDERER_TYPE_" .. self.requestedRenderer
-        rendererType = bgfx[rname]
-    end
-
-    bgfx.bgfx_init(rendererType, 0, 0, cbInterfacePtr, nil)
-    bgfx.bgfx_reset(self.width, self.height, reset)
-    self.bgfxInitted = true
-
-    -- Enable debug text.
-    bgfx.bgfx_set_debug(debug)
-
-    log.info("AppScaffold: initted bgfx")
-    local rendererType = bgfx.bgfx_get_renderer_type()
-    local rendererName = ffi.string(bgfx.bgfx_get_renderer_name(rendererType))
-    log.info("Renderer type: " .. rendererName)
+  self.pipeline.globals.u_lightRgb:set_multiple({
+          Vector(0.8, 0.8, 0.8),
+          Vector(1.0, 1.0, 1.0),
+          Vector(0.1, 0.1, 0.1),
+          Vector(0.1, 0.1, 0.1)})
 end
 
-function AppScaffold:setDefaultLights()
-    -- set default lights
-    local Vector = math.Vector
-    local forwardpass = self.forwardpass
-    forwardpass.globals.lightDirs:setMultiple({
-            Vector( 1.0,  1.0,  0.0),
-            Vector(-1.0,  1.0,  0.0),
-            Vector( 0.0, -1.0,  1.0),
-            Vector( 0.0, -1.0, -1.0)})
-
-    forwardpass.globals.lightColors:setMultiple({
-            Vector(0.8, 0.8, 0.8),
-            Vector(1.0, 1.0, 1.0),
-            Vector(0.1, 0.1, 0.1),
-            Vector(0.1, 0.1, 0.1)})
+function App:initScene()
+  self.scene = gfx.Object3D()
+  self.camera = gfx.Camera():makeProjection(70, self.width/self.height,
+                                          0.1, 100.0)
 end
 
-function AppScaffold:initPipeline()
-    local pbr = require("shaders/pbr.t")
-
-    self.pipeline = gfx.Pipeline()
-
-    local backbuffer = gfx.RenderTarget(self.width, self.height):makeBackbuffer()
-    local forwardpass = gfx.MultiShaderStage({
-        renderTarget = backbuffer,
-        clear = {color = self.clearcolor},
-        shaders = {solid = pbr.PBRShader()}
-    })
-    self.forwardpass = forwardpass
-    self.pipeline:add("forwardpass", forwardpass)
-    if self.nvgoptions then
-        self.nvgpass = gfx.NanoVGStage({
-            draw = self.nvgoptions.draw,
-            setup = self.nvgoptions.setup,
-            renderTarget = backbuffer,
-            clear = false
-        })
-        self.pipeline:add("nvgpass", self.nvgpass)
-    end
-    self.pipeline:setupViews(0)
-
-    self:setDefaultLights()
+function App:onKeyDown_(keyname, modifiers)
+  log.info("Keydown: " .. keyname .. " | " .. modifiers)
+  if self.keybindings[keyname] ~= nil then
+    self.keybindings[keyname](keyname, modifiers)
+  end
 end
 
-function AppScaffold:initScene()
-    self.scene = gfx.Object3D()
-    self.camera = gfx.Camera():makeProjection(70, self.width/self.height,
-                                            0.1, 100.0)
+function App:setKeyBinding(keyname, func)
+  self.keybindings[keyname] = func
 end
 
-function AppScaffold:onKeyDown_(keyname, modifiers)
-    log.info("Keydown: " .. keyname .. " | " .. modifiers)
-    if self.keybindings[keyname] ~= nil then
-        self.keybindings[keyname](keyname, modifiers)
-    end
+function App:onKey(keyname, func)
+  self:setKeyBinding(keyname, func)
 end
 
-function AppScaffold:setKeyBinding(keyname, func)
-    self.keybindings[keyname] = func
+function App:onMouseMove(func)
+  self.mousemove = func
 end
 
-function AppScaffold:onKey(keyname, func)
-    self:setKeyBinding(keyname, func)
+function App:takeScreenshot(filename)
+  bgfx.bgfx_save_screen_shot(filename)
 end
 
-function AppScaffold:onMouseMove(func)
-    self.mousemove = func
+function App:updateEvents()
+  for evt in sdl:events() do
+      if evt.event_type == sdl.EVENT_KEYDOWN or evt.event_type == sdl.EVENT_KEYUP then
+          local keyname = ffi.string(evt.keycode)
+          if evt.event_type == sdl.EVENT_KEYDOWN then
+              if not self.downkeys[keyname] then
+                  self.downkeys[keyname] = true
+                  self:onKeyDown_(keyname, evt.flags)
+              end
+          else -- keyup
+              self.downkeys[keyname] = false
+          end
+      elseif evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
+          log.info("Received window close, quitting...")
+          truss.quit()
+      end
+      if self.userEventHandler then
+          self:userEventHandler(evt)
+      end
+  end
 end
 
-function AppScaffold:takeScreenshot(filename)
-    bgfx.bgfx_save_screen_shot(filename)
+function App:updateScene()
+  self.scene:updateMatrices()
 end
 
-function AppScaffold:updateEvents()
-    for evt in sdl:events() do
-        if evt.event_type == sdl.EVENT_KEYDOWN or evt.event_type == sdl.EVENT_KEYUP then
-            local keyname = ffi.string(evt.keycode)
-            if evt.event_type == sdl.EVENT_KEYDOWN then
-                if not self.downkeys[keyname] then
-                    self.downkeys[keyname] = true
-                    self:onKeyDown_(keyname, evt.flags)
-                end
-            else -- keyup
-                self.downkeys[keyname] = false
-            end
-        elseif evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
-            log.info("Received window close, quitting...")
-            truss.quit()
-        end
-        if self.userEventHandler then
-            self:userEventHandler(evt)
-        end
-    end
+function App:render()
+  self.pipeline:render({camera = self.camera,
+                        scene  = self.scene})
 end
 
-function AppScaffold:updateScene()
-    self.scene:updateMatrices()
+function App:drawDebugText()
+  if not self.debugtext then return end
+  -- Use debug font to print information about this example.
+  bgfx.bgfx_dbg_text_clear(0, false)
+  bgfx.bgfx_dbg_text_printf(0, 1, 0x6f, "total: " .. self.frametime*1000.0
+                                                  .. " ms, script: "
+                                                  .. self.scripttime*1000.0
+                                                  .. " ms")
 end
 
-function AppScaffold:render()
-    self.pipeline:render({camera = self.camera,
-                          scene  = self.scene})
-end
+function App:update()
+  self.frame = self.frame + 1
+  self.time = self.time + 1.0 / 60.0
 
-function AppScaffold:drawDebugText()
-    if not self.debugtext then return end
-    -- Use debug font to print information about this example.
-    bgfx.bgfx_dbg_text_clear(0, false)
-    bgfx.bgfx_dbg_text_printf(0, 1, 0x6f, "total: " .. self.frametime*1000.0
-                                                    .. " ms, script: "
-                                                    .. self.scripttime*1000.0
-                                                    .. " ms")
-end
+  -- Deal with input events
+  self:updateEvents()
 
-function AppScaffold:update()
-    self.frame = self.frame + 1
-    self.time = self.time + 1.0 / 60.0
+  -- Set view 0,1 default viewport.
+  bgfx.bgfx_set_view_rect(0, 0, 0, self.width, self.height)
+  bgfx.bgfx_set_view_rect(1, 0, 0, self.width, self.height)
 
-    -- Deal with input events
-    self:updateEvents()
+  -- Touch the view to make sure it is cleared even if no draw
+  -- calls happen
+  -- bgfx.bgfx_touch(0)
+  self:drawDebugText()
 
-    -- Set view 0,1 default viewport.
-    bgfx.bgfx_set_view_rect(0, 0, 0, self.width, self.height)
-    bgfx.bgfx_set_view_rect(1, 0, 0, self.width, self.height)
+  if self.preRender then
+      self:preRender()
+  end
 
-    -- Touch the view to make sure it is cleared even if no draw
-    -- calls happen
-    -- bgfx.bgfx_touch(0)
-    self:drawDebugText()
+  self:updateScene()
+  self:render()
+  self.scripttime = truss.toc(self.startTime)
 
-    if self.preRender then
-        self:preRender()
-    end
+  -- Advance to next frame. Rendering thread will be kicked to
+  -- process submitted rendering primitives.
+  bgfx.bgfx_frame(false)
 
-    self:updateScene()
-    self:render()
-    self.scripttime = truss.toc(self.startTime)
-
-    -- Advance to next frame. Rendering thread will be kicked to
-    -- process submitted rendering primitives.
-    bgfx.bgfx_frame(false)
-
-    self.frametime = truss.toc(self.startTime)
-    self.startTime = truss.tic()
-end
-
-function AppScaffold:fallbackUpdate()
-    -- show the miniconsole
-
-    if not self.bgfxInitted then
-        log.info("Crash before bgfx init; no choice but to quit.")
-        truss.quit()
-    end
-
-    if not self._inittedFallback then
-        self.fbMiniconsole = require("devtools/miniconsole.t")
-        self.fbMiniconsole.hijackBGFX(self.width, self.height)
-        self.fbMiniconsole.init(math.floor(self.width / 8),
-                                math.floor(self.height / 16))
-        self.fbMiniconsole.setHeader("Something broke: " .. truss.crashMessage, 0x83)
-        self.fbMiniconsole.printMiniHelp()
-
-        self._inittedFallback = true
-    end
-
-    self.fbMiniconsole.update()
+  self.frametime = truss.toc(self.startTime)
+  self.startTime = truss.tic()
 end
 
 local m = {}
-m.AppScaffold = AppScaffold
+m.App = App
 return m
