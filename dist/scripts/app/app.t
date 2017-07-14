@@ -3,12 +3,11 @@
 -- a convenience class for handling a lot of boilerplate
 
 local class = require('class')
-local sdl = require("addons/sdl.t")
-
 local math = require("math")
 local gfx = require("gfx")
 local ecs = require("ecs")
-local sdl_input = require("ecs/sdl_input.t")
+local sdl = require("addons/sdl.t")
+local sdl_input = require("input/sdl_input.t")
 local graphics = require("graphics")
 
 local App = class('App')
