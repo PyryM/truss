@@ -1,6 +1,7 @@
 local class = require("class")
 local gfx = require("gfx")
 local ecs = require("ecs")
+local math = require("math")
 local m = {}
 
 local RenderSystem = ecs.System:extend("RenderSystem")
@@ -35,75 +36,6 @@ function RenderSystem:update()
   end
 end
 
-local Stage = class("Stage")
-m.Stage = Stage
-
--- initoptions should contain e.g. input render targets (for post-processing),
--- output render targets, uniform values.
-function Stage:init(globals, render_ops)
-  self.num_views = 1
-  self._render_ops = render_ops or {}
-  self.filter = globals.filter
-  self.globals = globals or {}
-end
-
-function Stage:__tostring()
-  return self.globals.name or self.name or "Stage"
-end
-
--- copies a table value by value, using val:duplicate() when present
-local function duplicate_copy(t, strict)
-  local ret = {}
-  for k,v in pairs(t) do
-    if type(v) == "table" and v.duplicate then
-      ret[k] = v:duplicate()
-    else
-      if strict then truss.error("Value did not support duplicate!") end
-      ret[k] = v
-    end
-  end
-  return ret
-end
-
-function Stage:duplicate()
-  local ret = Stage(duplicate_copy(self.globals),
-                    duplicate_copy(self._render_ops, true))
-  ret.filter = self.filter
-  ret.num_views = self.num_views
-  return ret
-end
-
-function Stage:bind()
-  self.view:set(self.globals)
-  for _,op in ipairs(self._render_ops) do
-    op:set_stage(self)
-  end
-end
-
-function Stage:set_views(views)
-  self.view = views[1]
-  self:bind()
-end
-
-function Stage:add_render_op(op)
-  table.insert(self._render_ops, op)
-  op:set_stage(self)
-end
-
-function Stage:get_render_ops(component, target)
-  target = target or {}
-
-  if self.filter and not (self.filter(component)) then return target end
-
-  for _, op in ipairs(self._render_ops) do
-    if op:matches(component) then
-      table.insert(target, op)
-      if self._exclusive then return target end
-    end
-  end
-  return target
-end
-
 local RenderOperation = class("RenderOperation")
 m.RenderOperation = RenderOperation
 
@@ -136,25 +68,24 @@ function GenericRenderOp:matches(component)
   return (component.geo ~= nil and component.mat ~= nil)
 end
 
-function GenericRenderOp:draw(component)
-  if not component.geo or not component.mat then return end
-  if not component.mat.program then return end
-  gfx.set_transform(component._entity.matrix_world)
-  component.geo:bind()
-  if component.mat.state then gfx.set_state(component.mat.state) end
-  if component.mat.uniforms then component.mat.uniforms:bind() end
-  if component.mat.globals then
+function GenericRenderOp:render(component)
+  local geo, mat = component.geo, component.mat
+  if (not geo) or (not mat) then return end
+  if not mat.program then return end
+  gfx.set_transform(component.ent.matrix_world)
+  geo:bind()
+  if mat.state then gfx.set_state(mat.state) end
+  if mat.uniforms then mat.uniforms:bind() end
+  if mat.globals then
     local g = self.stage.globals
-    for _,v in ipairs(component.mat.globals) do
+    for _, v in ipairs(mat.globals) do
       if g[v] then g[v]:bind() end
     end
   end
-  gfx.submit(self.stage.view, component.mat.program)
+  gfx.submit(self.stage.view, mat.program)
 end
 
-local Component = require("ecs/component.t").Component
-
-local RenderComponent = Component:extend("RenderComponent")
+local RenderComponent = ecs.Component:extend("RenderComponent")
 m.RenderComponent = RenderComponent
 function RenderComponent:init()
   self._render_ops = {}

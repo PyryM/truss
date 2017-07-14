@@ -60,4 +60,73 @@ function Pipeline:add_stage(stage, stage_name)
   return stage
 end
 
+local Stage = class("Stage")
+m.Stage = Stage
+
+-- initoptions should contain e.g. input render targets (for post-processing),
+-- output render targets, uniform values.
+function Stage:init(globals, render_ops)
+  self.num_views = 1
+  self._render_ops = render_ops or {}
+  self.filter = globals.filter
+  self.globals = globals or {}
+end
+
+function Stage:__tostring()
+  return self.globals.name or self.name or "Stage"
+end
+
+-- copies a table value by value, using val:duplicate() when present
+local function duplicate_copy(t, strict)
+  local ret = {}
+  for k,v in pairs(t) do
+    if type(v) == "table" and v.duplicate then
+      ret[k] = v:duplicate()
+    else
+      if strict then truss.error("Value did not support duplicate!") end
+      ret[k] = v
+    end
+  end
+  return ret
+end
+
+function Stage:duplicate()
+  local ret = Stage(duplicate_copy(self.globals),
+                    duplicate_copy(self._render_ops, true))
+  ret.filter = self.filter
+  ret.num_views = self.num_views
+  return ret
+end
+
+function Stage:bind()
+  self.view:set(self.globals)
+  for _,op in ipairs(self._render_ops) do
+    op:set_stage(self)
+  end
+end
+
+function Stage:set_views(views)
+  self.view = views[1]
+  self:bind()
+end
+
+function Stage:add_render_op(op)
+  table.insert(self._render_ops, op)
+  op:set_stage(self)
+end
+
+function Stage:get_render_ops(component, target)
+  target = target or {}
+
+  if self.filter and not (self.filter(component)) then return target end
+
+  for _, op in ipairs(self._render_ops) do
+    if op:matches(component) then
+      table.insert(target, op)
+      if self._exclusive then return target end
+    end
+  end
+  return target
+end
+
 return m
