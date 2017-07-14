@@ -6,56 +6,29 @@ local m = {}
 local RenderSystem = ecs.System:extend("RenderSystem")
 m.RenderSystem = RenderSystem
 
-function RenderSystem:init(options)
+function RenderSystem:init()
   RenderSystem.super.init(self)
-  options = options or {}
-  self._ordered_stages = {}
-  self._next_view = 0
-  self.verbose = options.verbose
-  self.targets = {}
   self.auto_frame_advance = options.auto_frame_advance
   self.mount_name = "render" -- allow direct use of a RenderSystem as a system
 end
 
-function RenderSystem:add_stage(stage, stage_name)
-  table.insert(self._ordered_stages, stage)
-  if stage_name then self.stages[stage_name] = stage end
-  local nviews = stage.num_views or 1
-  local views = {}
-  if self.verbose then
-    log.debug("Giving stage [" .. tostring(stage) .. "] views " ..
-              self._next_view .. " to " .. (self._next_view + nviews - 1))
-  end
-  for i = 1,nviews do
-    local v = gfx.View(self._next_view)
-    views[i] = v
-    self._next_view = self._next_view + 1
-  end
-  stage:set_views(views)
-  return stage
+function RenderSystem:get_render_ops(component, ret)
+  return self._pipeline:get_render_ops(component, ret)
 end
 
-function RenderSystem:bind()
-  for _,stage in ipairs(self._ordered_stages) do
-    stage:bind()
-  end
-end
-
--- what is target_list???
-function RenderSystem:get_render_ops(component, target_list)
-  return self._pipeline:get_render_ops(component, target_list)
+function RenderSystem:set_pipeline(p)
+  self._pipeline = p
+  self._pipeline:bind()
+  self:call_on_components("configure")
+  return self
 end
 
 function RenderSystem:update()
-  for _,stage in ipairs(self._ordered_stages) do
-    if stage.update_begin then stage:update_begin() end
-  end
+  if not self._pipeline then return end
 
-  self:call_on_components("draw")
-
-  for _,stage in ipairs(self._ordered_stages) do
-    if stage.update_end then stage:update_end() end
-  end
+  self._pipeline:pre_render()
+  self:call_on_components("render")
+  self._pipeline:post_render()
 
   if self.auto_frame_advance ~= false then
     gfx.frame()
@@ -90,7 +63,6 @@ local function duplicate_copy(t, strict)
     end
   end
   return ret
-
 end
 
 function Stage:duplicate()
