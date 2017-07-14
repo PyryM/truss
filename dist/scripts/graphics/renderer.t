@@ -13,8 +13,8 @@ function RenderSystem:init()
   self.mount_name = "render" -- allow direct use of a RenderSystem as a system
 end
 
-function RenderSystem:get_render_ops(component, ret)
-  return self._pipeline:get_render_ops(component, ret)
+function RenderSystem:match_render_ops(component, ret)
+  return self._pipeline:match_render_ops(component, ret)
 end
 
 function RenderSystem:set_pipeline(p)
@@ -104,7 +104,7 @@ function RenderComponent:configure()
     log.warn("No 'render' system present in ecs!")
     return
   end
-  self._render_ops = render:get_render_ops(self)
+  self._render_ops = render:match_render_ops(self)
 end
 
 function RenderComponent:render()

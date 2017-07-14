@@ -22,10 +22,10 @@ function Pipeline:bind()
   end
 end
 
-function Pipeline:get_render_ops(component, ret)
+function Pipeline:match_render_ops(component, ret)
   ret = ret or {}
   for _, stage in ipairs(self._ordered_stages) do
-    stage:get_render_ops(component, ret)
+    stage:match_render_ops(component, ret)
   end
   return ret
 end
@@ -65,15 +65,18 @@ m.Stage = Stage
 
 -- initoptions should contain e.g. input render targets (for post-processing),
 -- output render targets, uniform values.
-function Stage:init(globals, render_ops)
+function Stage:init(options)
+  options = options or {}
   self.num_views = 1
-  self._render_ops = render_ops or {}
-  self.filter = globals.filter
-  self.globals = globals or {}
+  self._render_ops = options.render_ops or {}
+  self.filter = options.filter
+  self.globals = options.globals or {}
+  self._exclusive = options.exclusive
+  self.stage_name = options.name or "Stage"
 end
 
 function Stage:__tostring()
-  return self.globals.name or self.name or "Stage"
+  return self.stage_name or "Stage"
 end
 
 -- copies a table value by value, using val:duplicate() when present
@@ -115,7 +118,7 @@ function Stage:add_render_op(op)
   op:set_stage(self)
 end
 
-function Stage:get_render_ops(component, target)
+function Stage:match_render_ops(component, target)
   target = target or {}
 
   if self.filter and not (self.filter(component)) then return target end
