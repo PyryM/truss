@@ -56,10 +56,9 @@ function m.init_gfx(options)
   end
 
   local cb_ptr = nil
-  --sdl:getBGFXCallback()
   local renderer_type = bgfx.RENDERER_TYPE_COUNT
-  if options.renderer then
-    local rname = "RENDERER_TYPE_" .. options.renderer
+  if options.backend then
+    local rname = "RENDERER_TYPE_" .. options.backend
     renderer_type = bgfx[rname]
     if not renderer_type then
       truss.error("Nonexistent backend " .. rname)
@@ -87,18 +86,18 @@ function m.init_gfx(options)
   bgfx.set_debug(debug)
 
   log.info("initted bgfx")
-  local renderer_type = bgfx.get_renderer_type()
-  local renderer_name = ffi.string(bgfx.get_renderer_name(renderer_type))
-  gfx.renderer_name = renderer_name
-  gfx.renderer_type = renderer_type
-  gfx.short_renderer_name = m._translate_renderer_type(renderer_type)
+  local backend_type = bgfx.get_renderer_type()
+  local backend_name = ffi.string(bgfx.get_renderer_name(renderer_type))
+  gfx.backend_name = backend_name
+  gfx.backend_type = backend_type
+  gfx.short_backend_name = m._translate_backend_type(backend_type)
   log.info("Renderer name: " .. renderer_name)
-  log.info("Short renderer name: " .. gfx.short_renderer_name)
+  log.info("Short renderer name: " .. gfx.short_backend_name)
   local dt = truss.toc(t0) * 1000.0
   log.info(string.format("bgfx init took %.2f ms.", dt))
 end
 
-function m._translate_renderer_type(bgfx_type)
+function m._translate_backend_type(bgfx_type)
   local rtypes = {
     "NOOP",
     "DIRECT3D9",
