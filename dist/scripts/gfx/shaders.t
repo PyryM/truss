@@ -20,7 +20,7 @@ local subpaths = {
 function m.get_shader_path()
   local gfx = require("gfx")
 
-  local rendertype = gfx.short_renderer_name
+  local rendertype = gfx.short_backend_name
   local subpath = subpaths[rendertype]
   if not subpath then truss.error("No subpath for " .. rendertype) end
 
@@ -47,8 +47,8 @@ function m.load_program(vshadername, fshadername)
   if m._programs[pname] == nil then
     local vshader = m.load_shader(vshadername)
     local fshader = m.load_shader(fshadername)
-
     m._programs[pname] = bgfx.create_program(vshader, fshader, true)
+    log.debug("Loaded program " .. pname)
   end
   return m._programs[pname]
 end

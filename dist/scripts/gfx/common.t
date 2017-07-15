@@ -91,7 +91,7 @@ function m.init_gfx(options)
   gfx.backend_name = backend_name
   gfx.backend_type = backend_type
   gfx.short_backend_name = m._translate_backend_type(backend_type)
-  log.info("Renderer name: " .. renderer_name)
+  log.info("Renderer name: " .. backend_name)
   log.info("Short renderer name: " .. gfx.short_backend_name)
   local dt = truss.toc(t0) * 1000.0
   log.info(string.format("bgfx init took %.2f ms.", dt))
