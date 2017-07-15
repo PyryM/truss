@@ -4,11 +4,11 @@
 
 local class = require("class")
 local math = require("math")
-local pipeline = require("graphics/pipeline.t")
-local Entity3d = require("ecs/entity.t").Entity3d
+local renderer = require("graphics/renderer.t")
+local Entity3d = require("ecs").Entity3d
 
 local m = {}
-local CameraComponent = pipeline.DrawableComponent:extend("CameraComponent")
+local CameraComponent = renderer.RenderComponent:extend("CameraComponent")
 m.CameraComponent = CameraComponent
 
 function CameraComponent:init(tag)
@@ -42,19 +42,19 @@ function CameraComponent:set_projection(proj_mat)
 end
 
 function CameraComponent:update_matrices()
-  self.view_mat:invert(self._entity.matrix_world)
+  self.view_mat:invert(self.ent.matrix_world)
   return self.view_mat, self.proj_mat
 end
 
-function CameraComponent:on_update()
+function CameraComponent:render()
   self:update_matrices()
-  self:draw()
+  CameraComponent.super.render(self)
 end
 
 function CameraComponent:get_view_proj_mat(target)
-    local view, proj = self:update_matrices()
-    target = target or self.view_proj_mat
-    return target:multiply(proj, view)
+  local view, proj = self:update_matrices()
+  target = target or self.view_proj_mat
+  return target:multiply(proj, view)
 end
 
 -- "unproject" an image coordinate (in NDC, so [-1,1] w/ (0,0) center) to a ray
@@ -65,18 +65,18 @@ function CameraComponent:unproject(ndcX, ndcY, origin, direction)
   local p = origin or math.Vector()
   local d = direction or math.Vector()
 
-  local worldPose = self._entity.matrixWorld or self._entity.matrix
+  local worldPose = self.ent.matrix_world or self.ent.matrix
   worldPose:get_column(4, p)
   d:set(ndcX, ndcY, 0.0, 1.0)
   self.inv_proj_mat:multiply(d)
   d:divide_perspective():normalize3d()
-  d.elem.w = 0.0              -- only apply the rotation component of the
+  d.elem.w = 0.0        -- only apply the rotation component of the
   worldPose:multiply(d) -- world pose
 
   return p, d
 end
 
-local CameraControlOp = pipeline.RenderOperation:extend("CameraControlOp")
+local CameraControlOp = renderer.RenderOperation:extend("CameraControlOp")
 m.CameraControlOp = CameraControlOp
 function CameraControlOp:init(tag)
   self._tag = tag or "primary"
@@ -87,14 +87,14 @@ function CameraControlOp:matches(component)
   return (component.view_mat ~= nil) and (component.proj_mat ~= nil)
 end
 
-function CameraControlOp:draw(component)
+function CameraControlOp:render(component)
   self.stage.view:set_matrices(component.view_mat, component.proj_mat)
 end
 
 -- this is not actually a class, but just produces an Entity3d with a
 -- CameraComponent
-function m.Camera(options)
-  local ret = Entity3d(options.name)
+function m.Camera(ecs, options)
+  local ret = Entity3d(ecs, options.name)
   local cam_component = ret:add_component(CameraComponent(options.tag))
   cam_component:make_projection(options.fov or 70,
                                 options.aspect or 1.0,

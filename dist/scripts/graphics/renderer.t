@@ -7,8 +7,9 @@ local m = {}
 local RenderSystem = ecs.System:extend("RenderSystem")
 m.RenderSystem = RenderSystem
 
-function RenderSystem:init()
+function RenderSystem:init(options)
   RenderSystem.super.init(self)
+  options = options or {}
   self.auto_frame_advance = options.auto_frame_advance
   self.mount_name = "render" -- allow direct use of a RenderSystem as a system
 end
