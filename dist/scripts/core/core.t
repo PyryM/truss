@@ -129,10 +129,10 @@ truss.extend_table = extend_table
 truss._module_env = extend_table({}, _G)
 local disallow_globals_mt = {
   __newindex = function (t,k,v)
-    truss.error("Module tried to create global '" .. k .. "'")
+    truss.error("Module " .. t._module_name .. " tried to create global '" .. k .. "'")
   end,
   __index = function (t,k)
-    truss.error("Module tried to access nil global '" .. k .. "'")
+    truss.error("Module " .. t._module_name .. " tried to access nil global '" .. k .. "'")
   end
 }
 
@@ -156,8 +156,9 @@ function truss.is_directory(path)
   return truss.C.check_file(path) == 2
 end
 
-local function create_module_env()
+local function create_module_env(module_name)
   local modenv = extend_table({}, truss._module_env)
+  modenv._module_name = module_name
   setmetatable(modenv, disallow_globals_mt)
   return modenv
 end
@@ -197,7 +198,7 @@ function truss.require(filename, force)
       truss.error("require [" .. filename .. "]: syntax error: " .. loaderror)
       return nil
     end
-    setfenv(module_def, create_module_env())
+    setfenv(module_def, create_module_env(filename))
     loaded_libs[filename] = module_def()
     log.info(string.format("Loaded [%s] in %.2f ms",
                           filename, truss.toc(t0) * 1000.0))
