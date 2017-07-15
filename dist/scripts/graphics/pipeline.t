@@ -75,6 +75,7 @@ function Stage:init(options)
   self.globals = options.globals or {}
   self._exclusive = options.exclusive
   self.stage_name = options.name or "Stage"
+  self.options = options
 end
 
 function Stage:__tostring()
@@ -95,16 +96,18 @@ local function duplicate_copy(t, strict)
   return ret
 end
 
-function Stage:duplicate()
-  local ret = Stage(duplicate_copy(self.globals),
-                    duplicate_copy(self._render_ops, true))
-  ret.filter = self.filter
-  ret.num_views = self.num_views
-  return ret
-end
+-- TODO: figure out if this is needed or even makes sense
+-- function Stage:duplicate()
+--   -- TODO: have this duplicate view options as well somehow
+--   local ret = Stage{globals = duplicate_copy(self.globals),
+--                     render_ops = duplicate_copy(self._render_ops, true)}
+--   ret.filter = self.filter
+--   ret.num_views = self.num_views
+--   return ret
+-- end
 
 function Stage:bind()
-  self.view:set(self.globals)
+  self.view:set(self.options)
   for _,op in ipairs(self._render_ops) do
     op:set_stage(self)
   end

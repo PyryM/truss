@@ -23,7 +23,7 @@ function App:init(options)
   options.window = sdl
   gfx.init_gfx(options)
   log.debug("App: window+gfx initialized")
-  self.clear_color = options.clear_color or 0x303030ff
+  self.clear_color = options.clear_color or 0x000000ff
   if options.error_console ~= false then
     self:install_console()
   end
@@ -58,7 +58,7 @@ function App:init_pipeline()
   local p = graphics.Pipeline({verbose = true})
   p:add_stage(graphics.Stage{
     name = "forward",
-    clear = {color = self.clear_color or 0x303050ff, depth = 1.0},
+    clear = {color = self.clear_color or 0x000000ff, depth = 1.0},
     globals = p.globals,
     render_ops = {graphics.GenericRenderOp(), graphics.CameraControlOp()}
   })
