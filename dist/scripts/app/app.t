@@ -84,6 +84,7 @@ function App:init_scene()
   self.camera = self.ECS.scene:create_child(graphics.Camera,
                                             {fov = 65,
                                              aspect = self.width / self.height})
+  self.scene = self.ECS.scene
 end
 
 function App:keydown(evtname, evt)
