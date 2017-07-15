@@ -87,7 +87,7 @@ function m.init_gfx(options)
 
   log.info("initted bgfx")
   local backend_type = bgfx.get_renderer_type()
-  local backend_name = ffi.string(bgfx.get_renderer_name(renderer_type))
+  local backend_name = ffi.string(bgfx.get_renderer_name(backend_type))
   gfx.backend_name = backend_name
   gfx.backend_type = backend_type
   gfx.short_backend_name = m._translate_backend_type(backend_type)
