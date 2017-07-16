@@ -10,9 +10,9 @@ function init()
 
   myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 1, max_rad = 4}))
 
-  local geo = geometry.icosphere_geo(1.0, 1, "ico")
+  local geo = geometry.box_widget_geo(1.0)
   local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
-  mysphere = myapp.scene:create_child(graphics.Mesh, "Sphere", geo, mat)
+  mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
 end
 
 function update()
