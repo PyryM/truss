@@ -1,5 +1,5 @@
 local app = require("app/app.t")
-local icosphere = require("geometry/icosphere.t")
+local geometry = require("geometry")
 local pbr = require("shaders/pbr.t")
 local graphics = require("graphics")
 local orbitcam = require("gui/orbitcam.t")
@@ -10,7 +10,7 @@ function init()
 
   myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 1, max_rad = 4}))
 
-  local geo = icosphere.icosphere_geo(1.0, 1, "ico")
+  local geo = geometry.icosphere_geo(1.0, 1, "ico")
   local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
   mysphere = myapp.scene:create_child(graphics.Mesh, "Sphere", geo, mat)
 end
