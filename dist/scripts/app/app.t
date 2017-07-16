@@ -20,6 +20,7 @@ function App:init(options)
                     options.fullscreen and 1)
   self.width, self.height = sdl.get_window_size()
   self.stats = options.stats
+  options.debugtext = options.stats
   options.window = sdl
   gfx.init_gfx(options)
   log.debug("App: window+gfx initialized")

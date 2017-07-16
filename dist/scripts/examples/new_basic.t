@@ -18,7 +18,7 @@ end
 
 function init()
   myapp = app.App{title = "blah", width = 1280, height = 720,
-                  msaa = true, stats = false, clear_color = 0x404080ff}
+                  msaa = true, stats = true, clear_color = 0x404080ff}
   setup_scene()
 end
 
