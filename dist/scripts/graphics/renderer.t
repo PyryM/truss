@@ -32,6 +32,8 @@ function RenderSystem:update()
   self:call_on_components("render")
   self._pipeline:post_render()
 
+  self.ecs:insert_timing_event("render_submit")
+
   if self.auto_frame_advance ~= false then
     gfx.frame()
   end

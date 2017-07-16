@@ -73,8 +73,8 @@ function ECS:update()
 
   -- update systems
   for _, system in ipairs(self._update_order) do
-    self:insert_timing_event(system.mount_name)
     system:update(self)
+    self:insert_timing_event(system.mount_name)
   end
 
   self:insert_timing_event("frame_end")
