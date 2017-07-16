@@ -2,10 +2,10 @@
 --
 -- geometry metamodule
 
-local moduleutils = require("core/module.t")
+local module = require("core/module.t")
 local geometry = {}
 
-moduleutils.include_submodules({
+module.include_submodules({
   "geometry/cube.t",
   "geometry/cylinder.t",
   "geometry/debugcube.t",
