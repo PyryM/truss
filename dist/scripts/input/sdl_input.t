@@ -39,7 +39,7 @@ local function translate_key_flags(flags)
 end
 
 local function convert_event(evt)
-  local evt_name, evt_class = EVENT_INFO[evt.event_type]
+  local evt_name, evt_class = unpack(EVENT_INFO[evt.event_type])
   local new_evt = {}
   if evt_class == "key" then
     new_evt.keyname = ffi.string(evt.keycode)
