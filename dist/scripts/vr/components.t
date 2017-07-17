@@ -4,15 +4,14 @@
 
 local class = require("class")
 local math = require("math")
-local pipeline = require("graphics/pipeline.t")
+local graphics = require("graphics")
+local ecs = require("ecs")
 local openvr = require("vr/openvr.t")
-local Entity3d = require("ecs/entity.t").Entity3d
-local Component = require("ecs/component.t").Component
 local m = {}
 
 local EYES = {left = 1, right = 2}
 
-local VRCameraComponent = pipeline.DrawableComponent:extend("VRCameraComponent")
+local VRCameraComponent = graphics.RenderComponent:extend("VRCameraComponent")
 m.VRCameraComponent = VRCameraComponent
 
 function VRCameraComponent:init()
@@ -23,66 +22,83 @@ function VRCameraComponent:init()
   self.proj_mats = {}
 end
 
-function VRCameraComponent:on_preupdate()
-  self._entity.matrix:copy(openvr.hmd.pose)
+function VRCameraComponent:mount()
+  self:add_to_systems({"preupdate"})
+  graphics.RenderComponent.mount(self)
 end
 
-function VRCameraComponent:on_update()
+function VRCameraComponent:preupdate()
+  self.ent.matrix:copy(openvr.hmd.pose)
+end
+
+function VRCameraComponent:render()
   -- use the parent mat because openvr eye poses are given relative to the room
   -- rather than the hmd, and we will be moving our own entity around
-  local parent_mat = self._entity.parent.matrix_world
+  local parent_mat = self.ent.parent.matrix_world
   for i = 1,2 do
     self.view_mats[i]:multiply(parent_mat, openvr.eye_poses[i])
     self.view_mats[i]:invert()
     self.proj_mats[i] = openvr.eye_projections[i]
   end
-  self:draw()
+  VRCameraComponent.super.render(self)
 end
 
-local VRCameraControl = pipeline.RenderOperation:extend("VRCameraControl")
-m.VRCameraControl = VRCameraControl
+local VRCameraControlOp = graphics.RenderOperation:extend("VRCameraControlOp")
+m.VRCameraControlOp = VRCameraControlOp
 
-function VRCameraControl:matches(comp)
+function VRCameraControlOp:matches(comp)
   return comp.vr_camera_tag ~= nil
 end
 
-function VRCameraControl:draw(comp)
+function VRCameraControlOp:render(comp)
   local idx = EYES[self.stage.globals.eye]
   self.stage.view:set_matrices(comp.view_mats[idx], comp.proj_mats[idx])
 end
 
-local VRSystem = class("VRSystem")
-m.VRSystem = VRSystem
+local VRBeginFrameSystem = class("VRBeginFrameSystem")
+m.VRBeginFrameSystem = VRBeginFrameSystem
 
-function VRSystem:init()
-  self.mount_name = "vr"
-  self.update_priority = 101 -- try to update after normal graphics
+function VRBeginFrameSystem:init()
+  self.mount_name = "vr_begin"
 end
 
-function VRSystem:set_eye_textures(eye_texes)
-  self.eye_texes = eye_texes
-end
-
-function VRSystem:update_begin()
+function VRBeginFrameSystem:update()
   openvr.begin_frame()
 end
 
-function VRSystem:update_end()
+local VRSubmitSystem = class("VRSubmitSystem")
+m.VRSubmitSystem = VRSubmitSystem
+
+function VRSubmitSystem:init()
+  self.mount_name = "vr_end"
+end
+
+function VRSubmitSystem:set_eye_textures(eye_texes)
+  self.eye_texes = eye_texes
+end
+
+function VRSubmitSystem:update()
   openvr.submit_frame(self.eye_texes)
 end
 
 -- convenience function to create an entity with the vr camera component
-function m.VRCamera(name)
-  return Entity3d(name, VRCameraComponent())
+function m.VRCamera(ecs, name)
+  return Entity3d(ecs, name, VRCameraComponent())
 end
 
-local VRTrackableComponent = Component:extend("VRTrackableComponent")
+local VRTrackableComponent = ecs.Component:extend("VRTrackableComponent")
 m.VRTrackableComponent = VRTrackableComponent
 
 function VRTrackableComponent:init(trackable)
   VRTrackableComponent.super.init(self)
-  self.mount_name = "vr_trackable"
+  self.mount_name = "trackable"
   self._trackable = trackable
+end
+
+function VRTrackableComponent:mount()
+  VRTrackableComponent.super.mount(self)
+  self:add_to_systems({"preupdate"})
+  self:wake()
 end
 
 local function print_failure(task, msg)
@@ -91,10 +107,10 @@ end
 
 function VRTrackableComponent:load_geo_to_component(target_comp_name)
   target_comp_name = target_comp_name or "mesh_shader"
-  local target = self
+  local ent = self.ent
   local function on_load(task)
-    target._entity[target_comp_name].geo = task.geo
-    --target._entity[target_comp_name]:configure()
+    ent[target_comp_name].geo = task.geo
+    if ent.configure then ent:configure() end
   end
   self:load_model(on_load, print_failure, false)
 end
@@ -103,10 +119,10 @@ function VRTrackableComponent:load_model(on_load, on_fail, load_textures)
   self._trackable:load_model(on_load, on_fail, load_textures)
 end
 
-function VRTrackableComponent:on_preupdate()
+function VRTrackableComponent:preupdate()
   self.axes = self._trackable.axes
   self.buttons = self._trackable.buttons
-  self._entity.matrix:copy(self._trackable.pose)
+  self.ent.matrix:copy(self._trackable.pose)
 end
 
 local VRControllerComponent = VRTrackableComponent:extend("VRControllerComponent")
@@ -117,10 +133,10 @@ function VRControllerComponent:init(trackable)
   self.mount_name = "vr_controller"
 end
 
-function VRControllerComponent:on_preupdate()
+function VRControllerComponent:preupdate()
   self.axes = self._trackable.axes
   self.buttons = self._trackable.buttons
-  self._entity.matrix:copy(self._trackable.pose)
+  self.ent.matrix:copy(self._trackable.pose)
 end
 
 return m
