@@ -92,4 +92,8 @@ function View:get_dimensions()
   end
 end
 
+function View:touch()
+  bgfx.touch(self._viewid)
+end
+
 return m

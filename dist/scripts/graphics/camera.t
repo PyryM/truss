@@ -87,8 +87,8 @@ function CameraControlOp:matches(component)
   return (component.view_mat ~= nil) and (component.proj_mat ~= nil)
 end
 
-function CameraControlOp:render(component)
-  self.stage.view:set_matrices(component.view_mat, component.proj_mat)
+function CameraControlOp:render(context, component)
+  context.view:set_matrices(component.view_mat, component.proj_mat)
 end
 
 -- this is not actually a class, but just produces an Entity3d with a

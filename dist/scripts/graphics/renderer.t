@@ -46,10 +46,6 @@ function RenderOperation:init()
   -- nothing in particular to do
 end
 
-function RenderOperation:set_stage(stage)
-  self.stage = stage
-end
-
 function RenderOperation:duplicate()
   return self.class()
 end
@@ -58,6 +54,16 @@ function RenderOperation:matches(component)
   log.warn("Base RenderOperation shouldn't actually be added to a stage!")
   log.warn("Did you forget to implement op:matches()?")
   return false
+end
+
+function RenderOperation:render(context, component)
+  truss.error("Base RenderOperation should never actually :render!")
+end
+
+function RenderOperation:to_function(context)
+  return function(component)
+    self:render(context, component)
+  end
 end
 
 local GenericRenderOp = RenderOperation:extend("GenericRenderOp")
@@ -71,14 +77,14 @@ function GenericRenderOp:matches(component)
   return (component.geo ~= nil and component.mat ~= nil)
 end
 
-function GenericRenderOp:render(component)
+function GenericRenderOp:render(context, component)
   local geo, mat = component.geo, component.mat
   if (not geo) or (not mat) then return end
   if not mat.program then return end
   gfx.set_transform(component.ent.matrix_world)
   geo:bind()
   mat:bind()
-  gfx.submit(self.stage.view, mat.program)
+  gfx.submit(context.view, mat.program)
 end
 
 local RenderComponent = ecs.Component:extend("RenderComponent")
@@ -106,7 +112,7 @@ end
 function RenderComponent:render()
   if self.visible == false then return end
   for _, op in ipairs(self._render_ops) do
-    op:render(self)
+    op(self)
   end
 end
 
