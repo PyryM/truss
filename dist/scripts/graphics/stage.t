@@ -13,7 +13,7 @@ m.Stage = Stage
 -- output render targets, uniform values.
 function Stage:init(options)
   options = options or {}
-  self.num_views = 1
+  self._num_views = 1
   self._render_ops = options.render_ops or {}
   self.filter = options.filter
   self.globals = options.globals or {}
@@ -25,6 +25,10 @@ end
 
 function Stage:__tostring()
   return self.stage_name or "Stage"
+end
+
+function Stage:num_views()
+  return self._num_views
 end
 
 function Stage:bind()

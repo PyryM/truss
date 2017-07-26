@@ -83,8 +83,37 @@ function GenericRenderOp:render(context, component)
   if not mat.program then return end
   gfx.set_transform(component.ent.matrix_world)
   geo:bind()
-  mat:bind()
+  mat:bind(context.globals)
   gfx.submit(context.view, mat.program)
+end
+
+function GenericRenderOp:to_multiview_function(contexts)
+  return function(component)
+    self:multi_render(contexts, component)
+  end
+end
+
+function GenericRenderOp:multi_render(contexts, component)
+  -- render to multiple contexts/views, using the 'preserve_state' flag
+  -- in bgfx.submit to try to minimize the number of bgfx function calls
+  -- (in most cases will greatly reduce the number of uniform set calls)
+
+  local geo, mat = component.geo, component.mat
+  if (not geo) or (not mat) then return end
+  if not mat.program then return end
+  gfx.set_transform(component.ent.matrix_world)
+  geo:bind()
+  mat:bind()
+  local nctx = #contexts
+  local last_globals = nil
+  for idx, ctx in ipairs(contexts) do
+    if ctx.globals ~= last_globals then
+      mat:bind_globals(ctx.globals)
+    end
+    last_globals = ctx.globals
+    local preserve_state = (idx ~= nctx)
+    gfx.submit(ctx.view, mat.program, nil, preserve_state)
+  end
 end
 
 local RenderComponent = ecs.Component:extend("RenderComponent")

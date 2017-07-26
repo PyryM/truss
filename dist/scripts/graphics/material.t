@@ -33,6 +33,20 @@ function Material:bind(globals)
   end
 end
 
+function Material:bind_state()
+  if self.state then gfx.set_state(self.state) end
+end
+
+function Material:bind_locals()
+  if self.uniforms then self.uniforms:bind() end
+end
+
+function Material:bind_globals(globals)
+  if self.global_uniforms then
+    self.global_uniforms:bind_as_fallbacks(globals)
+  end
+end
+
 function Material:clone()
   return self.class(self, true)
 end
