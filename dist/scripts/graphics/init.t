@@ -8,6 +8,7 @@ local graphics = {}
 moduleutils.include_submodules({
   "graphics/pipeline.t",
   "graphics/stage.t",
+  "graphics/multiview.t",
   "graphics/renderer.t",
   "graphics/camera.t",
   "graphics/material.t",

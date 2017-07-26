@@ -66,6 +66,16 @@ function RenderOperation:to_function(context)
   end
 end
 
+function RenderOperation:to_multiview_function(contexts)
+  if self.multi_render then
+    return function(component)
+      self:multi_render(contexts, component)
+    end
+  else
+    return nil
+  end
+end
+
 local GenericRenderOp = RenderOperation:extend("GenericRenderOp")
 m.GenericRenderOp = GenericRenderOp
 

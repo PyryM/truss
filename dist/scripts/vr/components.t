@@ -50,9 +50,15 @@ function VRCameraControlOp:matches(comp)
   return comp.vr_camera_tag ~= nil
 end
 
-function VRCameraControlOp:render(comp)
-  local idx = EYES[self.stage.globals.eye]
-  self.stage.view:set_matrices(comp.view_mats[idx], comp.proj_mats[idx])
+function VRCameraControlOp:render(context, comp)
+  local idx = EYES[context.eye or context.globals.eye or context.name]
+  context.view:set_matrices(comp.view_mats[idx], comp.proj_mats[idx])
+end
+
+function VRCameraControlOp:multi_render(contexts, comp)
+  for idx, ctx in ipairs(contexts) do
+    ctx.view:set_matrices(comp.view_mats[idx], comp.proj_mats[idx])
+  end
 end
 
 local VRBeginFrameSystem = class("VRBeginFrameSystem")

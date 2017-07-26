@@ -19,9 +19,6 @@ function MultiviewStage:init(options)
   self._num_views = #(options.views)
   self._contexts = options.views
   self.contexts = {}
-  for idx, v in ipairs(options.views) do
-    self.contexts[v.name or ("subview_" .. idx)] = v
-  end
   self._render_ops = options.render_ops or {}
   self.filter = options.filter
   self.globals = options.globals or {}
@@ -29,6 +26,10 @@ function MultiviewStage:init(options)
   self.stage_name = options.name or "MultiviewStage"
   self.options = options
   self._always_clear = options.always_clear
+  for idx, v in ipairs(options.views) do
+    if not v.globals then v.globals = self.globals end
+    self.contexts[v.name or ("subview_" .. idx)] = v
+  end
 end
 
 function MultiviewStage:__tostring()
@@ -60,7 +61,7 @@ end
 function MultiviewStage:update_begin()
   if self._always_clear then
     for _, ctx in ipairs(self._contexts) do
-      if ctx.view then ctx.view:touch()
+      if ctx.view then ctx.view:touch() end
     end
   end
 end
@@ -72,21 +73,19 @@ function MultiviewStage:match_render_ops(component, target)
 
   for _, op in ipairs(self._render_ops) do
     if op:matches(component) then
-      if op.to_multiview_function then -- supports multiview
-        table.insert(target, op:to_multiview_function(self._contexts))
+      local multi_op = op.to_multiview_function and 
+                       op:to_multiview_function(self._contexts)
+      if multi_op then -- supports multiview
+        table.insert(target, multi_op)
       else -- shove in the same op n times
-        self:_multimatch_op(op, target)
+        for _, ctx in ipairs(self._contexts) do
+          table.insert(target, op:to_function(ctx))
+        end
       end
       if self._exclusive then return target end
     end
   end
   return target
-end
-
-function MultiviewStage:_multimatch_op(op, target)
-  for _, ctx in ipairs(self._contexts) do
-    table.insert(target, op:to_function(ctx))
-  end
 end
 
 return m
