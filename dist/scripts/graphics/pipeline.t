@@ -47,7 +47,7 @@ end
 function Pipeline:add_stage(stage, stage_name)
   table.insert(self._ordered_stages, stage)
   if stage_name then self.stages[stage_name] = stage end
-  local nviews = stage.num_views() or 1
+  local nviews = stage:num_views() or 1
   local views = {}
   if self.verbose then
     log.debug("Giving stage [" .. tostring(stage) .. "] views " ..

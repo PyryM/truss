@@ -63,3 +63,5 @@ function Stage:match_render_ops(component, target)
   end
   return target
 end
+
+return m
