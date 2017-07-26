@@ -199,7 +199,11 @@ function truss.require(filename, force)
       return nil
     end
     setfenv(module_def, create_module_env(filename))
-    loaded_libs[filename] = module_def()
+    local evaluated_module = module_def()
+    if not evaluated_module then 
+      truss.error("Module [" .. filename .. "] did not return a table!")
+    end
+    loaded_libs[filename] = evaluated_module
     log.info(string.format("Loaded [%s] in %.2f ms",
                           filename, truss.toc(t0) * 1000.0))
   end
