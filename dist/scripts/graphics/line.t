@@ -8,12 +8,13 @@ local Matrix4 = math.Matrix4
 local Quaternion = math.Quaternion
 local Vector = math.Vector
 local gfx = require("gfx")
-local pipeline = require("graphics/pipeline.t")
+local render = require("graphics/renderer.t")
+local Material = require("graphics/material.t").Material
 
 local m = {}
 
-local LineShaderComponent = pipeline.DrawableComponent:extend("LineShaderComponent")
-m.LineShaderComponent = LineShaderComponent
+local LineRenderComponent = render.RenderComponent:extend("LineRenderComponent")
+m.LineRenderComponent = LineRenderComponent
 
 local internals = {}
 struct internals.VertexType {
@@ -45,21 +46,20 @@ local function get_vertex_info()
   return internals.vert_info
 end
 
-function LineShaderComponent:init(options)
+function LineRenderComponent:init(options)
   local opts = options or {}
   self._render_ops = {}
-  self.mount_name = "line_shader"
+  self.mount_name = "line"
 
   self.maxpoints = opts.maxpoints
   if not self.maxpoints then
-    truss.error("LineShaderComponent needs maxpoints!")
+    truss.error("LineRenderComponent needs maxpoints!")
     return
   end
   self.dynamic = not not opts.dynamic -- coerce to boolean
   self.geo = self:_create_buffers()
   self.mat = self:_create_material(opts.state, opts.uniforms, opts.program)
 end
-LineShaderComponent.on_update = pipeline.DrawableComponent.draw
 
 local function pack_v3(dest, arr)
   -- dest is a 0-indexed terra type, arr is a 1-index lua table
@@ -75,7 +75,7 @@ local function pack_vertex(dest, cur_pt, prev_pt, next_pt, dir)
   dest.color0[3] = dir
 end
 
-function LineShaderComponent:_append_segment(segpoints, vertidx, idxidx)
+function LineRenderComponent:_append_segment(segpoints, vertidx, idxidx)
   local npts = #segpoints
   local nlinesegs = npts - 1
   local startvert = vertidx
@@ -112,7 +112,7 @@ function LineShaderComponent:_append_segment(segpoints, vertidx, idxidx)
   return vertidx, idxidx
 end
 
-function LineShaderComponent:_create_buffers()
+function LineRenderComponent:_create_buffers()
   local vinfo = get_vertex_info()
   local geo
   if self.dynamic then
@@ -125,14 +125,13 @@ function LineShaderComponent:_create_buffers()
 end
 
 local line_uniforms = nil
-function LineShaderComponent:_create_material(state, uniforms, pgm)
+function LineRenderComponent:_create_material(state, uniforms, pgm)
   if line_uniforms == nil then
-    line_uniforms = gfx.UniformSet()
-    line_uniforms:add(gfx.VecUniform("u_color"))
-    line_uniforms:add(gfx.VecUniform("u_thickness"))
+    line_uniforms = gfx.UniformSet{gfx.VecUniform("u_color"),
+                                   gfx.VecUniform("u_thickness")}
   end
 
-  local mat = {
+  local mat = Material{
     state = state or gfx.create_state(),
     uniforms = uniforms or line_uniforms:clone(),
     program = pgm or gfx.load_program("vs_line", "fs_line")
@@ -143,7 +142,7 @@ end
 
 -- Update the line buffers: for a static line (dynamic == false)
 -- this will only work once
-function LineShaderComponent:set_points(lines)
+function LineRenderComponent:set_points(lines)
   -- try to determine whether somebody has passed in a single line
   -- rather than a list of lines
   if type(lines[1][1]) == "number" then
