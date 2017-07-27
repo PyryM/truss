@@ -91,6 +91,33 @@ function CameraControlOp:render(context, component)
   context.view:set_matrices(component.view_mat, component.proj_mat)
 end
 
+local MultiCameraControlOp = renderer.MultiRenderOperation:extend("MultiCameraControlOp")
+m.MultiCameraControlOp = MultiCameraControlOp
+
+function MultiCameraControlOp:init()
+  -- hmmm, maybe need to think about this a bit
+  -- right now this will match *every* camera, and only in the actual
+  -- :multi_render() call does it apply the matrices to the correct view
+  -- 
+  -- Probably you'll never have enough cameras and multistages that this 
+  -- is a performance problem, but nonetheless it's inelegant.
+  -- Perhaps the right way to do it would be to change :matches() to also take
+  -- the stage as an argument, so this could check stage._contexts...
+end
+
+function MultiCameraControlOp:matches(component)
+  if not component.camera_tag then return false end
+  return (component.view_mat ~= nil) and (component.proj_mat ~= nil)
+end
+
+function MultiCameraControlOp:multi_render(contexts, component)
+  for _, ctx in ipairs(contexts) do
+    if ctx.name == component.camera_tag then
+      ctx.view:set_matrices(component.view_mat, component.proj_mat)
+    end
+  end
+end
+
 -- this is not actually a class, but just produces an Entity3d with a
 -- CameraComponent
 function m.Camera(ecs, options)

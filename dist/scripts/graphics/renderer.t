@@ -66,17 +66,20 @@ function RenderOperation:to_function(context)
   end
 end
 
-function RenderOperation:to_multiview_function(contexts)
-  if self.multi_render then
-    return function(component)
-      self:multi_render(contexts, component)
-    end
-  else
-    return nil
+local MultiRenderOperation = RenderOperation:extend("MultiRenderOperation")
+m.MultiRenderOperation = MultiRenderOperation
+
+function MultiRenderOperation:multi_render(contexts, component)
+  truss.error("Base MultiRenderOperation should never actually :multi_render!")
+end
+
+function MultiRenderOperation:to_multiview_function(contexts)
+  return function(component)
+    self:multi_render(contexts, component)
   end
 end
 
-local GenericRenderOp = RenderOperation:extend("GenericRenderOp")
+local GenericRenderOp = MultiRenderOperation:extend("GenericRenderOp")
 m.GenericRenderOp = GenericRenderOp
 
 function GenericRenderOp:init()
@@ -95,12 +98,6 @@ function GenericRenderOp:render(context, component)
   geo:bind()
   mat:bind(context.globals)
   gfx.submit(context.view, mat.program)
-end
-
-function GenericRenderOp:to_multiview_function(contexts)
-  return function(component)
-    self:multi_render(contexts, component)
-  end
 end
 
 function GenericRenderOp:multi_render(contexts, component)
