@@ -159,12 +159,12 @@ function m.load_device_model(trackable, cb_success, cb_fail, load_textures)
 end
 
 function m._ovr_tex_to_tex(texid, data)
-    local flags = 0 -- default texture flags
-    local w, h = data.unWidth, data.unHeight
-    log.debug("modelloader got tex of size " .. w .. " x " .. h)
-    local datalen = w * h * 4
-    return gfx.create_texture_from_data(w, h, data.rubTextureMapData,
-                                            datalen, flags)
+  local flags = 0 -- default texture flags
+  local w, h = data.unWidth, data.unHeight
+  log.debug("modelloader got tex of size " .. w .. " x " .. h)
+  local datalen = w * h * 4
+  return gfx.create_texture_from_data(w, h, data.rubTextureMapData,
+                                          datalen, flags)
 end
 
 function m._ovr_model_to_geo(name, data)

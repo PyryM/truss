@@ -9,15 +9,8 @@ local sdl = require("addons/sdl.t")
 local openvr = require("vr/openvr.t")
 local vrcomps = require("vr/components.t")
 
-local ecs = require("ecs/ecs.t")
-local component = require("ecs/component.t")
-local entity = require("ecs/entity.t")
-local sdl_input = require("ecs/sdl_input.t")
-
-local pipeline = require("graphics/pipeline.t")
-local framestats = require("graphics/framestats.t")
-local camera = require("graphics/camera.t")
-local compositestage = require("graphics/compositestage.t")
+local ecs = require("ecs")
+local graphics = require("graphics")
 
 local m = {}
 

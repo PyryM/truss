@@ -14,10 +14,11 @@ local EYES = {left = 1, right = 2}
 local VRCameraComponent = graphics.RenderComponent:extend("VRCameraComponent")
 m.VRCameraComponent = VRCameraComponent
 
-function VRCameraComponent:init()
+function VRCameraComponent:init(options)
+  options = options or {}
   VRCameraComponent.super.init(self)
   self.mount_name = "vr_camera"
-  self.vr_camera_tag = "primary"
+  self.vr_camera_tag = options.tag or "vr_primary"
   self.view_mats = {math.Matrix4(), math.Matrix4()}
   self.proj_mats = {}
 end
@@ -28,7 +29,7 @@ function VRCameraComponent:mount()
 end
 
 function VRCameraComponent:preupdate()
-  self.ent.matrix:copy(openvr.hmd.pose)
+  if openvr.hmd then self.ent.matrix:copy(openvr.hmd.pose) end
 end
 
 function VRCameraComponent:render()
@@ -43,11 +44,15 @@ function VRCameraComponent:render()
   VRCameraComponent.super.render(self)
 end
 
-local VRCameraControlOp = graphics.RenderOperation:extend("VRCameraControlOp")
+local VRCameraControlOp = graphics.MultiRenderOperation:extend("VRCameraControlOp")
 m.VRCameraControlOp = VRCameraControlOp
 
+function VRCameraControlOp:init(tag)
+  self._tag = tag or "vr_primary"
+end
+
 function VRCameraControlOp:matches(comp)
-  return comp.vr_camera_tag ~= nil
+  return comp.vr_camera_tag == self._tag
 end
 
 function VRCameraControlOp:render(context, comp)
