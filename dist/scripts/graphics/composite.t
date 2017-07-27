@@ -21,7 +21,7 @@ function CompositeStage:init(options)
   self._identity_mat = math.Matrix4():identity()
   self._quad_geo = gfx.TransientGeometry()
   self._material = options.material or self:create_default_material(options.shader)
-  for k,v in pairs(options.ops or {}) do
+  for k,v in pairs(options.composite_ops or options.ops or {}) do
     self:add_composite_operation(k, v)
   end
 end

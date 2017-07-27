@@ -81,7 +81,7 @@ local VRSubmitSystem = class("VRSubmitSystem")
 m.VRSubmitSystem = VRSubmitSystem
 
 function VRSubmitSystem:init()
-  self.mount_name = "vr_end"
+  self.mount_name = "vr_submit"
 end
 
 function VRSubmitSystem:set_eye_textures(eye_texes)
@@ -94,7 +94,7 @@ end
 
 -- convenience function to create an entity with the vr camera component
 function m.VRCamera(ecs, name)
-  return Entity3d(ecs, name, VRCameraComponent())
+  return ecs.Entity3d(ecs, name, VRCameraComponent())
 end
 
 local VRTrackableComponent = ecs.Component:extend("VRTrackableComponent")
