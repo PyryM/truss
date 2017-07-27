@@ -114,8 +114,13 @@ function TexUniform:bind()
 end
 
 local UniformSet = class("UniformSet")
-function UniformSet:init()
+function UniformSet:init(uniform_list)
   self._uniforms = {}
+  if uniform_list then
+    for _, uniform in ipairs(uniform_list) do
+      self:add(uniform)
+    end
+  end
 end
 
 function UniformSet:add(uniform)
