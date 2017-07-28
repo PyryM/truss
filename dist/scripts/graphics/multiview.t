@@ -17,7 +17,7 @@ m.MultiviewStage = MultiviewStage
 function MultiviewStage:init(options)
   options = options or {}
   self._num_views = #(options.views)
-  self._contexts = options.views
+  self._contexts = {}
   self.contexts = {}
   self._render_ops = options.render_ops or {}
   self.filter = options.filter
@@ -26,9 +26,13 @@ function MultiviewStage:init(options)
   self.stage_name = options.name or "MultiviewStage"
   self.options = options
   self._always_clear = options.always_clear
-  for idx, v in ipairs(options.views) do
-    if not v.globals then v.globals = self.globals end
-    self.contexts[v.name or ("subview_" .. idx)] = v
+  for idx, ctx in ipairs(options.views) do
+    local view = ctx.view or ctx
+    if not view.bind then view = gfx.View(view) end
+    ctx.view = view
+    if not ctx.globals then ctx.globals = self.globals end
+    self._contexts[idx] = ctx
+    self.contexts[ctx.name or ("context_" .. idx)] = ctx
   end
 end
 
@@ -42,16 +46,17 @@ end
 
 function MultiviewStage:bind()
   for _, ctx in ipairs(self._contexts) do
-    ctx.view:set(ctx)
+    ctx.view:bind()
   end
 end
 
-function MultiviewStage:set_views(views)
-if #views ~= self._num_views then truss.error("Wrong number of views!") end
-  for idx, view in ipairs(views) do
-    self._contexts[idx].view = view
+function MultiviewStage:bind_view_ids(view_ids)
+  if #view_ids ~= self._num_views then 
+    truss.error("Wrong number of views!") 
   end
-  self:bind()
+  for idx, view_id in ipairs(view_ids) do
+    self._contexts[idx].view:bind(view_id)
+  end
 end
 
 function MultiviewStage:add_render_op(op)

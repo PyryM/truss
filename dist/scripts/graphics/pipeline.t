@@ -48,17 +48,16 @@ function Pipeline:add_stage(stage, stage_name)
   table.insert(self._ordered_stages, stage)
   if stage_name then self.stages[stage_name] = stage end
   local nviews = stage:num_views() or 1
-  local views = {}
+  local view_ids = {}
   if self.verbose then
     log.debug("Giving stage [" .. tostring(stage) .. "] views " ..
               self._next_view .. " to " .. (self._next_view + nviews - 1))
   end
-  for i = 1,nviews do
-    local v = gfx.View(self._next_view)
-    views[i] = v
+  for i = 1, nviews do
+    view_ids[i] = self._next_view
     self._next_view = self._next_view + 1
   end
-  stage:set_views(views)
+  stage:bind_view_ids(view_ids)
   return stage
 end
 

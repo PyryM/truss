@@ -21,6 +21,11 @@ function Stage:init(options)
   self.stage_name = options.name or "Stage"
   self.options = options
   self._always_clear = options.always_clear
+  if options.view and options.view.bind then -- an actual gfx.View
+    self.view = options.view
+  else -- options.view is a table, or use options as the view options
+    self.view = gfx.View(options.view or options)
+  end
 end
 
 function Stage:__tostring()
@@ -32,12 +37,11 @@ function Stage:num_views()
 end
 
 function Stage:bind()
-  self.view:set(self.options)
+  self.view:bind()
 end
 
-function Stage:set_views(views)
-  self.view = views[1]
-  self:bind()
+function Stage:bind_view_ids(view_ids)
+  self.view:bind(view_ids[1])
 end
 
 function Stage:add_render_op(op)
