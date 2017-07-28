@@ -117,11 +117,12 @@ local function print_failure(task, msg)
 end
 
 function VRTrackableComponent:load_geo_to_component(target_comp_name)
-  target_comp_name = target_comp_name or "mesh_shader"
+  target_comp_name = target_comp_name or "mesh"
   local ent = self.ent
   local function on_load(task)
-    ent[target_comp_name].geo = task.geo
-    if ent.configure then ent:configure() end
+    local target_component = ent[target_comp_name]
+    target_component.geo = task.geo
+    if target_component.configure then target_component:configure() end
   end
   self:load_model(on_load, print_failure, false)
 end
