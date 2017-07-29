@@ -102,7 +102,7 @@ m.VRTrackableComponent = VRTrackableComponent
 
 function VRTrackableComponent:init(trackable)
   VRTrackableComponent.super.init(self)
-  self.mount_name = "trackable"
+  self.mount_name = "vr_trackable"
   self._trackable = trackable
 end
 
