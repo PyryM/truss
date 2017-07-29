@@ -6,6 +6,7 @@ local class = require("class")
 local math = require("math")
 local gfx = require("gfx")
 local sdl = require("addons/sdl.t")
+local sdl_input = require("input/sdl_input.t")
 local openvr = require("vr/openvr.t")
 local vrcomps = require("vr/components.t")
 
@@ -17,12 +18,16 @@ local m = {}
 local VRApp = class("VRApp")
 
 function VRApp:init(options)
+  local t0 = truss.tic()
   self.options = options or {}
   openvr.init()
+  log.info("up to openvr init: " .. tostring(truss.toc(t0) * 1000.0))
   local vw, vh = 800, 1280
   if openvr.available then
     vw, vh = openvr.get_target_size()
   end
+
+  self.stats = options.stats
 
   if self.options.width and self.options.width < 1.0 then
     self.window_width = self.options.width * vw
@@ -42,9 +47,11 @@ function VRApp:init(options)
 
   log.info("gfx init!")
   self:gfx_init()
+  log.info("up to bgfx init: " .. tostring(truss.toc(t0) * 1000.0))
 
   log.info("got this far3?")
   self:ecs_init()
+  log.info("up to ecs init: " .. tostring(truss.toc(t0) * 1000.0))
 end
 
 function VRApp:gfx_init()
@@ -53,7 +60,7 @@ function VRApp:gfx_init()
                     self.window_height or 800,
                     self.options.title or 'title')
   local gfx_opts = {msaa = true,
-                    debugtext = self.options.debugtext,
+                    debugtext = self.stats,
                     window = sdl,
                     lowlatency = true}
   gfx_opts.vsync = (not openvr.available) -- enable vsync if no openvr
@@ -110,11 +117,11 @@ function VRApp:init_pipeline()
   end
 
   local clear = {color = 0x303050ff, depth = 1.0}
-  local p = graphics.Pipeline({verbose = true}))
-  p:add_stage(graphics.MultiViewStage{
+  local p = graphics.Pipeline({verbose = true})
+  p:add_stage(graphics.MultiviewStage{
     name = "stereo_forward",
     globals = p.globals,
-    render_ops = {graphics.GenericRenderOp(), vrcomps.VRCameraControl()},
+    render_ops = {graphics.GenericRenderOp(), vrcomps.VRCameraControlOp()},
     views = {
       {name = "left",  clear = clear, render_target = self.targets[1]},
       {name = "right", clear = clear, render_target = self.targets[2]}
@@ -133,7 +140,7 @@ function VRApp:init_pipeline()
 end
 
 function VRApp:init_scene()
-  self.hmd_cam = ECS.scene:create_child(vrcomps.VRCamera, "hmd_camera")
+  self.hmd_cam = self.ECS.scene:create_child(vrcomps.VRCamera, "hmd_camera")
 end
 
 function VRApp:update()

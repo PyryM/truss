@@ -93,8 +93,8 @@ function VRSubmitSystem:update()
 end
 
 -- convenience function to create an entity with the vr camera component
-function m.VRCamera(ecs, name)
-  return ecs.Entity3d(ecs, name, VRCameraComponent())
+function m.VRCamera(_ecs, name)
+  return ecs.Entity3d(_ecs, name, VRCameraComponent())
 end
 
 local VRTrackableComponent = ecs.Component:extend("VRTrackableComponent")

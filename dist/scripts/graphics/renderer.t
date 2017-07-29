@@ -163,9 +163,9 @@ function MeshRenderComponent:init(geo, mat)
 end
 
 -- convenience function to create an Entity3d that just renders a mesh
-function m.Mesh(ecs, name, geo, mat)
+function m.Mesh(_ecs, name, geo, mat)
   local entity = require("ecs/entity.t")
-  return entity.Entity3d(ecs, name, MeshRenderComponent(geo, mat))
+  return entity.Entity3d(_ecs, name, MeshRenderComponent(geo, mat))
 end
 
 return m

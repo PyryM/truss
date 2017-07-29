@@ -120,8 +120,8 @@ end
 
 -- this is not actually a class, but just produces an Entity3d with a
 -- CameraComponent
-function m.Camera(ecs, options)
-  local ret = Entity3d(ecs, options.name)
+function m.Camera(_ecs, options)
+  local ret = Entity3d(_ecs, options.name)
   local cam_component = ret:add_component(CameraComponent(options.tag))
   cam_component:make_projection(options.fov or 70,
                                 options.aspect or 1.0,

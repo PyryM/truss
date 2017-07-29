@@ -19,7 +19,7 @@ local flat = require("shaders/flat.t")
 
 function init()
   app = VRApp({title = "vr fov testing", nvg = false,
-               mirror = "both", debugtext = true})
+               mirror = "both", stats = true})
   create_scene(app.ECS.scene)
   openvr.on("trackable_connected", add_trackable)
 end

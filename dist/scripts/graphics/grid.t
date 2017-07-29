@@ -77,14 +77,14 @@ function m.grid_segments(options)
   return lines, npts
 end
 
-function m.Grid(ecs, options)
+function m.Grid(_ecs, options)
   local pts, npts = m.grid_segments(options)
   local entity = require("ecs/entity.t")
   local line_comp = line.LineRenderComponent({maxpoints = npts})
   line_comp:set_points(pts)
   if options.color then line_comp.mat.uniforms.u_color:set(options.color) end
   if options.thickness then line_comp.mat.uniforms.u_thickness:set({options.thickness}) end
-  return entity.Entity3d(ecs, options.name or "grid", line_comp)
+  return entity.Entity3d(_ecs, options.name or "grid", line_comp)
 end
 
 return m

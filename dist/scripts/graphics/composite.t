@@ -24,6 +24,12 @@ function CompositeStage:init(options)
   for k,v in pairs(options.composite_ops or options.ops or {}) do
     self:add_composite_operation(k, v)
   end
+  -- TODO: factor this out/into Stage
+  if options.view and options.view.bind then -- an actual gfx.View
+    self.view = options.view
+  else -- options.view is a table, or use options as the view options
+    self.view = gfx.View(options.view or options)
+  end
 end
 
 function CompositeStage:create_default_material(shader)
