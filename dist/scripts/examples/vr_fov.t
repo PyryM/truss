@@ -72,7 +72,7 @@ end
 
 -- adds the controller model in
 function add_trackable_model(trackable)
-  local geo = icosphere.icosphere_geo(0.1, 3, "cico")
+  local geo = geometry.icosphere_geo(0.1, 3, "cico")
   local mat = pbr.FacetedPBRMaterial({0.03,0.03,0.03,1.0},
                                      {0.001, 0.001, 0.001}, 0.7)
   local controller = app.ECS.scene:create_child(graphics.Mesh, "controller", geo, mat)
