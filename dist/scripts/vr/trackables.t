@@ -141,6 +141,14 @@ function Trackable:get_prop(propname)
   return p.getter_func(self.device_idx, p.prop_id)
 end
 
+function Trackable:get_parts()
+  if not self.parts then
+    local modelloader = require("vr/modelloader.t")
+    self.parts = modelloader.enumerate_parts(self)
+  end
+  return self.parts
+end
+
 function Trackable:load_model(on_load, on_fail, load_textures)
   local modelloader = require("vr/modelloader.t")
   modelloader.load_device_model(self, on_load, on_fail, load_textures)

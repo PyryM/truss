@@ -133,6 +133,43 @@ function m._dispatch_success(task)
   end
 end
 
+m.string_buff_size = 512 -- maybe needs to be larger???
+m.string_buff = terralib.new(int8[m.string_buff_size])
+
+function m.enumerate_parts(trackable)
+  if not trackable.device_idx then return nil end
+  local base_model_name = trackable:get_prop("RenderModelName")
+  log.info("Base model: " .. base_model_name)
+  local n_parts = openvr_c.tr_ovw_GetComponentCount(m.rendermodelsptr, base_model_name)
+  log.info("num parts: " .. n_parts)
+  local parts = {}
+  for i = 1, n_parts do
+    local retlen = openvr_c.tr_ovw_GetComponentName(m.rendermodelsptr, 
+                                            base_model_name, i - 1, 
+                                            m.string_buff, m.string_buff_size)
+    if retlen > 0 then
+      local part_name = ffi.string(m.string_buff, retlen-1) -- strip /0 term
+      local part_button_mask = openvr_c.tr_ovw_GetComponentButtonMask(m.rendermodelsptr,
+                                              base_model_name, part_name)
+      retlen = openvr_c.tr_ovw_GetComponentRenderModelName(m.rendermodelsptr, 
+                                              base_model_name, part_name, 
+                                              m.string_buff, m.string_buff_size)
+      local part_model_name = nil
+      if retlen > 0 then
+        part_model_name = ffi.string(m.string_buff, retlen-1) -- strip /0 term
+      end
+      parts[part_name] = {
+        name = part_name,
+        button_mask = part_button_mask,
+        model_name = part_model_name
+      }
+    else
+      log.info("Component " .. base_model_name .. ":" .. (i-1) .. " has no name?")
+    end
+  end
+  return parts
+end
+
 function m.load_device_model(trackable, cb_success, cb_fail, load_textures)
   if trackable.device_idx == nil then
     log.error("Nil device index???")
