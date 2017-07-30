@@ -7,6 +7,7 @@ local openvr = nil
 local class = require("class")
 local math = require("math")
 local const = require("vr/constants.t")
+local modelloader = nil
 
 function m.init(parent_openvr)
   openvr = parent_openvr
@@ -141,16 +142,8 @@ function Trackable:get_prop(propname)
   return p.getter_func(self.device_idx, p.prop_id)
 end
 
-function Trackable:get_parts()
-  if not self.parts then
-    local modelloader = require("vr/modelloader.t")
-    self.parts = modelloader.enumerate_parts(self)
-  end
-  return self.parts
-end
-
 function Trackable:load_model(on_load, on_fail, load_textures)
-  local modelloader = require("vr/modelloader.t")
+  modelloader = modelloader or require("vr/modelloader.t")
   modelloader.load_device_model(self, on_load, on_fail, load_textures)
 end
 
@@ -255,6 +248,7 @@ function Controller:update(src)
   local statesize = self.statesize
   openvr_c.tr_ovw_GetControllerState(openvr.sysptr, self.device_idx, rawstate,
                                      statesize)
+  if self.parts then self:update_parts() end
 
   for bname, bmask in pairs(self._buttons) do
     local v = 0 -- 0 = none, 1 = touched, 2 = pressed, 3 = touched+pressed
@@ -269,6 +263,33 @@ function Controller:update(src)
   end
 
   self._has_vibrated = false
+end
+
+function Controller:get_parts()
+  if not self.parts then
+    modelloader = modelloader or require("vr/modelloader.t")
+    self.parts = modelloader.enumerate_parts(self)
+  end
+  return self.parts
+end
+
+function Controller:load_part_model(partname, on_load, on_fail, load_textures)
+  modelloader = modelloader or require("vr/modelloader.t")
+  local part = self.parts[partname]
+  if not part then
+    truss.error("Part " .. tostring(partname) .. " does not exist.")
+    return nil
+  end
+  modelloader.load_part_model(self, part, on_load, on_fail, load_textures)
+end
+
+function Controller:update_parts()
+  modelloader = modelloader or require("vr/modelloader.t")
+  for partname, part in pairs(self.parts) do
+    if not part.static then -- only update non-static parts
+      modelloader.get_part_pose(self.rawstate, part) 
+    end 
+  end
 end
 
 return m

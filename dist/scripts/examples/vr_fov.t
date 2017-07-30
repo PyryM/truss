@@ -75,7 +75,11 @@ function add_trackable_model(trackable)
   local geo = geometry.icosphere_geo(0.1, 3, "cico")
   local mat = pbr.FacetedPBRMaterial({0.03,0.03,0.03,1.0},
                                      {0.001, 0.001, 0.001}, 0.7)
-  local controller = app.ECS.scene:create_child(graphics.Mesh, "controller", geo, mat)
-  controller:add_component(vrcomps.VRTrackableComponent(trackable))
-  controller.vr_trackable:load_geo_to_component("mesh")
+  
+  local controller = app.ECS.scene:create_child(ecs.Entity3d, "controller")
+  controller:add_component(vrcomps.VRControllerComponent(trackable))
+  controller.vr_controller:create_mesh_parts(geo, mat)
+
+  --local controller = app.ECS.scene:create_child(graphics.Mesh, "controller", geo, mat)
+  -- controller.vr_trackable:load_geo_to_component("mesh")
 end

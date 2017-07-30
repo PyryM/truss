@@ -145,10 +145,64 @@ function VRControllerComponent:init(trackable)
   self.mount_name = "vr_controller"
 end
 
+function VRControllerComponent:create_parts()
+  local raw_parts = self._trackable:get_parts()
+  self.parts = {}
+  self._dynamic_parts = {}
+  for partname, part in pairs(raw_parts) do
+    self.parts[partname] = self.ent:create_child(ecs.Entity3d, partname)
+    self._dynamic_parts[partname] = self.parts[partname]
+  end
+  return self.parts
+end
+
+function VRControllerComponent:create_mesh_parts(default_geo, default_mat)
+  local part_entities = self:create_parts()
+  for pname, pent in pairs(part_entities) do
+    if self._trackable.parts[pname].model_name then --not all parts have models
+      pent:add_component(graphics.MeshRenderComponent(default_geo, default_mat))
+      self:load_part_geo_to_component(pname, "mesh")
+    end
+  end
+end
+
+function VRControllerComponent:_update_parts()
+  for partname, part_entity in pairs(self._dynamic_parts) do
+    local p_src = self._trackable.parts[partname]
+    if p_src then
+      part_entity.matrix:copy(p_src.pose)
+      if part_entity.mesh then 
+        part_entity.mesh.visible = p_src.visible 
+      end
+      if p_src.static then
+        self._dynamic_parts[partname] = nil
+      end
+    end
+  end
+end
+
+function VRControllerComponent:load_part_geo_to_component(partname, target_comp_name)
+  target_comp_name = target_comp_name or "mesh"
+  local ent = self.parts[partname]
+  local function on_load(task)
+    local target_component = ent[target_comp_name]
+    target_component.geo = task.geo
+    if target_component.configure then target_component:configure() end
+  end
+  self:load_part_model(partname, on_load, print_failure, false)
+end
+
+function VRControllerComponent:load_part_model(partname, on_load, on_fail, load_textures)
+  self._trackable:load_part_model(partname, on_load, on_fail, load_textures)
+end
+
 function VRControllerComponent:preupdate()
   self.axes = self._trackable.axes
   self.buttons = self._trackable.buttons
   self.ent.matrix:copy(self._trackable.pose)
+  if self.parts and self._trackable.parts then
+    self:_update_parts()
+  end
 end
 
 return m
