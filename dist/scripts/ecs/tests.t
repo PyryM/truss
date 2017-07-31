@@ -74,10 +74,20 @@ local function test_events(t)
   function Foo:update(evtname, evt)
     self.was_called = true
   end
+  function Foo:update2(evtname, evt)
+    self.update2_called = true
+  end
   local myfoo = Foo()
-  evt:on("mupdate", myfoo, myfoo.update)
+  local myfoo2 = Foo()
+  -- GOTCHA: if the same receiver is bound twice for the same event,
+  --         then the second binding replaces the first
+  evt:on("mupdate", myfoo, myfoo.update2) -- this should not get called
+  evt:on("mupdate", myfoo, myfoo.update)  -- this replaces the above
+  evt:on("mupdate", myfoo2, myfoo2.update) -- different receiver
   evt:emit("mupdate")
   t.ok(myfoo.was_called, "class :update was called")
+  t.ok(not myfoo.update2_called, "replaced callback not called")
+  t.ok(myfoo2.was_called, "same function w/ 2 receivers was called")
 end
 
 local function test_systems(t)
@@ -97,13 +107,19 @@ local function test_systems(t)
     self:wake() -- should this happen automatically?
   end
   function FooComp:update1()
-    table.insert(self.call_order, 1)
+    table.insert(self.call_order, 1)     
   end
   function FooComp:update2()
     table.insert(self.call_order, 2)
+    if self.destroy_on_update then 
+      self.ent:destroy()
+    end
   end
   function FooComp:update3()
     table.insert(self.call_order, 3)
+  end
+  function FooComp:mark_for_destroy()
+    self.destroy_on_update = true
   end
 
   local e = ECS:create(ecs.Entity3d)
@@ -150,6 +166,16 @@ local function test_systems(t)
   t.ok(#(f.call_order) == 0, "Destroyed entity's component not updated.")
   t.ok(f._dead, "Destroyed entity's component is marked dead.")
   t.ok(not e:is_in_subtree(ECS.scene), "Destroyed entity not in scene.")
+
+  -- test :destroy during a system update
+  local e4 = ECS.scene:create_child(ecs.Entity3d)
+  local f4 = e4:add_component(FooComp())
+  f4:mark_for_destroy()
+  ECS:update()
+  t.ok(t.eq(f4.call_order, {1, 2}), "Updates after destroy don't happen")
+  t.ok(f4._dead, "Component is dead")
+  t.ok(e4._dead, "Entity is dead")
+  t.ok(not e4:is_in_subtree(ECS.scene), "Destroyed entity not in scene.")
 end
 
 local function test_scenegraph(t)
