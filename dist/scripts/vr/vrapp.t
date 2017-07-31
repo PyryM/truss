@@ -52,6 +52,10 @@ function VRApp:init(options)
   log.info("got this far3?")
   self:ecs_init()
   log.info("up to ecs init: " .. tostring(truss.toc(t0) * 1000.0))
+
+  if options.create_controllers then
+    self:create_default_controllers()
+  end
 end
 
 function VRApp:gfx_init()
@@ -141,6 +145,29 @@ end
 
 function VRApp:init_scene()
   self.hmd_cam = self.ECS.scene:create_child(vrcomps.VRCamera, "hmd_camera")
+end
+
+function VRApp:create_default_controllers()
+  openvr.on("trackable_connected", function(trackable)
+    self:add_controller_model(trackable)
+  end)
+end
+
+function VRApp:add_controller_model(trackable)
+  if trackable.device_class_name ~= "Controller" then
+    return
+  end
+
+  local geometry = require("geometry")
+  local pbr = require("shaders/pbr.t")
+  local geo = geometry.icosphere_geo(0.1, 3, "cico")
+  local mat = pbr.FacetedPBRMaterial({0.03,0.03,0.03,1.0},
+                                     {0.001, 0.001, 0.001}, 0.7)
+  
+  local controller = self.ECS.scene:create_child(ecs.Entity3d, 
+                                                 "controller")
+  controller:add_component(vrcomps.VRControllerComponent(trackable))
+  controller.vr_controller:create_mesh_parts(geo, mat)
 end
 
 function VRApp:update()

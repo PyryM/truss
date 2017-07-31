@@ -19,9 +19,9 @@ local flat = require("shaders/flat.t")
 
 function init()
   app = VRApp({title = "vr fov testing", nvg = false,
-               mirror = "both", stats = true})
+               mirror = "both", stats = true, 
+               create_controllers = true})
   create_scene(app.ECS.scene)
-  openvr.on("trackable_connected", add_trackable)
 end
 
 function update()
@@ -29,13 +29,6 @@ function update()
   if not debug_printed then
     openvr.print_debug_info()
     debug_printed = true
-  end
-end
-
-function add_trackable(trackable)
-  local device_class = trackable.device_class_name
-  if device_class == "Controller" then
-    add_trackable_model(trackable)
   end
 end
 
@@ -68,18 +61,4 @@ function create_scene(root)
   target.position:set(0.0, 1.0, 0.0)
   target.quaternion:euler({x = 0.0, y = math.pi, z = 0.0})
   target:update_matrix()
-end
-
--- adds the controller model in
-function add_trackable_model(trackable)
-  local geo = geometry.icosphere_geo(0.1, 3, "cico")
-  local mat = pbr.FacetedPBRMaterial({0.03,0.03,0.03,1.0},
-                                     {0.001, 0.001, 0.001}, 0.7)
-  
-  local controller = app.ECS.scene:create_child(ecs.Entity3d, "controller")
-  controller:add_component(vrcomps.VRControllerComponent(trackable))
-  controller.vr_controller:create_mesh_parts(geo, mat)
-
-  --local controller = app.ECS.scene:create_child(graphics.Mesh, "controller", geo, mat)
-  -- controller.vr_trackable:load_geo_to_component("mesh")
 end
