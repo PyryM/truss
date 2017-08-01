@@ -120,9 +120,7 @@ function VRTrackableComponent:load_geo_to_component(target_comp_name)
   target_comp_name = target_comp_name or "mesh"
   local ent = self.ent
   local function on_load(task)
-    local target_component = ent[target_comp_name]
-    target_component.geo = task.geo
-    if target_component.configure then target_component:configure() end
+    ent[target_comp_name]:set_geometry(task.geo)
   end
   self:load_model(on_load, print_failure, false)
 end
@@ -185,9 +183,7 @@ function VRControllerComponent:load_part_geo_to_component(partname, target_comp_
   target_comp_name = target_comp_name or "mesh"
   local ent = self.parts[partname]
   local function on_load(task)
-    local target_component = ent[target_comp_name]
-    target_component.geo = task.geo
-    if target_component.configure then target_component:configure() end
+    ent[target_comp_name]:set_geometry(task.geo)
   end
   self:load_part_model(partname, on_load, print_failure, false)
 end

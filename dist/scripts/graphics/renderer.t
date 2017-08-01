@@ -139,14 +139,16 @@ end
 function RenderComponent:configure()
   local render = self.ecs.systems.render
   if not render then
-    log.warn("No 'render' system present in ecs!")
+    truss.error("No 'render' system present in ecs!")
     return
   end
   self._render_ops = render:match_render_ops(self)
+  self._needs_configure = false
 end
 
 function RenderComponent:render()
   if self.visible == false then return end
+  if self._needs_configure then self:configure() end
   for _, op in ipairs(self._render_ops) do
     op(self)
   end
@@ -160,6 +162,18 @@ function MeshRenderComponent:init(geo, mat)
   self.mat = mat
   self._render_ops = {}
   self.mount_name = "mesh"
+end
+
+function MeshRenderComponent:set_geometry(geo)
+  if not geo then truss.error("No geo provided to set_geometry!") end
+  self.geo = geo
+  self._needs_configure = true
+end
+
+function MeshRenderComponent:set_material(mat)
+  if not mat then truss.error("No mat provided to set_material!") end
+  self.mat = mat
+  self._needs_configure = true
 end
 
 -- convenience function to create an Entity3d that just renders a mesh
