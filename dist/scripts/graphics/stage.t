@@ -18,7 +18,7 @@ function Stage:init(options)
   self.filter = options.filter
   self.globals = options.globals or {}
   self._exclusive = options.exclusive
-  self.stage_name = options.name or "Stage"
+  self.stage_name = options.name or options.stage_name or "Stage"
   self.options = options
   self._always_clear = options.always_clear
   self.view = self:_create_view(options.view, options)

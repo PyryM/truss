@@ -21,6 +21,7 @@ end
 function RenderSystem:set_pipeline(p)
   self._pipeline = p
   self._pipeline:bind()
+  self.pipeline = p
   self:call_on_components("configure")
   return self
 end
