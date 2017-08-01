@@ -16,6 +16,7 @@ function View:init(options)
   self._clear = {color = 0x303030ff, depth = 1.0}
   self._projmat = math.Matrix4():identity()
   self._viewmat = math.Matrix4():identity()
+  self._sequential = false
   self.props = options.props or options
   self.name = options.name or "View"
   self:set(options)
@@ -26,6 +27,7 @@ function View:set(options)
   self:set_matrices(options.view_matrix, options.proj_matrix)
   self:set_viewport(options.viewport)
   self:set_clear(options.clear)
+  self:set_sequential(options.sequential)
   return self
 end
 
@@ -103,12 +105,23 @@ function View:apply_render_target()
   bgfx.set_view_frame_buffer(self._viewid, tgt.framebuffer)
 end
 
+function View:set_sequential(s)
+  if s ~= nil then self._sequential = s end
+  self:apply_sequential()
+end
+
+function View:apply_sequential()
+  if (not self._viewid) or (self._viewid < 0) then return end
+  bgfx.set_view_seq(self._viewid, self._sequential)
+end
+
 function View:apply_all()
   if (not self._viewid) or (self._viewid < 0) then return end
   self:apply_matrices()
   self:apply_clear()
   self:apply_render_target()
   self:apply_viewport()
+  self:apply_sequential()
 end
 
 function View:get_dimensions()

@@ -27,12 +27,22 @@ local nvg_statics = {
 local NVGContext = class("NVGContext")
 m.NVGContext = NVGContext
 
-function NVGContext:init(viewid, edgeaa)
-  self._ctx = nvg_c_funcs.Create((edgeaa and 1) or 0, viewid)
+function NVGContext:init(view, edgeaa)
+  self._viewid = (view and view._viewid) or 0
+  self._ctx = nvg_c_funcs.Create((edgeaa and 1) or 0, self._viewid)
   self._fonts = {}
   self._font_aliases = {}
+  if view then view:set_sequential(true) end
 
   self.resources = {} -- a public table to hold context-bound resources (images)
+end
+
+function NVGContext:set_view(view)
+  self:assert_valid()
+  if (not view) or (view._viewid == self._viewid) then return end
+  self._viewid = view._viewid
+  nvg_c_funcs.ViewId(self._ctx, self._viewid)
+  view:set_sequential(true)
 end
 
 function NVGContext:assert_valid()
