@@ -21,10 +21,14 @@ function Stage:init(options)
   self.stage_name = options.name or "Stage"
   self.options = options
   self._always_clear = options.always_clear
-  if options.view and options.view.bind then -- an actual gfx.View
-    self.view = options.view
-  else -- options.view is a table, or use options as the view options
-    self.view = gfx.View(options.view or options)
+  self.view = self:_create_view(options.view, options)
+end
+
+function Stage:_create_view(v, default)
+  if v and v.bind then -- an actual gfx.View
+    return v
+  else -- a table
+    return gfx.View(v or default)
   end
 end
 

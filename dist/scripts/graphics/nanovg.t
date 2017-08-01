@@ -4,32 +4,36 @@
 
 local gfx = require("gfx")
 local math = require("math")
-local pipeline = require("graphics/pipeline.t")
-local entity = require("ecs/entity.t")
+local ecs = require("ecs")
+local stage = require("graphics/stage.t")
+local renderer = require("graphics/renderer.t")
 local nanovg = require("addons/nanovg.t")
 local m = {}
 
-local NanoVGStage = pipeline.Stage:extend("NanoVGStage")
+local NanoVGStage = stage.Stage:extend("NanoVGStage")
 m.NanoVGStage = NanoVGStage
 
-function NanoVGStage:init(options, ops)
+function NanoVGStage:init(options)
   options = options or {}
   self.options = options
-  self.num_views = 1
-  self.enabled = true
+  self._num_views = 1
   self.filter = options.filter
   self.globals = options or {}
   self._render_ops = {self} -- the stage itself acts as a renderop
-  for _, op in ipairs(ops or {}) do self:add_render_op(op) end
 
   if options.draw then self.nvg_draw = options.draw end
   if options.setup then self.nvg_setup = options.setup end
+
+  self.view = self:_create_view(options.view, options)
 end
 
-function NanoVGStage:set_views(views)
-  NanoVGStage.super.set_views(self, views)
-  self._ctx = nanovg.NVGContext(self.view._viewid, self.options.edge_aa)
-  bgfx.set_view_seq(self.view._viewid, true)
+function NanoVGStage:bind_view_ids(view_ids)
+  NanoVGStage.super.bind_view_ids(self, view_ids)
+  if self._ctx then -- reuse existing context for fonts etc.
+    self._ctx:set_view(self.view)
+  else
+    self._ctx = nanovg.NVGContext(self.view, self.options.edge_aa)
+  end
   if self.nvg_setup then self:nvg_setup(self._ctx) end
 end
 
@@ -50,30 +54,28 @@ function NanoVGStage:matches(component)
   return component.nvg_draw ~= nil
 end
 
-function NanoVGStage:draw(component)
+function NanoVGStage:render(component)
   component:nvg_draw(self, self._ctx)
 end
 
-function NanoVGStage:set_stage(stage)
-  -- just need this for compatibility
+function NanoVGStage:to_function(context)
+  return function(component)
+    self:render(component)
+  end
 end
 -----------------------------------------------
 
-function NanoVGStage:duplicate()
-  truss.error("NanoVGStage does not implement duplicate.")
-end
+local NVGRenderComponent = renderer.RenderComponent:extend("NVGRenderComponent")
+m.NVGRenderComponent = NVGRenderComponent
 
-local NanoVGDrawable = pipeline.DrawableComponent:extend("NanoVGDrawable")
-m.NanoVGDrawable = NanoVGDrawable
-
-function NanoVGDrawable:init(draw_func)
+function NVGRenderComponent:init(draw_func)
   self.nvg_draw = draw_func
+  self._render_ops = {}
 end
-NanoVGDrawable.on_update = pipeline.DrawableComponent.draw
 
 function m.NanoVGEntity(name, draw_func)
   local ret = entity.Entity3d(name)
-  ret:add_component(NanoVGDrawable(draw_func))
+  ret:add_component(NVGRenderComponent(draw_func))
   return ret
 end
 
