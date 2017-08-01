@@ -60,4 +60,13 @@ function CompositeStage:update_begin()
   end
 end
 
+-- convenience function to create a stage that composites the entire screen
+-- e.g., for postprocessing effects
+function m.FullscreenStage(options)
+  options = options or {}
+  options.ops = {fullscreen = {x0 = 0, y0 = 0, x1 = 1, y1 = 1,
+                               source = options.input}}
+  return CompositeStage(options)
+end
+
 return m
