@@ -30,7 +30,7 @@ function App:init(options)
   end
 
   self:init_ecs()
-  self:init_pipeline()
+  self:init_pipeline(options)
   self:init_scene()
 end
 
@@ -53,7 +53,7 @@ end
 
 -- this creates a basic forward pbr pipeline; if you want something fancier,
 -- feel free to override this
-function App:init_pipeline()
+function App:init_pipeline(options)
   local Vector = math.Vector
   local pbr = require("shaders/pbr.t")
   local p = graphics.Pipeline({verbose = true})
@@ -74,6 +74,14 @@ function App:init_pipeline()
       Vector(1.0, 1.0, 1.0),
       Vector(0.1, 0.1, 0.1),
       Vector(0.1, 0.1, 0.1)})
+  if options.nvg_render or options.use_nvg then
+    self.nvg_stage = p:add_stage(graphics.NanoVGStage{
+      name = "nanovg",
+      clear = false,
+      setup = options.nvg_setup,
+      render = options.nvg_render
+    })
+  end
 
   self.pipeline = p
   self.ECS.systems.render:set_pipeline(p)

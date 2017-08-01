@@ -33,7 +33,7 @@ function ECS:_get_unique_name(ent)
 end
 
 function ECS:create(entity_constructor, ...)
-  entity_constructor = entity_constructor or entity.Entity3d
+  if not entity_constructor then truss.error("No constructor given!") end
   local ret = entity_constructor(self, ...)
   self.entities[ret.unique_name] = ret
   return ret

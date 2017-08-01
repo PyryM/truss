@@ -13,7 +13,8 @@ moduleutils.include_submodules({
   "graphics/renderer.t",
   "graphics/camera.t",
   "graphics/material.t",
-  "graphics/framestats.t"
+  "graphics/framestats.t",
+  "graphics/line.t"
 }, graphics)
 
 return graphics

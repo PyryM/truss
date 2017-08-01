@@ -1,77 +1,47 @@
-local class = require("class")
+local app = require("app/app.t")
 local gfx = require("gfx")
-local ecs = require("ecs/ecs.t")
-local component = require("ecs/component.t")
-local entity = require("ecs/entity.t")
-local sdl_input = require("ecs/sdl_input.t")
-local sdl = require("addons/sdl.t")
+local ecs = require("ecs")
 local math = require("math")
-local pipeline = require("graphics/pipeline.t")
-local framestats = require("graphics/framestats.t")
-local line = require("graphics/line.t")
-local grid = require("graphics/grid.t")
+local graphics = require("graphics")
 
-local camera = require("graphics/camera.t")
+local grid = require("graphics/grid.t")
 local orbitcam = require("gui/orbitcam.t")
 
-width = 800
-height = 600
-
 function init()
-  -- basic init
-  sdl.create_window(width, height, 'keyboard events')
-  gfx.init_gfx({msaa = true, debugtext = true, window = sdl})
+  -- app/ecs setup
+  myapp = app.App{title = "line example", width = 1280, height = 720,
+                  msaa = true, stats = true, clear_color = 0x404080ff,
+                  lowlatency = true}
+  myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 2, max_rad = 5}))
 
-  -- create ecs
-  ECS = ecs.ECS()
-  ECS:add_system(sdl_input.SDLInputSystem())
-  local p = ECS:add_system(pipeline.Pipeline({verbose = true}))
-  p:add_stage(pipeline.Stage({
-    name = "solid_geo",
-    clear = {color = 0x303050ff, depth = 1.0},
-  }, {pipeline.GenericRenderOp(), camera.CameraControlOp()}))
+  -- scene setup
+  local mygrid = myapp.scene:create_child(grid.Grid, {thickness = 0.01, 
+                                                     color = {0.5, 0.2, 0.2}})
+  mygrid.position:set(0.0, -1.0, 0.0)
+  mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
+  mygrid:update_matrix()
 
-  ECS:add_system(framestats.DebugTextStats())
-
-  ECS.scene:add_component(sdl_input.SDLInputComponent())
-  ECS.scene:on("keydown", function(entity, evt)
-    local keyname = ffi.string(evt.keycode)
-    if keyname == "F12" then
-      print("Saving screenshot!")
-      gfx.save_screenshot("screenshot.png")
-    end
-  end)
-
-  local cam = camera.Camera({fov = 65, aspect = width/height})
-  cam:add_component(sdl_input.SDLInputComponent())
-  cam:add_component(orbitcam.OrbitControl({min_rad = 1.0, max_rad = 15.0}))
-  ECS.scene:add(cam)
-
-  -- create the scene
-  lineobj = create_line()
-  ECS.scene:add(lineobj)
-
-  local thegrid = grid.Grid({numlines = 0, numcircles = 20, spacing = 1.0,
-                             color = {0.8, 0.8, 0.8}, thickness = 0.03})
-  thegrid.position:set(0.0, -5.0, 0.0)
-  thegrid.quaternion:euler({x= -math.pi / 2.0, y=0, z=0}, 'ZYX')
-  thegrid:update_matrix()
-  ECS.scene:add(thegrid)
+  local linething = create_line(myapp.scene)
+  linething.scale:set(0.2, 0.2, 0.2)
+  linething:update_matrix()
 end
 
 function update()
-  -- update ecs
-  ECS:update()
+  myapp:update()
 end
 
-local Twiddler = component.Component:extend("Twidder")
+local Twiddler = ecs.Component:extend("Twiddler")
 function Twiddler:init(idata, ldata)
   self.idata, self.ldata = idata, ldata
-  self.mount_name = "twiddler"
+  self.mount_name = "line_twiddler"
 end
 
-local htime = 0.0
-local function hfield(x, y, z)
+function Twiddler:mount()
+  self:add_to_systems({"update"})
+  self:wake()
+end
+
+local function hfield(htime, x, y, z)
   --local mult = 1.0 + math.tanh((math.tan(x + y * 3.0 + time)*0.5)*0.1)
   --mult = math.max(-5.0, math.min(5.0, mult))
   local mult = math.sin(y*1.1 + htime)*0.1*math.cos(x + htime) + math.cos(z + htime)*0.1
@@ -79,26 +49,21 @@ local function hfield(x, y, z)
   return x*mult, y*mult, z*mult
 end
 
-function Twiddler:on_update()
-  htime = htime + 1.0/60.0
-
-  local linecomp = self._entity.line_shader
-  if not linecomp.dynamic then return end
+function Twiddler:update()
+  --print("update?")
+  self.htime = (self.htime or 0.0) + 1.0/60.0
+  local htime = self.htime
   local idata = self.idata
   for i,v in ipairs(self.ldata) do
     local v2 = idata[i]
-    v[1], v[2], v[3] = hfield(v2[1], v2[2], v2[3])
+    v[1], v[2], v[3] = hfield(htime, v2[1], v2[2], v2[3])
   end
-
-  linecomp:set_points({self.ldata})
+  self.ent.line:set_points({self.ldata})
 end
 
-
--- actually creates the cube structure
-function create_line()
+-- actually creates the line structure
+function create_line(parent)
   local npoints = 5000
-
-  local linecomp = line.LineShaderComponent({maxpoints = npoints, dynamic = true})
   local f = 50 * math.pi * 2.0
 
   local initial_data = {}
@@ -116,12 +81,10 @@ function create_line()
     initial_data[i] = {x,z,y}
   end
 
-  linecomp:set_points({linedata})
-  linecomp.mat.uniforms.u_color:set({0.8,0.3,0.3})
-  linecomp.mat.uniforms.u_thickness:set({0.05})
-
-  local ret = entity.Entity3d("line")
-  ret:add_component(linecomp)
+  local ret = parent:create_child(graphics.Line, "line", {
+    maxpoints = npoints, dynamic = true, points = {linedata},
+    color = {0.8,0.8,0.8}, thickness = 0.01
+  })
   ret:add_component(Twiddler(initial_data, linedata))
 
   return ret

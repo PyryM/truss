@@ -65,6 +65,9 @@ function View:apply_viewport()
 end
 
 function View:set_clear(clear)
+  if clear == false then 
+    clear = {color = false, depth = false, stencil = false}
+  end
   self._clear = clear or self._clear
   self:apply_clear()
 end

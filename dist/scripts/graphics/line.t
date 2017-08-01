@@ -58,7 +58,8 @@ function LineRenderComponent:init(options)
   end
   self.dynamic = not not opts.dynamic -- coerce to boolean
   self.geo = self:_create_buffers()
-  self.mat = self:_create_material(opts.state, opts.uniforms, opts.program)
+  self.mat = self:_create_material(opts)
+  if opts.points then self:set_points(opts.points) end
 end
 
 local function pack_v3(dest, arr)
@@ -125,17 +126,24 @@ function LineRenderComponent:_create_buffers()
 end
 
 local line_uniforms = nil
-function LineRenderComponent:_create_material(state, uniforms, pgm)
+function LineRenderComponent:_create_material(options)
   if line_uniforms == nil then
     line_uniforms = gfx.UniformSet{gfx.VecUniform("u_color"),
                                    gfx.VecUniform("u_thickness")}
   end
 
-  local mat = Material{
-    state = state or gfx.create_state(),
-    uniforms = uniforms or line_uniforms:clone(),
-    program = pgm or gfx.load_program("vs_line", "fs_line")
+  local mat = options.material or Material{
+    state = options.state or gfx.create_state(),
+    uniforms = options.uniforms or line_uniforms:clone(),
+    program = options.program or gfx.load_program("vs_line", "fs_line")
   }
+
+  if options.color then
+    mat.uniforms.u_color:set(options.color)
+  end
+  if options.thickness then
+    mat.uniforms.u_thickness:set({options.thickness})
+  end
 
   return mat
 end
@@ -166,6 +174,11 @@ function LineRenderComponent:set_points(lines)
   end
 
   if self.dynamic then self.geo:update() else self.geo:commit() end
+end
+
+function m.Line(_ecs, name, options)
+  local ecs = require("ecs")
+  return ecs.Entity3d(_ecs, name, LineRenderComponent(options))
 end
 
 return m

@@ -419,6 +419,7 @@ function m.fallback_update()
   local gfx = require('gfx')
   if not gfx.renderer_name then
     log.info("No graphics initted, no choice but to quit.")
+    log.info(truss.error_trace)
     truss.quit()
     return
   end
