@@ -88,6 +88,10 @@ local function test_events(t)
   t.ok(myfoo.was_called, "class :update was called")
   t.ok(not myfoo.update2_called, "replaced callback not called")
   t.ok(myfoo2.was_called, "same function w/ 2 receivers was called")
+  myfoo.was_called = false
+  evt:on("mupdate", myfoo, false) -- this should clear the callback
+  evt:emit("mupdate")
+  t.ok(not myfoo.was_called, ":on(evt, recv, false) clears callback")
 end
 
 local function test_systems(t)
@@ -126,7 +130,7 @@ local function test_systems(t)
   local f = e:add_component(FooComp())
   local f2 = e:add_component(FooComp(), "bar")
   t.ok(ECS.systems.update1:num_components() == 2, "Sys should have 2 components")
-  local e2 = e:create_child()
+  local e2 = e:create_child(ecs.Entity)
   local f3 = e2:add_component(FooComp())
   ECS:update()
   ECS:update()

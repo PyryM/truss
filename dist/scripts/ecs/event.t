@@ -36,6 +36,12 @@ function EventEmitter:emit(evtname, evt)
 end
 
 function EventEmitter:on(evtname, receiver, callback)
+  if not receiver then truss.error("nil receiver!") end
+  if callback == nil then 
+    truss.error("nil callback! (use false to remove)")
+  elseif callback == false then
+    return self:remove(evtname, receiver)
+  end
   if not self._listeners[evtname] then
     self._listeners[evtname] = create_weak_table()
   end
