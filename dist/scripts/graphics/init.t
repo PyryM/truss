@@ -14,7 +14,8 @@ moduleutils.include_submodules({
   "graphics/camera.t",
   "graphics/material.t",
   "graphics/framestats.t",
-  "graphics/line.t"
+  "graphics/line.t",
+  "graphics/nanovg.t"
 }, graphics)
 
 return graphics

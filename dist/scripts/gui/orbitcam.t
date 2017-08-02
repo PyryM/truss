@@ -99,7 +99,7 @@ end
 
 function OrbitControl:pan_orbit_point(dx, dy)
   self:_update_matrix()
-  local target = self._entity
+  local target = self.ent
   -- pan using basis vectors from rotation matrix
   -- Note that Matrix4:getColumn is 1-indexed
   local basisX = target.matrix:get_column(1)
