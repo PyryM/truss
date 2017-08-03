@@ -113,21 +113,21 @@ end
 
 -- load just the raw pixel data of a texture
 function m.load_texture_data(filename)
-	local temp = terralib.new(texture_data)
-	load_texture_data(filename, temp)
-	if temp.w <= 0 or temp.h <=0 or temp.n <= 0 then
-		log.error("couldn't load tex data: " .. temp.w .. " " .. temp.h .. " "
-				  .. temp.n)
-		truss.C.release_message(temp.data)
-		return nil
-	end
-	local dsize = temp.w*temp.h*temp.n
-	local ndata = terralib.new(uint8[temp.w*temp.h*temp.n])
-	for i = 0,dsize-1 do
-		ndata[i] = temp.data.data[i]
-	end
-	truss.C.release_message(temp.data)
-	return {w = temp.w, h = temp.h, n = temp.n, data = ndata}
+  local temp = terralib.new(texture_data)
+  load_texture_data(filename, temp)
+  if temp.w <= 0 or temp.h <=0 or temp.n <= 0 then
+    log.error("couldn't load tex data: " .. temp.w .. " " .. temp.h .. " "
+              .. temp.n)
+    truss.C.release_message(temp.data)
+    return nil
+  end
+  local dsize = temp.w*temp.h*temp.n
+  local ndata = terralib.new(uint8[temp.w*temp.h*temp.n])
+  for i = 0,dsize-1 do
+    ndata[i] = temp.data.data[i]
+  end
+  truss.C.release_message(temp.data)
+  return {w = temp.w, h = temp.h, n = temp.n, data = ndata}
 end
 
 local Texture = class("Texture")
