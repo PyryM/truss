@@ -24,7 +24,7 @@ end
 
 function m.FlatMaterial(options)
   local vs_name = "vs_flat"
-  local fs_name = "fs_flat"
+  local fs_name = "fs_flatsolid"
   if options.skybox then
     vs_name = "vs_flat_skybox"
   end
@@ -33,7 +33,7 @@ function m.FlatMaterial(options)
   end
 
   local mat = {
-    state = gfx.create_state(),
+    state = options.state or gfx.create_state(),
     program = gfx.load_program(vs_name, fs_name),
     uniforms = m.create_flat_uniforms(options.texture):clone()
   }

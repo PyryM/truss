@@ -125,6 +125,7 @@ function View:apply_all()
   self:apply_render_target()
   self:apply_viewport()
   self:apply_sequential()
+  return self
 end
 
 function View:get_dimensions()
@@ -139,10 +140,12 @@ end
 function View:bind(viewid)
   if viewid ~= nil then self._viewid = viewid end
   self:apply_all()
+  return self
 end
 
 function View:touch()
   bgfx.touch(self._viewid)
+  return self
 end
 
 return m

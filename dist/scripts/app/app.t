@@ -57,6 +57,9 @@ function App:init_pipeline(options)
   local Vector = math.Vector
   local pbr = require("shaders/pbr.t")
   local p = graphics.Pipeline({verbose = true})
+  if options.use_tasks ~= false then
+    p:add_stage(graphics.TaskRunnerStage{num_workers = 1})
+  end
   p:add_stage(graphics.Stage{
     name = "forward",
     clear = {color = self.clear_color or 0x000000ff, depth = 1.0},

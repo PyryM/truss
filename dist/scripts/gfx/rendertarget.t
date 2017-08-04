@@ -219,6 +219,9 @@ function RenderTarget:get_read_back_buffer(idx)
 end
 
 function RenderTarget:destroy()
+  -- TODO: maybe this should use gfx.schedule to avoid the
+  -- possibility of destroying this framebuffer when it's 
+  -- already been used in a submit this frame
   if self.framebuffer then
     bgfx.destroy_frame_buffer(self.framebuffer)
   end
@@ -226,6 +229,7 @@ function RenderTarget:destroy()
   self.attachments = nil
   self.cattachments = nil
   self.finalized = false
+  self.raw_tex = nil
 end
 
 m.RenderTarget = RenderTarget

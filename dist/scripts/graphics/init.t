@@ -15,7 +15,9 @@ moduleutils.include_submodules({
   "graphics/material.t",
   "graphics/framestats.t",
   "graphics/line.t",
-  "graphics/nanovg.t"
+  "graphics/nanovg.t",
+  "graphics/taskstage.t",
+  "graphics/canvas.t"
 }, graphics)
 
 return graphics

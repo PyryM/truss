@@ -181,6 +181,7 @@ function m.create_state(user_options)
 
   return state
 end
+m.State = m.create_state -- alias
 
 function m.invalid_handle(ttype)
   local ret = terralib.new(ttype)
