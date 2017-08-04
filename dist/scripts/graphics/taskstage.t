@@ -110,7 +110,8 @@ end
 
 function TaskSubmitter:finish_task(task)
   -- TODO: probably should be some bookkeeping here
-  log.debug("Finished task " .. tostring(task))
+  -- local common = require("gfx/common.t")
+  -- log.debug("Finished task " .. tostring(task) .. " on frame " .. common.frame_index)
 end
 
 function TaskSubmitter:render()

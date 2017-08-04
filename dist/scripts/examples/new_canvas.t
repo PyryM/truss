@@ -38,12 +38,11 @@ local label_geo = nil
 local function Label(ecs, name, options)
   options = options or {}
   if not label_geo then
-    label_geo = geometry.plane_geo(1.0, 0.5, 2, 2, "plane")
+    label_geo = geometry.plane_geo(1.0, 0.25, 2, 2, "plane")
   end
   local canvas = graphics.CanvasComponent{width = options.width or 256, 
-                                          height = options.height or 128}
-  if not canvas:get_target() then truss.error("no target?") end
-  local mat = flat.FlatMaterial{texture = canvas:get_target(),
+                                          height = options.height or 64}
+  local mat = flat.FlatMaterial{texture = canvas,
                                 state = gfx.State{cull = false}}
   local ret = graphics.Mesh(ecs, name, label_geo, mat)
   ret:add_component(canvas)
@@ -60,7 +59,13 @@ function init()
   -- local geo = geometry.icosphere_geo(1.0, 1)
   -- local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
   -- mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
-  myapp.scene:create_child(Label, "hello")
+  for i = 1,6 do
+    local label = myapp.scene:create_child(Label, "hello_" .. i)
+    label.position:set(0.0, 0.3*i - 1, 0.0)
+    label.quaternion:euler{x = 0, y = math.pi/2, z = 0}
+    label:update_matrix()
+  end
+  
   mygrid = myapp.scene:create_child(grid.Grid, {thickness = 0.02, 
                                                 color = {0.5, 0.5, 0.5}})
   mygrid.position:set(0.0, -1.0, 0.0)

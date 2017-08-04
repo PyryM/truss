@@ -15,13 +15,15 @@ function CanvasComponent:init(options)
   self.mount_name = "canvas"
   self._target = options.target or self:_create_target(options)
   self._clear = options.clear
+  self.raw_tex = self._target.raw_tex -- allow use as texture
 end
 
 function CanvasComponent:_create_target(options)
   if self._target then self._target:destroy() end
   if not (options.width and options.height) then return nil end
   local gfx = require("gfx")
-  return gfx.RenderTarget(options.width, options.height):make_RGB8()
+  -- don't need depth buffer for this
+  return gfx.RenderTarget(options.width, options.height):make_RGB8(false)
 end
 
 function CanvasComponent:get_target()
