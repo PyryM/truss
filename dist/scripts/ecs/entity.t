@@ -247,6 +247,8 @@ end
 
 -- recursively calculate world matrices from local transforms for
 -- object and all its children
+--
+-- TODO: use this traversal to also update recursive visibility
 function Entity3d:recursive_update_world_mat(parentmat)
   if not self.matrix then return end
   self.matrix_world:multiply(parentmat, self.matrix)
