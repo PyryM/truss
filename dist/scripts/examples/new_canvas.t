@@ -42,7 +42,7 @@ local function Label(ecs, name, options)
   end
   local canvas = graphics.CanvasComponent{width = options.width or 256, 
                                           height = options.height or 64}
-  local mat = flat.FlatMaterial{texture = canvas,
+  local mat = flat.FlatMaterial{texture = canvas:get_tex(),
                                 state = gfx.State{cull = false}}
   local ret = graphics.Mesh(ecs, name, label_geo, mat)
   ret:add_component(canvas)

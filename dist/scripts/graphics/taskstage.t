@@ -13,10 +13,13 @@ local TaskRunnerStage = class("TaskRunnerStage")
 m.TaskRunnerStage = TaskRunnerStage
 function TaskRunnerStage:init(options)
   options = options or {}
-  self._num_views = options.num_views or options.num_workers or 1
+  self._num_workers = options.num_views or options.num_workers or 1
+  self._num_views = self._num_workers + 1 -- reserve one view for blit
   self._queue = Queue()
-  self._view_ids = {}
   self._contexts = {}
+  self._extra_blit_view = gfx.View{clear = false}
+  self._blits = nil
+  self._scratch_target = options.scratch or self:_create_scratch(options)
 
   local function dont_run_this()
     truss.error("The TaskRunnerStage renderop should never actually be called!")
@@ -28,20 +31,29 @@ function TaskRunnerStage:num_views()
   return self._num_views
 end
 
+function TaskRunnerStage:_create_scratch(options)
+  return gfx.RenderTarget(options.scratch_width  or 1024,
+                          options.scratch_height or 1024):make_RGB8()
+end
+
 function TaskRunnerStage:bind_view_ids(view_ids)
+  if #view_ids < 2 then truss.error("Not enough views: got " .. #view_ids) end
   self._contexts = {}
-  for idx, viewid in ipairs(view_ids) do
+  for idx = 1, (#view_ids - 1) do
     self._contexts[idx] = {
-      viewid = viewid,
-      view = gfx.View():bind(viewid)
+      viewid = view_ids[idx],
+      view = gfx.View():bind(view_ids[idx])
     }
   end
+  self._extra_blit_view:bind(view_ids[#view_ids]) -- reserve last id for blit
 end
 
 function TaskRunnerStage:bind()
   -- clear out render ops to avoid potential double-execution when
   -- switching pipelines
   self._queue = Queue()
+  for _, ctx in ipairs(self._contexts) do ctx.view:bind() end
+  self._extra_blit_view:bind()
 end
 
 function TaskRunnerStage:update_begin()
@@ -63,17 +75,66 @@ function TaskRunnerStage:add_task(task)
   self._queue:push(task)
 end
 
+function TaskRunnerStage:_dispatch_blits(view)
+  if not self._blits then return end
+  for _, blit in ipairs(self._blits) do
+    bgfx.blit(view._viewid,
+          blit.dest._handle, 0, 0, 0, 0,
+          self._scratch_target.raw_tex, 0, 0, 0, 0,
+          blit.size[1], blit.size[2], 0)
+  end
+  self._blits = nil
+end
+
+function TaskRunnerStage:_scratch_render(context, task)
+  -- we are going to overwrite scratch, so blits need to be dispatched
+  -- first to copy out anything important
+  self:_dispatch_blits(context.view)
+
+  local tex = task.tex
+  if not tex._blit_dest then 
+    truss.error("task.target_tex must be blit dest!")
+  end
+  local tw, th = tex._info.width, tex._info.height
+  local sw = self._scratch_target.width 
+  local sh = self._scratch_target.height
+  if tw > sw or th > sh then
+    truss.error("Task requested render operation larger than scratch: " ..
+                "req=(" .. tw .. " x" .. th .. ") " ..
+                "scratch=(" .. sw .. " x " .. sh .. ")")
+  end
+  context.view:set_render_target(self._scratch_target)
+  -- set a viewport to the exact size of the target texture
+  context.view:set_viewport({0, 0, tw, th})
+  task:execute(self, context)
+  if not self._blits then self._blits = {} end
+  table.insert(self._blits, {dest = tex, size = {tw, th}})
+end
+
 function TaskRunnerStage:render()
   for _, context in ipairs(self._contexts) do
-    if self._queue:length() <= 0 then return end
-    self._queue:pop():execute(self, context)
+    if self._queue:length() <= 0 then break end
+    local task = self._queue:pop()
+    if task.tex then -- task needs to render to scratch
+      self:_scratch_render(context, task)
+    else             -- task will manage its own render target
+      task:execute(self, context)
+    end
+  end
+  if self._blits then
+    self:_dispatch_blits(self._extra_blit_view)
+    self._extra_blit_view:touch()
   end
 end
 
 local Task = class("Task")
-function Task:init(submitter, func)
+function Task:init(submitter, options)
+  if not (options.tex or options.render_target) then
+    truss.error("Task options must have either a .tex or .render_target")
+  end
   self.submitter = submitter
-  self.func = func
+  self.func = options.func
+  self.tex = options.tex
   self.completed = false
 end
 
@@ -92,7 +153,7 @@ function TaskSubmitter:init(options)
   self.mount_name = "tasks"
 end
 
-function TaskSubmitter:submit(task_function)
+function TaskSubmitter:submit(options)
   local nops = #(self._render_ops)
   local task_runner = nil
   if nops == 0 then
@@ -103,7 +164,7 @@ function TaskSubmitter:submit(task_function)
   else -- randomly choose one for now
     task_runner = self._render_ops[math.random(nops)].task_runner
   end
-  local task = Task(self, task_function)
+  local task = Task(self, options)
   task_runner:add_task(task)
   return task
 end

@@ -13,21 +13,20 @@ function CanvasComponent:init(options)
   options = options or {}
   CanvasComponent.super.init(self, options)
   self.mount_name = "canvas"
-  self._target = options.target or self:_create_target(options)
+  self._tex = options.target or self:_create_tex(options)
   self._clear = options.clear
-  self.raw_tex = self._target.raw_tex -- allow use as texture
 end
 
-function CanvasComponent:_create_target(options)
-  if self._target then self._target:destroy() end
+function CanvasComponent:_create_tex(options)
+  if self._tex then self._tex:destroy() end
   if not (options.width and options.height) then return nil end
   local gfx = require("gfx")
-  -- don't need depth buffer for this
-  return gfx.RenderTarget(options.width, options.height):make_RGB8(false)
+  return gfx.Texture():create_blit_dest(options)
+  --return gfx.RenderTarget(options.width, options.height):make_RGB8(false)
 end
 
-function CanvasComponent:get_target()
-  return self._target
+function CanvasComponent:get_tex()
+  return self._tex
 end
 
 function CanvasComponent:nvg_draw(nvg)
@@ -39,13 +38,12 @@ function CanvasComponent:nvg_draw(nvg)
 end
 
 function CanvasComponent:submit_draw(drawfunc)
-  if not self._target then 
-    truss.error("CanvasComponent has no render target.")
+  if not self._tex then 
+    truss.error("CanvasComponent has texture.")
   end
   drawfunc = drawfunc or self.nvg_draw
   local rfunc = function(task, stage, context)
     context.view:set{
-      render_target = self._target,
       clear = self._clear or {color = 0x000000ff, depth = 1.0}
     }
     if not context.nvg then 
@@ -56,9 +54,10 @@ function CanvasComponent:submit_draw(drawfunc)
     context.nvg:end_frame()
   end
   if self._task and not self._task.completed then
-    self._task:set_function(rfunc)
+    self._task.tex = self._tex
+    self._task.func = rfunc
   else
-    self._task = self:submit(rfunc)
+    self._task = self:submit{func = rfunc, tex = self._tex}
   end
 end
 
