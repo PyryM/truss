@@ -137,6 +137,14 @@ function View:get_dimensions()
   end
 end
 
+function View:get_active_dimensions()
+  if self._viewport then
+    return self._viewport[3], self._viewport[4]
+  else
+    return self:get_dimensions()
+  end
+end
+
 function View:bind(viewid)
   if viewid ~= nil then self._viewid = viewid end
   self:apply_all()

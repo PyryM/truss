@@ -80,7 +80,7 @@ function NVGContext:load_font(filename, alias)
 end
 
 function NVGContext:begin_frame(view)
-  local w,h = view:get_dimensions()
+  local w,h = view:get_active_dimensions()
   self.width, self.height = w, h
   self:BeginFrame(w, h, 1.0)
 end

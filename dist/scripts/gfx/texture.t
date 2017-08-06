@@ -177,6 +177,19 @@ function Texture:create_copy_target(src, options)
   return self
 end
 
+function Texture:create_blit_dest(options)
+  local width = options.width
+  local height = options.height
+  local format = options.format or bgfx.TEXTURE_FORMAT_BGRA8
+  local flags = math.combine_flags(options.flags or 0, bgfx.TEXTURE_BLIT_DST)
+
+  self._handle = bgfx.create_texture_2d(width, height, false, 1,
+                                        format, flags, nil)
+  self._info = {width = width, height = height, format = format}
+  self._blit_dest = true
+  return self
+end
+
 function Texture:copy(src, options)
   options = options or {}
   if not self._handle then self:create_copy_target(src, options) end
@@ -221,6 +234,7 @@ function Texture:release()
     self._allow_read = false
   end
 end
+Texture.destroy = Texture.release
 
 -- TODO: refactor MemTexture into Texture
 
