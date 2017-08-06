@@ -53,13 +53,14 @@ end
 
 function init()
   myapp = app.App{title = "canvas example", width = 1280, height = 720,
-                  msaa = true, stats = false, clear_color = 0x404080ff}
+                  msaa = true, stats = false, clear_color = 0x404080ff,
+                  num_workers = 3}
   myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 1, max_rad = 4}))
 
   -- local geo = geometry.icosphere_geo(1.0, 1)
   -- local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
   -- mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
-  for i = 1,6 do
+  for i = 1,7 do
     local label = myapp.scene:create_child(Label, "hello_" .. i)
     label.position:set(0.0, 0.3*i - 1, 0.0)
     label.quaternion:euler{x = 0, y = math.pi/2, z = 0}

@@ -58,7 +58,8 @@ function App:init_pipeline(options)
   local pbr = require("shaders/pbr.t")
   local p = graphics.Pipeline({verbose = true})
   if options.use_tasks ~= false then
-    p:add_stage(graphics.TaskRunnerStage{num_workers = 1})
+    p:add_stage(graphics.TaskRunnerStage{
+                          num_workers = options.num_workers or 1})
   end
   p:add_stage(graphics.Stage{
     name = "forward",

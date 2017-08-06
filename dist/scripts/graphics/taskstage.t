@@ -7,6 +7,7 @@ local Queue = require("utils/queue.t").Queue
 local functable = require("utils/functable.t")
 local renderer = require("graphics/renderer.t")
 local gfx = require("gfx")
+local ring = require("utils/ring.t")
 local m = {}
 
 local TaskRunnerStage = class("TaskRunnerStage")
@@ -19,7 +20,7 @@ function TaskRunnerStage:init(options)
   self._contexts = {}
   self._extra_blit_view = gfx.View{clear = false}
   self._blits = nil
-  self._scratch_target = options.scratch or self:_create_scratch(options)
+  self._scratch_buffer = self:_create_scratch(options)
 
   local function dont_run_this()
     truss.error("The TaskRunnerStage renderop should never actually be called!")
@@ -32,8 +33,14 @@ function TaskRunnerStage:num_views()
 end
 
 function TaskRunnerStage:_create_scratch(options)
-  return gfx.RenderTarget(options.scratch_width  or 1024,
-                          options.scratch_height or 1024):make_RGB8()
+  local scratch = options.scratch or 
+                  gfx.RenderTarget(options.scratch_width  or 1024,
+                                   options.scratch_height or 1024):make_RGB8()
+  if self._num_workers > 1 then
+    return ring.RingBuffer({scratch, scratch:clone()})
+  else
+    return ring.RingBuffer({scratch})
+  end
 end
 
 function TaskRunnerStage:bind_view_ids(view_ids)
@@ -80,7 +87,7 @@ function TaskRunnerStage:_dispatch_blits(view)
   for _, blit in ipairs(self._blits) do
     bgfx.blit(view._viewid,
           blit.dest._handle, 0, 0, 0, 0,
-          self._scratch_target.raw_tex, 0, 0, 0, 0,
+          blit.src.raw_tex, 0, 0, 0, 0,
           blit.size[1], blit.size[2], 0)
   end
   self._blits = nil
@@ -91,27 +98,29 @@ function TaskRunnerStage:_scratch_render(context, task)
   -- first to copy out anything important
   self:_dispatch_blits(context.view)
 
+  local scratch = self._scratch_buffer:next()
   local tex = task.tex
   if not tex._blit_dest then 
     truss.error("task.target_tex must be blit dest!")
   end
   local tw, th = tex._info.width, tex._info.height
-  local sw = self._scratch_target.width 
-  local sh = self._scratch_target.height
+  local sw = scratch.width 
+  local sh = scratch.height
   if tw > sw or th > sh then
     truss.error("Task requested render operation larger than scratch: " ..
                 "req=(" .. tw .. " x" .. th .. ") " ..
                 "scratch=(" .. sw .. " x " .. sh .. ")")
   end
-  context.view:set_render_target(self._scratch_target)
+  context.view:set_render_target(scratch)
   -- set a viewport to the exact size of the target texture
   context.view:set_viewport({0, 0, tw, th})
   task:execute(self, context)
   if not self._blits then self._blits = {} end
-  table.insert(self._blits, {dest = tex, size = {tw, th}})
+  table.insert(self._blits, {src = scratch, dest = tex, size = {tw, th}})
 end
 
 function TaskRunnerStage:render()
+  self._scratch_buffer:reset()
   for _, context in ipairs(self._contexts) do
     if self._queue:length() <= 0 then break end
     local task = self._queue:pop()
