@@ -69,7 +69,9 @@ function m.get_clipboard()
 end
 
 function m.set_relative_mouse_mode(mode)
-  m.rawfunctions.truss_sdl_set_relative_mouse_mode(raw_pointer, mode)
+  local mode_int = 0
+  if mode then mode_int = 1 end
+  m.rawfunctions.truss_sdl_set_relative_mouse_mode(raw_pointer, mode_int)
 end
 
 function m.get_bgfx_callback()

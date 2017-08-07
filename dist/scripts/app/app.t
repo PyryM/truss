@@ -108,6 +108,10 @@ function App:keydown(evtname, evt)
   end
 end
 
+function App:capture_mouse(capture)
+  sdl.set_relative_mouse_mode(capture)
+end
+
 function App:update()
   self.ECS:update()
 end
