@@ -26,9 +26,6 @@ function OrbitControl:init(options)
   self.rad_rate = 0.4
   self.pan_rate = 0.01
 
-  self.last_mouse_x = 0
-  self.last_mouse_y = 0
-
   self.input = options.input
 
   -- mouse buttons: 1 = left, 2 = middle, 4 = right
@@ -118,21 +115,16 @@ function OrbitControl:mousewheel(evtname, evt)
 end
 
 function OrbitControl:mousemove(evtname, evt)
-  local x, y = evt.x, evt.y
+  local rdx, rdy = evt.dx, evt.dy
   local buttons = evt.flags
   if bit.band(buttons, self.rotate_button) > 0 then
-    local dx = x - self.last_mouse_x
-    local dy = y - self.last_mouse_y
-    self:move_theta(dx)
-    self:move_phi(-dy)
+    self:move_theta(rdx)
+    self:move_phi(-rdy)
   elseif bit.band(buttons, self.pan_button) > 0 then
     -- scale pan_rate to rad so that it's reasonable at all zooms
-    local dx = (x - self.last_mouse_x) * self.pan_rate * self.rad
-    local dy = (y - self.last_mouse_y) * self.pan_rate * self.rad
-    self:pan_orbit_point(-dx, dy)
+    self:pan_orbit_point(-rdx * self.pan_rate * self.rad, 
+                          rdy * self.pan_rate * self.rad)
   end
-
-  self.last_mouse_x, self.last_mouse_y = x, y
 end
 
 -- use the preupdate system to update camera position before scenegraph
