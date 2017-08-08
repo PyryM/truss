@@ -63,6 +63,7 @@ function App:init_pipeline(options)
   end
   p:add_stage(graphics.Stage{
     name = "forward",
+    always_clear = true,
     clear = {color = self.clear_color or 0x000000ff, depth = 1.0},
     globals = p.globals,
     render_ops = {graphics.GenericRenderOp(), graphics.CameraControlOp()}
