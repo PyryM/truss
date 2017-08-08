@@ -28,7 +28,7 @@ function OrbitControl:init(options)
 
   self.input = options.input
 
-  -- mouse buttons: 1 = left, 2 = middle, 4 = right
+  -- mouse buttons: 1 = left, 2 = middle, 3 = right
   self.rotate_button = 1
   self.pan_button = 2
 
@@ -116,11 +116,11 @@ end
 
 function OrbitControl:mousemove(evtname, evt)
   local rdx, rdy = evt.dx, evt.dy
-  local buttons = evt.flags
-  if bit.band(buttons, self.rotate_button) > 0 then
+  local button = evt.flags
+  if button == self.rotate_button then
     self:move_theta(rdx)
     self:move_phi(-rdy)
-  elseif bit.band(buttons, self.pan_button) > 0 then
+  elseif button == self.pan_button then
     -- scale pan_rate to rad so that it's reasonable at all zooms
     self:pan_orbit_point(-rdx * self.pan_rate * self.rad, 
                           rdy * self.pan_rate * self.rad)
