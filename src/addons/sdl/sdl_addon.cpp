@@ -148,6 +148,7 @@ void hackCStrCpy(char* dest, char* src, size_t destsize) {
 
 void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	truss_sdl_event newEvent;
+	bool isValid = true;
 	switch(event.type) {
 	case SDL_KEYDOWN:
 	case SDL_KEYUP:
@@ -172,7 +173,7 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 		break;
 	case SDL_MOUSEBUTTONDOWN:
 	case SDL_MOUSEBUTTONUP:
-		newEvent.event_type = (event.type == SDL_MOUSEBUTTONDOWN ? 
+		newEvent.event_type = (event.type == SDL_MOUSEBUTTONDOWN ?
 								TRUSS_SDL_EVENT_MOUSEDOWN : TRUSS_SDL_EVENT_MOUSEUP);
 		newEvent.x = event.button.x;
 		newEvent.y = event.button.y;
@@ -188,10 +189,13 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 		newEvent.event_type = TRUSS_SDL_EVENT_WINDOW;
 		newEvent.flags = event.window.event;
 		break;
-	default:
+	default: // a whole mess of event types we don't care about
+		isValid = false;
 		break;
 	}
-	eventBuffer_.push_back(newEvent);
+	if(isValid) {
+		eventBuffer_.push_back(newEvent);
+	}
 }
 
 void SDLAddon::update(double dt) {
