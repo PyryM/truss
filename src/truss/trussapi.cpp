@@ -70,6 +70,11 @@ int truss_set_fs_savedir(const char* path) {
     return 0;
 }
 
+int truss_set_raw_write_dir(const char* path) {
+	core().setRawWriteDir(path);
+	return 0;
+}
+
 int truss_list_directory(truss_interpreter_id interpreter, const char* path) {
     return Core::instance().listDirectory(interpreter, path);
 }

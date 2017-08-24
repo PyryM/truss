@@ -139,6 +139,20 @@ void Core::setWriteDir(const char* writepath) {
     }
 }
 
+void Core::setRawWriteDir(const char* path, bool mount) {
+	logPrint(TRUSS_LOG_DEBUG, "Setting physFS write path: %s", path);
+	int retval = PHYSFS_setWriteDir(path);
+	if (retval == 0) {
+		logPrint(TRUSS_LOG_ERROR, "setWriteDir failed: %s", PHYSFS_getLastError());
+	}
+	if (mount) {
+		retval = PHYSFS_mount(path, "writedir", 0);
+		if (retval == 0) {
+			logPrint(TRUSS_LOG_ERROR, "addFSPath failed: %s", PHYSFS_getLastError());
+		}
+	}
+}
+
 // NOT THREAD SAFE!!!
 std::ostream& Core::logStream(int log_level) {
     logfile_ << "[" << log_level << "] ";

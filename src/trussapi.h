@@ -72,6 +72,7 @@ TRUSS_C_API int truss_save_file(const char* filename, truss_message* data);
 TRUSS_C_API int truss_save_data(const char* filename, const char* data, unsigned int datalength);
 TRUSS_C_API int truss_add_fs_path(const char* path, const char* mountpath, int append);
 TRUSS_C_API int truss_set_fs_savedir(const char* path);
+TRUSS_C_API int truss_set_raw_write_dir(const char* path);
 TRUSS_C_API int truss_list_directory(truss_interpreter_id interpreter, const char* path);
 TRUSS_C_API const char* truss_get_string_result(truss_interpreter_id interpreter, int idx);
 TRUSS_C_API void truss_clear_string_results(truss_interpreter_id interpreter);

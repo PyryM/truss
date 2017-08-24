@@ -59,6 +59,7 @@ TRUSS_C_API void truss_sdl_start_textinput(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_stop_textinput(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_set_clipboard(SDLAddon* addon, const char* data);
 TRUSS_C_API const char* truss_sdl_get_clipboard(SDLAddon* addon);
+TRUSS_C_API const char* truss_sdl_get_user_path(SDLAddon* addon, const char* orgname, const char* appname);
 TRUSS_C_API bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode);
 

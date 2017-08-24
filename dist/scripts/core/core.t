@@ -136,6 +136,17 @@ local disallow_globals_mt = {
   end
 }
 
+function truss.set_app_directories(orgname, appname)
+  if (not orgname) or (not appname) then
+    truss.error("Must specify both org and app names.")
+    return
+  end 
+  local sdl = require("addons/sdl.t")
+  local userpath = sdl.create_user_path(orgname, appname)
+  print(userpath)
+  truss.C.set_raw_write_dir(userpath)
+end
+
 function truss.list_directory(path)
   local nresults = truss.C.list_directory(TRUSS_ID, path)
   if nresults < 0 then return nil end
@@ -154,6 +165,10 @@ end
 
 function truss.is_directory(path)
   return truss.C.check_file(path) == 2
+end
+
+function truss.save_string(filename, s)
+  truss.C.save_data(filename, s, #s)
 end
 
 local function create_module_env(module_name)

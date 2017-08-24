@@ -68,6 +68,12 @@ function m.get_clipboard()
   return ffi.string(cstr)
 end
 
+function m.create_user_path(orgname, appname)
+  local cpath = m.rawfunctions.truss_sdl_get_user_path(raw_pointer, 
+                                                       orgname, appname)
+  return ffi.string(cpath)
+end
+
 function m.set_relative_mouse_mode(mode)
   local mode_int = 0
   if mode then mode_int = 1 end

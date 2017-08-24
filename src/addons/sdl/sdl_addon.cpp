@@ -86,6 +86,7 @@ SDLAddon::SDLAddon() {
 		void truss_sdl_stop_textinput(Addon* addon);
 		void truss_sdl_set_clipboard(Addon* addon, const char* data);
 		const char* truss_sdl_get_clipboard(Addon* addon);
+		const char* truss_sdl_get_user_path(Addon* addon, const char* orgname, const char* appname);
 		bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(Addon* addon);
 		void truss_sdl_set_relative_mouse_mode(Addon* addon, int mod);
 	)";
@@ -310,6 +311,10 @@ void truss_sdl_set_clipboard(SDLAddon* addon, const char* data) {
 
 const char* truss_sdl_get_clipboard(SDLAddon* addon) {
 	return addon->getClipboardText();
+}
+
+const char* truss_sdl_get_user_path(SDLAddon* addon, const char* orgname, const char* appname) {
+	return SDL_GetPrefPath(orgname, appname);
 }
 
 void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode) {

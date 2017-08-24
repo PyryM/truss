@@ -22,6 +22,7 @@ public:
     void initFS(char* argv0, bool mountBaseDir=true);
     void addFSPath(const char* pathname, const char* mountname, bool append=true);
     void setWriteDir(const char* writepath);
+	void setRawWriteDir(const char* path, bool mount=true);
     void extractLibraries();
 
     std::ostream& logStream(int log_level);

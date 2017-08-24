@@ -36,6 +36,7 @@ int truss_save_file(const char* filename, truss_message* data);
 int truss_save_data(const char* filename, const char* data, unsigned int datalength);
 int truss_add_fs_path(const char* path, const char* mountpath, int append);
 int truss_set_fs_savedir(const char* path);
+int truss_set_raw_write_dir(const char* path);
 int truss_list_directory(truss_interpreter_id interpreter, const char* path);
 const char* truss_get_string_result(truss_interpreter_id interpreter, int idx);
 void truss_clear_string_results(truss_interpreter_id interpreter);
