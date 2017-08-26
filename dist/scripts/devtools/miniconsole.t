@@ -225,7 +225,7 @@ end
 
 function m._wrap_lines(s)
   local ret = {}
-  local lines = stringutils.splitLines(s)
+  local lines = stringutils.split_lines(s)
   for _, line in ipairs(lines) do
     m._wrap_overlong(line, ret)
   end
@@ -350,7 +350,7 @@ function m.dumplog()
     m.print("Couldn't load trusslog.txt", m.colors.error)
     return
   end
-  local lines = stringutils.splitLines(loglines)
+  local lines = stringutils.split_lines(loglines)
   for _, line in ipairs(lines) do
     local prefix = line:sub(1,3)
     m.print(line, m._logcolors[prefix])
@@ -417,7 +417,7 @@ end
 
 function m.fallback_update()
   local gfx = require('gfx')
-  if not gfx.renderer_name then
+  if not gfx.backend_name then
     log.info("No graphics initted, no choice but to quit.")
     log.info(truss.error_trace)
     truss.quit()
