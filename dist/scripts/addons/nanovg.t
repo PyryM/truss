@@ -10,9 +10,11 @@ local nanovg_c_raw = terralib.includec("nanovg_terra.h")
 
 local nvg_c_funcs = {}
 local nvg_c = {}
+local nvg_constants = {}
 modutils.reexport_without_prefix(nanovg_c_raw, "nvg", nvg_c_funcs)
 modutils.reexport_without_prefix(nanovg_c_raw, "nvg", nvg_c)
-modutils.reexport_without_prefix(nanovg_c_raw, "NVG", nvg_c)
+modutils.reexport_without_prefix(nanovg_c_raw, "NVG_", nvg_c)
+modutils.reexport_without_prefix(nanovg_c_raw, "NVG_", nvg_constants)
 m.C = nvg_c
 m.C_raw = nanovg_c_raw
 
@@ -96,10 +98,11 @@ function NVGContext:release()
   end
 end
 
--- autogenerate bindings for other functions so you can call ctx:whatever(...)
+-- autogenerate bindings for other functions and constants
+-- to allow ctx:whatever(...) and ctx.WHATEVER
 local s_table = {}
 for _, k in ipairs(nvg_statics) do s_table[k] = true end
-
+-- -- functions
 for func_name, func in pairs(nvg_c_funcs) do
   if s_table[func_name] then
     NVGContext[func_name] = function(self, ...)
@@ -110,6 +113,10 @@ for func_name, func in pairs(nvg_c_funcs) do
       return func(self._ctx, ...)
     end
   end
+end
+-- -- constants
+for const_name, val in pairs(nvg_constants) do
+  NVGContext[const_name] = val
 end
 
 return m

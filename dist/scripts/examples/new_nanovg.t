@@ -20,25 +20,26 @@ local function rounded_text(ctx, x, y, text)
   local tw = #text * FONT_SIZE * 0.55
   local th = FONT_SIZE
   ctx:BeginPath()
-  ctx:RoundedRect(x, y - th + FONT_Y_MARGIN, tw, th, 3)
+  ctx:RoundedRect(x, y, tw, th, 3)
   ctx:FillColor(ctx.bg_color)
   ctx:Fill()
 
   ctx:FontFace("sans")
   ctx:FontSize(FONT_SIZE)
   ctx:FillColor(ctx.font_color)
-  ctx:Text(x + FONT_X_MARGIN, y, text, nil)
+  ctx:TextAlign(ctx.ALIGN_MIDDLE)
+  ctx:Text(x, y + th/2, text, nil)
 end
 
 function nanovg_render(stage, ctx)
-  rounded_text(ctx, 70, 100, "NanoVG: Initialized")
+  rounded_text(ctx, 70, 50, "NanoVG: Initialized")
   local ocam = myapp.camera.orbit_control
   local tstr = string.format("theta = % .4f", ocam.theta)
   local pstr = string.format("phi   = % .4f", ocam.phi)
   local rstr = string.format("rad   = % .4f", ocam.rad)
-  rounded_text(ctx, 70, 100 + FONT_SIZE*1.1, tstr)
-  rounded_text(ctx, 70, 100 + 2*FONT_SIZE*1.1, pstr)
-  rounded_text(ctx, 70, 100 + 3*FONT_SIZE*1.1, rstr)
+  rounded_text(ctx, 70, 50 + FONT_SIZE*1.1, tstr)
+  rounded_text(ctx, 70, 50 + 2*FONT_SIZE*1.1, pstr)
+  rounded_text(ctx, 70, 50 + 3*FONT_SIZE*1.1, rstr)
 end
 
 function init()
