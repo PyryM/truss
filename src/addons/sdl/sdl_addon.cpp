@@ -252,12 +252,15 @@ void SDLAddon::destroyWindow() {
 
 void SDLAddon::resizeWindow(int width, int height, int fullscreen) {
 	if (fullscreen <= 0) {
-		SDL_SetWindowFullscreen(window_, 0);
+		//SDL_SetWindowFullscreen(window_, 0);
 		SDL_SetWindowBordered(window_, SDL_TRUE);
 		SDL_SetWindowSize(window_, width, height);
 	} else {
 		SDL_SetWindowBordered(window_, SDL_FALSE);
-		SDL_SetWindowFullscreen(window_, SDL_WINDOW_FULLSCREEN_DESKTOP);
+		SDL_MaximizeWindow(window_);
+		SDL_HideWindow(window_);
+		SDL_ShowWindow(window_);
+		//SDL_SetWindowFullscreen(window_, SDL_WINDOW_FULLSCREEN_DESKTOP);
 	}
 }
 

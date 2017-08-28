@@ -28,10 +28,32 @@ function App:init(options)
   if options.error_console ~= false then
     self:install_console()
   end
+  self._init_options = options
 
   self:init_ecs()
   self:init_pipeline(options)
   self:init_scene()
+end
+
+-- Note! This doesn't automatically resize rendertargets you've made!
+-- (maybe it should?)
+-- You will need to update the pipeline yourself.
+function App:reset_graphics(newoptions)
+  local options = self._init_options
+  for k,v in pairs(newoptions) do
+    options[k] = v
+  end
+  sdl.resize_window(options.width or 1280, options.height or 720,
+                    options.fullscreen and 1)
+  self.width, self.height = sdl.get_window_size()
+  gfx.reset_gfx(options)
+  if self.camera then
+    self.camera.camera:make_projection(65, self.width / self.height, 
+                                       0.01, 30.0)
+  end
+  if self.pipeline then
+    self.pipeline:bind()
+  end
 end
 
 function App:install_console()
