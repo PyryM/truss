@@ -78,6 +78,7 @@ SDLAddon::SDLAddon() {
 
 		void truss_sdl_create_window(Addon* addon, int width, int height, const char* name, int is_fullscreen);
 		void truss_sdl_destroy_window(Addon* addon);
+		void truss_sdl_resize_window(Addon* addon, int width, int height, int fullscreen);
 		int truss_sdl_window_width(Addon* addon);
 		int truss_sdl_window_height(Addon* addon);
 		int  truss_sdl_num_events(Addon* addon);
@@ -249,6 +250,17 @@ void SDLAddon::destroyWindow() {
 	std::cout << "SDLAddon::destroyWindow not implemented yet.\n";
 }
 
+void SDLAddon::resizeWindow(int width, int height, int fullscreen) {
+	if (fullscreen <= 0) {
+		SDL_SetWindowFullscreen(window_, 0);
+		SDL_SetWindowBordered(window_, SDL_TRUE);
+		SDL_SetWindowSize(window_, width, height);
+	} else {
+		SDL_SetWindowBordered(window_, SDL_FALSE);
+		SDL_SetWindowFullscreen(window_, SDL_WINDOW_FULLSCREEN_DESKTOP);
+	}
+}
+
 const char* SDLAddon::getClipboardText() {
 	char* temp = SDL_GetClipboardText();
 	clipboard_ = temp;
@@ -279,6 +291,10 @@ void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char*
 
 void truss_sdl_destroy_window(SDLAddon* addon) {
 	addon->destroyWindow();
+}
+
+void truss_sdl_resize_window(SDLAddon* addon, int width, int height, int fullscreen) {
+	addon->resizeWindow(width, height, fullscreen);
 }
 
 int truss_sdl_window_width(SDLAddon* addon) {

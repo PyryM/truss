@@ -51,6 +51,7 @@ typedef struct {
 
 TRUSS_C_API void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name, int is_fullscreen);
 TRUSS_C_API void truss_sdl_destroy_window(SDLAddon* addon);
+TRUSS_C_API void truss_sdl_resize_window(SDLAddon* addon, int width, int height, int fullscreen);
 TRUSS_C_API int truss_sdl_window_width(SDLAddon* addon);
 TRUSS_C_API int truss_sdl_window_height(SDLAddon* addon);
 TRUSS_C_API int truss_sdl_num_events(SDLAddon* addon);
@@ -78,6 +79,7 @@ public:
 	int windowHeight();
 	void registerBGFX();
 	void destroyWindow();
+	void resizeWindow(int width, int height, int fullscreen);
 
 	const char* getClipboardText();
 
