@@ -76,6 +76,7 @@ function VRApp:ecs_init()
   -- create ecs
   local ECS = ecs.ECS()
   self.ECS = ECS
+  self.scene = ECS.scene
   --ECS:add_system(vrcomps.VRBeginFrameSystem())
   ECS:add_system(sdl_input.SDLInputSystem())
   ECS:add_system(ecs.System("preupdate", "preupdate"))
@@ -84,7 +85,7 @@ function VRApp:ecs_init()
   ECS:add_system(graphics.RenderSystem())
   if self.stats then ECS:add_system(graphics.DebugTextStats()) end
   --ECS:add_system(vrcomps.VRSubmitSystem())
-  ECS.systems.input:on("keydown", self, self.keydown)
+  --ECS.systems.input:on("keydown", self, self.keydown)
 
   self:init_pipeline()
   self:init_scene()
