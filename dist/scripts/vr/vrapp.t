@@ -54,6 +54,7 @@ function VRApp:init(options)
   log.info("up to ecs init: " .. tostring(truss.toc(t0) * 1000.0))
 
   if options.create_controllers then
+    self.controllers = {}
     self:create_default_controllers()
   end
 end
@@ -169,6 +170,7 @@ function VRApp:add_controller_model(trackable)
                                                  "controller")
   controller:add_component(vrcomps.VRControllerComponent(trackable))
   controller.vr_controller:create_mesh_parts(geo, mat)
+  table.insert(self.controllers, controller)
 end
 
 function VRApp:update()
