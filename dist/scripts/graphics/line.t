@@ -132,7 +132,7 @@ function LineRenderComponent:_create_material(options)
     local has_texture = options.texture ~= nil
     local uniforms = line_uniforms[has_texture]
     if not uniforms then
-      uniforms = gfx.UniformSet{gfx.VecUniform("u_color"),
+      uniforms = gfx.UniformSet{gfx.VecUniform("u_baseColor"),
                                 gfx.VecUniform("u_thickness")}
       if has_texture then uniforms:add(gfx.TexUniform("s_texAlbedo", 0)) end
       line_uniforms[has_texture] = uniforms
@@ -155,7 +155,7 @@ function LineRenderComponent:_create_material(options)
   end
 
   if options.color then
-    mat.uniforms.u_color:set(options.color)
+    mat.uniforms.u_baseColor:set(options.color)
   end
   local thickness = options.thickness or 0.1
   local umult = options.u_mult or 1.0
