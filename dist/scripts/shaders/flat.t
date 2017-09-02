@@ -8,8 +8,9 @@ local math = require("math")
 local gfx = require("gfx")
 local Material = require("graphics/material.t").Material
 
+local flat_uniforms = {}
 function m.create_flat_uniforms(has_texture)
-  if m._flat_uniforms then return m._flat_uniforms end
+  if flat_uniforms[has_texture] then return flat_uniforms[has_texture] end
 
   local uniforms = gfx.UniformSet()
 
@@ -18,7 +19,7 @@ function m.create_flat_uniforms(has_texture)
     uniforms:add(gfx.TexUniform("s_texAlbedo", 0))
   end
 
-  m._flat_uniforms = uniforms
+  flat_uniforms[has_texture] = uniforms
   return uniforms
 end
 
