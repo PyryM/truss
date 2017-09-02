@@ -44,7 +44,7 @@ void main() {
 
   float len = u_thickness.x;
   float orientation = sign(a_color0.w);
-  v_uv = vec2(abs(a_color0.w), orientation*0.5 + 0.5);
+  v_uv = vec2(abs(a_color0.w) * u_thickness.y, orientation*0.5 + 0.5);
 
   //starting point uses (next - current)
   vec2 dir = vec2(0.0, 0.0);

@@ -76,7 +76,7 @@ local function pack_vertex(dest, cur_pt, prev_pt, next_pt, dir)
   dest.color0[3] = dir
 end
 
-function LineRenderComponent:_append_segment(segpoints, vertidx, idxidx)
+function LineRenderComponent:_append_segment(segpoints, vertidx, idxidx, uscale)
   local npts = #segpoints
   local nlinesegs = npts - 1
   local startvert = vertidx
@@ -89,7 +89,7 @@ function LineRenderComponent:_append_segment(segpoints, vertidx, idxidx)
     --                line end   if nextpoint==curpoint
     local prevpoint = segpoints[i-1] or curpoint
     local nextpoint = segpoints[i+1] or curpoint
-    local u = i / npts
+    local u = i * (uscale or (1.0 / npts))
 
     pack_vertex(vbuf[vertidx]  , curpoint, prevpoint, nextpoint,  u)
     pack_vertex(vbuf[vertidx+1], curpoint, prevpoint, nextpoint, -u)
@@ -125,24 +125,43 @@ function LineRenderComponent:_create_buffers()
   return geo
 end
 
-local line_uniforms = nil
+local line_uniforms = {}
 function LineRenderComponent:_create_material(options)
-  if line_uniforms == nil then
-    line_uniforms = gfx.UniformSet{gfx.VecUniform("u_color"),
-                                   gfx.VecUniform("u_thickness")}
-  end
+  local mat = options.material
+  if not mat then
+    local has_texture = options.texture ~= nil
+    local uniforms = line_uniforms[has_texture]
+    if not uniforms then
+      uniforms = gfx.UniformSet{gfx.VecUniform("u_color"),
+                                gfx.VecUniform("u_thickness")}
+      if has_texture then uniforms:add(gfx.TexUniform("s_texAlbedo", 0)) end
+      line_uniforms[has_texture] = uniforms
+    end
 
-  local mat = options.material or Material{
-    state = options.state or gfx.create_state(),
-    uniforms = options.uniforms or line_uniforms:clone(),
-    program = options.program or gfx.load_program("vs_line", "fs_line")
-  }
+    local fsname = "fs_line"
+    if has_texture then
+      if options.alpha_test then
+        fsname = "fs_line_textured_atest"
+      else
+        fsname = "fs_line_textured"
+      end
+    end
+
+    mat = Material{
+      state = options.state or gfx.create_state(),
+      uniforms = options.uniforms or uniforms:clone(),
+      program = options.program or gfx.load_program("vs_line", fsname)
+    }
+  end
 
   if options.color then
     mat.uniforms.u_color:set(options.color)
   end
-  if options.thickness then
-    mat.uniforms.u_thickness:set({options.thickness})
+  local thickness = options.thickness or 0.1
+  local umult = options.u_mult or 1.0
+  mat.uniforms.u_thickness:set({thickness, umult})
+  if options.texture then
+    mat.uniforms.s_texAlbedo:set(options.texture)
   end
 
   return mat
