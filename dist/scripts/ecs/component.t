@@ -47,4 +47,15 @@ function Component:destroy()
   self._dead = true
 end
 
+local UpdateComponent = Component:extend("UpdateComponent")
+m.UpdateComponent = UpdateComponent
+function UpdateComponent:mount()
+  self:add_to_systems({"update"})
+  self:wake()
+end
+
+function UpdateComponent:update()
+  -- you should override this
+end
+
 return m
