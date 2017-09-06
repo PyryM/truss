@@ -62,6 +62,11 @@ SDLAddon::SDLAddon() {
 		#define TRUSS_SDL_EVENT_MOUSEWHEEL  6
 		#define TRUSS_SDL_EVENT_WINDOW      7
 		#define TRUSS_SDL_EVENT_TEXTINPUT   8
+		#define TRUSS_SDL_EVENT_GP_ADDED     9
+		#define TRUSS_SDL_EVENT_GP_REMOVED   10
+		#define TRUSS_SDL_EVENT_GP_AXIS      11
+		#define TRUSS_SDL_EVENT_GP_BUTTONDOWN 12
+		#define TRUSS_SDL_EVENT_GP_BUTTONUP 13
 
 		typedef struct Addon Addon;
 		typedef struct bgfx_callback_interface bgfx_callback_interface_t;
@@ -90,8 +95,15 @@ SDLAddon::SDLAddon() {
 		const char* truss_sdl_get_user_path(Addon* addon, const char* orgname, const char* appname);
 		bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(Addon* addon);
 		void truss_sdl_set_relative_mouse_mode(Addon* addon, int mod);
+		int truss_sdl_num_controllers(Addon* addon);
+		int truss_sdl_enable_controller(Addon* addon, int controllerIdx);
+		void truss_sdl_disable_controller(Addon* addon, int controllerIdx);
+		const char* truss_sdl_get_controller_name(Addon* addon, int controllerIdx);
 	)";
 	errorEvent_.event_type = TRUSS_SDL_EVENT_OUTOFBOUNDS;
+	for (unsigned int i = 0; i < MAX_CONTROLLERS; ++i) {
+		controllers_[i] = NULL;
+	}
 }
 
 const std::string& SDLAddon::getName() {
@@ -113,7 +125,7 @@ void SDLAddon::init(truss::Interpreter* owner) {
 	std::cout << "Going to create window; if you get an LLVM crash on linux" <<
 		" at this point, the mostly likely reason is that you are using" <<
 		" the mesa software renderer.\n";
-	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0) {
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
 	}
 }
@@ -191,6 +203,27 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 		newEvent.event_type = TRUSS_SDL_EVENT_WINDOW;
 		newEvent.flags = event.window.event;
 		break;
+	case SDL_CONTROLLERAXISMOTION:
+		newEvent.event_type = TRUSS_SDL_EVENT_GP_AXIS;
+		newEvent.flags = event.caxis.which;
+		newEvent.x = event.caxis.axis;
+		newEvent.y = ((double)event.caxis.value) / 32767.0;
+		break;
+	case SDL_CONTROLLERBUTTONDOWN:
+	case SDL_CONTROLLERBUTTONUP:
+		newEvent.event_type = (event.type == SDL_CONTROLLERBUTTONDOWN ?
+			TRUSS_SDL_EVENT_GP_BUTTONDOWN : TRUSS_SDL_EVENT_GP_BUTTONUP);
+		newEvent.flags = event.cbutton.which;
+		newEvent.x = event.cbutton.button;
+		break;
+	case SDL_CONTROLLERDEVICEADDED:
+		newEvent.event_type = TRUSS_SDL_EVENT_GP_ADDED;
+		newEvent.flags = event.cdevice.which;
+		break;
+	case SDL_CONTROLLERDEVICEREMOVED:
+		newEvent.event_type = TRUSS_SDL_EVENT_GP_REMOVED;
+		newEvent.flags = event.cdevice.which;
+		break;
 	default: // a whole mess of event types we don't care about
 		isValid = false;
 		break;
@@ -258,6 +291,37 @@ void SDLAddon::resizeWindow(int width, int height, int fullscreen) {
 		SDL_SetWindowBordered(window_, SDL_FALSE);
 		SDL_MaximizeWindow(window_);
 	}
+}
+
+int SDLAddon::openController(int controllerIdx) {
+	if (controllerIdx < 0 || controllerIdx >= MAX_CONTROLLERS 
+		|| !SDL_IsGameController(controllerIdx)) {
+		return -1;
+	}
+	SDL_GameController* controller = SDL_GameControllerOpen(controllerIdx);
+	SDL_Joystick* joy = SDL_GameControllerGetJoystick(controller);
+	controllers_[controllerIdx] = controller;
+	return SDL_JoystickInstanceID(joy);
+}
+
+void SDLAddon::closeController(int controllerIdx) {
+	if (controllerIdx < 0 || controllerIdx >= MAX_CONTROLLERS) {
+		return;
+	}
+	if (controllers_[controllerIdx]) {
+		SDL_GameControllerClose(controllers_[controllerIdx]);
+		controllers_[controllerIdx] = NULL;
+	}
+}
+
+const char* SDLAddon::getControllerName(int controllerIdx) {
+	if (controllerIdx < 0 || controllerIdx >= MAX_CONTROLLERS) {
+		return NULL;
+	}
+	if (controllers_[controllerIdx] == NULL) {
+		return NULL;
+	}
+	return SDL_GameControllerName(controllers_[controllerIdx]);
 }
 
 const char* SDLAddon::getClipboardText() {
@@ -338,6 +402,22 @@ void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode) {
 	} else {
 		SDL_SetRelativeMouseMode(SDL_FALSE);
 	}
+}
+
+int truss_sdl_num_controllers(SDLAddon* addon) {
+	return SDL_NumJoysticks();
+}
+
+int truss_sdl_enable_controller(SDLAddon* addon, int controllerIdx) {
+	return addon->openController(controllerIdx);
+}
+
+void truss_sdl_disable_controller(SDLAddon* addon, int controllerIdx) {
+	addon->closeController(controllerIdx);
+}
+
+const char* truss_sdl_get_controller_name(SDLAddon* addon, int controllerIdx) {
+	return addon->getControllerName(controllerIdx);
 }
 
 void bgfx_cb_fatal(bgfx_callback_interface_t* _this, bgfx_fatal_t _code, const char* _str) {

@@ -90,6 +90,31 @@ function m.get_bgfx_callback()
   return m.rawfunctions.truss_sdl_get_bgfx_cb(raw_pointer)
 end
 
+m._controller_map = {}
+m._reverse_controller_map = {}
+function m.enable_controller(idx)
+  local inst_id = m.rawfunctions.truss_sdl_enable_controller(raw_pointer, idx)
+  if inst_id >= 0 then
+    local info = {
+      id = idx, 
+      instance_id = inst_id, 
+      name = ffi.string(m.rawfunctions.truss_sdl_get_controller_name(raw_pointer, idx))
+    }
+    m._reverse_controller_map[idx] = inst_id
+    m._controller_map[inst_id] = info
+    return info
+  end
+end
+
+function m.disable_controller(idx)
+  local inst_id = m._reverse_controller_map[idx]
+  if inst_id then
+    m._controller_map[inst_id] = nil
+    m._reverse_controller_map[idx] = nil
+    m.rawfunctions.truss_sdl_disable_controller(raw_pointer, idx)
+  end
+end
+
 local function event_iterator(state)
   local idx = state.idx
   if idx >= state.n then
