@@ -125,6 +125,7 @@ void SDLAddon::init(truss::Interpreter* owner) {
 	std::cout << "Going to create window; if you get an LLVM crash on linux" <<
 		" at this point, the mostly likely reason is that you are using" <<
 		" the mesa software renderer.\n";
+	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0) {
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
 	}
