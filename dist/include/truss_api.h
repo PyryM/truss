@@ -30,6 +30,7 @@ int truss_get_error();
 void truss_shutdown();
 uint64_t truss_get_hp_time();
 uint64_t truss_get_hp_freq();
+void truss_sleep(unsigned int ms);
 int truss_check_file(const char* filename);
 truss_message* truss_load_file(const char* filename);
 int truss_save_file(const char* filename, truss_message* data);

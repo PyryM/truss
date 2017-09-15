@@ -63,6 +63,7 @@ TRUSS_C_API void truss_shutdown();
 /* High precision timer */
 TRUSS_C_API uint64_t truss_get_hp_time();
 TRUSS_C_API uint64_t truss_get_hp_freq();
+TRUSS_C_API void truss_sleep(unsigned int ms);
 
 /* FileIO */
 /* Note that when saving the message_type field is not saved */

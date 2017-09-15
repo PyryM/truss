@@ -10,6 +10,10 @@
 #include <trussapi.h>
 #include <physfs.h>
 
+// c++ 11 timing functions
+#include <chrono>
+#include <thread>
+
 using namespace truss;
 
 const char* truss_get_version() {
@@ -29,7 +33,7 @@ void truss_set_error(int errcode) {
 	Core::instance().setError(errcode);
 }
 
-void truss_shutddown() {
+void truss_shutdown() {
     Core::instance().stopAllInterpreters();
 }
 
@@ -39,6 +43,10 @@ uint64_t truss_get_hp_time() {
 
 uint64_t truss_get_hp_freq() {
     return bx::getHPFrequency();
+}
+
+void truss_sleep(unsigned int ms) {
+	std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
 int truss_check_file(const char* filename) {
