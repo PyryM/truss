@@ -75,6 +75,11 @@ function truss.on_quit(f)
   truss._cleanup_functions[f] = f
 end
 
+-- sleep
+function truss.sleep(ms)
+  truss.C.sleep(ms)
+end
+
 -- gracefully quit truss with an optional error code
 function truss.quit(code)
   for _, f in pairs(truss._cleanup_functions) do f() end
