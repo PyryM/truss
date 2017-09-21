@@ -30,7 +30,12 @@ function m.FlatMaterial(options)
     vs_name = "vs_flat_skybox"
   end
   if options.texture then
-    fs_name = "fs_flattextured"
+    if options.cubemap then
+      vs_name = "vs_flatcubemap"
+      fs_name = "fs_flatcubemap"
+    else
+      fs_name = "fs_flattextured"
+    end
   end
 
   local mat = {

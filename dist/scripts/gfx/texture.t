@@ -177,7 +177,7 @@ function Texture:create_copy_target(src, options)
   return self
 end
 
-function Texture:create_blit_dest(options)
+function Texture:create(options)
   local width = options.width
   local height = options.height
   local format = options.format or bgfx.TEXTURE_FORMAT_BGRA8
@@ -190,6 +190,19 @@ function Texture:create_blit_dest(options)
   return self
 end
 
+function Texture:create_cubemap(options)
+  local size = options.size
+  local format = options.format or bgfx.TEXTURE_FORMAT_BGRA8
+  local flags = math.combine_flags(options.flags or 0, bgfx.TEXTURE_BLIT_DST)
+
+  self._handle = bgfx.create_texture_cube(size, false, 1, 
+                                          format, flags, nil)
+  self._info = {width = size, height = size, format = format, cubemap = true}
+  self._blit_dest = true
+  self._cubemap = true
+  return self
+end
+
 function Texture:copy(src, options)
   options = options or {}
   if not self._handle then self:create_copy_target(src, options) end
@@ -197,7 +210,7 @@ function Texture:copy(src, options)
     truss.error("Cannot copy: target texture is not blittable!")
     return
   end
-  local dMip, dX, dY, dZ = 0, 0, 0, 0
+  local dMip, dX, dY, dZ = 0, 0, 0, options.cubeface or 0
   local sMip, sX, sY, sZ = 0, 0, 0, 0
   local sinfo, dinfo = src._info, self._info
   if not (sinfo and dinfo) then
