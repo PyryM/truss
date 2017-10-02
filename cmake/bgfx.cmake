@@ -121,6 +121,7 @@ set_target_properties(bgfx PROPERTIES
 
 # On Windows, need to include bx's 'compat' headers
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+    file(MAKE_DIRECTORY "${bx_MSVC_COMPAT_DIR}")
     set_target_properties(bgfx PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${bgfx_INCLUDE_DIR};${bx_INCLUDE_DIR};${bx_MSVC_COMPAT_DIR}"
     )
