@@ -115,7 +115,9 @@ end
 
 function View:apply_sequential()
   if (not self._viewid) or (self._viewid < 0) then return end
-  bgfx.set_view_seq(self._viewid, self._sequential)
+  local mode = bgfx.VIEW_MODE_DEFAULT
+  if self._sequential then mode = bgfx.VIEW_MODE_SEQUENTIAL end
+  bgfx.set_view_mode(self._viewid, mode)
 end
 
 function View:apply_all()
