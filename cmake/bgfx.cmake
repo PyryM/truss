@@ -14,6 +14,7 @@ ExternalProject_Add(bx_EXTERNAL
 ExternalProject_Get_Property(bx_EXTERNAL SOURCE_DIR)
 set(bx_DIR "${SOURCE_DIR}")
 set(bx_INCLUDE_DIR "${SOURCE_DIR}/include")
+set(bx_MSVC_COMPAT_DIR "${SOURCE_DIR}/include/compat/msvc")
 string(TOLOWER "${CMAKE_SYSTEM_NAME}" bx_SYSTEM_NAME)
 set(bx_GENIE "${SOURCE_DIR}/tools/bin/${bx_SYSTEM_NAME}/genie")
 
@@ -117,6 +118,13 @@ set_target_properties(bgfx PROPERTIES
     IMPORTED_LOCATION "${bgfx_LIBRARY}"
     IMPORTED_IMPLIB "${bgfx_IMPLIB}"
 )
+
+# On Windows, need to include bx's 'compat' headers
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+    set_target_properties(bgfx PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${bgfx_INCLUDE_DIR};${bx_INCLUDE_DIR};${bx_MSVC_COMPAT_DIR}"
+    )
+endif()
 
 # On Linux, BGFX needs a few other libraries.
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
