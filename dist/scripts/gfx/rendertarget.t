@@ -18,7 +18,7 @@ m.color_formats = {
   FLOAT     = bgfx.TEXTURE_FORMAT_RGBA32F
 }
 
-m.color_formatSizes = {
+m.color_format_sizes = {
   [bgfx.TEXTURE_FORMAT_BGRA8] = 4,
   [bgfx.TEXTURE_FORMAT_RGBA8] = 4,
   [bgfx.TEXTURE_FORMAT_RGBA16F] = 8,
@@ -189,7 +189,7 @@ function RenderTarget:create_read_back_buffer(idx)
   local ainfo = self._construction_args[idx]
 
   local w, h, fmt = ainfo[1], ainfo[2], ainfo[4]
-  local pixelsize = m.color_formatSizes[fmt]
+  local pixelsize = m.color_format_sizes[fmt]
   local datasize = w*h*pixelsize
 
   local flags = math.combine_flags(
