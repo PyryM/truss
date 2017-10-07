@@ -24,7 +24,7 @@ m.UNI_TEX = {
 }
 
 local Uniform = class("Uniform")
-function Uniform:init(uni_name, uni_type, num)
+function Uniform:init(uni_name, uni_type, num, value)
   if not uni_name then return end
 
   num = num or 1
@@ -35,6 +35,7 @@ function Uniform:init(uni_name, uni_type, num)
   self._num = num
   self._val = terralib.new(uni_type.terra_type[num])
   self._uni_name = uni_name
+  if num == 1 and value then self:set(value) end
 end
 
 function Uniform:clone()
@@ -76,13 +77,17 @@ function Uniform:bind()
   return self
 end
 
+function Uniform:bind_global(global)
+  if global then global:bind() else self:bind() end
+end
+
 local TexUniform = class("TexUniform")
-function TexUniform:init(uni_name, sampler_idx)
+function TexUniform:init(uni_name, sampler_idx, value)
   if not uni_name then return end
   self._handle = m._create_uniform(uni_name, m.UNI_TEX, 1)
   self._sampler_idx = sampler_idx
-  self._tex = nil
   self._uni_name = uni_name
+  self:set(value)
 end
 
 function TexUniform:clone()
@@ -99,18 +104,28 @@ function TexUniform:set(tex)
   return self
 end
 
-function TexUniform:bind()
-  if not self._tex then return self end
+function TexUniform:_bind(tex, sampler)
+  if not tex then return self end
   local texhandle
-  if type(self._tex) == "cdata" then
-    texhandle = self._tex
+  if type(tex) == "cdata" then
+    texhandle = tex
   else
-    texhandle = self._tex._handle or self._tex.raw_tex
+    texhandle = tex._handle or tex.raw_tex
   end
   if texhandle then
-    bgfx.set_texture(self._sampler_idx, self._handle, texhandle, bgfx.UINT32_MAX)
+    bgfx.set_texture(sampler, self._handle, texhandle, bgfx.UINT32_MAX)
   end
   return self
+end
+
+function TexUniform:bind()
+  self:_bind(self._tex, self._sampler_idx)
+end
+
+function TexUniform:bind_global(global)
+  -- use the global's *value* but our *sampler index*
+  if not global then return self:bind() end
+  self:_bind(global._tex, self._sampler_idx)
 end
 
 local UniformSet = class("UniformSet")
@@ -172,7 +187,7 @@ function UniformSet:bind_as_fallbacks(globals)
   if not globals then return self:bind() end
   -- preferentially bind uniforms in globals, but fall back to ones in this set
   for uni_name, uni in pairs(self._uniforms) do
-    (globals[uni_name] or uni):bind()
+    uni:bind_global(globals[uni_name])
   end
   return self
 end
