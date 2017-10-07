@@ -10,7 +10,6 @@ m.DebugTextStats = DebugTextStats
 
 function DebugTextStats:init()
   self.mount_name = "DebugTextStats"
-  self.update_priority = 0 -- doesn't really matter
   self.start_time = truss.tic()
 end
 
@@ -33,14 +32,14 @@ function DebugTextStats:time_between(name1, name2, info1, info2)
   end
 end
 
-function DebugTextStats:update_begin()
+function DebugTextStats:update()
   -- Use debug font to print timing information
-  local scripttime = self:time_between("frame_start", "update")
+  local scripttime = self:time_between("frame_start", "render_submit")
   local frametime = self:find_evt("frame_end").cdt * 1000.0
 
-  local putime = self:time_between("configure", "preupdate")
+  local putime = self:time_between("frame_start", "preupdate")
   local sgtime = self:time_between("preupdate", "scenegraph")
-  local uptime = self:time_between("scenegraph", "update")
+  local uptime = self:time_between("scenegraph", "render_submit")
 
   local ft = string.format("frame: %5.2f ms, ecs: %5.2f ms",
                             frametime, scripttime)

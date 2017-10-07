@@ -4,39 +4,53 @@
 
 local gfx = require("gfx")
 local math = require("math")
-local pipeline = require("graphics/pipeline.t")
-local entity = require("ecs/entity.t")
+local ecs = require("ecs")
+local stage = require("graphics/stage.t")
+local renderer = require("graphics/renderer.t")
 local nanovg = require("addons/nanovg.t")
 local m = {}
 
-local NanoVGStage = pipeline.Stage:extend("NanoVGStage")
+local NanoVGStage = stage.Stage:extend("NanoVGStage")
 m.NanoVGStage = NanoVGStage
 
-function NanoVGStage:init(options, ops)
+function NanoVGStage:init(options)
   options = options or {}
   self.options = options
-  self.num_views = 1
-  self.enabled = true
-  self.filter = options.filter
-  self.globals = options or {}
-  self._render_ops = {self} -- the stage itself acts as a renderop
-  for _, op in ipairs(ops or {}) do self:add_render_op(op) end
+  self._num_views = 1
+  self._render_ops = {} 
+  self.stage_name = options.name or options.stage_name or "nanovg"
+  -- self._render_ops = {self} -- the stage itself acts as a renderop
 
-  if options.draw then self.nvg_draw = options.draw end
+  if options.render then self.nvg_render = options.render end
   if options.setup then self.nvg_setup = options.setup end
+
+  self.view = self:_create_view(options.view, options)
 end
 
-function NanoVGStage:set_views(views)
-  NanoVGStage.super.set_views(self, views)
-  self._ctx = nanovg.NVGContext(self.view._viewid, self.options.edge_aa)
-  bgfx.set_view_seq(self.view._viewid, true)
-  if self.nvg_setup then self:nvg_setup(self._ctx) end
+function NanoVGStage:set_nanovg_functions(nvg_setup, nvg_render)
+  self.nvg_setup = nvg_setup
+  self.nvg_render = nvg_render
+  self._need_setup = true
+end
+
+function NanoVGStage:bind_view_ids(view_ids)
+  NanoVGStage.super.bind_view_ids(self, view_ids)
+  if self._ctx then -- reuse existing context for fonts etc.
+    self._ctx:set_view(self.view)
+  else
+    self._ctx = nanovg.NVGContext(self.view, self.options.edge_aa)
+    self._need_setup = true
+  end
 end
 
 function NanoVGStage:update_begin()
   if not self._ctx then return end
+  if self._need_setup and self.nvg_setup then 
+    self:nvg_setup(self._ctx)
+    self._need_setup = false
+  end
   self._ctx:begin_frame(self.view)
-  if self.nvg_draw then self:nvg_draw(self._ctx) end
+  if self.nvg_render then self:nvg_render(self._ctx) end
 end
 
 function NanoVGStage:update_end()
@@ -44,37 +58,43 @@ function NanoVGStage:update_end()
   self._ctx:end_frame()
 end
 
+-- Let's ignore this for the moment until I rethink how ecs entities should
+-- interact with nanovg rendering.
+--
+-- Right now the problem with this approach is that you get no control over
+-- what order the entities are drawn in, which is important in nanovg since
+-- there's no z buffering.
+--[[
 -----------------------------------------------
 --- NanoVGStage acting as a RenderOperation ---
 function NanoVGStage:matches(component)
-  return component.nvg_draw ~= nil
+  return component.nvg_render ~= nil
 end
 
-function NanoVGStage:draw(component)
-  component:nvg_draw(self, self._ctx)
+function NanoVGStage:render(component)
+  component:nvg_render(self, self._ctx)
 end
 
-function NanoVGStage:set_stage(stage)
-  -- just need this for compatibility
+function NanoVGStage:to_function(context)
+  return function(component)
+    self:render(component)
+  end
 end
 -----------------------------------------------
 
-function NanoVGStage:duplicate()
-  truss.error("NanoVGStage does not implement duplicate.")
+local NVGRenderComponent = renderer.RenderComponent:extend("NVGRenderComponent")
+m.NVGRenderComponent = NVGRenderComponent
+
+function NVGRenderComponent:init(draw_func)
+  if draw_func then self.nvg_render = draw_func end
+  self._render_ops = {}
 end
 
-local NanoVGDrawable = pipeline.DrawableComponent:extend("NanoVGDrawable")
-m.NanoVGDrawable = NanoVGDrawable
-
-function NanoVGDrawable:init(draw_func)
-  self.nvg_draw = draw_func
-end
-NanoVGDrawable.on_update = pipeline.DrawableComponent.draw
-
-function m.NanoVGEntity(name, draw_func)
-  local ret = entity.Entity3d(name)
-  ret:add_component(NanoVGDrawable(draw_func))
+function m.NanoVGEntity(_ecs, name, draw_func)
+  local ret = entity.Entity3d(_ecs, name)
+  ret:add_component(NVGRenderComponent(draw_func))
   return ret
 end
+--]]
 
 return m

@@ -6,30 +6,28 @@ local class = require("class")
 local math = require("math")
 local gfx = require("gfx")
 local sdl = require("addons/sdl.t")
+local sdl_input = require("input/sdl_input.t")
 local openvr = require("vr/openvr.t")
 local vrcomps = require("vr/components.t")
 
-local ecs = require("ecs/ecs.t")
-local component = require("ecs/component.t")
-local entity = require("ecs/entity.t")
-local sdl_input = require("ecs/sdl_input.t")
-
-local pipeline = require("graphics/pipeline.t")
-local framestats = require("graphics/framestats.t")
-local camera = require("graphics/camera.t")
-local compositestage = require("graphics/compositestage.t")
+local ecs = require("ecs")
+local graphics = require("graphics")
 
 local m = {}
 
 local VRApp = class("VRApp")
 
 function VRApp:init(options)
+  local t0 = truss.tic()
   self.options = options or {}
   openvr.init()
+  log.info("up to openvr init: " .. tostring(truss.toc(t0) * 1000.0))
   local vw, vh = 800, 1280
   if openvr.available then
     vw, vh = openvr.get_target_size()
   end
+
+  self.stats = options.stats
 
   if self.options.width and self.options.width < 1.0 then
     self.window_width = self.options.width * vw
@@ -49,9 +47,16 @@ function VRApp:init(options)
 
   log.info("gfx init!")
   self:gfx_init()
+  log.info("up to bgfx init: " .. tostring(truss.toc(t0) * 1000.0))
 
   log.info("got this far3?")
   self:ecs_init()
+  log.info("up to ecs init: " .. tostring(truss.toc(t0) * 1000.0))
+
+  if options.create_controllers then
+    self.controllers = {}
+    self:create_default_controllers()
+  end
 end
 
 function VRApp:gfx_init()
@@ -60,7 +65,7 @@ function VRApp:gfx_init()
                     self.window_height or 800,
                     self.options.title or 'title')
   local gfx_opts = {msaa = true,
-                    debugtext = self.options.debugtext,
+                    debugtext = self.stats,
                     window = sdl,
                     lowlatency = true}
   gfx_opts.vsync = (not openvr.available) -- enable vsync if no openvr
@@ -72,25 +77,19 @@ function VRApp:ecs_init()
   -- create ecs
   local ECS = ecs.ECS()
   self.ECS = ECS
+  self.scene = ECS.scene
+  --ECS:add_system(vrcomps.VRBeginFrameSystem())
   ECS:add_system(sdl_input.SDLInputSystem())
-
-  if self.options.debugtext or self.options.stats then
-    ECS:add_system(framestats.DebugTextStats())
-  end
-
-  ECS.scene:add_component(sdl_input.SDLInputComponent())
-  ECS.scene:on("keydown", function(entity, evt)
-    local keyname = ffi.string(evt.keycode)
-    if keyname == "F12" then
-      print("Saving screenshot!")
-      gfx.save_screenshot("screenshot.png")
-    end
-  end)
+  ECS:add_system(ecs.System("preupdate", "preupdate"))
+  ECS:add_system(ecs.ScenegraphSystem())
+  ECS:add_system(ecs.System("update", "update"))
+  ECS:add_system(graphics.RenderSystem())
+  if self.stats then ECS:add_system(graphics.DebugTextStats()) end
+  --ECS:add_system(vrcomps.VRSubmitSystem())
+  --ECS.systems.input:on("keydown", self, self.keydown)
 
   self:init_pipeline()
-
-  self.hmd_cam = vrcomps.VRCamera("hmd_camera")
-  ECS.scene:add(self.hmd_cam)
+  self:init_scene()
 end
 
 function VRApp:setup_targets()
@@ -107,45 +106,71 @@ function VRApp:init_pipeline()
 
   local composite_ops
   if self.options.mirror == "left" then
-    composite_ops = {left = {self.targets[1], 0.0, 0.0, 1.0, 1.0}}
+    composite_ops = {left = {source = self.targets[1], 
+                             x0 = 0.0, y0 = 0.0,
+                             x1 = 1.0, y1 = 1.0}}
   elseif self.options.mirror == "right" then
-    composite_ops = {right = {self.targets[1], 0.0, 0.0, 1.0, 1.0}}
-  elseif self.options.mirror == "none" then
-    composite_ops = {}
-  else
-    composite_ops = {left =  {self.targets[1], 0.0, 0.0, 0.5, 1.0},
-                     right = {self.targets[2], 0.5, 0.0, 1.0, 1.0}}
+    composite_ops = {right = {source = self.targets[2], 
+                              x0 = 0.0, y0 = 0.0, 
+                              x1 = 1.0, y1 = 1.0}}
+  else -- mirror both
+    composite_ops = {left =  {source = self.targets[1], 
+                              x0 = 0.0, y0 = 0.0, 
+                              x1 = 0.5, y1 = 1.0},
+                     right = {source = self.targets[2], 
+                              x0 = 0.5, y0 = 0.0, 
+                              x1 = 1.0, y1 = 1.0}}
   end
 
-  local p = self.ECS:add_system(pipeline.Pipeline({verbose = true}))
-  local left = p:add_stage(pipeline.Stage({
-    name = "solid_geo_left",
-    eye = "left",
-    clear = {color = 0x303050ff, depth = 1.0},
-    render_target = self.targets[1]
-  }, {pipeline.GenericRenderOp(), vrcomps.VRCameraControl()}))
-  local right = p:add_stage(pipeline.Stage({
-    name = "solid_geo_right",
-    eye = "right",
-    clear = {color = 0x303050ff, depth = 1.0},
-    render_target = self.targets[2]
-  }, {pipeline.GenericRenderOp(), vrcomps.VRCameraControl()}))
-  local composite = p:add_stage(compositestage.CompositeStage({
+  local clear = {color = 0x303050ff, depth = 1.0}
+  local p = graphics.Pipeline({verbose = true})
+  p:add_stage(graphics.MultiviewStage{
+    name = "stereo_forward",
+    globals = p.globals,
+    render_ops = {graphics.GenericRenderOp(), vrcomps.VRCameraControlOp()},
+    views = {
+      {name = "left",  clear = clear, render_target = self.targets[1]},
+      {name = "right", clear = clear, render_target = self.targets[2]}
+    }
+  })
+  p:add_stage(graphics.CompositeStage{
     name = "composite",
-    render_target = self.backbuffer
-  }, composite_ops))
-  if self.options.nvg then
-    local nvg = require("graphics/nanovg.t")
-    p:add_stage(nvg.NanoVGStage({
-      name = "nanovg_overlay",
-      render_target = self.backbuffer,
-      clear = {color = false, depth = false}
-    }))
+    clear = {color = 0xff0000ff, depth = 1.0},
+    render_target = self.backbuffer,
+    composite_ops = composite_ops
+  })
+
+  -- set pipeline
+  self.pipeline = p
+  self.ECS.systems.render:set_pipeline(p)
+end
+
+function VRApp:init_scene()
+  self.hmd_cam = self.ECS.scene:create_child(vrcomps.VRCamera, "hmd_camera")
+end
+
+function VRApp:create_default_controllers()
+  openvr.on("trackable_connected", function(trackable)
+    self:add_controller_model(trackable)
+  end)
+end
+
+function VRApp:add_controller_model(trackable)
+  if trackable.device_class_name ~= "Controller" then
+    return
   end
 
-  -- finalize pipeline
-  self.pipeline = p
-  self.pipeline:bind()
+  local geometry = require("geometry")
+  local pbr = require("shaders/pbr.t")
+  local geo = geometry.icosphere_geo(0.1, 3, "cico")
+  local mat = pbr.FacetedPBRMaterial({0.03,0.03,0.03,1.0},
+                                     {0.001, 0.001, 0.001}, 0.7)
+  
+  local controller = self.ECS.scene:create_child(ecs.Entity3d, 
+                                                 "controller")
+  controller:add_component(vrcomps.VRControllerComponent(trackable))
+  controller.vr_controller:create_mesh_parts(geo, mat)
+  table.insert(self.controllers, controller)
 end
 
 function VRApp:update()

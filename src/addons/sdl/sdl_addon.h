@@ -34,6 +34,11 @@ typedef struct SDLAddon SDLAddon;
 #define TRUSS_SDL_EVENT_MOUSEWHEEL   6
 #define TRUSS_SDL_EVENT_WINDOW       7
 #define TRUSS_SDL_EVENT_TEXTINPUT    8
+#define TRUSS_SDL_EVENT_GP_ADDED     9
+#define TRUSS_SDL_EVENT_GP_REMOVED   10
+#define TRUSS_SDL_EVENT_GP_AXIS      11
+#define TRUSS_SDL_EVENT_GP_BUTTONDOWN 12
+#define TRUSS_SDL_EVENT_GP_BUTTONUP 13
 
 #define TRUSS_SDL_MAX_KEYCODE_LENGTH 15 /* should be enough for anybody */
 #define TRUSS_SDL_KEYCODE_BUFF_SIZE  16 /* extra byte for null terminator */
@@ -51,6 +56,7 @@ typedef struct {
 
 TRUSS_C_API void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name, int is_fullscreen);
 TRUSS_C_API void truss_sdl_destroy_window(SDLAddon* addon);
+TRUSS_C_API void truss_sdl_resize_window(SDLAddon* addon, int width, int height, int fullscreen);
 TRUSS_C_API int truss_sdl_window_width(SDLAddon* addon);
 TRUSS_C_API int truss_sdl_window_height(SDLAddon* addon);
 TRUSS_C_API int truss_sdl_num_events(SDLAddon* addon);
@@ -59,8 +65,15 @@ TRUSS_C_API void truss_sdl_start_textinput(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_stop_textinput(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_set_clipboard(SDLAddon* addon, const char* data);
 TRUSS_C_API const char* truss_sdl_get_clipboard(SDLAddon* addon);
+TRUSS_C_API const char* truss_sdl_get_user_path(SDLAddon* addon, const char* orgname, const char* appname);
 TRUSS_C_API bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode);
+TRUSS_C_API int truss_sdl_num_controllers(SDLAddon* addon);
+TRUSS_C_API int truss_sdl_enable_controller(SDLAddon* addon, int controllerIdx);
+TRUSS_C_API void truss_sdl_disable_controller(SDLAddon* addon, int controllerIdx);
+TRUSS_C_API const char* truss_sdl_get_controller_name(SDLAddon* addon, int controllerIdx);
+
+#define MAX_CONTROLLERS 16
 
 class SDLAddon : public truss::Addon {
 public:
@@ -77,6 +90,11 @@ public:
 	int windowHeight();
 	void registerBGFX();
 	void destroyWindow();
+	void resizeWindow(int width, int height, int fullscreen);
+
+	int openController(int joyIndex);
+	void closeController(int joyIndex);
+	const char* getControllerName(int controllerIdx);
 
 	const char* getClipboardText();
 
@@ -97,6 +115,7 @@ private:
 	truss::Interpreter* owner_;
 	std::vector<truss_sdl_event> eventBuffer_;
 	truss_sdl_event errorEvent_;
+	SDL_GameController* controllers_[MAX_CONTROLLERS];
 };
 
 extern "C" {

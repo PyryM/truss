@@ -8,79 +8,146 @@ local m = {}
 
 local Entity = class("Entity")
 m.Entity = Entity
-function Entity:init(name, ...)
+function Entity:init(ecs, name, ...)
+  self.ecs = ecs
   self._components = {}
-  self._event_handlers = {}
   self.children = {}
   self.name = name or "entity"
-  self.user_handlers = {} -- a pseudo-component to hold user attached handlers
+  self.unique_name = ecs:_get_unique_name(self)
+  self.event = false -- to prevent overriding of this
 
   for _, comp in ipairs({...}) do
     self:add_component(comp)
   end
 end
 
+-- create an entity in the same ecs as this entity
+function Entity:create(constructor, ...)
+  return self.ecs:create(constructor, ...)
+end
+
+-- create an entity as a child of this entity
+function Entity:create_child(constructor, ...)
+  return self:add(self:create(constructor, ...))
+end
+
 -- return a string identifying this component for error messages
-function Entity:error_name(funcname)
-  return "Entity[" .. (self.name or "?") .. "]: "
+function Entity:log_name(funcname)
+  return "Entity[" .. (self.unique_name or self.name or "?") .. "]: "
 end
 
 -- throw an error with convenient formatting
-function Entity:error(error_message)
-  truss.error(self:error_name() .. error_message)
+function Entity:error(message)
+  truss.error(self:log_name() .. message)
 end
 
--- how deep a scenegraph tree can be
-m.MAX_TREE_DEPTH = 200
+-- throw a warning with convenient formatting
+function Entity:warning(message)
+  truss.warning(self:log_name() .. message)
+end
+
 -- check whether adding a prospective child to a parent
 -- would cause a cycle (i.e., that our scene tree would
 -- no longer be a tree)
-local function would_cause_cycle(parent, child)
-  -- we would have a cycle if tracing the parent up
-  -- to root would encounter the child or itself
-  local depth = 0
-  local curnode = parent
-  local MAXD = m.MAX_TREE_DEPTH
-  while curnode ~= nil do
-    curnode = curnode.parent
-    if curnode == parent or curnode == child then
-      return true, "Adding child would have caused cycle!"
+local function assert_cycle_free(parent, child, err_on_failure)
+  if parent:is_in_subtree(child) then
+    if err_on_failure then
+      truss.error("Cyclical reparent.")
     end
-    depth = depth + 1
-    if depth > MAXD then
-      return true, "Adding child would exceed max tree depth!"
-    end
+    return false
+  else
+    return true
   end
+end
+
+-- check if this entity is in a subtree rooted at a given entity
+function Entity:is_in_subtree(other)
+  if not other then return false end
+  local curnode = self
+  while curnode ~= nil do
+    if curnode == other then return true end
+    curnode = curnode.parent
+  end
+  -- got to root without hitting other
   return false
 end
 
-function Entity:add(child)
-  if not child then
-    truss.error("Cannot add nil as child.")
-    return false
+-- set an entity's parent
+-- the entity is removed from its previous parent (if any)
+-- setting a nil parent removes it from the tree
+-- if the operation would cause a cycle, an error is thrown
+function Entity:set_parent(parent)
+  if parent == self.parent then return end
+  if self.parent then
+    self.parent.children[self] = nil
   end
-  if would_cause_cycle(self, child) then
-    local _, errmsg = would_cause_cycle(self, child)
-    truss.error("Cyclic add: " .. errmsg)
-    return false
+  if parent then
+    if not assert_cycle_free(parent, self, true) then return false end
+    parent.children[self] = self
   end
-
-  -- remove child from its previous parent
-  if child.parent then
-    child.parent:remove(child)
-  end
-
-  self.children[child] = child
-  child.parent = self
-
-  if child._sg_root ~= self._sg_root then
-    child:configure_recursive(self._sg_root)
-  end
-
-  return true
+  self.parent = parent
 end
 
--- call a function on this node and its descendents
+function Entity:add_child(child)
+  child:set_parent(self)
+  return child
+end
+Entity.add = Entity.add_child -- alias for backwards compatibility
+
+function Entity:remove_child(child)
+  if not self.children[child] then
+    self:error("Entity does not have child " .. tostring(child))
+    return
+  end
+  child:set_parent(nil)
+  return child
+end
+Entity.remove = Entity.remove_child
+
+function Entity:detach()
+  self:set_parent(nil)
+end
+
+function Entity:destroy(recursive)
+  if recursive then
+    self:call_recursive("destroy", false)
+  else
+    self:set_parent(nil)
+    self._dead = true
+    self:destroy_components()
+  end
+end
+
+function Entity:destroy_components()
+  for mount_name, comp in pairs(self._components) do
+    comp._dead = true
+    if comp.destroy then comp:destroy() end
+    self[mount_name] = nil
+  end
+  self._components = {}
+end
+
+function Entity:sleep(recursive)
+  if recursive then
+    self:call_recursive("sleep", false)
+  else
+    for _, comp in pairs(self._components) do
+      comp:sleep()
+    end
+  end
+end
+
+function Entity:wake(recursive)
+  if recursive then
+    self:call_recursive("wake", false)
+  else
+    for _, comp in pairs(self._components) do
+      comp:wake()
+    end
+  end
+end
+
+-- call a function on this node and its descendants
 function Entity:call_recursive(func_name, ...)
   if self[func_name] then self[func_name](self, ...) end
   for _, child in pairs(self.children) do
@@ -88,48 +155,28 @@ function Entity:call_recursive(func_name, ...)
   end
 end
 
-function Entity:configure_recursive(sg_root)
-  self._sg_root = sg_root
-  self:configure(sg_root)
-  for _,child in pairs(self.children) do child:configure_recursive(sg_root) end
-end
-
-function Entity:remove(child)
-  if not self.children[child] then return end
-  self.children[child] = nil
-  child.parent = nil
-  child:configure_recursive(nil)
-end
-
-function Entity:configure(sg_root)
-  sg_root = sg_root or self._sg_root
-  for _,comp in pairs(self._components) do
-    if comp.configure then comp:configure(sg_root) end
-  end
-  if sg_root then
-    self:_register_global_events()
-  else
-    self:_remove_global_events()
+-- call f(ent) on this entity and all its descendants
+function Entity:traverse(f)
+  f(self)
+  for _, child in pairs(self.children) do
+    child:traverse(f)
   end
 end
 
-function Entity:_register_global_events()
-  if not self._sg_root then return end
-  for evt_name, _ in pairs(self._event_handlers) do
-    self._sg_root:_register_for_global_event(evt_name, self)
+-- allow iteration over this entity and all its descendants
+function Entity:iter_tree()
+  local co = coroutine.create(function() self:traverse(coroutine.yield) end)
+  return function()   -- iterator
+    local code, res = coroutine.resume(co)
+    return res
   end
-end
-
-function Entity:_remove_global_events()
-  if not self._sg_root then return end
-  self._sg_root:_remove_from_global_events(self)
 end
 
 -- add a component *instance* to an entity
 -- the name must be unique, and cannot be any of the keys in the entity
 function Entity:add_component(component, component_name)
   component_name = component_name or component.mount_name or component.name
-  if self[component_name] then
+  if self[component_name] ~= nil then
     self:error("[" .. component_name .. "] is already key in entity!")
   end
 
@@ -139,10 +186,9 @@ function Entity:add_component(component, component_name)
 
   self._components[component_name] = component
   self[component_name] = component
-  if component.mount then component:mount(self, component_name) end
-  if self._sg_root and component.configure then
-    component:configure(self._sg_root)
-  end
+  component.ent = self
+  component.ecs = self.ecs
+  if component.mount then component:mount(component_name) end
 
   return component
 end
@@ -151,89 +197,29 @@ end
 function Entity:remove_component(component_name)
   local comp = self._components[component_name]
   if not comp then
-    log.warning(self:error_name() .. "tried to remove component ["
-                .. component_name .. "] that doesn't exist.")
+    self:warning("can't remove nonexistent comp [" .. component_name .. "]")
     return
   end
   self._components[component_name] = nil
   self[component_name] = nil
   if comp.unmount then comp:unmount(self) end
-  self:_remove_handlers(comp)
 end
 
-function Entity:_add_handler(event_name, component)
-  self._event_handlers[event_name] = self._event_handlers[event_name] or {}
-  self._event_handlers[event_name][component] = component
-  if self._sg_root then
-    self._sg_root:_register_for_global_event(event_name, self)
+function Entity:emit(event_name, evt)
+  if not self.event then return end
+  self.event:emit(event_name, evt)
+end
+
+-- send an event to this entity and all its descendants
+function Entity:emit_recursive(event_name, evt)
+  self:call_recursive("emit", event_name, evt)
+end
+
+function Entity:on(event_name, receiver, callback)
+  if not self.event then
+    self.event = require("ecs/event.t").EventEmitter()
   end
-end
-
-function Entity:_remove_handler(event_name, component)
-  (self._event_handlers[event_name] or {})[component] = nil
-  local count = 0
-  for _, _ in pairs(self._event_handlers[event_name] or {}) do
-    count = count + 1
-  end
-  if count == 0 then self._event_handlers[event_name] = nil end
-end
-
-function Entity:_remove_handlers(component)
-  for _, handlers in pairs(self._event_handlers) do
-    handlers[component] = nil
-  end
-end
-
-function Entity:_auto_add_handlers(component)
-  local c = component.class or component
-  for k,v in pairs(c) do
-    if type(v) == "function" and k:sub(1, 3) == "on_" then
-      self:_add_handler(k, component)
-    end
-  end
-end
-
-local function dispatch_event(targets, event_name, arg)
-  if not targets then return end
-  for _, handler in pairs(targets) do
-    -- i.e., for "on_update", first try handler:on_update(arg)
-    -- then fall back to handler:on_event("on_update", arg)
-    if handler[event_name] then
-      handler[event_name](handler, arg)
-    elseif handler.on_event then
-      handler:on_event(event_name, arg)
-    end
-  end
-end
-
--- send an event to any components that want to handle it
-function Entity:event(event_name, arg)
-  dispatch_event(self._event_handlers["on_event"], event_name, arg)
-  dispatch_event(self._event_handlers[event_name], event_name, arg)
-end
-
--- send an event to this entity and all its descendents
-function Entity:event_recursive(event_name, arg)
-  self:call_recursive("event", event_name, arg)
-end
-
--- attach a function directly as an event handler
--- gets added to the "user_handlers" pseudo-component
--- only one such 'user handler' can be attached for any given event
-function Entity:on(event_name, f)
-  event_name = "on_" .. event_name
-  if f then
-    -- want function to be called as f(entity, [args]) not f(comp, [args])
-    -- because the 'component' that it belongs to is a bare table user_handlers
-    local f2 = function(_, ...)
-      f(self, ...)
-    end
-    self.user_handlers[event_name] = f2
-    self:_add_handler(event_name, self.user_handlers)
-  else -- remove existing handlers
-    self.user_handlers[event_name] = nil
-    self:_remove_handler(event_name, self.user_handlers)
-  end
+  self.event:on(event_name, receiver, callback)
 end
 
 -- plain Entity doesn't have a world mat
@@ -244,7 +230,7 @@ end
 local Entity3d = Entity:extend("Entity3d")
 m.Entity3d = Entity3d
 
-function Entity3d:init(name, ...)
+function Entity3d:init(ecs, name, ...)
   self.position = math.Vector(0.0, 0.0, 0.0, 0.0)
   self.scale = math.Vector(1.0, 1.0, 1.0, 0.0)
   self.quaternion = math.Quaternion():identity()
@@ -252,7 +238,7 @@ function Entity3d:init(name, ...)
   self.matrix_world = math.Matrix4():identity()
   -- call super.init after adding these fields, because some component might
   -- need to have e.g. .matrix available in its :mount
-  Entity3d.super.init(self, name, ...)
+  Entity3d.super.init(self, ecs, name, ...)
 end
 
 function Entity3d:update_matrix()
@@ -261,6 +247,8 @@ end
 
 -- recursively calculate world matrices from local transforms for
 -- object and all its children
+--
+-- TODO: use this traversal to also update recursive visibility
 function Entity3d:recursive_update_world_mat(parentmat)
   if not self.matrix then return end
   self.matrix_world:multiply(parentmat, self.matrix)

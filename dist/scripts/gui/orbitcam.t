@@ -4,11 +4,11 @@
 
 local class = require("class")
 local math = require("math")
-local Component = require("ecs/component.t").Component
+local ecs = require("ecs")
 
 local m = {}
 
-local OrbitControl = Component:extend("OrbitControl")
+local OrbitControl = ecs.Component:extend("OrbitControl")
 m.OrbitControl = OrbitControl
 function OrbitControl:init(options)
   options = options or {}
@@ -26,10 +26,9 @@ function OrbitControl:init(options)
   self.rad_rate = 0.4
   self.pan_rate = 0.01
 
-  self.last_mouse_x = 0
-  self.last_mouse_y = 0
+  self.input = options.input
 
-  -- mouse buttons: 1 = left, 2 = middle, 4 = right
+  -- mouse buttons: 1 = left, 2 = middle, 3 = right
   self.rotate_button = 1
   self.pan_button = 2
 
@@ -41,6 +40,17 @@ function OrbitControl:init(options)
   self.orbitpoint = math.Vector(0, 0, 0)
 
   self.mount_name = "orbit_control"
+end
+
+function OrbitControl:mount()
+  OrbitControl.super.mount(self)
+  self:add_to_systems({"preupdate"})
+  self.input = self.input or self.ecs.systems.input
+  if self.input then
+    self.input:on("mousewheel", self, self.mousewheel)
+    self.input:on("mousemove", self, self.mousemove)
+  end
+  self:wake()
 end
 
 function OrbitControl:set_zoom_limits(minrad, maxrad)
@@ -86,7 +96,7 @@ end
 
 function OrbitControl:pan_orbit_point(dx, dy)
   self:_update_matrix()
-  local target = self._entity
+  local target = self.ent
   -- pan using basis vectors from rotation matrix
   -- Note that Matrix4:getColumn is 1-indexed
   local basisX = target.matrix:get_column(1)
@@ -99,31 +109,26 @@ function OrbitControl:pan_orbit_point(dx, dy)
   self.orbitpoint:add(basisY)
 end
 
-function OrbitControl:on_mousewheel(evt)
+function OrbitControl:mousewheel(evtname, evt)
   local dwheel = evt.y
   self:move_rad(-dwheel)
 end
 
-function OrbitControl:on_mousemove(evt)
-  local x, y = evt.x, evt.y
-  local buttons = evt.flags
-  if bit.band(buttons, self.rotate_button) > 0 then
-    local dx = x - self.last_mouse_x
-    local dy = y - self.last_mouse_y
-    self:move_theta(dx)
-    self:move_phi(-dy)
-  elseif bit.band(buttons, self.pan_button) > 0 then
+function OrbitControl:mousemove(evtname, evt)
+  local rdx, rdy = evt.dx, evt.dy
+  local button = evt.flags
+  if button == self.rotate_button then
+    self:move_theta(rdx)
+    self:move_phi(-rdy)
+  elseif button == self.pan_button then
     -- scale pan_rate to rad so that it's reasonable at all zooms
-    local dx = (x - self.last_mouse_x) * self.pan_rate * self.rad
-    local dy = (y - self.last_mouse_y) * self.pan_rate * self.rad
-    self:pan_orbit_point(-dx, dy)
+    self:pan_orbit_point(-rdx * self.pan_rate * self.rad, 
+                          rdy * self.pan_rate * self.rad)
   end
-
-  self.last_mouse_x, self.last_mouse_y = x, y
 end
 
--- use the preupdate event because to update camera position before scenegraph
-function OrbitControl:on_preupdate()
+-- use the preupdate system to update camera position before scenegraph
+function OrbitControl:preupdate()
   local dt = 1.0 / 60.0
   local alpha, tolerance = self.alpha, self.tolerance
   self.phi = tween_to(self.phi, self.phi_target, alpha, tolerance, dt)
@@ -139,15 +144,15 @@ function OrbitControl:_update_matrix()
   local y = -self.rad * math.sin(self.phi)
   local x = rr * math.cos(self.theta)
   local z = rr * math.sin(self.theta)
-  local target = self._entity
+  local ent = self.ent
 
-  local pos = target.position
-  local quat = target.quaternion
+  local pos = ent.position
+  local quat = ent.quaternion
 
   pos:set(x, y, z)
   pos:add(self.orbitpoint)
   quat:euler({x = self.phi, y = -self.theta + math.pi / 2.0, z = 0}, 'ZYX')
-  target:update_matrix()
+  ent:update_matrix()
 end
 
 return m

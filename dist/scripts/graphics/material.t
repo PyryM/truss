@@ -22,6 +22,29 @@ function Material:init(src, clone)
   else
     self.uniforms = src.uniforms
   end
+  self.global_uniforms = src.global_uniforms
+end
+
+function Material:bind(globals)
+  if self.state then gfx.set_state(self.state) end
+  if self.uniforms then self.uniforms:bind() end
+  if self.global_uniforms then
+    self.global_uniforms:bind_as_fallbacks(globals)
+  end
+end
+
+function Material:bind_state()
+  if self.state then gfx.set_state(self.state) end
+end
+
+function Material:bind_locals()
+  if self.uniforms then self.uniforms:bind() end
+end
+
+function Material:bind_globals(globals)
+  if self.global_uniforms then
+    self.global_uniforms:bind_as_fallbacks(globals)
+  end
 end
 
 function Material:clone()

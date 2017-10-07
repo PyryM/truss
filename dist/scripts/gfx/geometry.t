@@ -5,6 +5,7 @@
 local class = require("class")
 local math = require("math")
 local bufferutils = require("gfx/bufferutils.t")
+local gfx = nil -- need to delay load
 
 local Quaternion = math.Quaternion
 local Matrix4 = math.Matrix4
@@ -273,9 +274,9 @@ function StaticGeometry:release_backing()
   self.verts, self.indices = nil, nil
   self.allocated = false
 
-  -- if the geometry has been committed, they to be safe need to wait 3 frames
+  -- if the geometry has been committed, then to be safe need to wait 3 frames
   if not self.committed then return self end
-  local gfx = require("gfx")
+  gfx = gfx or require("gfx")
   gfx.schedule(function()
     verts, indices = nil, nil
   end)
@@ -307,7 +308,8 @@ function StaticGeometry:from_data(modeldata, vertinfo, no_commit)
     nindices = nindices * 3                      -- assume triangles
   end
   if not vertinfo then
-    vertinfo = require("gfx").guess_vertex_type(modeldata)
+    gfx = gfx or require("gfx")
+    vertinfo = gfx.guess_vertex_type(modeldata)
   end
   self:allocate(#(modeldata.attributes.position), nindices, vertinfo)
 
@@ -330,13 +332,27 @@ function StaticGeometry:_create_bgfx_buffers(flags)
       bgfx.make_ref(self.indices, self.index_data_size), flags )
 end
 
+function DynamicGeometry:_mem_ref(data, datasize)
+  -- In multithreaded mode we need to copy the underlying memory because
+  -- bgfx will not actually look at it until several frames later.
+  --
+  -- In single threaded mode we can safely just pass in a reference to
+  -- the memory.
+  gfx = gfx or require("gfx")
+  if self.force_unsafe_updates or gfx.single_threaded then
+    return bgfx.make_ref(data, datasize)
+  else
+    return bgfx.copy(data, datasize)
+  end
+end
+
 function DynamicGeometry:_create_bgfx_buffers(flags)
   self._vbh = bgfx.create_dynamic_vertex_buffer_mem(
-      bgfx.make_ref(self.verts, self.vert_data_size),
+      self:_mem_ref(self.verts, self.vert_data_size),
       self.vertinfo.vdecl, flags )
 
   self._ibh = bgfx.create_dynamic_index_buffer_mem(
-      bgfx.make_ref(self.indices, self.index_data_size), flags )
+      self:_mem_ref(self.indices, self.index_data_size), flags )
 end
 
 function StaticGeometry:commit()
@@ -439,7 +455,7 @@ function DynamicGeometry:update_vertices()
   if not self._vbh then return end
 
   bgfx.update_dynamic_vertex_buffer(self._vbh, 0,
-    bgfx.make_ref(self.verts, self.vert_data_size))
+    self:_mem_ref(self.verts, self.vert_data_size))
 
   return self
 end
@@ -448,7 +464,7 @@ function DynamicGeometry:update_indices()
   if not self._ibh then return end
 
   bgfx.update_dynamic_index_buffer(self._ibh, 0,
-     bgfx.make_ref(self.indices, self.index_data_size))
+    self:_mem_ref(self.indices, self.index_data_size))
 
   return self
 end

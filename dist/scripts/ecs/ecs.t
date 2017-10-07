@@ -4,7 +4,6 @@
 
 local class = require("class")
 local entity = require("ecs/entity.t")
-local math = require("math")
 
 local m = {}
 
@@ -12,70 +11,42 @@ local ECS = class("ECS")
 m.ECS = ECS
 function ECS:init()
   self.systems = {}
-  self._ordered_systems = {}
-  self.scene = entity.Entity3d("ROOT")
-  self.scene._sg_root = self
-  self._identity_mat = math.Matrix4():identity()
-  self._configuration_dirty = false
+  self._update_order = {}
   self.timings = {}
   self._current_timings = {}
   self._t0 = truss.tic()
   self._lastdt = 0
-  self._global_events = {on_update = {}, on_preupdate = {}}
+  self._nextid = 0
+  self.entities = {}
+  setmetatable(self.entities, {__mode = "v"})
+  self.scene = entity.Entity3d(self, "ROOT")
 end
 
-function ECS:add_global_event(evt_name)
-  if not self._global_events[evt_name] then
-    self._global_events[evt_name] = {}
+function ECS:_get_unique_name(ent)
+  local basename = ent.name or "entity"
+  if not self.entities[basename] then
+    return basename
+  else
+    self._nextid = self._nextid + 1
+    return basename .. "_" .. self._nextid .. "_"
   end
-  self._configuration_dirty = true
 end
 
-function ECS:add_system(system, name, priority)
+function ECS:create(entity_constructor, ...)
+  if not entity_constructor then truss.error("No constructor given!") end
+  local ret = entity_constructor(self, ...)
+  self.entities[ret.unique_name] = ret
+  return ret
+end
+
+function ECS:add_system(system, name)
   name = name or system.mount_name
-  system.mount_name = name
   system.ecs = self
+  system.mount_name = name
   if self.systems[name] then truss.error("System name " .. name .. "taken!") end
   self.systems[name] = system
-  if priority then system.update_priority = priority end
-  self._configuration_dirty = true
-  table.insert(self._ordered_systems, system)
-  table.sort(self._ordered_systems, function(a,b)
-    return (a.update_priority or 0) < (b.update_priority or 0)
-  end)
+  table.insert(self._update_order, system)
   return system
-end
-
-function ECS:configure()
-  self.scene:configure_recursive(self)
-  self._configuration_dirty = false
-  return self
-end
-
-function ECS:event(evt_name, evt)
-  local targets = self._global_events[evt_name]
-  if not targets then
-    truss.error("ECS has no global event named " .. evt_name
-                 .. "; global events must be pre-registered"
-                 .. " with ECS:add_global_event()")
-    return
-  end
-  for entity, _ in pairs(targets) do
-    entity:event(evt_name, evt)
-  end
-end
-
-function ECS:_register_for_global_event(evt_name, entity)
-  local targets = self._global_events[evt_name]
-  if targets then
-    targets[entity] = true
-  end
-end
-
-function ECS:_remove_from_global_events(entity)
-  for _, targets in pairs(self._global_events) do
-    targets[entity] = nil
-  end
 end
 
 function ECS:_start_timing()
@@ -100,34 +71,10 @@ end
 function ECS:update()
   self:insert_timing_event("frame_start")
 
-  -- reconfigure if dirty
-  if self._configuration_dirty then self:configure() end
-
-  -- update systems first
-  self:insert_timing_event("configure")
-  for _, system in ipairs(self._ordered_systems) do
-    if system.update_begin then
-      system:update_begin()
-      self:insert_timing_event("subsystem_update_begin", system.mount_name)
-    end
-  end
-
-  -- preupdate
-  self:event("on_preupdate")
-  self:insert_timing_event("preupdate")
-  -- scenegraph transform update
-  self.scene:recursive_update_world_mat(self._identity_mat)
-  self:insert_timing_event("scenegraph")
-  -- update
-  self:event("on_update")
-  self:insert_timing_event("update")
-
-  -- update systems first
-  for _, system in ipairs(self._ordered_systems) do
-    if system.update_end then
-      system:update_end()
-      self:insert_timing_event("subsystem_update_end", system.mount_name)
-    end
+  -- update systems
+  for _, system in ipairs(self._update_order) do
+    system:update(self)
+    self:insert_timing_event(system.mount_name)
   end
 
   self:insert_timing_event("frame_end")

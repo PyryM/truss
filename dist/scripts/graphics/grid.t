@@ -77,16 +77,16 @@ function m.grid_segments(options)
   return lines, npts
 end
 
-function m.Grid(options)
+function m.Grid(_ecs, options)
   local pts, npts = m.grid_segments(options)
   local entity = require("ecs/entity.t")
-  local lshader = line.LineShaderComponent({maxpoints = npts})
-  lshader:set_points(pts)
-  if options.color then lshader.mat.uniforms.u_color:set(options.color) end
-  if options.thickness then lshader.mat.uniforms.u_thickness:set({options.thickness}) end
-  local ret = entity.Entity3d(options.name or "grid", lshader)
-
-  return ret
+  local line_comp = line.LineRenderComponent{
+    maxpoints = npts,
+    color = options.color,
+    thickness = options.thickness,
+    points = pts
+  }
+  return entity.Entity3d(_ecs, options.name or "grid", line_comp)
 end
 
 return m

@@ -75,6 +75,11 @@ function truss.on_quit(f)
   truss._cleanup_functions[f] = f
 end
 
+-- sleep
+function truss.sleep(ms)
+  truss.C.sleep(ms)
+end
+
 -- gracefully quit truss with an optional error code
 function truss.quit(code)
   for _, f in pairs(truss._cleanup_functions) do f() end
@@ -129,15 +134,51 @@ truss.extend_table = extend_table
 truss._module_env = extend_table({}, _G)
 local disallow_globals_mt = {
   __newindex = function (t,k,v)
-    truss.error("Module tried to create global '" .. k .. "'")
+    truss.error("Module " .. t._module_name .. " tried to create global '" .. k .. "'")
   end,
   __index = function (t,k)
-    truss.error("Module tried to access nil global '" .. k .. "'")
+    truss.error("Module " .. t._module_name .. " tried to access nil global '" .. k .. "'")
   end
 }
 
-local function create_module_env()
+function truss.set_app_directories(orgname, appname)
+  if (not orgname) or (not appname) then
+    truss.error("Must specify both org and app names.")
+    return
+  end 
+  local sdl = require("addons/sdl.t")
+  local userpath = sdl.create_user_path(orgname, appname)
+  print(userpath)
+  truss.C.set_raw_write_dir(userpath)
+end
+
+function truss.list_directory(path)
+  local nresults = truss.C.list_directory(TRUSS_ID, path)
+  if nresults < 0 then return nil end
+  local ret = {}
+  for i = 1, nresults do
+    -- C api is 0 indexed
+    ret[i] = ffi.string(truss.C.get_string_result(TRUSS_ID, i - 1))
+  end
+  truss.C.clear_string_results(TRUSS_ID)
+  return ret
+end
+
+function truss.is_file(path)
+  return truss.C.check_file(path) == 1
+end
+
+function truss.is_directory(path)
+  return truss.C.check_file(path) == 2
+end
+
+function truss.save_string(filename, s)
+  truss.C.save_data(filename, s, #s)
+end
+
+local function create_module_env(module_name)
   local modenv = extend_table({}, truss._module_env)
+  modenv._module_name = module_name
   setmetatable(modenv, disallow_globals_mt)
   return modenv
 end
@@ -177,8 +218,12 @@ function truss.require(filename, force)
       truss.error("require [" .. filename .. "]: syntax error: " .. loaderror)
       return nil
     end
-    setfenv(module_def, create_module_env())
-    loaded_libs[filename] = module_def()
+    setfenv(module_def, create_module_env(filename))
+    local evaluated_module = module_def()
+    if not evaluated_module then 
+      truss.error("Module [" .. filename .. "] did not return a table!")
+    end
+    loaded_libs[filename] = evaluated_module
     log.info(string.format("Loaded [%s] in %.2f ms",
                           filename, truss.toc(t0) * 1000.0))
   end

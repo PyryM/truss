@@ -5,13 +5,14 @@
 
 local m = {}
 local openvr_c = nil
-local parent = nil
+local openvr = nil
 local Queue = require("utils/queue.t").Queue
 local gfx = require("gfx")
+local math = require("math")
 
 function m.init(_parent)
   openvr_c = _parent.c_api
-  parent = _parent
+  openvr = _parent
 
   local addonfuncs = truss.addons.openvr.functions
   local addonptr   = truss.addons.openvr.pointer
@@ -46,6 +47,22 @@ function m.update()
   local task = m.task_queue:peek()
   local completed = task:execute()
   if completed then m.task_queue:pop() end
+end
+
+local pose_info = nil
+local controller_info = nil
+function m.get_part_pose(controller_state, part)
+  pose_info = pose_info or terralib.new(openvr_c.RenderModel_ComponentState_t)
+  controller_info = controller_info or terralib.new(openvr_c.RenderModel_ControllerMode_State_t)
+  local happy = openvr_c.tr_ovw_GetComponentState(m.rendermodelsptr, 
+                            part.parent_model_name, part.name, 
+                            controller_state, 
+                            controller_info, pose_info)
+  if not happy then return end
+  part.visible = bit.band(pose_info.uProperties, openvr_c.EVRComponentProperty_VRComponentProperty_IsVisible) > 0
+  part.static = bit.band(pose_info.uProperties, openvr_c.EVRComponentProperty_VRComponentProperty_IsStatic) > 0
+  if not part.pose then part.pose = math.Matrix4():identity() end
+  openvr.openvr_mat34_to_mat(pose_info.mTrackingToComponentRenderModel, part.pose)
 end
 
 local function load_model_task(task)
@@ -133,9 +150,57 @@ function m._dispatch_success(task)
   end
 end
 
+m.string_buff_size = 512 -- maybe needs to be larger???
+m.string_buff = terralib.new(int8[m.string_buff_size])
+
+function m.enumerate_parts(trackable)
+  if not trackable.device_idx then return nil end
+  local base_model_name = trackable:get_prop("RenderModelName")
+  log.info("Base model: " .. base_model_name)
+  local n_parts = openvr_c.tr_ovw_GetComponentCount(m.rendermodelsptr, base_model_name)
+  log.info("num parts: " .. n_parts)
+  local parts = {}
+  for i = 1, n_parts do
+    local retlen = openvr_c.tr_ovw_GetComponentName(m.rendermodelsptr, 
+                                            base_model_name, i - 1, 
+                                            m.string_buff, m.string_buff_size)
+    if retlen > 0 then
+      local part_name = ffi.string(m.string_buff, retlen-1) -- strip /0 term
+      local part_button_mask = openvr_c.tr_ovw_GetComponentButtonMask(m.rendermodelsptr,
+                                              base_model_name, part_name)
+      retlen = openvr_c.tr_ovw_GetComponentRenderModelName(m.rendermodelsptr, 
+                                              base_model_name, part_name, 
+                                              m.string_buff, m.string_buff_size)
+      local part_model_name = nil
+      if retlen > 0 then
+        part_model_name = ffi.string(m.string_buff, retlen-1) -- strip /0 term
+      end
+      parts[part_name] = {
+        name = part_name,
+        button_mask = part_button_mask,
+        parent_model_name = base_model_name,
+        model_name = part_model_name
+      }
+    else
+      log.info("Component " .. base_model_name .. ":" .. (i-1) .. " has no name?")
+    end
+  end
+  return parts
+end
+
+function m._load_model(trackable, model_name, cb_success, cb_fail, load_textures)
+  local task = {trackable = trackable,
+                on_load = cb_success,
+                on_fail = cb_fail,
+                execute = load_model_task,
+                model_name = model_name,
+                load_textures = load_textures}
+  m.task_queue:push(task)
+end
+
 function m.load_device_model(trackable, cb_success, cb_fail, load_textures)
   if trackable.device_idx == nil then
-    log.error("Nil device index???")
+    log.error("Nil device index")
     cb_fail({trackable = trackable}, "Nil device index.")
     return
   end
@@ -147,24 +212,21 @@ function m.load_device_model(trackable, cb_success, cb_fail, load_textures)
     cb_fail({trackable = trackable}, "No render model available.")
     return
   end
+  m._load_model(trackable, model_name, cb_success, cb_fail, load_textures)
+end
 
-  log.debug("Starting to load device model " .. model_name)
-  local task = {trackable = trackable,
-                on_load = cb_success,
-                on_fail = cb_fail,
-                execute = load_model_task,
-                model_name = model_name,
-                load_textures = load_textures}
-  m.task_queue:push(task)
+function m.load_part_model(trackable, part, cb_succ, cb_fail, load_textures)
+  if not part.model_name then return end
+  m._load_model(trackable, part.model_name, cb_succ, cb_fail, load_textures)
 end
 
 function m._ovr_tex_to_tex(texid, data)
-    local flags = 0 -- default texture flags
-    local w, h = data.unWidth, data.unHeight
-    log.debug("modelloader got tex of size " .. w .. " x " .. h)
-    local datalen = w * h * 4
-    return gfx.create_texture_from_data(w, h, data.rubTextureMapData,
-                                            datalen, flags)
+  local flags = 0 -- default texture flags
+  local w, h = data.unWidth, data.unHeight
+  log.debug("modelloader got tex of size " .. w .. " x " .. h)
+  local datalen = w * h * 4
+  return gfx.create_texture_from_data(w, h, data.rubTextureMapData,
+                                          datalen, flags)
 end
 
 function m._ovr_model_to_geo(name, data)

@@ -95,7 +95,7 @@ function init()
   gfx.init_gfx({msaa = true, debugtext = true, window = sdl})
 
   -- set up our one view (rendering directly to backbuffer)
-  view = gfx.View(0)
+  view = gfx.View():bind(0)
   view:set_clear({color = 0x303030ff, depth = 1.0})
   view:set_viewport(false)
 

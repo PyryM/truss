@@ -113,21 +113,21 @@ end
 
 -- load just the raw pixel data of a texture
 function m.load_texture_data(filename)
-	local temp = terralib.new(texture_data)
-	load_texture_data(filename, temp)
-	if temp.w <= 0 or temp.h <=0 or temp.n <= 0 then
-		log.error("couldn't load tex data: " .. temp.w .. " " .. temp.h .. " "
-				  .. temp.n)
-		truss.C.release_message(temp.data)
-		return nil
-	end
-	local dsize = temp.w*temp.h*temp.n
-	local ndata = terralib.new(uint8[temp.w*temp.h*temp.n])
-	for i = 0,dsize-1 do
-		ndata[i] = temp.data.data[i]
-	end
-	truss.C.release_message(temp.data)
-	return {w = temp.w, h = temp.h, n = temp.n, data = ndata}
+  local temp = terralib.new(texture_data)
+  load_texture_data(filename, temp)
+  if temp.w <= 0 or temp.h <=0 or temp.n <= 0 then
+    log.error("couldn't load tex data: " .. temp.w .. " " .. temp.h .. " "
+              .. temp.n)
+    truss.C.release_message(temp.data)
+    return nil
+  end
+  local dsize = temp.w*temp.h*temp.n
+  local ndata = terralib.new(uint8[temp.w*temp.h*temp.n])
+  for i = 0,dsize-1 do
+    ndata[i] = temp.data.data[i]
+  end
+  truss.C.release_message(temp.data)
+  return {w = temp.w, h = temp.h, n = temp.n, data = ndata}
 end
 
 local Texture = class("Texture")
@@ -177,6 +177,32 @@ function Texture:create_copy_target(src, options)
   return self
 end
 
+function Texture:create(options)
+  local width = options.width
+  local height = options.height
+  local format = options.format or bgfx.TEXTURE_FORMAT_BGRA8
+  local flags = math.combine_flags(options.flags or 0, bgfx.TEXTURE_BLIT_DST)
+
+  self._handle = bgfx.create_texture_2d(width, height, false, 1,
+                                        format, flags, nil)
+  self._info = {width = width, height = height, format = format}
+  self._blit_dest = true
+  return self
+end
+
+function Texture:create_cubemap(options)
+  local size = options.size
+  local format = options.format or bgfx.TEXTURE_FORMAT_BGRA8
+  local flags = math.combine_flags(options.flags or 0, bgfx.TEXTURE_BLIT_DST)
+
+  self._handle = bgfx.create_texture_cube(size, false, 1, 
+                                          format, flags, nil)
+  self._info = {width = size, height = size, format = format, cubemap = true}
+  self._blit_dest = true
+  self._cubemap = true
+  return self
+end
+
 function Texture:copy(src, options)
   options = options or {}
   if not self._handle then self:create_copy_target(src, options) end
@@ -184,7 +210,7 @@ function Texture:copy(src, options)
     truss.error("Cannot copy: target texture is not blittable!")
     return
   end
-  local dMip, dX, dY, dZ = 0, 0, 0, 0
+  local dMip, dX, dY, dZ = 0, 0, 0, options.cubeface or 0
   local sMip, sX, sY, sZ = 0, 0, 0, 0
   local sinfo, dinfo = src._info, self._info
   if not (sinfo and dinfo) then
@@ -221,6 +247,7 @@ function Texture:release()
     self._allow_read = false
   end
 end
+Texture.destroy = Texture.release
 
 -- TODO: refactor MemTexture into Texture
 

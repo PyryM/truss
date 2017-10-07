@@ -12,14 +12,50 @@ function Component:init()
   -- actually nothing to do
 end
 
-function Component:mount(entity)
-  self._entity = entity
-  entity:_auto_add_handlers(self)
+function Component:mount(compname)
+  self.mounted_name = compname
 end
 
 function Component:unmount()
-  if self._entity then self._entity:_remove_handlers(self) end
-  self._entity = nil
+  self.ecs = nil
+  self.ent = nil
+end
+
+function Component:add_to_systems(syslist)
+  self._systems = self._systems or {}
+  local ecs_systems = self.ecs.systems
+  for _, sysname in ipairs(syslist) do
+    self._systems[sysname] = ecs_systems[sysname]
+  end
+end
+
+function Component:wake()
+  if not self._systems then return end
+  for _, sys in pairs(self._systems) do
+    sys:register_component(self)
+  end
+end
+
+function Component:sleep()
+  if not self._systems then return end
+  for _, sys in pairs(self._systems) do
+    sys:unregister_component(self)
+  end
+end
+
+function Component:destroy()
+  self._dead = true
+end
+
+local UpdateComponent = Component:extend("UpdateComponent")
+m.UpdateComponent = UpdateComponent
+function UpdateComponent:mount()
+  self:add_to_systems({"update"})
+  self:wake()
+end
+
+function UpdateComponent:update()
+  -- you should override this
 end
 
 return m

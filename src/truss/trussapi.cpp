@@ -10,6 +10,10 @@
 #include <trussapi.h>
 #include <physfs.h>
 
+// c++ 11 timing functions
+#include <chrono>
+#include <thread>
+
 using namespace truss;
 
 const char* truss_get_version() {
@@ -29,7 +33,7 @@ void truss_set_error(int errcode) {
 	Core::instance().setError(errcode);
 }
 
-void truss_shutddown() {
+void truss_shutdown() {
     Core::instance().stopAllInterpreters();
 }
 
@@ -39,6 +43,10 @@ uint64_t truss_get_hp_time() {
 
 uint64_t truss_get_hp_freq() {
     return bx::getHPFrequency();
+}
+
+void truss_sleep(unsigned int ms) {
+	std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
 int truss_check_file(const char* filename) {
@@ -69,6 +77,24 @@ int truss_set_fs_savedir(const char* path) {
     core().setWriteDir(path);
     return 0;
 }
+
+int truss_set_raw_write_dir(const char* path) {
+	core().setRawWriteDir(path);
+	return 0;
+}
+
+int truss_list_directory(truss_interpreter_id interpreter, const char* path) {
+    return Core::instance().listDirectory(interpreter, path);
+}
+
+const char* truss_get_string_result(truss_interpreter_id interpreter, int idx) {
+    return Core::instance().getStringResult(interpreter, idx);
+}
+
+void truss_clear_string_results(truss_interpreter_id interpreter) {
+    Core::instance().clearStringResults(interpreter);
+}
+
 
 /* Datastore functions */
 truss_message* truss_get_store_value(const char* key) {

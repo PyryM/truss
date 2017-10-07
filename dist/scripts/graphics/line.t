@@ -8,12 +8,13 @@ local Matrix4 = math.Matrix4
 local Quaternion = math.Quaternion
 local Vector = math.Vector
 local gfx = require("gfx")
-local pipeline = require("graphics/pipeline.t")
+local render = require("graphics/renderer.t")
+local Material = require("graphics/material.t").Material
 
 local m = {}
 
-local LineShaderComponent = pipeline.DrawableComponent:extend("LineShaderComponent")
-m.LineShaderComponent = LineShaderComponent
+local LineRenderComponent = render.RenderComponent:extend("LineRenderComponent")
+m.LineRenderComponent = LineRenderComponent
 
 local internals = {}
 struct internals.VertexType {
@@ -45,21 +46,21 @@ local function get_vertex_info()
   return internals.vert_info
 end
 
-function LineShaderComponent:init(options)
+function LineRenderComponent:init(options)
   local opts = options or {}
   self._render_ops = {}
-  self.mount_name = "line_shader"
+  self.mount_name = "line"
 
   self.maxpoints = opts.maxpoints
   if not self.maxpoints then
-    truss.error("LineShaderComponent needs maxpoints!")
+    truss.error("LineRenderComponent needs maxpoints!")
     return
   end
   self.dynamic = not not opts.dynamic -- coerce to boolean
   self.geo = self:_create_buffers()
-  self.mat = self:_create_material(opts.state, opts.uniforms, opts.program)
+  self.mat = self:_create_material(opts)
+  if opts.points then self:set_points(opts.points) end
 end
-LineShaderComponent.on_update = pipeline.DrawableComponent.draw
 
 local function pack_v3(dest, arr)
   -- dest is a 0-indexed terra type, arr is a 1-index lua table
@@ -75,7 +76,7 @@ local function pack_vertex(dest, cur_pt, prev_pt, next_pt, dir)
   dest.color0[3] = dir
 end
 
-function LineShaderComponent:_append_segment(segpoints, vertidx, idxidx)
+function LineRenderComponent:_append_segment(segpoints, vertidx, idxidx, uscale)
   local npts = #segpoints
   local nlinesegs = npts - 1
   local startvert = vertidx
@@ -88,7 +89,7 @@ function LineShaderComponent:_append_segment(segpoints, vertidx, idxidx)
     --                line end   if nextpoint==curpoint
     local prevpoint = segpoints[i-1] or curpoint
     local nextpoint = segpoints[i+1] or curpoint
-    local u = i / npts
+    local u = i * (uscale or (1.0 / npts))
 
     pack_vertex(vbuf[vertidx]  , curpoint, prevpoint, nextpoint,  u)
     pack_vertex(vbuf[vertidx+1], curpoint, prevpoint, nextpoint, -u)
@@ -112,7 +113,7 @@ function LineShaderComponent:_append_segment(segpoints, vertidx, idxidx)
   return vertidx, idxidx
 end
 
-function LineShaderComponent:_create_buffers()
+function LineRenderComponent:_create_buffers()
   local vinfo = get_vertex_info()
   local geo
   if self.dynamic then
@@ -124,26 +125,51 @@ function LineShaderComponent:_create_buffers()
   return geo
 end
 
-local line_uniforms = nil
-function LineShaderComponent:_create_material(state, uniforms, pgm)
-  if line_uniforms == nil then
-    line_uniforms = gfx.UniformSet()
-    line_uniforms:add(gfx.VecUniform("u_color"))
-    line_uniforms:add(gfx.VecUniform("u_thickness"))
+local line_uniforms = {}
+function LineRenderComponent:_create_material(options)
+  local mat = options.material
+  if not mat then
+    local has_texture = options.texture ~= nil
+    local uniforms = line_uniforms[has_texture]
+    if not uniforms then
+      uniforms = gfx.UniformSet{gfx.VecUniform("u_baseColor"),
+                                gfx.VecUniform("u_thickness")}
+      if has_texture then uniforms:add(gfx.TexUniform("s_texAlbedo", 0)) end
+      line_uniforms[has_texture] = uniforms
+    end
+
+    local fsname = "fs_line"
+    if has_texture then
+      if options.alpha_test then
+        fsname = "fs_line_textured_atest"
+      else
+        fsname = "fs_line_textured"
+      end
+    end
+
+    mat = Material{
+      state = options.state or gfx.create_state(),
+      uniforms = options.uniforms or uniforms:clone(),
+      program = options.program or gfx.load_program("vs_line", fsname)
+    }
   end
 
-  local mat = {
-    state = state or gfx.create_state(),
-    uniforms = uniforms or line_uniforms:clone(),
-    program = pgm or gfx.load_program("vs_line", "fs_line")
-  }
+  if options.color then
+    mat.uniforms.u_baseColor:set(options.color)
+  end
+  local thickness = options.thickness or 0.1
+  local umult = options.u_mult or 1.0
+  mat.uniforms.u_thickness:set({thickness, umult})
+  if options.texture then
+    mat.uniforms.s_texAlbedo:set(options.texture)
+  end
 
   return mat
 end
 
 -- Update the line buffers: for a static line (dynamic == false)
 -- this will only work once
-function LineShaderComponent:set_points(lines)
+function LineRenderComponent:set_points(lines)
   -- try to determine whether somebody has passed in a single line
   -- rather than a list of lines
   if type(lines[1][1]) == "number" then
@@ -167,6 +193,11 @@ function LineShaderComponent:set_points(lines)
   end
 
   if self.dynamic then self.geo:update() else self.geo:commit() end
+end
+
+function m.Line(_ecs, name, options)
+  local ecs = require("ecs")
+  return ecs.Entity3d(_ecs, name, LineRenderComponent(options))
 end
 
 return m

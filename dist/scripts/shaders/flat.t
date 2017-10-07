@@ -8,8 +8,9 @@ local math = require("math")
 local gfx = require("gfx")
 local Material = require("graphics/material.t").Material
 
+local flat_uniforms = {}
 function m.create_flat_uniforms(has_texture)
-  if m._flat_uniforms then return m._flat_uniforms end
+  if flat_uniforms[has_texture] then return flat_uniforms[has_texture] end
 
   local uniforms = gfx.UniformSet()
 
@@ -18,22 +19,27 @@ function m.create_flat_uniforms(has_texture)
     uniforms:add(gfx.TexUniform("s_texAlbedo", 0))
   end
 
-  m._flat_uniforms = uniforms
+  flat_uniforms[has_texture] = uniforms
   return uniforms
 end
 
 function m.FlatMaterial(options)
   local vs_name = "vs_flat"
-  local fs_name = "fs_flat"
+  local fs_name = "fs_flatsolid"
   if options.skybox then
     vs_name = "vs_flat_skybox"
   end
   if options.texture then
-    fs_name = "fs_flattextured"
+    if options.cubemap then
+      vs_name = "vs_flatcubemap"
+      fs_name = "fs_flatcubemap"
+    else
+      fs_name = "fs_flattextured"
+    end
   end
 
   local mat = {
-    state = gfx.create_state(),
+    state = options.state or gfx.create_state(),
     program = gfx.load_program(vs_name, fs_name),
     uniforms = m.create_flat_uniforms(options.texture):clone()
   }

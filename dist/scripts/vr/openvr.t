@@ -64,7 +64,7 @@ function m.init()
 
   m.eye_ids = {openvr_c.EVREye_Eye_Left, openvr_c.EVREye_Eye_Right}
 
-  m.vrEvent = terralib.new(openvr_c.VREvent_t)
+  m.vr_event = terralib.new(openvr_c.VREvent_t)
   m.MAX_TRACKABLES = const.k_unMaxTrackedDeviceCount
   m.trackable_poses = terralib.new(openvr_c.TrackedDevicePose_t[m.MAX_TRACKABLES])
   m.trackables = {}
@@ -115,44 +115,44 @@ function m.submit_frame(eye_texes)
   end
 end
 
-function m.loadModel(device, callbackSuccess, callbackFailure)
-  modelloader.loadDeviceModel(device, callbackSuccess, callbackFailure)
+function m.load_model(device, callback_success, callback_failure)
+  modelloader.load_device_model(device, callback_success, callback_failure)
 end
 
-function m.processVREvent_()
-  local evt = m.vrEvent
+function m._process_vr_event()
+  local evt = m.vr_event
   if evt.eventType == openvr_c.EVREventType_VREvent_Quit then
     log.info("Openvr requested application quit!")
-    if m.on_quit then m.on_quit() end
+    --if m.on_quit then m.on_quit() end
     openvr_c.tr_ovw_AcknowledgeQuit_Exiting(m.sysptr)
     truss.quit()
   end
 end
 
-function m.updateVREvents_()
+function m._update_vr_events()
   local evtsize = sizeof(openvr_c.VREvent_t)
-  while openvr_c.tr_ovw_PollNextEvent(m.sysptr, m.vrEvent, evtsize) > 0 do
-    m.processVREvent_()
+  while openvr_c.tr_ovw_PollNextEvent(m.sysptr, m.vr_event, evtsize) > 0 do
+    m._process_vr_event()
   end
 end
 
-function m.device_idxToController(idx)
-  local controllerIdx = m.controllerIDMapping[idx]
-  if not controllerIdx then
-    m.maxControllers = m.maxControllers + 1
-    controllerIdx = m.maxControllers
-    m.controllerIDMapping[idx] = controllerIdx
-    m.controllers[controllerIdx] = Controller(idx)
-  end
-  return m.controllers[controllerIdx]
-end
+-- function m.device_idxToController(idx)
+--   local controllerIdx = m.controllerIDMapping[idx]
+--   if not controllerIdx then
+--     m.maxControllers = m.maxControllers + 1
+--     controllerIdx = m.maxControllers
+--     m.controllerIDMapping[idx] = controllerIdx
+--     m.controllers[controllerIdx] = Controller(idx)
+--   end
+--   return m.controllers[controllerIdx]
+-- end
 
 function m.on(evt_name, f)
   m._event_handlers[evt_name] = m._event_handlers[evt_name] or {}
   table.insert(m._event_handlers[evt_name], f)
 end
 
-function m._event(evt_name, ...)
+function m._emit_event(evt_name, ...)
   for _, f in ipairs(m._event_handlers[evt_name] or {}) do
     f(...)
   end
@@ -171,12 +171,12 @@ function m._update_trackables()
       if not target or target.device_class ~= ttype then
         if target then
           target:on_disconnect()
-          m._event("trackable_disconnected", target)
+          m._emit_event("trackable_disconnected", target)
         end
         log.info("New trackable " .. tostring(ttype))
         target = trackable_types[ttype].constructor(i, ttype)
         m.trackables[i+1] = target
-        m._event("trackable_connected", target)
+        m._emit_event("trackable_connected", target)
       end
       target:update(trackable_pose)
     elseif target then
@@ -213,9 +213,9 @@ function m.openvr_mat34_to_mat(m_3x4, target)
   d[3], d[7], d[11], d[15] =     0.0,     0.0,     0.0,     1.0
 end
 
-local terra derefInt(x: &uint32) : uint32
-  return @x
-end
+-- local terra derefInt(x: &uint32) : uint32
+--   return @x
+-- end
 
 function m._update_projections()
   local near = m.nearClip or 0.05

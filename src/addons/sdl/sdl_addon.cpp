@@ -62,6 +62,11 @@ SDLAddon::SDLAddon() {
 		#define TRUSS_SDL_EVENT_MOUSEWHEEL  6
 		#define TRUSS_SDL_EVENT_WINDOW      7
 		#define TRUSS_SDL_EVENT_TEXTINPUT   8
+		#define TRUSS_SDL_EVENT_GP_ADDED     9
+		#define TRUSS_SDL_EVENT_GP_REMOVED   10
+		#define TRUSS_SDL_EVENT_GP_AXIS      11
+		#define TRUSS_SDL_EVENT_GP_BUTTONDOWN 12
+		#define TRUSS_SDL_EVENT_GP_BUTTONUP 13
 
 		typedef struct Addon Addon;
 		typedef struct bgfx_callback_interface bgfx_callback_interface_t;
@@ -78,6 +83,7 @@ SDLAddon::SDLAddon() {
 
 		void truss_sdl_create_window(Addon* addon, int width, int height, const char* name, int is_fullscreen);
 		void truss_sdl_destroy_window(Addon* addon);
+		void truss_sdl_resize_window(Addon* addon, int width, int height, int fullscreen);
 		int truss_sdl_window_width(Addon* addon);
 		int truss_sdl_window_height(Addon* addon);
 		int  truss_sdl_num_events(Addon* addon);
@@ -86,10 +92,18 @@ SDLAddon::SDLAddon() {
 		void truss_sdl_stop_textinput(Addon* addon);
 		void truss_sdl_set_clipboard(Addon* addon, const char* data);
 		const char* truss_sdl_get_clipboard(Addon* addon);
+		const char* truss_sdl_get_user_path(Addon* addon, const char* orgname, const char* appname);
 		bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(Addon* addon);
 		void truss_sdl_set_relative_mouse_mode(Addon* addon, int mod);
+		int truss_sdl_num_controllers(Addon* addon);
+		int truss_sdl_enable_controller(Addon* addon, int controllerIdx);
+		void truss_sdl_disable_controller(Addon* addon, int controllerIdx);
+		const char* truss_sdl_get_controller_name(Addon* addon, int controllerIdx);
 	)";
 	errorEvent_.event_type = TRUSS_SDL_EVENT_OUTOFBOUNDS;
+	for (unsigned int i = 0; i < MAX_CONTROLLERS; ++i) {
+		controllers_[i] = NULL;
+	}
 }
 
 const std::string& SDLAddon::getName() {
@@ -111,7 +125,8 @@ void SDLAddon::init(truss::Interpreter* owner) {
 	std::cout << "Going to create window; if you get an LLVM crash on linux" <<
 		" at this point, the mostly likely reason is that you are using" <<
 		" the mesa software renderer.\n";
-	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0) {
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
 	}
 }
@@ -148,6 +163,7 @@ void hackCStrCpy(char* dest, char* src, size_t destsize) {
 
 void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	truss_sdl_event newEvent;
+	bool isValid = true;
 	switch(event.type) {
 	case SDL_KEYDOWN:
 	case SDL_KEYUP:
@@ -172,7 +188,7 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 		break;
 	case SDL_MOUSEBUTTONDOWN:
 	case SDL_MOUSEBUTTONUP:
-		newEvent.event_type = (event.type == SDL_MOUSEBUTTONDOWN ? 
+		newEvent.event_type = (event.type == SDL_MOUSEBUTTONDOWN ?
 								TRUSS_SDL_EVENT_MOUSEDOWN : TRUSS_SDL_EVENT_MOUSEUP);
 		newEvent.x = event.button.x;
 		newEvent.y = event.button.y;
@@ -188,10 +204,34 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 		newEvent.event_type = TRUSS_SDL_EVENT_WINDOW;
 		newEvent.flags = event.window.event;
 		break;
-	default:
+	case SDL_CONTROLLERAXISMOTION:
+		newEvent.event_type = TRUSS_SDL_EVENT_GP_AXIS;
+		newEvent.flags = event.caxis.which;
+		newEvent.x = event.caxis.axis;
+		newEvent.y = ((double)event.caxis.value) / 32767.0;
+		break;
+	case SDL_CONTROLLERBUTTONDOWN:
+	case SDL_CONTROLLERBUTTONUP:
+		newEvent.event_type = (event.type == SDL_CONTROLLERBUTTONDOWN ?
+			TRUSS_SDL_EVENT_GP_BUTTONDOWN : TRUSS_SDL_EVENT_GP_BUTTONUP);
+		newEvent.flags = event.cbutton.which;
+		newEvent.x = event.cbutton.button;
+		break;
+	case SDL_CONTROLLERDEVICEADDED:
+		newEvent.event_type = TRUSS_SDL_EVENT_GP_ADDED;
+		newEvent.flags = event.cdevice.which;
+		break;
+	case SDL_CONTROLLERDEVICEREMOVED:
+		newEvent.event_type = TRUSS_SDL_EVENT_GP_REMOVED;
+		newEvent.flags = event.cdevice.which;
+		break;
+	default: // a whole mess of event types we don't care about
+		isValid = false;
 		break;
 	}
-	eventBuffer_.push_back(newEvent);
+	if(isValid) {
+		eventBuffer_.push_back(newEvent);
+	}
 }
 
 void SDLAddon::update(double dt) {
@@ -244,6 +284,47 @@ void SDLAddon::destroyWindow() {
 	std::cout << "SDLAddon::destroyWindow not implemented yet.\n";
 }
 
+void SDLAddon::resizeWindow(int width, int height, int fullscreen) {
+	if (fullscreen <= 0) {
+		SDL_SetWindowBordered(window_, SDL_TRUE);
+		SDL_SetWindowSize(window_, width, height);
+	} else {
+		SDL_SetWindowBordered(window_, SDL_FALSE);
+		SDL_MaximizeWindow(window_);
+	}
+}
+
+int SDLAddon::openController(int controllerIdx) {
+	if (controllerIdx < 0 || controllerIdx >= MAX_CONTROLLERS 
+		|| !SDL_IsGameController(controllerIdx)) {
+		return -1;
+	}
+	SDL_GameController* controller = SDL_GameControllerOpen(controllerIdx);
+	SDL_Joystick* joy = SDL_GameControllerGetJoystick(controller);
+	controllers_[controllerIdx] = controller;
+	return SDL_JoystickInstanceID(joy);
+}
+
+void SDLAddon::closeController(int controllerIdx) {
+	if (controllerIdx < 0 || controllerIdx >= MAX_CONTROLLERS) {
+		return;
+	}
+	if (controllers_[controllerIdx]) {
+		SDL_GameControllerClose(controllers_[controllerIdx]);
+		controllers_[controllerIdx] = NULL;
+	}
+}
+
+const char* SDLAddon::getControllerName(int controllerIdx) {
+	if (controllerIdx < 0 || controllerIdx >= MAX_CONTROLLERS) {
+		return NULL;
+	}
+	if (controllers_[controllerIdx] == NULL) {
+		return NULL;
+	}
+	return SDL_GameControllerName(controllers_[controllerIdx]);
+}
+
 const char* SDLAddon::getClipboardText() {
 	char* temp = SDL_GetClipboardText();
 	clipboard_ = temp;
@@ -274,6 +355,10 @@ void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char*
 
 void truss_sdl_destroy_window(SDLAddon* addon) {
 	addon->destroyWindow();
+}
+
+void truss_sdl_resize_window(SDLAddon* addon, int width, int height, int fullscreen) {
+	addon->resizeWindow(width, height, fullscreen);
 }
 
 int truss_sdl_window_width(SDLAddon* addon) {
@@ -308,12 +393,32 @@ const char* truss_sdl_get_clipboard(SDLAddon* addon) {
 	return addon->getClipboardText();
 }
 
+const char* truss_sdl_get_user_path(SDLAddon* addon, const char* orgname, const char* appname) {
+	return SDL_GetPrefPath(orgname, appname);
+}
+
 void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode) {
 	if (mode > 0) {
 		SDL_SetRelativeMouseMode(SDL_TRUE);
 	} else {
 		SDL_SetRelativeMouseMode(SDL_FALSE);
 	}
+}
+
+int truss_sdl_num_controllers(SDLAddon* addon) {
+	return SDL_NumJoysticks();
+}
+
+int truss_sdl_enable_controller(SDLAddon* addon, int controllerIdx) {
+	return addon->openController(controllerIdx);
+}
+
+void truss_sdl_disable_controller(SDLAddon* addon, int controllerIdx) {
+	addon->closeController(controllerIdx);
+}
+
+const char* truss_sdl_get_controller_name(SDLAddon* addon, int controllerIdx) {
+	return addon->getControllerName(controllerIdx);
 }
 
 void bgfx_cb_fatal(bgfx_callback_interface_t* _this, bgfx_fatal_t _code, const char* _str) {

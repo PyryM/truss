@@ -139,6 +139,20 @@ void Core::setWriteDir(const char* writepath) {
     }
 }
 
+void Core::setRawWriteDir(const char* path, bool mount) {
+	logPrint(TRUSS_LOG_DEBUG, "Setting physFS write path: %s", path);
+	int retval = PHYSFS_setWriteDir(path);
+	if (retval == 0) {
+		logPrint(TRUSS_LOG_ERROR, "setWriteDir failed: %s", PHYSFS_getLastError());
+	}
+	if (mount) {
+		retval = PHYSFS_mount(path, "writedir", 0);
+		if (retval == 0) {
+			logPrint(TRUSS_LOG_ERROR, "addFSPath failed: %s", PHYSFS_getLastError());
+		}
+	}
+}
+
 // NOT THREAD SAFE!!!
 std::ostream& Core::logStream(int log_level) {
     logfile_ << "[" << log_level << "] ";
@@ -334,6 +348,56 @@ void Core::saveFile(const char* filename, truss_message* data) {
 void Core::saveFileRaw(const char* filename, truss_message* data) {
     saveDataRaw(filename, (char*)(data->data),
                 static_cast<unsigned int>(data->data_length));
+}
+
+int Core::listDirectory(int interpreter, const char* dirpath) {
+    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+
+    if (!physFSInitted_) {
+        logPrint(TRUSS_LOG_ERROR,
+                "Cannot list directory '%s': PhysFS not initialized.", dirpath);
+        return -1;
+    }
+
+    while(stringResults_.size() <= interpreter) {
+        std::vector<std::string> temp;
+        stringResults_.push_back(temp);
+    }
+    stringResults_[interpreter].clear();
+
+    char** stringlist = PHYSFS_enumerateFiles(dirpath);
+    int nresults = 0;
+    for(char** i = stringlist; *i != NULL; ++i) {
+        std::string temp(*i);
+        stringResults_[interpreter].push_back(temp);
+        ++nresults;
+    }
+    PHYSFS_freeList(stringlist);
+    return nresults;
+}
+
+const char* Core::getStringResult(int interpreter, int idx) {
+    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    if(interpreter < 0 || interpreter >= stringResults_.size()) {
+        logPrint(TRUSS_LOG_ERROR,
+                 "Interpreter idx '%d' out of range.", interpreter);
+        return NULL;
+    }
+    if(idx < 0 || idx >= stringResults_[interpreter].size()) {
+        logPrint(TRUSS_LOG_ERROR,
+                 "String result idx '%d' out of range.", idx);
+        return NULL;
+    }
+
+    return stringResults_[interpreter][idx].c_str();
+}
+
+void Core::clearStringResults(int interpreter) {
+    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    if(interpreter < 0 || interpreter >= stringResults_.size()) {
+        return;
+    }
+    stringResults_[interpreter].clear();
 }
 
 truss_message* Core::getStoreValue(const std::string& key) {
