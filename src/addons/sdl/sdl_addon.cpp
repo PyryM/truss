@@ -454,7 +454,8 @@ void bgfx_cb_screen_shot(bgfx_callback_interface_t* _this, const char* _filePath
 	ss << "w: " << _width << ", h: " << _height << ", p: " << _pitch << ", s: " << _size << ", yf: " << _yflip;
 	truss_log(TRUSS_LOG_INFO, ss.str().c_str());
 	char* temp = new char[_size];
-	bgfx_image_swizzle_bgra8(_width, _height, _pitch, _data, temp);
+	// TODO: fix this swizzling so our screenshots work again 
+	// bgfx_image_swizzle_bgra8(_width, _height, _pitch, _data, temp);
 	stbi_write_png(_filePath, _width, _height, 4, temp, _pitch);
 	delete[] temp;
 }

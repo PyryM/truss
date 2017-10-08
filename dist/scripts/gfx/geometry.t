@@ -169,7 +169,7 @@ function m.make_fast_transient_quad_func(vinfo)
     indexb[4] = 3
     indexb[5] = 0
 
-    bgfx.set_transient_vertex_buffer(&vb, 0, 4)
+    bgfx.set_transient_vertex_buffer(0, &vb, 0, 4)
     bgfx.set_transient_index_buffer(&ib, 0, 6)
   end
   return fastQuad
@@ -415,28 +415,28 @@ end
 function StaticGeometry:bind()
   if not check_committed(self) then return end
 
-  bgfx.set_vertex_buffer(self._vbh, 0, bgfx.UINT32_MAX)
+  bgfx.set_vertex_buffer(0, self._vbh, 0, bgfx.UINT32_MAX)
   bgfx.set_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
 end
 
 function StaticGeometry:bind_partial(start_v, n_v, start_i, n_i)
   if not check_committed(self) then return end
 
-  bgfx.set_vertex_buffer(self._vbh, start_v, n_v)
+  bgfx.set_vertex_buffer(0, self._vbh, start_v, n_v)
   bgfx.set_index_buffer(self._ibh, start_i, n_i)
 end
 
 function DynamicGeometry:bind()
   if not check_committed(self) then return end
 
-  bgfx.set_dynamic_vertex_buffer(self._vbh, 0, bgfx.UINT32_MAX)
+  bgfx.set_dynamic_vertex_buffer(0, self._vbh, 0, bgfx.UINT32_MAX)
   bgfx.set_dynamic_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
 end
 
 function DynamicGeometry:bind_partial(start_v, n_v, start_i, n_i)
   if not check_committed(self) then return end
 
-  bgfx.set_dynamic_vertex_buffer(self._vbh, start_v, n_v)
+  bgfx.set_dynamic_vertex_buffer(0, self._vbh, start_v, n_v)
   bgfx.set_dynamic_index_buffer(self._ibh, start_v, n_i)
 end
 

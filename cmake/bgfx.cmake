@@ -3,7 +3,7 @@ include(ExternalProject)
 # Download `bx` and extract source path.
 ExternalProject_Add(bx_EXTERNAL
     GIT_REPOSITORY "https://github.com/bkaradzic/bx.git"
-    GIT_TAG "be3ff82dc8d0c4fe81af22a92084ef748865108d"
+    GIT_TAG "82185277e4de27c332dbf61388a1d641e4850696"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -14,8 +14,25 @@ ExternalProject_Add(bx_EXTERNAL
 ExternalProject_Get_Property(bx_EXTERNAL SOURCE_DIR)
 set(bx_DIR "${SOURCE_DIR}")
 set(bx_INCLUDE_DIR "${SOURCE_DIR}/include")
+set(bx_MSVC_COMPAT_DIR "${SOURCE_DIR}/include/compat/msvc")
 string(TOLOWER "${CMAKE_SYSTEM_NAME}" bx_SYSTEM_NAME)
 set(bx_GENIE "${SOURCE_DIR}/tools/bin/${bx_SYSTEM_NAME}/genie")
+
+# Download `bimg` and extract source path.
+ExternalProject_Add(bimg_EXTERNAL
+    GIT_REPOSITORY "https://github.com/bkaradzic/bimg.git"
+    GIT_TAG "224aa80d10ae11cd6b98e12651109ebcc979e2f1"
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    LOG_DOWNLOAD 1
+)
+
+# Recover BIMG tool paths for additional settings.
+ExternalProject_Get_Property(bimg_EXTERNAL SOURCE_DIR)
+set(bimg_DIR "${SOURCE_DIR}")
+set(bimg_INCLUDE_DIR "${SOURCE_DIR}/include")
+
 
 # Create a system name compatible with BGFX build scripts.
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
@@ -35,14 +52,14 @@ endif()
 # Configure platform-specific build commands.
 if("${CMAKE_GENERATOR}" MATCHES "Visual Studio 14 2015")
     set(bgfx_COMPILER "vs2015")
-    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-tools --with-shared-lib "${bgfx_COMPILER}")
+    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "BIMG_DIR=${bimg_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-tools --with-shared-lib "${bgfx_COMPILER}")
     set(bgfx_BUILD_COMMAND "${CMAKE_VS_DEVENV_COMMAND}" "<SOURCE_DIR>/.build/projects/${bgfx_COMPILER}/bgfx.sln" /Build Release|x64)
 elseif("${CMAKE_GENERATOR}" MATCHES "Visual Studio 15 2017")
     set(bgfx_COMPILER "vs2017")
-    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-tools --with-shared-lib "${bgfx_COMPILER}")
+    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "BIMG_DIR=${bimg_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-tools --with-shared-lib "${bgfx_COMPILER}")
     set(bgfx_BUILD_COMMAND "${CMAKE_VS_DEVENV_COMMAND}" "<SOURCE_DIR>/.build/projects/${bgfx_COMPILER}/bgfx.sln" /Build Release|x64)
 elseif("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
-    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-tools --with-shared-lib "--gcc=${bgfx_GENIE_GCC}" gmake)
+    set(bgfx_CONFIGURE_COMMAND "${CMAKE_COMMAND}" -E env "BX_DIR=${bx_DIR}" "BIMG_DIR=${bimg_DIR}" "${bx_GENIE}${CMAKE_EXECUTABLE_SUFFIX}" --with-tools --with-shared-lib "--gcc=${bgfx_GENIE_GCC}" gmake)
     set(bgfx_BUILD_COMMAND "$(MAKE)" -C "<SOURCE_DIR>/.build/projects/gmake-${bgfx_SYSTEM_NAME}" config=release64)
 else()
     message(FATAL_ERROR "BGFX does not support the generator '${CMAKE_GENERATOR}'.")
@@ -51,9 +68,9 @@ endif()
 # Download `bgfx` (my fork that allows getting native texture handles)
 # and build it using `bx`.
 ExternalProject_Add(bgfx_EXTERNAL
-    DEPENDS bx_EXTERNAL
+    DEPENDS bx_EXTERNAL bimg_EXTERNAL
     GIT_REPOSITORY "https://github.com/PyryM/bgfx.git"
-    GIT_TAG "bc0b1fbfd312929f0537c89f49946d6ab28ec681"
+    GIT_TAG "ed8aec92049a60a9d9a7b9624bad2830b3d06695"
     CONFIGURE_COMMAND ${bgfx_CONFIGURE_COMMAND}
     BUILD_COMMAND ${bgfx_BUILD_COMMAND}
     INSTALL_COMMAND ""
@@ -101,6 +118,14 @@ set_target_properties(bgfx PROPERTIES
     IMPORTED_LOCATION "${bgfx_LIBRARY}"
     IMPORTED_IMPLIB "${bgfx_IMPLIB}"
 )
+
+# On Windows, need to include bx's 'compat' headers
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+    file(MAKE_DIRECTORY "${bx_MSVC_COMPAT_DIR}")
+    set_target_properties(bgfx PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${bgfx_INCLUDE_DIR};${bx_INCLUDE_DIR};${bx_MSVC_COMPAT_DIR}"
+    )
+endif()
 
 # On Linux, BGFX needs a few other libraries.
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
