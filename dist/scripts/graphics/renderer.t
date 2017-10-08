@@ -91,25 +91,27 @@ function GenericRenderOp:matches(component)
   return (component.geo ~= nil and component.mat ~= nil)
 end
 
-function GenericRenderOp:render(context, component)
-  local geo, mat = component.geo, component.mat
+local function generic_render(geo, mat, entity, context)
   if (not geo) or (not mat) then return end
   if not mat.program then return end
-  gfx.set_transform(component.ent.matrix_world)
+  gfx.set_transform(entity.matrix_world)
   geo:bind()
   mat:bind(context.globals)
   gfx.submit(context.view, mat.program)
 end
 
-function GenericRenderOp:multi_render(contexts, component)
+function GenericRenderOp:render(context, component)
+  local geo, mat = component.geo, component.mat
+  generic_render(geo, mat, component.ent, context)
+end
+
+local function generic_multi_render(geo, mat, entity, contexts)
   -- render to multiple contexts/views, using the 'preserve_state' flag
   -- in bgfx.submit to try to minimize the number of bgfx function calls
   -- (in most cases will greatly reduce the number of uniform set calls)
-
-  local geo, mat = component.geo, component.mat
   if (not geo) or (not mat) then return end
   if not mat.program then return end
-  gfx.set_transform(component.ent.matrix_world)
+  gfx.set_transform(entity.matrix_world)
   geo:bind()
   mat:bind()
   local nctx = #contexts
@@ -122,6 +124,11 @@ function GenericRenderOp:multi_render(contexts, component)
     local preserve_state = (idx ~= nctx)
     gfx.submit(ctx.view, mat.program, nil, preserve_state)
   end
+end
+
+function GenericRenderOp:multi_render(contexts, component)
+  local geo, mat = component.geo, component.mat
+  generic_multi_render(geo, mat, component.ent, contexts)
 end
 
 local RenderComponent = ecs.Component:extend("RenderComponent")
