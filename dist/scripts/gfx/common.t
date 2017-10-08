@@ -79,7 +79,7 @@ function m.init_gfx(options)
     log.info("Trying to init bgfx in single-threaded mode...")
     m._safe_wait_frames = 1
     -- secret bgfx feature: call render_frame before init => single-threaded
-    bgfx.render_frame() 
+    bgfx.render_frame(-1) -- no timeout 
     gfx.single_threaded = true
   end
 
