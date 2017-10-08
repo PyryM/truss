@@ -83,12 +83,20 @@ end
 local GenericRenderOp = MultiRenderOperation:extend("GenericRenderOp")
 m.GenericRenderOp = GenericRenderOp
 
-function GenericRenderOp:init()
-  -- nothing to do
+function GenericRenderOp:init(options)
+  options = options or {}
+  self._filter = options.filter
+  if options.override_material then
+    self._replacement_mat = options.override_material
+    self.render = self._replacement_render
+    self.multi_render = self._replacement_multi_render
+  end
 end
 
 function GenericRenderOp:matches(component)
-  return (component.geo ~= nil and component.mat ~= nil)
+  if component.geo == nil or component.mat == nil then return false end
+  if self._filter and not self._filter(component) then return false end
+  return true
 end
 
 local function generic_render(geo, mat, entity, context)
@@ -102,6 +110,11 @@ end
 
 function GenericRenderOp:render(context, component)
   local geo, mat = component.geo, component.mat
+  generic_render(geo, mat, component.ent, context)
+end
+
+function GenericRenderOp:_replacement_render(context, component)
+  local geo, mat = component.geo, self._replacement_mat
   generic_render(geo, mat, component.ent, context)
 end
 
@@ -129,6 +142,11 @@ end
 function GenericRenderOp:multi_render(contexts, component)
   local geo, mat = component.geo, component.mat
   generic_multi_render(geo, mat, component.ent, contexts)
+end
+
+function GenericRenderOp:_replacement_multi_render(context, component)
+  local geo, mat = component.geo, self._replacement_mat
+  generic_multi_render(geo, mat, component.ent, context)
 end
 
 local RenderComponent = ecs.Component:extend("RenderComponent")
