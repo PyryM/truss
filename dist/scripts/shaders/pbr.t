@@ -59,7 +59,8 @@ function m.TexPBRMaterial(opts)
     program = gfx.load_program("vs_basicpbr_tex", 
                               opts.fshader or "fs_basicpbr_x4_tex"),
     uniforms = m.create_pbr_tex_uniforms():clone(),
-    global_uniforms = m.create_pbr_globals()
+    global_uniforms = m.create_pbr_globals(),
+    tags = opts.tags
   }
   mat.uniforms.u_baseColor:set(opts.diffuse or {0.2,0.02,0.02,1.0})
   local tint = opts.tint or {0.001, 0.001, 0.001}

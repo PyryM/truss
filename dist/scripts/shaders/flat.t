@@ -10,6 +10,7 @@ local Material = require("graphics/material.t").Material
 
 local flat_uniforms = {}
 function m.create_flat_uniforms(has_texture)
+  has_texture = not not has_texture -- coerce to boolean
   if flat_uniforms[has_texture] then return flat_uniforms[has_texture] end
 
   local uniforms = gfx.UniformSet()
@@ -41,7 +42,8 @@ function m.FlatMaterial(options)
   local mat = {
     state = options.state or gfx.create_state(),
     program = gfx.load_program(vs_name, fs_name),
-    uniforms = m.create_flat_uniforms(options.texture):clone()
+    uniforms = m.create_flat_uniforms(options.texture):clone(),
+    tags = options.tags
   }
 
   mat.uniforms.u_baseColor:set(options.color or {1.0,1.0,1.0,1.0})
