@@ -16,7 +16,7 @@ end
 function m.tagged(k1, k2)
   return function(t)
     local v = subkey({k1, "tags", k2}, t)
-    return v == nil or v
+    return v
   end
 end
 
@@ -24,7 +24,21 @@ end
 function m.not_tagged(k1, k2)
   return function(t)
     local v = subkey({k1, "tags", k2}, t)
-    return v == nil or (not v)
+    return not v
+  end
+end
+
+function m.material_tagged(k)
+  return function(t)
+    if not t.mat then return true end
+    return t.mat.tags and t.mat.tags[k]
+  end
+end
+
+function m.material_not_tagged(k)
+  return function(t)
+    if not t.mat then return true end
+    return not (t.mat.tags and t.mat.tags[k])
   end
 end
 
