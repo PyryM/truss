@@ -136,7 +136,7 @@ function m.gather_vertices(vertexlist, posList, texList, normalList)
 end
 
 function m.parse_obj(objstring, invert)
-  local lines = stringutils.splitLines(objstring) -- TODO: fix stringutils
+  local lines = stringutils.split_lines(objstring) -- TODO: fix stringutils
   local nlines = #lines
   local attributes = {}
   local rawfaces = {}
@@ -173,23 +173,23 @@ function m.parse_obj(objstring, invert)
   local faces, vertexlist = m.reindex_vertices(rawfaces)
 
   -- produce attribute lists
-  local finalAttr = m.gather_vertices(vertexlist, attributes.positions or {},
-                                                  attributes.uvs or {},
-                                                  attributes.normals or {})
+  local attr = m.gather_vertices(vertexlist, attributes.positions or {},
+                                             attributes.uvs or {},
+                                             attributes.normals or {})
 
   -- add in face index list
   local ret = {
     indices = faces,
-    attributes = finalAttr
+    attributes = attr
   }
-  if #(finalAttr.normal) == 0 then finalAttr.normal = nil end
-  if #(finalAttr.texcoord0) == 0 then finalAttr.texcoord0 = nil end
+  if #(attr.normal) == 0 then attr.normal = nil end
+  if #(attr.texcoord0) == 0 then attr.texcoord0 = nil end
 
   if m.verbose then
     log.debug("#triangles (faces): " .. #ret.indices)
-    log.debug("#vertices: " .. #(finalAttr.position or {}))
-    log.debug("#normals: " .. #(finalAttr.normal or {}))
-    log.debug("#uvs: " .. #(finalAttr.texcoord0 or {}))
+    log.debug("#vertices: " .. #(attr.position or {}))
+    log.debug("#normals: " .. #(attr.normal or {}))
+    log.debug("#uvs: " .. #(attr.texcoord0 or {}))
   end
 
   return ret

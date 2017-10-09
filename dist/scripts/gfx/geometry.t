@@ -208,7 +208,7 @@ function TransientGeometry:bind()
     return
   end
 
-  bgfx.set_transient_vertex_buffer(self._transient_vb, 0, bgfx.UINT32_MAX)
+  bgfx.set_transient_vertex_buffer(0, self._transient_vb, 0, bgfx.UINT32_MAX)
   bgfx.set_transient_index_buffer(self._transient_ib, 0, bgfx.UINT32_MAX)
 
   self._bound = true
