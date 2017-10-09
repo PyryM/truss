@@ -239,12 +239,12 @@ m.TexUniform = TexUniform
 m.UniformSet = UniformSet
 
 -- convenience versions
-m.VecUniform = function(name, num)
-  return m.Uniform(name, m.UNI_VEC, num or 1)
+m.VecUniform = function(name, num, value)
+  return m.Uniform(name, m.UNI_VEC, num or 1, value)
 end
 
-m.MatUniform = function(name, num)
-  return m.Uniform(name, m.UNI_MAT4, num or 1)
+m.MatUniform = function(name, num, value)
+  return m.Uniform(name, m.UNI_MAT4, num or 1, value)
 end
 
 return m
