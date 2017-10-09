@@ -123,10 +123,19 @@ end
 function m.Camera(_ecs, options)
   local ret = Entity3d(_ecs, options.name)
   local cam_component = ret:add_component(CameraComponent(options.tag))
-  cam_component:make_projection(options.fov or 70,
-                                options.aspect or 1.0,
-                                options.near or 0.01,
-                                options.far or 30.0)
+  if options.orthographic then
+    cam_component:make_orthographic(options.left or -1.0,
+                                    options.right or 1.0,
+                                    options.bottom or -1.0,
+                                    options.top or 1.0,
+                                    options.near or 0.01,
+                                    options.far or 30.0)
+  else
+    cam_component:make_projection(options.fov or 70,
+                                  options.aspect or 1.0,
+                                  options.near or 0.01,
+                                  options.far or 30.0)
+  end
   return ret
 end
 
