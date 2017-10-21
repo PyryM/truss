@@ -221,8 +221,12 @@ function m.set_state(state)
   bgfx.set_state(state or bgfx.STATE_DEFAULT, 0)
 end
 
-function m.save_screenshot(filename)
-  bgfx.save_screen_shot(filename)
+function m.save_screenshot(filename, target)
+  local fb = target and target.framebuffer
+  if not fb then
+    fb = m.invalid_handle(bgfx.frame_buffer_handle_t)
+  end
+  bgfx.request_screen_shot(fb, filename)
 end
 
 return m

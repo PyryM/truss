@@ -447,6 +447,19 @@ void bgfx_cb_cache_write(bgfx_callback_interface_t* _this, uint64_t _id, const v
 	// nothing to do
 }
 
+void swizzle(unsigned int w, unsigned int h, unsigned int pitch, char* srcdata, char* destdata, unsigned int dataSize) {
+	for (unsigned int y = 0; y < h; ++y) {
+		unsigned int idx = y * pitch;
+		for (unsigned int x = 0; x < w; ++x) {
+			destdata[idx + 0] = srcdata[idx + 2];
+			destdata[idx + 1] = srcdata[idx + 1];
+			destdata[idx + 2] = srcdata[idx + 0];
+			destdata[idx + 3] = srcdata[idx + 3];
+			idx += 4;
+		}
+	}
+}
+
 void bgfx_cb_screen_shot(bgfx_callback_interface_t* _this, const char* _filePath, uint32_t _width, uint32_t _height, uint32_t _pitch, const void* _data, uint32_t _size, bool _yflip) {
 	truss_log(TRUSS_LOG_WARNING, "bgfx_cb_screen_shot implemented with direct writes to file!");
 	truss_log(TRUSS_LOG_INFO, _filePath);
@@ -454,8 +467,7 @@ void bgfx_cb_screen_shot(bgfx_callback_interface_t* _this, const char* _filePath
 	ss << "w: " << _width << ", h: " << _height << ", p: " << _pitch << ", s: " << _size << ", yf: " << _yflip;
 	truss_log(TRUSS_LOG_INFO, ss.str().c_str());
 	char* temp = new char[_size];
-	// TODO: fix this swizzling so our screenshots work again 
-	// bgfx_image_swizzle_bgra8(_width, _height, _pitch, _data, temp);
+	swizzle(_width, _height, _pitch, (char*)_data, temp, _size);
 	stbi_write_png(_filePath, _width, _height, 4, temp, _pitch);
 	delete[] temp;
 }
