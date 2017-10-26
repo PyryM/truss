@@ -284,6 +284,40 @@ function StaticGeometry:release_backing()
 end
 DynamicGeometry.release_backing = StaticGeometry.release_backing
 
+function StaticGeometry:compute_bounds()
+  if not self.allocated then 
+    truss.error("Cannot compute bounds for unallocated geometry.") 
+  end
+  local n_verts = self.n_verts
+  local sx, sy, sz = 0.0, 0.0, 0.0
+  local r = 0.0
+  -- compute cm and bounding radius *from origin*
+  -- use double vectors to accumulate CM to avoid precision issues
+  local cm_v = math.VectorD():zero()
+  local tempv = math.VectorD():zero()
+  for i = 0, n_verts - 1 do
+    local p = self.verts[i].position
+    tempv:set(p[0], p[1], p[2])
+    cm_v:add(tempv)
+    r = math.max(r, tempv:length3())
+  end
+  cm_v:divide(n_verts)
+  -- compute bounding radius *from cm*
+  local cm_r = 0.0
+  for i = 0, n_verts - 1 do
+    local p = self.verts[i].position
+    tempv:set(p[0], p[1], p[2]):sub(cm_v)
+    cm_r = math.max(cm_r, tempv:length3())
+  end
+  self.bounds = {
+    origin_radius = r,
+    radius = cm_r,
+    center = math.Vector():copy(cm_v) -- convert to float vector
+  }
+  return self
+end
+DynamicGeometry.compute_bounds = StaticGeometry.compute_bounds
+
 function StaticGeometry:set_indices(indices)
   bufferutils.set_indices(self, indices)
   return self

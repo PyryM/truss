@@ -6,7 +6,8 @@ local m = {}
 
 local class = require("class")
 local mathtypes = require("math/types.t")
-local vec4_ = mathtypes.vec4_
+local vec4_  = mathtypes.vec4_
+local vec4d_ = mathtypes.vec4d_ 
 
 local Vector = class("Vector")
 
@@ -39,12 +40,17 @@ function Vector:zero()
   return self
 end
 
-local terra copyvec(src: &vec4_, dest: &vec4_)
-  @dest = @src
-end
+-- local terra copyvec(src: &vec4_, dest: &vec4_)
+--   @dest = @src
+-- end
 
 function Vector:copy(rhs)
-  copyvec(rhs.elem, self.elem)
+  --copyvec(rhs.elem, self.elem)
+  local e_d, e_s = self.elem, rhs.elem
+  e_d.x = e_s.x
+  e_d.y = e_s.y
+  e_d.z = e_s.z
+  e_d.w = e_s.w
   return self
 end
 
@@ -90,6 +96,7 @@ function Vector:length()
   return math.sqrt( x*x + y*y + z*z + w*w )
 end
 
+-- length of just first three components; NOT length^3
 function Vector:length3()
   local e = self.elem
   local x, y, z = e.x, e.y, e.z
@@ -278,6 +285,16 @@ function Vector:dot(a, b)
   local ae = a.elem
   local be = (b and b.elem) or self.elem
   return ae.x * be.x + ae.y * be.y + ae.z * be.z + ae.w * be.w
+end
+
+local VectorD = Vector:extend("VectorD")
+function VectorD:init(x, y, z, w)
+  self.elem = terralib.new(vec4d_)
+  self:set(x, y, z, w)
+end
+
+function VectorD:clone()
+  return VectorD(self:components())
 end
 
 m.Vector = Vector

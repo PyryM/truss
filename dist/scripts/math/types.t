@@ -14,4 +14,11 @@ struct m.vec4_ {
   w: scalar_;
 }
 
+struct m.vec4d_ {
+  x: double;
+  y: double;
+  z: double;
+  w: double;
+}
+
 return m
