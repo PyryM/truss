@@ -90,6 +90,24 @@ function Vector:length()
   return math.sqrt( x*x + y*y + z*z + w*w )
 end
 
+function Vector:length3()
+  local e = self.elem
+  local x, y, z = e.x, e.y, e.z
+  return math.sqrt( x*x + y*y + z*z )
+end
+
+function Vector:distance_to(rhs)
+  local e1, e2 = self.elem, rhs.elem
+  local dx, dy, dz, dw = e1.x - e2.x, e1.y - e2.y, e1.z - e2.z, e1.w - e2.w
+  return math.sqrt( dx*dx + dy*dy + dz*dz + dw*dw )
+end
+
+function Vector:distance3_to(rhs)
+  local e1, e2 = self.elem, rhs.elem
+  local dx, dy, dz = e1.x - e2.x, e1.y - e2.y, e1.z - e2.z
+  return math.sqrt( dx*dx + dy*dy + dz*dz )
+end
+
 function Vector:rand_uniform(minval, maxval)
   local d = maxval - minval
   local e = self.elem
@@ -149,6 +167,7 @@ function Vector:multiply(s)
   e.w = e.w * s
   return self
 end
+Vector.mul = Vector.multiply -- convenience alias
 
 function Vector:divide(s)
   local e = self.elem
