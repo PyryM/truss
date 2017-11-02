@@ -236,9 +236,9 @@ function m.to_basic_geo(geo_name, data)
 end
 
 local function push_tri_verts(src, dest, tri)
-  table.insert(dest, src[tri[1]+1])
-  table.insert(dest, src[tri[2]+1])
-  table.insert(dest, src[tri[3]+1])
+  table.insert(dest, src[tri[1]+1]:clone())
+  table.insert(dest, src[tri[2]+1]:clone())
+  table.insert(dest, src[tri[3]+1]:clone())
 end
 
 -- splits indexed triangles into a 'triangle soup' so that no triangles share
