@@ -195,7 +195,6 @@ function m.compute_normals(srcdata)
   local tempN  = Vector()
 
   local normals = {}
-  -- prepopulate normals
   for i, _ in ipairs(srcdata.attributes.position) do
     normals[i] = Vector():zero()
   end
@@ -212,7 +211,7 @@ function m.compute_normals(srcdata)
     tempV0:sub(ps[idx1], ps[idx0])
     tempV1:sub(ps[idx2], ps[idx0])
     tempN:cross(tempV0, tempV1):normalize()
-    tempN.elem.w = 1.0
+    tempN.elem.w = 1.0 -- use w component to track denominator of average
     normals[idx0]:add(tempN)
     normals[idx1]:add(tempN)
     normals[idx2]:add(tempN)
@@ -303,6 +302,69 @@ function m.merge_data(datalist, attributes)
     offset = offset + nverts
   end
   return ret
+end
+
+-- create a *triangular* convex hull mesh by brute-force
+function m.brute_force_hull(pts)
+  local temp_normal = Vector()
+  local temp_v1 = Vector()
+  local temp_v2 = Vector()
+  -- test whether all points are on the same side of a given face
+  -- if so, return the sign of the side they're on
+  local function test_face(i, j, k)
+    temp_v1:sub(pts[i], pts[j])
+    temp_v2:sub(pts[i], pts[k])
+    temp_normal:cross(temp_v1, temp_v2)
+    -- test sign of (candidate - pts[i]) \cdot temp_normal
+    -- => candidate \cdot temp_normal - (pts[i] \cdot temp_normal)
+    local dd = pts[i]:dot(temp_normal)
+    local sign = nil
+
+    for idx, candidate in ipairs(pts) do
+      if idx ~= i and idx ~= j and idx ~= k then
+        local diff = candidate:dot(temp_normal) - dd
+        if sign and sign * diff < 0 then 
+          return false 
+        end
+        sign = diff
+      end
+    end
+    return sign
+  end
+
+  local data = {
+    attributes = {position = {}},
+    indices = {}
+  }
+  local vmap = {}
+  local function push_vertex(i)
+    if vmap[i] then return vmap[i] end
+    local idx = #(data.attributes.position)
+    vmap[i] = idx
+    table.insert(data.attributes.position, pts[i]:clone())
+    return idx
+  end
+  local function push_face(i, j, k)
+    local ni, nj, nk = push_vertex(i), push_vertex(j), push_vertex(k)
+    table.insert(data.indices, {ni, nj, nk})
+  end
+
+  -- try all unordered choices of three points to make faces
+  local npoints = #pts
+  for i = 1, npoints - 2 do
+    for j = i + 1, npoints - 1 do
+      for k = j + 1, npoints do
+        local sign = test_face(i, j, k)
+        if sign and sign > 0 then -- determine face winding by sign
+          push_face(i, j, k)
+        elseif sign and sign < 0 then
+          push_face(i, k, j)
+        end
+      end
+    end
+  end
+
+  return data
 end
 
 return m

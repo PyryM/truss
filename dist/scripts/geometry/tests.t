@@ -4,6 +4,7 @@
 local testlib = require("devtools/test.t")
 local test = testlib.test
 local geoutils = require("geometry/geoutils.t")
+local Vec = require("math").Vector
 local m = {}
 
 function m.run()
@@ -11,7 +12,6 @@ function m.run()
 end
 
 local function make_tri()
-  local Vec = require("math").Vector
   return {
     indices = {{0, 1, 2}},
     attributes = {
@@ -21,12 +21,15 @@ local function make_tri()
   }
 end
 
+local function tetra_points()
+  return {Vec(0, 0, 0), Vec(1, 0, 0), Vec(0, 1, 0), Vec(0, 0, 1)}
+end
+
 local function make_quad()
-  local Vec = require("math").Vector
   return {
     indices = {{0, 1, 2}, {2, 3, 0}},
     attributes = {
-      position = {Vec(0, 0, 0), Vec(1, 0, 0), Vec(0, 1, 0), Vec(0, 0, 1)},
+      position = {Vec(0, 0, 0), Vec(0, 1, 0), Vec(1, 0, 0), Vec(1, 1, 0)},
       texcoord0 = {Vec(0, 0), Vec(0, 1), Vec(1, 0), Vec(1, 1)}
     }
   }
@@ -54,6 +57,17 @@ function m.test_geoutils(t)
   t.expect(#(split_tris.indices or {}), 2, "split: faces")
   t.expect(#(split_tris.attributes.position or {}), 6, "split: vertices")
   t.expect(#(split_tris.attributes.texcoord0 or {}), 6, "split: texcoords")
+
+  -- brute force hull computation
+  local tpoints = tetra_points()
+  local hull = geoutils.brute_force_hull(tpoints)
+  t.expect(#(hull.indices or {}), 4, "tetra hull: faces")
+  t.expect(#(hull.attributes.position or {}), 4, "tetra hull: vertices")
+  tpoints = tetra_points()
+  table.insert(tpoints, Vec(0.1, 0.1, 0.1)) -- this point should be inside hull
+  local hull2 = geoutils.brute_force_hull(tpoints)
+  t.expect(#(hull2.indices or {}), 4, "tetra+1 hull: faces")
+  t.expect(#(hull2.attributes.position or {}), 4, "tetra+1 hull: vertices")
 end
 
 return m
