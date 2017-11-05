@@ -35,6 +35,21 @@ local function make_quad()
   }
 end
 
+-- test if triangles are correctly wound to face away from p_center
+local function check_windings(p_center, data)
+  local vx, vy, vn = Vec(), Vec(), Vec()
+  local pts = data.attributes.position
+  for _, face in ipairs(data.indices) do
+    local i1, i2, i3 = face[1] + 1, face[2] + 1, face[3] + 1
+    vx:sub(pts[i1],pts[i2])
+    vy:sub(pts[i1],pts[i3])
+    vn:cross(vx, vy):normalize3()
+    vx:sub(p_center, pts[i1])
+    if vx:dot(vn) > 0.0 then return false end
+  end
+  return true
+end
+
 function m.test_geoutils(t)
   -- subdivision
   local tri = make_tri()
@@ -68,6 +83,7 @@ function m.test_geoutils(t)
   local hull2 = geoutils.brute_force_hull(tpoints)
   t.expect(#(hull2.indices or {}), 4, "tetra+1 hull: faces")
   t.expect(#(hull2.attributes.position or {}), 4, "tetra+1 hull: vertices")
+  t.ok(check_windings(Vec(0.1, 0.1, 0.1, 0), hull2), "tetra+1 hull: incorrect windings")
 end
 
 return m
