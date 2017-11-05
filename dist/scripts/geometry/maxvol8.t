@@ -20,7 +20,7 @@ function m.maxvol8_data()
     V(0,  math.sin(phi), -math.cos(phi)),
     V(0, -math.sin(phi), -math.cos(phi))
   }
-  return geoutils.brute_force_hull(verts)
+  return geoutils.convex_hull(verts)
 end
 m._geometries = {maxvol8 = m.maxvol8_data}
 

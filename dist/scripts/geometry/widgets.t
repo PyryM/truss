@@ -34,11 +34,12 @@ function m.geo_from_rotated_lines(lines, positions, rotations, rad, segs)
   return geoutils.merge_data(components, {"position", "normal"})
 end
 
-function m.box_widget_data(side_length, radius, gap_frac, segments)
-  side_length = side_length or 1.0
-  radius = radius or (side_length * 0.025)
-  gap_frac = gap_frac or 0.5
-  segments = segments or 6
+function m.box_widget_data(opts)
+  opts = opts or {}
+  local side_length = opts.side_length or 1.0
+  local radius = opts.radius or (side_length * 0.025)
+  local gap_frac = opts.gap_frac or 0.5
+  local segments = opts.segments or 6
   local hs = side_length / 2.0
 
   local Q = math.Quaternion
@@ -73,16 +74,12 @@ function m.box_widget_data(side_length, radius, gap_frac, segments)
   return m.geo_from_rotated_lines(lines, positions, rotations, radius, segments)
 end
 
-function m.box_widget_geo(side_length, radius, gap_frac, segments, gname)
-  return geoutils.to_basic_geo(gname or "box_widget",
-                    m.box_widget_data(side_length, radius, gap_frac, segments))
-end
-
-function m.axis_widget_data(scale, length, segments)
-  scale = scale or 1.0
-  segments = segments or 12
+function m.axis_widget_data(opts)
+  opts = opts or {}
+  local scale = opts.scale or 1.0
+  local segments = opts.segments or 12
   local radius = scale * 0.02
-  length = length or scale
+  local length = opts.length or scale
 
   local Q = math.Quaternion
   local rotations = {Q():euler{0,0,-math.pi/2},
@@ -98,9 +95,7 @@ function m.axis_widget_data(scale, length, segments)
   return m.geo_from_rotated_lines(lines, {}, rotations, radius, segments)
 end
 
-function m.axis_widget_geo(scale, length, segments, gname)
-    return geoutils.to_basic_geo(gname or "axis_widget",
-                                 m.axis_widget_data(scale, length, segments))
-end
+m._geometries = {axis_widget = m.axis_widget_data, 
+                 box_widget = m.box_widget_data}
 
 return m

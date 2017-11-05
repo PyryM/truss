@@ -6,8 +6,12 @@ local m = {}
 local math = require("math")
 local gfx = require("gfx")
 
-function m.cube_data(sx, sy, sz)
-  -- half extents
+function m.cube_data(opts)
+  -- extents and half extents
+  opts = opts or {}
+  local sx = opts.sx or opts[1] or 1
+  local sy = opts.sy or opts[2] or sx
+  local sz = opts.sz or opts[3] or sy
   local hx, hy, hz = sx/2, sy/2, sz/2
   local u0, u1 = 0.0, 1.0
   local v0, v1 = 0.0, 1.0
@@ -96,12 +100,6 @@ function m.cube_data(sx, sy, sz)
           attributes = {position = position, texcoord0 = texcoord0}}
 end
 
-function m.cube_geo(ex, ey, ez, gname)
-  local gfx = require("gfx")
-  local geoutils = require("geometry/geoutils.t")
-  local cube_data = m.cube_data(ex, ey, ez)
-  geoutils.compute_normals(cube_data)
-  return gfx.StaticGeometry(gname):from_data(cube_data)
-end
+m._geometries = {cube = m.cube_data}
 
 return m

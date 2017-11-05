@@ -227,13 +227,6 @@ function m.compute_normals(srcdata)
   srcdata.attributes.normal = normals
 end
 
--- creates a geometry from a geometry data using the default vertex type
-function m.to_basic_geo(geo_name, data)
-  local gfx = require("gfx")
-  if not data.attributes.normal then m.compute_normals(data) end
-  return gfx.StaticGeometry(geo_name):from_data(data)
-end
-
 local function push_tri_verts(src, dest, tri)
   table.insert(dest, src[tri[1]+1]:clone())
   table.insert(dest, src[tri[2]+1]:clone())

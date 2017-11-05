@@ -6,8 +6,12 @@ local m = {}
 local math = require("math")
 local Vector = math.Vector
 
-function m.cylinder_data(radius, height, nsegs, capped)
-  capped = (capped == nil) or capped -- make it default to true
+function m.cylinder_data(opts)
+  opts = opts or {}
+  local radius = opts.radius or 1
+  local height = opts.height or 1
+  local nsegs = opts.segments or 16
+  local capped = opts.capped or (opts.capped == nil) -- default true
 
   local dtheta = 2.0 * math.pi / nsegs
 
@@ -58,12 +62,6 @@ function m.cylinder_data(radius, height, nsegs, capped)
   return {indices = indices, attributes = {position = positions}}
 end
 
-function m.cylinder_geo(radius, height, nsegs, capped, gname)
-  local gfx = require("gfx")
-  local geoutils = require("geometry/geoutils.t")
-  local cylinder_data = m.cylinder_data(radius, height, nsegs, capped)
-  geoutils.compute_normals(cylinder_data)
-  return gfx.StaticGeometry(gname):from_data(cylinder_data)
-end
+m._geometries = {cylinder = m.cylinder_data}
 
 return m

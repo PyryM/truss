@@ -25,18 +25,18 @@ function m.uvsphere_data(options)
   options = options or {}
   local projfunc = options.projfunc or m.plate_carree
   local rad = options.rad or 1.0
-  local latDivs = options.lat_divs or 10
-  local lonDivs = options.lon_divs or 10
-  local capSize = options.cap_size or (5.0 * math.pi/180.0)
+  local lat_divs = (options.lat_divs or 10) + 1
+  local lon_divs = (options.lon_divs or 10) + 1
+  local cap_size = options.cap_size or (5.0 * math.pi/180.0)
 
-  local lonStart = 0.0
-  local lonEnd   = math.pi * 2.0
+  local lon_start = 0.0
+  local lon_end   = math.pi * 2.0
 
-  local latStart = -((math.pi / 2.0) - capSize)
-  local latEnd   =   (math.pi / 2.0) - capSize
+  local lat_start = -((math.pi / 2.0) - cap_size)
+  local lat_end   =   (math.pi / 2.0) - cap_size
 
-  local dLon = (lonEnd - lonStart) / (lonDivs-1)
-  local dLat = (latEnd - latStart) / (latDivs-1)
+  local d_lon = (lon_end - lon_start) / (lon_divs-1)
+  local d_lat = (lat_end - lat_start) / (lat_divs-1)
 
   local indices = {}
 
@@ -46,10 +46,10 @@ function m.uvsphere_data(options)
   local uvs = {Vector(0.5, 1), Vector(0.5, 0)} -- not correct, swirls at poles
 
   -- create remaining vertices
-  for latIdx = 1,latDivs do
-    for lonIdx = 1,lonDivs do
-      local lat = latStart + (latIdx-1)*dLat
-      local lon = lonStart + (lonIdx-1)*dLon
+  for lat_idx = 1, lat_divs do
+    for lon_idx = 1, lon_divs do
+      local lat = lat_start + (lat_idx-1)*d_lat
+      local lon = lon_start + (lon_idx-1)*d_lon
       local x,y,z = m.sphere_to_cartesian(lat, lon, rad)
       local u,v = projfunc(lat, lon)
       table.insert(positions, Vector(x,y,z))
@@ -58,28 +58,28 @@ function m.uvsphere_data(options)
     end
   end
 
-  local function get_vertex_indices(latidx, lonidx)
-    local v0 = (latidx-1)*lonDivs + (lonidx-1) + 2
+  local function get_vertex_indices(lat_idx, lon_idx)
+    local v0 = (lat_idx-1)*lon_divs + (lon_idx-1) + 2
     local v1 = v0 + 1
-    local v2 = v0 + lonDivs
+    local v2 = v0 + lon_divs
     local v3 = v2 + 1
     return v0,v1,v2,v3
   end
 
   -- create 'body' triangles
-  for latIdx = 1, latDivs-1 do
-    for lonIdx = 1, lonDivs-1 do
-      local v0,v1,v2,v3 = get_vertex_indices(latIdx, lonIdx)
+  for lat_idx = 1, lat_divs-1 do
+    for lon_idx = 1, lon_divs-1 do
+      local v0,v1,v2,v3 = get_vertex_indices(lat_idx, lon_idx)
       table.insert(indices, {v0, v2, v1})
       table.insert(indices, {v1, v2, v3})
     end
   end
 
   -- create 'cap' triangles
-  for lonIdx = 1, lonDivs-1 do
-    local v0 = (lonIdx-1) + 2
+  for lon_idx = 1, lon_divs-1 do
+    local v0 = (lon_idx-1) + 2
     table.insert(indices, {v0, v0+1, 1})
-    local v0 = lonDivs*(latDivs-1) + (lonIdx-1) + 2
+    local v0 = lon_divs*(lat_divs-1) + (lon_idx-1) + 2
     table.insert(indices, {v0, 0, v0+1})
   end
 
@@ -89,10 +89,6 @@ function m.uvsphere_data(options)
                                            texcoord0 = uvs}}
 end
 
-function m.uvsphere_geo(options, gname)
-  local gfx = require("gfx")
-  local uvsphere_data = m.uvsphere_data(options)
-  return gfx.StaticGeometry(gname):from_data(uvsphere_data)
-end
+m._geometries = {uvsphere = m.uvsphere_data}
 
 return m
