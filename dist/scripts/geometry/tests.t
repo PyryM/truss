@@ -75,12 +75,12 @@ function m.test_geoutils(t)
 
   -- brute force hull computation
   local tpoints = tetra_points()
-  local hull = geoutils.brute_force_hull(tpoints)
+  local hull = geoutils.convex_hull(tpoints)
   t.expect(#(hull.indices or {}), 4, "tetra hull: faces")
   t.expect(#(hull.attributes.position or {}), 4, "tetra hull: vertices")
   tpoints = tetra_points()
   table.insert(tpoints, Vec(0.1, 0.1, 0.1)) -- this point should be inside hull
-  local hull2 = geoutils.brute_force_hull(tpoints)
+  local hull2 = geoutils.convex_hull(tpoints)
   t.expect(#(hull2.indices or {}), 4, "tetra+1 hull: faces")
   t.expect(#(hull2.attributes.position or {}), 4, "tetra+1 hull: vertices")
   t.ok(check_windings(Vec(0.1, 0.1, 0.1, 0), hull2), "tetra+1 hull: incorrect windings")

@@ -304,8 +304,11 @@ function m.merge_data(datalist, attributes)
   return ret
 end
 
--- create a *triangular* convex hull mesh by brute-force
-function m.brute_force_hull(pts)
+-- create a convex hull from a list of points
+--
+-- warning: current implementation is brute force, takes O(n^4)
+-- warning: current implementation does not handle non triangular faces
+function m.convex_hull(pts)
   local temp_normal = Vector()
   local temp_v1 = Vector()
   local temp_v2 = Vector()
