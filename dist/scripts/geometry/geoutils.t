@@ -355,9 +355,9 @@ function m.brute_force_hull(pts)
     for j = i + 1, npoints - 1 do
       for k = j + 1, npoints do
         local sign = test_face(i, j, k)
-        if sign and sign > 0 then -- determine face winding by sign
+        if sign and sign < 0 then -- determine face winding by sign
           push_face(i, j, k)
-        elseif sign and sign < 0 then
+        elseif sign and sign > 0 then
           push_face(i, k, j)
         end
       end
