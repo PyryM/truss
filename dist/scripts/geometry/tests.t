@@ -59,7 +59,7 @@ function m.test_geoutils(t)
   t.expect(#(subdivided_tri.indices or {}), 4, "subdivide: tri faces")
   t.expect(#(subdivided_tri.attributes.position or {}), 6, "subdivide: tri vertices")
   t.expect(#(subdivided_tri.attributes.texcoord0 or {}), 6, "subdivide: tri texcoords")
-  subdivided_tri = geoutils.subdivide(subdivided_tri)
+  subdivided_tri = geoutils.subdivide(tri, 2)
   t.expect(#(subdivided_tri.indices or {}), 16, "subdivide^2: tri faces")
   t.expect(#(subdivided_tri.attributes.position or {}), 15, "subdivide^2: tri vertices")
   t.expect(#(subdivided_tri.attributes.texcoord0 or {}), 15, "subdivide^2: tri texcoords")
@@ -100,8 +100,8 @@ function m.test_geometries(t)
   t.expect(#(uncapped_cylinder.indices or {}), 7*2, 
             "uncapped cylinder: triangular faces")
 
-  local icosphere = geo.icosphere_data{detail = 1}
-  t.expect(#(icosphere.indices or {}), 20*4, "icosphere (detail=1): faces")
+  local icosphere = geo.icosphere_data{detail = 0}
+  t.expect(#(icosphere.indices or {}), 20, "icosphere (detail=0): faces")
   icosphere = geo.icosphere_data{detail = 2}
   t.expect(#(icosphere.indices or {}), 20*4*4, "icosphere (detail=2): faces")
 

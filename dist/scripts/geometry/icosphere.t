@@ -63,10 +63,7 @@ function m.icosphere_data(opts)
   local subdivisions = opts.subdivisions or opts.detail or 2
   local data = m.icosahedron_data()
 
-  for i = 1, subdivisions do
-    data = geoutils.subdivide(data)
-  end
-
+  data = geoutils.subdivide(data, subdivisions)
   geoutils.spherize(data, opts.radius or 1)
   return data
 end

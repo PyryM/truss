@@ -145,7 +145,7 @@ end
 
 -- does a single subdivision of each triangular face of the data
 -- assumes indices in list-of-lists format
-function m.subdivide(srcdata)
+function m._subdivide(srcdata)
   local newindices = {}
   local remap_list = {}
   local vtable = {}
@@ -169,6 +169,11 @@ function m.subdivide(srcdata)
     indices = newindices,
     attributes = resolve_remap_list(srcdata.attributes, remap_list)
   }
+end
+
+function m.subdivide(data, rounds)
+  for i = 1, (rounds or 1) do data = m._subdivide(data) end
+  return data
 end
 
 function m.map_attribute(data, f, arg)
@@ -225,6 +230,7 @@ function m.compute_normals(srcdata)
   end
 
   srcdata.attributes.normal = normals
+  return srcdata
 end
 
 local function push_tri_verts(src, dest, tri)
@@ -360,6 +366,49 @@ function m.convex_hull(pts)
     end
   end
 
+  return data
+end
+
+function m.smooth(data, rounds, kernel)
+  if not kernel then 
+    kernel = 1.0
+  end
+  if type(kernel) == "number" then
+    local gamma = kernel*kernel
+    kernel = function(d)
+      return math.exp(-d*d / gamma)
+    end
+  end
+
+  local p_src = data.attributes.position
+  local p_dest = {}
+  local tempv = Vector()
+  local function accumulate_edge(i0, i1)
+    local v0, v1 = p_src[i0], p_src[i1]
+    local w = kernel(v0:distance3_to(v1))
+    tempv:copy(v0):multiply(w)
+    tempv.elem.w = w
+    p_dest[i1]:add(tempv)
+    tempv:copy(v1):multiply(w)
+    tempv.elem.w = w
+    p_dest[i0]:add(tempv)
+  end
+  for r = 1, rounds do
+    for idx, v in ipairs(p_src) do 
+      p_dest[idx] = (p_dest[idx] or Vector()):copy(p_src[idx])
+      p_dest[idx].elem.w = 1 
+    end
+    for _, face in ipairs(data.indices) do
+      accumulate_edge(face[1]+1, face[2]+1)
+      accumulate_edge(face[2]+1, face[3]+1)
+      accumulate_edge(face[3]+1, face[1]+1)
+    end
+    for _, v in ipairs(p_dest) do
+      v:divide(v.elem.w)
+    end
+    p_src, p_dest = p_dest, p_src
+  end
+  data.attributes.position = p_dest
   return data
 end
 
