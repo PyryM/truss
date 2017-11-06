@@ -374,7 +374,7 @@ function m.smooth(data, rounds, kernel)
     kernel = 1.0
   end
   if type(kernel) == "number" then
-    local gamma = kernel*kernel
+    local gamma = kernel --*kernel
     kernel = function(d)
       return math.exp(-d*d / gamma)
     end
@@ -408,7 +408,7 @@ function m.smooth(data, rounds, kernel)
     end
     p_src, p_dest = p_dest, p_src
   end
-  data.attributes.position = p_dest
+  data.attributes.position = p_src
   return data
 end
 
