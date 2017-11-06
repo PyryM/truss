@@ -11,12 +11,15 @@ function m.create_cylinder_line(y0, y1, radius, segs, target, parentmat)
   local length = y1 - y0
   local center = (y0 + y1) / 2.0
 
-  local data = cylinder.cylinder_data(radius, length, segs, true)
+  local data = cylinder.cylinder_data{radius = radius, 
+                                      height = length, 
+                                      segments = segs, 
+                                      capped = true}
   geoutils.compute_normals(data)
   local offset = math.Vector(0.0, center, 0.0)
   local mat = math.Matrix4():translation(offset)
   mat:left_multiply(parentmat)
-  table.insert(target, {data, mat})
+  table.insert(target, {data, {position = mat}})
 end
 
 function m.geo_from_rotated_lines(lines, positions, rotations, rad, segs)
@@ -26,7 +29,7 @@ function m.geo_from_rotated_lines(lines, positions, rotations, rad, segs)
 
   for i = 1, #lines do
     local mat = math.Matrix4():compose(positions[i] or p0, rotations[i] or q0)
-    for _,s in ipairs(lines[i]) do
+    for _, s in ipairs(lines[i]) do
         m.create_cylinder_line(s[1], s[2], rad, segs, components, mat)
     end
   end

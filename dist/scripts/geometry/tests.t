@@ -86,6 +86,21 @@ function m.test_geoutils(t)
   t.expect(#(hull2.indices or {}), 4, "tetra+1 hull: faces")
   t.expect(#(hull2.attributes.position or {}), 4, "tetra+1 hull: vertices")
   t.ok(check_windings(Vec(0.1, 0.1, 0.1, 0), hull2), "tetra+1 hull: incorrect windings")
+
+  -- geometry merging
+  quad = make_quad()
+  local math = require("math")
+  local pos = math.Vector(1,0,-1)
+  local rot = math.Quaternion():euler{x = 0, y = 1.1, z = 2.2} 
+  local t1 = math.Matrix4():compose(pos, rot)
+  pos:set(3,-3,7)
+  rot:euler{x = 2.2, y = -3.3, z = 4.4}
+  local t2 = math.Matrix4():compose(pos, rot)
+  local twoquads = geoutils.merge_data({
+    {quad, {position = t1}}, {quad, {position = t2}}
+  }, {"position"})
+  t.expect(#(twoquads.indices or {}), 4, "merged quads: faces")
+  t.expect(#(twoquads.attributes.position or {}), 8, "merged quads: vertices")
 end
 
 function m.test_geometries(t)

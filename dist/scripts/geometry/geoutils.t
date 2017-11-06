@@ -264,7 +264,7 @@ end
 -- input: a list of {geometryData, mat4 pose} lists
 function m.merge_data(datalist, attributes)
   local ret = {indices = {}, attributes = {}}
-  for _,v in ipairs(attributes) do ret.attributes[v] = {} end
+  for _, v in ipairs(attributes) do ret.attributes[v] = {} end
 
   local offset = 0
   for _, v in ipairs(datalist) do
@@ -287,7 +287,7 @@ function m.merge_data(datalist, attributes)
           else -- direction vector
             new_v.elem.w = 0.0 
           end
-          pose:multiply_vector(new_v)
+          pose[attr_name]:multiply(new_v)
         end
         table.insert(vertex_list, new_v)
       end
