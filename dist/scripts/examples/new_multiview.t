@@ -18,10 +18,15 @@ function MultiviewApp:init_pipeline()
   local pbr = require("shaders/pbr.t")
   local p = graphics.Pipeline({verbose = true})
 
+  local mat = pbr.FacetedPBRMaterial({0.01, 0.2, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
+
   p:add_stage(graphics.MultiviewStage{
     name = "forward",
     globals = p.globals,
-    render_ops = {graphics.GenericRenderOp(), graphics.MultiCameraControlOp()},
+    render_ops = {
+      graphics.GenericRenderOp{override_material = mat}, 
+      graphics.MultiCameraControlOp()
+    },
     views = {
       {name = "left", clear = clear_l, viewport = left}, 
       {name = "right", clear = clear_r, viewport = right}
@@ -48,6 +53,7 @@ function MultiviewApp:init_scene()
   local aspect = 0.5 * self.width / self.height
   self.left_camera = self.ECS.scene:create_child(graphics.Camera,
                                                 {fov = fov, tag = "left",
+                                                orthographic = true,
                                                  aspect = aspect})
   self.right_camera = self.ECS.scene:create_child(graphics.Camera,
                                                  {fov = fov, tag = "right",
@@ -64,7 +70,7 @@ function init()
 
   myapp.left_camera:add_component(orbitcam.OrbitControl({min_rad = 1, max_rad = 4}))
 
-  local geo = geometry.box_widget_geo(1.0)
+  local geo = geometry.box_widget_geo{side_length = 1.0}
   local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
   mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
 end
