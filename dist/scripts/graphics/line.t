@@ -50,8 +50,14 @@ function LineRenderComponent:init(options)
   local opts = options or {}
   self._render_ops = {}
   self.mount_name = "line"
-
   self.maxpoints = opts.maxpoints
+  if not self.maxpoints and opts.points then
+    -- infer maxpoints from length of provided point set
+    self.maxpoints = 0
+    for _, pts in ipairs(opts.points) do
+      self.maxpoints = self.maxpoints + #pts
+    end
+  end
   if not self.maxpoints then
     truss.error("LineRenderComponent needs maxpoints!")
     return
