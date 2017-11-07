@@ -12,19 +12,19 @@ local OrbitControl = ecs.Component:extend("OrbitControl")
 m.OrbitControl = OrbitControl
 function OrbitControl:init(options)
   options = options or {}
-  self.phi = 0.0
-  self.theta = 0.0
+  self.phi = options.phi or 0.0
+  self.theta = options.theta or 0.0
 
   self.phi_target = self.phi
   self.theta_target = self.theta
 
-  self.alpha = 0.15
-  self.tolerance = 0.001
+  self.alpha = options.alpha or 0.15
+  self.tolerance = options.tolerance or 0.001
 
-  self.phi_rate = 0.01
-  self.theta_rate = 0.01
-  self.rad_rate = 0.4
-  self.pan_rate = 0.01
+  self.phi_rate = options.phi_rate or 0.01
+  self.theta_rate = options.theta_rate or 0.01
+  self.rad_rate = options.rad_rate or 0.4
+  self.pan_rate = options.pan_rate or 0.01
 
   self.input = options.input
 
@@ -34,7 +34,7 @@ function OrbitControl:init(options)
 
   self.minrad = options.min_rad or 0.1
   self.maxrad = options.max_rad or 10.0
-  self.rad = (self.minrad + self.maxrad) / 2.0
+  self.rad = options.rad or ((self.minrad + self.maxrad) / 2.0)
   self.rad_target = self.rad
 
   self.orbitpoint = math.Vector(0, 0, 0)
