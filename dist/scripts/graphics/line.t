@@ -156,7 +156,8 @@ function LineRenderComponent:_create_material(options)
     mat = Material{
       state = options.state or gfx.create_state(),
       uniforms = options.uniforms or uniforms:clone(),
-      program = options.program or gfx.load_program("vs_line", fsname)
+      program = options.program or gfx.load_program("vs_line", fsname),
+      tags = options.tags
     }
   end
 
