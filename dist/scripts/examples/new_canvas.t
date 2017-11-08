@@ -55,11 +55,8 @@ function init()
   myapp = app.App{title = "canvas example", width = 1280, height = 720,
                   msaa = true, stats = false, clear_color = 0x404080ff,
                   num_workers = 3}
-  myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 1, max_rad = 4}))
+  myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 1, max_rad = 4})
 
-  -- local geo = geometry.icosphere_geo(1.0, 1)
-  -- local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
-  -- mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
   for i = 1,7 do
     local label = myapp.scene:create_child(Label, "hello_" .. i)
     label.position:set(0.0, 0.3*i - 1, 0.0)
@@ -70,7 +67,7 @@ function init()
   mygrid = myapp.scene:create_child(grid.Grid, {thickness = 0.02, 
                                                 color = {0.5, 0.5, 0.5}})
   mygrid.position:set(0.0, -1.0, 0.0)
-  mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
+  mygrid.quaternion:euler{x = math.pi / 2.0, y = 0.0, z = 0.0}
   mygrid:update_matrix()
 end
 
