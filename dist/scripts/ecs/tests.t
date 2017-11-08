@@ -187,7 +187,7 @@ local function test_scenegraph(t)
   local ECS = make_test_ecs()
   local parent = ECS.scene:create_child(Entity3d, "blah")
   local child = parent:create_child(Entity3d, "foo")
-  local grandchild = child:create_child(Entity3d, "feh")
+  local grandchild = child:create_child(Entity3d, "bobby")
   local brother = ECS.scene:create_child(Entity3d, "meh")
   local stranger = ECS.scene:create(Entity3d, "stranger")
 
@@ -200,6 +200,16 @@ local function test_scenegraph(t)
   t.ok(parent:is_in_subtree(parent), "parent is in its own subtree")
   t.ok(not parent:is_in_subtree(nil), "nothing is in subtree of nil")
   t.ok(not stranger:is_in_subtree(ECS.scene), "stranger is not in tree")
+
+  -- finding works
+  local found_child = parent:find("bobby")
+  t.ok(found_child and found_child.name == "bobby", "found bobby (grandchild)")
+  grandchild.some_attribute = 23
+  found_child = parent:find(function(e) return e.some_attribute == 23 end)
+  t.ok(found_child and found_child.name == "bobby", "found bobby by function")
+  found_child = nil -- keeping a reference around interferes with later tests
+  found_child = parent:find("i don't exist")
+  t.ok(found_child == nil, "didn't find nonexistent entity")
 
   -- moving entities
   brother:add_child(child)

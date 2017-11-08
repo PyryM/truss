@@ -172,6 +172,20 @@ function Entity:iter_tree()
   end
 end
 
+-- find the first descendent matching a given condition
+function Entity:find(condition)
+  if type(condition) == "string" then
+    local target_name = condition
+    condition = function(e) return e.name == target_name end
+  end
+  if type(condition) ~= "function" then 
+    truss.error("condition must be a function")
+  end
+  for child in self:iter_tree() do
+    if condition(child) then return child end
+  end
+end
+
 -- add a component *instance* to an entity
 -- the name must be unique, and cannot be any of the keys in the entity
 function Entity:add_component(component, component_name)
