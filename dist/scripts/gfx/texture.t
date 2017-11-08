@@ -177,24 +177,36 @@ function Texture:create_copy_target(src, options)
   return self
 end
 
+function Texture:_resolve_tex_flags(options)
+  local flags = options.flags or 0
+  -- unless otherwise specified, assume you want to get data into this
+  -- texture by blitting
+  if options.blit_dest ~= false then
+    flags = math.combine_flags(flags, bgfx.TEXTURE_BLIT_DST)
+    self._blit_dest = true
+  end
+  if options.render_target then
+    flags = math.combine_flags(flags, bgfx.TEXTURE_RT)
+    self._render_target = true
+  end
+  return flags
+end
+
 function Texture:create(options)
   local width = options.width
   local height = options.height
   local format = options.format or bgfx.TEXTURE_FORMAT_BGRA8
-  local flags = math.combine_flags(options.flags or 0, bgfx.TEXTURE_BLIT_DST)
-
+  local flags = self:_resolve_tex_flags(options)
   self._handle = bgfx.create_texture_2d(width, height, false, 1,
                                         format, flags, nil)
   self._info = {width = width, height = height, format = format}
-  self._blit_dest = true
   return self
 end
 
 function Texture:create_cubemap(options)
   local size = options.size
   local format = options.format or bgfx.TEXTURE_FORMAT_BGRA8
-  local flags = math.combine_flags(options.flags or 0, bgfx.TEXTURE_BLIT_DST)
-
+  local flags = self:_resolve_tex_flags(options)
   self._handle = bgfx.create_texture_cube(size, false, 1, 
                                           format, flags, nil)
   self._info = {width = size, height = size, format = format, cubemap = true}

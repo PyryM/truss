@@ -139,4 +139,34 @@ function m.Camera(_ecs, options)
   return ret
 end
 
+-- convenience function to create six cameras under one parent to
+-- render to cubemap faces
+function m.CubeCamera(_ecs, options)
+  options = options or {}
+  local parent = Entity3d(_ecs, options.name)
+  local vpx, vnx = math.Vector(1,0,0), math.Vector(-1, 0, 0)
+  local vpy, vny = math.Vector(0,1,0), math.Vector( 0,-1, 0)
+  local vpz, vnz = math.Vector(0,0,1), math.Vector( 0, 0,-1)
+  -- see updateTextureCube in bgfx.h for face orientations
+  local faces = { 
+    nx = {up = vpy, right = vnz}, px = {up = vpy, right = vpz},
+    ny = {up = vnz, right = vpx}, py = {up = vpz, right = vpx},
+    pz = {up = vpy, right = vpx}, nz = {up = vpy, right = vnx}
+  }
+  local forward = math.Vector()
+  for face_id, face in pairs(faces) do
+    -- cube map faces have fixed fov and aspect
+    local cam_options = {fov = 90, aspect = 1, 
+                         near = options.near, far = options.far,
+                         name = (options.name or "face") .. "_" .. face_id,
+                         tag = (options.tag or "cube") .. "_" .. face_id}
+    local face_cam = parent:create_child(m.Camera, cam_options)
+    forward:cross(face.right, face.up)
+    face_cam.matrix:identity()
+    face_cam.matrix:from_basis{face.right, face.up, forward}
+  end
+  return parent
+end
+
+
 return m

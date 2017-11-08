@@ -22,6 +22,7 @@ function Stage:init(options)
   self.options = options
   self._always_clear = options.always_clear
   self.view = self:_create_view(options.view, options)
+  self._user_update = options.on_run
 end
 
 function Stage:_create_view(v, default)
@@ -56,6 +57,7 @@ function Stage:update_begin()
   if self._always_clear and self.view then
     self.view:touch()
   end
+  if self._user_update then self:_user_update() end
 end
 
 function Stage:match_render_ops(component, target)
