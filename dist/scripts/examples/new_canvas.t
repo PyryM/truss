@@ -38,7 +38,7 @@ local label_geo = nil
 local function Label(ecs, name, options)
   options = options or {}
   if not label_geo then
-    label_geo = geometry.plane_geo(1.0, 0.25, 2, 2, "plane")
+    label_geo = geometry.plane_geo{width = 1.0, height = 0.25}
   end
   local canvas = graphics.CanvasComponent{width = options.width or 256, 
                                           height = options.height or 64}
