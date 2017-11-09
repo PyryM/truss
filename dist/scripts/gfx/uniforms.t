@@ -132,8 +132,28 @@ local UniformSet = class("UniformSet")
 function UniformSet:init(uniform_list)
   self._uniforms = {}
   if uniform_list then
-    for _, uniform in ipairs(uniform_list) do
-      self:add(uniform)
+    if uniform_list[1] then
+      for _, uniform in ipairs(uniform_list) do
+        self:add(uniform)
+      end
+    else
+      self:from_table(uniform_list)
+    end
+  end
+end
+
+function UniformSet:from_table(uniform_table)
+  for uni_name, uni_val in pairs(uniform_table) do
+    if uni_val.elem then -- vector
+      self:add(m.VecUniform(uni_name, 1, uni_val))
+    elseif uni_val.data then -- matrix
+      self:add(m.MatUniform(uni_name, 1, uni_val))
+    elseif uni_val._handle then -- incorrectly passed texture
+      truss.error("UniformSet(table) must specify textures as {tex, sampler}")
+    elseif uni_val[1] and uni_val[1]._handle then -- texture
+      self:add(m.TexUniform(uni_name, uni_val[2], uni_val[1]))
+    else
+      truss.error("Couldn't infer uniform type")
     end
   end
 end
