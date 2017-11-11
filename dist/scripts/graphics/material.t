@@ -12,7 +12,9 @@ m.Material = Material
 function Material:init(src, clone)
   src = src or {}
   self.program = src.program
-  self.state   = src.state
+  if src.state ~= false then
+    self.state = src.state or gfx.create_state()
+  end
   if src.tags then
     self.tags = {}
     for k,v in pairs(src.tags) do self.tags[k] = src.tags[k] end
