@@ -22,3 +22,4 @@ shader_errors.txt
 console_log.txt
 error.txt
 dist/shaders/raw/shadercRelease
+frames/
