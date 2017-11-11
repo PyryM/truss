@@ -271,4 +271,22 @@ function Entity3d:recursive_update_world_mat(parentmat)
   end
 end
 
+-- promote a component class to an entity class
+function m.promote(name, componentclass, parentclass)
+  local E = (Entity3d or parentclass):extend(name)
+  for k, _ in pairs(parentclass) do
+    if type(k) == "function" and string.sub(k, 1, 2) ~= "_" and k ~= "init" then
+      E[k] = function(self, ...)
+        local tgt = self._primary_component
+        return tgt[k](tgt, ...)
+      end
+    end
+  end
+  function E:init(_ecs, name, ...)
+    self._primary_component = self:add_component(componentclass(...))
+    E.super.init(self, _ecs, name)
+  end
+  return E
+end
+
 return m
