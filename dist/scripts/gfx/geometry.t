@@ -263,8 +263,14 @@ function StaticGeometry:copy(src)
   for i = 0, (self.n_indices - 1) do
     self.indices[i] = src.indices[i]
   end
+  return self
 end
 DynamicGeometry.copy = StaticGeometry.copy
+
+function StaticGeometry:clone(name)
+  return self.class(name):copy(self)
+end
+DynamicGeometry.clone = StaticGeometry.clone
 
 -- release the cpu memory backing this geometry
 -- if the geometry has been committed (uploaded to gpu), then the backing memory
