@@ -202,10 +202,7 @@ function MeshRenderComponent:set_material(mat)
   self._needs_configure = true
 end
 
--- convenience function to create an Entity3d that just renders a mesh
-function m.Mesh(_ecs, name, geo, mat)
-  local entity = require("ecs/entity.t")
-  return entity.Entity3d(_ecs, name, MeshRenderComponent(geo, mat))
-end
+-- convenience Mesh entity
+m.Mesh = ecs.promote("Mesh", MeshRenderComponent)
 
 return m

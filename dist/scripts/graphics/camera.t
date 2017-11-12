@@ -5,21 +5,35 @@
 local class = require("class")
 local math = require("math")
 local renderer = require("graphics/renderer.t")
-local Entity3d = require("ecs").Entity3d
+local ecs = require("ecs")
 
 local m = {}
 local CameraComponent = renderer.RenderComponent:extend("CameraComponent")
 m.CameraComponent = CameraComponent
 
-function CameraComponent:init(tag)
+function CameraComponent:init(options)
   CameraComponent.super.init(self)
+  options = options or {}
   self.mount_name = "camera"
-  self.camera_tag = tag or "primary"
+  self.camera_tag = options.tag or "primary"
   self.view_mat = math.Matrix4():identity()
   self.proj_mat = math.Matrix4():identity()
   self.inv_proj_mat = math.Matrix4():identity()
   self.view_proj_mat = math.Matrix4():identity()
   self._render_ops = {}
+  if options.orthographic then
+    self:make_orthographic(options.left or -1.0,
+                           options.right or 1.0,
+                           options.bottom or -1.0,
+                           options.top or 1.0,
+                           options.near or 0.01,
+                           options.far or 30.0)
+  else
+    self:make_projection(options.fov or 70,
+                         options.aspect or 1.0,
+                         options.near or 0.01,
+                         options.far or 30.0)
+  end
 end
 
 function CameraComponent:make_projection(fov_degrees, aspect, near, far)
@@ -118,32 +132,14 @@ function MultiCameraControlOp:multi_render(contexts, component)
   end
 end
 
--- this is not actually a class, but just produces an Entity3d with a
--- CameraComponent
-function m.Camera(_ecs, options)
-  local ret = Entity3d(_ecs, options.name)
-  local cam_component = ret:add_component(CameraComponent(options.tag))
-  if options.orthographic then
-    cam_component:make_orthographic(options.left or -1.0,
-                                    options.right or 1.0,
-                                    options.bottom or -1.0,
-                                    options.top or 1.0,
-                                    options.near or 0.01,
-                                    options.far or 30.0)
-  else
-    cam_component:make_projection(options.fov or 70,
-                                  options.aspect or 1.0,
-                                  options.near or 0.01,
-                                  options.far or 30.0)
-  end
-  return ret
-end
+-- convenience Camera entity
+m.Camera = ecs.promote("Camera", CameraComponent)
 
 -- convenience function to create six cameras under one parent to
 -- render to cubemap faces
-function m.CubeCamera(_ecs, options)
+function m.CubeCamera(_ecs, name, options)
   options = options or {}
-  local parent = Entity3d(_ecs, options.name)
+  local parent = ecs.Entity3d(_ecs, name)
   local vpx, vnx = math.Vector(1,0,0), math.Vector(-1, 0, 0)
   local vpy, vny = math.Vector(0,1,0), math.Vector( 0,-1, 0)
   local vpz, vnz = math.Vector(0,0,1), math.Vector( 0, 0,-1)
@@ -160,7 +156,7 @@ function m.CubeCamera(_ecs, options)
                          near = options.near, far = options.far,
                          name = (options.name or "face") .. "_" .. face_id,
                          tag = (options.tag or "cube") .. "_" .. face_id}
-    local face_cam = parent:create_child(m.Camera, cam_options)
+    local face_cam = parent:create_child(m.Camera, "facecam", cam_options)
     forward:cross(face.right, face.up)
     face_cam.matrix:identity()
     face_cam.matrix:from_basis{face.right, face.up, forward}

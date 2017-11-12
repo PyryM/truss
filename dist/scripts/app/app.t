@@ -117,7 +117,7 @@ end
 -- this just makes a default camera;
 -- feel free to override
 function App:init_scene()
-  self.camera = self.ECS.scene:create_child(graphics.Camera,
+  self.camera = self.ECS.scene:create_child(graphics.Camera, "camera",
                                             {fov = 65,
                                              aspect = self.width / self.height})
   self.scene = self.ECS.scene
