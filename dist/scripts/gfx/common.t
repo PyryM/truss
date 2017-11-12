@@ -62,6 +62,47 @@ function m._make_reset_flags(options)
   return reset, debug
 end
 
+local function _convert_view_stats(numviews, vs)
+  local stats = {}
+  for i = 0, numviews-1 do
+    stats[i] = {
+      view_id = vs[i].view,
+      cpu_time = tonumber(vs[i].cpuTimeElapsed),
+      gpu_time = tonumber(vs[i].gpuTimeElapsed)
+    }
+  end
+  return stats
+end
+
+function m.get_stats(include_views)
+  local rs = bgfx.get_stats()
+  local cpu_freq = tonumber(rs.cpuTimerFreq)
+  local gpu_freq = tonumber(rs.gpuTimerFreq)
+  local stats = {
+    cpu_time = tonumber(rs.cpuTimeFrame) / cpu_freq,
+    cpu_begin = tonumber(rs.cpuTimeBegin) / cpu_freq,
+    cpu_end = tonumber(rs.cpuTimeEnd) / cpu_freq,
+    gpu_begin = tonumber(rs.gpuTimeBegin) / gpu_freq,
+    gpu_end = tonumber(rs.gpuTimeEnd) / gpu_freq,
+    wait_render = tonumber(rs.waitRender),
+    wait_submit = tonumber(rs.waitSubmit),
+    num_draw = tonumber(rs.numDraw),
+    num_compute = tonumber(rs.numCompute),
+    max_gpu_latency = tonumber(rs.maxGpuLatency),
+    gpu_memory_used = tonumber(rs.gpuMemoryUsed),
+    gpu_memory_max = tonumber(rs.gpuMemoryMax),
+    width = tonumber(rs.width),
+    height = tonumber(rs.height),
+    text_width = tonumber(rs.textWidth),
+    text_height = tonumber(rs.textHeight),
+    num_view = tonumber(rs.numViews)
+  }
+  if include_views then
+    stats.views = _convert_view_stats(rs.numViews, rs.viewStats)
+  end
+  return stats
+end
+
 function m.init_gfx(options)
   local gfx = require("gfx") -- so we can set module level values
 
