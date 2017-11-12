@@ -274,9 +274,8 @@ end
 -- promote a component class to an entity class
 function m.promote(name, componentclass, parentclass)
   local E = (Entity3d or parentclass):extend(name)
-  for k, _ in pairs(componentclass) do
-    if type(k) == "function" and string.sub(k, 1, 2) ~= "_" and k ~= "init" then
-      if E[k] then truss.error("entity already has function " .. k) end
+  for k, f in pairs(componentclass) do
+    if type(f) == "function" and (string.sub(k, 1, 1) ~= "_") and (k ~= "init") and not E[k] then
       E[k] = function(self, ...)
         local tgt = self._primary_component
         return tgt[k](tgt, ...)

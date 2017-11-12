@@ -253,10 +253,31 @@ local function test_scenegraph(t)
   end, "creating a cycle throws an error")
 end
 
+local function test_components(t)
+  local ECS = make_test_ecs()
+  local Comp = ecs.Component:extend("Comp")
+  function Comp:init()
+    self.mount_name = "bleh"
+  end
+  function Comp:do_thing()
+    self.done_thing = true
+  end
+  function Comp:_hidden_thing()
+    self.done_thing = true
+  end
+  local PromotedComp = ecs.promote("PromotedComp", Comp)
+  t.ok(PromotedComp.do_thing ~= nil, "PromotedComp has :do_thing")
+  t.ok(PromotedComp._hidden_thing == nil, "PromotedComp does not have :_hidden_thing")
+  local instance = ECS.scene:create_child(PromotedComp, "Bleh")
+  instance:do_thing()
+  t.ok(instance.bleh.done_thing, "Promoted component function called")
+end
+
 function m.run()
   test("ECS scenegraph", test_scenegraph)
   test("ECS events", test_events)
   test("ECS systems", test_systems)
+  test("ECS components", test_components)
 end
 
 return m
