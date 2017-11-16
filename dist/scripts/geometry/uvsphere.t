@@ -52,6 +52,8 @@ function m.uvsphere_data(options)
       local lon = lon_start + (lon_idx-1)*d_lon
       local x,y,z = m.sphere_to_cartesian(lat, lon, rad)
       local u,v = projfunc(lat, lon)
+      u = u * (options.u_mult or 1)
+      v = v * (options.v_mult or 1)
       table.insert(positions, Vector(x,y,z))
       table.insert(normals, Vector(x,y,z):normalize())
       table.insert(uvs, Vector(u, v))

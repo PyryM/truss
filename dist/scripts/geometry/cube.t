@@ -13,8 +13,8 @@ function m.cube_data(opts)
   local sy = opts.sy or opts[2] or sx
   local sz = opts.sz or opts[3] or sy
   local hx, hy, hz = sx/2, sy/2, sz/2
-  local u0, u1 = 0.0, 1.0
-  local v0, v1 = 0.0, 1.0
+  local u0, u1 = 0.0, (opts.u_mult or 1.0)
+  local v0, v1 = 0.0, (opts.v_mult or 1.0)
   local Vector = math.Vector
 
   local position = {
