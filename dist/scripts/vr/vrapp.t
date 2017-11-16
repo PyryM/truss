@@ -97,8 +97,8 @@ function VRApp:setup_targets()
   self.targets = {gfx.RenderTarget(w,h):make_RGB8(true),
                   gfx.RenderTarget(w,h):make_RGB8(true)}
   self.backbuffer = gfx.RenderTarget(self.width, self.height):make_backbuffer()
-  self.eye_texes = {self.targets[1].attachments[1],
-                   self.targets[2].attachments[1]}
+  self.eye_texes = {self.targets[1]:get_attachment_handle(1),
+                   self.targets[2]:get_attachment_handle(1)}
 end
 
 function VRApp:init_pipeline()

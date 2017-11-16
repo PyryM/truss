@@ -180,6 +180,10 @@ function RenderTarget:add_shadow_attachment(depth_bits, has_stencil)
   return self:add_depth_attachment(depth_bits, has_stencil, flags, true)
 end
 
+function RenderTarget:get_attachment_handle(idx)
+  return self.attachments[idx].handle
+end
+
 function RenderTarget:finalize()
   local attachments = self.attachments
   local cattachments = terralib.new(bgfx.attachment_t[#attachments])

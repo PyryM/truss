@@ -38,7 +38,7 @@ end
 
 -- create a big red ball so that there's something to see at least
 function create_scene(root)
-  local geo = geometry.icosphere_geo(1.0, 3, "ico")
+  local geo = geometry.icosphere_geo{detail = 3}
   local mat = pbr.FacetedPBRMaterial({0.2,0.03,0.01,1.0},
                                      {0.001, 0.001, 0.001}, 0.7)
 
@@ -48,14 +48,14 @@ function create_scene(root)
   thegrid.quaternion:euler({x = -math.pi / 2.0, y = 0, z = 0}, 'ZYX')
   thegrid:update_matrix()
 
-  local axis_geo = geometry.axis_widget_geo(0.4, 0.2, 6)
+  local axis_geo = geometry.axis_widget_geo{}
   local m2 = root:create_child(graphics.Mesh, "axis0", axis_geo, mat)
   m2.position:set(0.0, 1.0, -1.0)
   m2:update_matrix()
 
   local tex = gfx.load_texture("textures/test_pattern.png")
   local mat = flat.FlatMaterial{texture = tex}
-  local geo = geometry.plane_geo(1.0, 1.0, 2, 2, "plane")
+  local geo = geometry.plane_geo{}
 
   local target = root:create_child(graphics.Mesh, "calibtarget", geo, mat)
   target.position:set(0.0, 1.0, 0.0)
