@@ -69,7 +69,13 @@ int OpenVRAddon::initVR(int graphicsApiMode) {
 
     // Loading the SteamVR Runtime
     vr::EVRInitError eError = vr::VRInitError_None;
-    ivrsystem_ = vr::VR_Init( &eError, vr::VRApplication_Scene );
+	if (graphicsApiMode == 0) {
+		ivrsystem_ = vr::VR_Init(&eError, vr::VRApplication_Other);
+	} else if (graphicsApiMode == 1) {
+		ivrsystem_ = vr::VR_Init(&eError, vr::VRApplication_Scene);
+	} else {
+		ivrsystem_ = vr::VR_Init(&eError, vr::VRApplication_Overlay);
+	}
 
     if ( eError != vr::VRInitError_None ) {
         ivrsystem_ = NULL;
