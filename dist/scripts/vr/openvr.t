@@ -10,11 +10,17 @@ local const = require("vr/constants.t")
 local trackables = require("vr/trackables.t")
 local modelloader = require("vr/modelloader.t")
 
+local vr_modes = {}
 if truss.addons.openvr ~= nil then
   log.info("OpenVR support is available.")
   openvr_c = terralib.includec("openvr_c.h")
   m.c_api = openvr_c
   m.available = true
+  vr_modes = {
+    other = openvr_c.EVRApplicationType_VRApplication_Other,
+    scene = openvr_c.EVRApplicationType_VRApplication_Scene,
+    overlay = openvr_c.EVRApplicationType_VRApplication_Overlay
+  }
 else
   log.info("openvr.t: not built with openvr, or addon not attached.")
   m.available = false
@@ -26,15 +32,22 @@ struct m.TargetSize {
   h: uint32;
 }
 
-function m.init()
+function m.init(options)
+  options = options or {}
   if not m.available then
     return false, "OpenVR support not built."
   end
 
   local addonfuncs = truss.addons.openvr.functions
   local addonptr   = truss.addons.openvr.pointer
-  log.info("Initting...")
-  local success = addonfuncs.truss_openvr_init(addonptr, 0)
+  m.openvr_mode = options.mode or "scene"
+  if not vr_modes[m.openvr_mode] then
+    truss.error("OpenVR application type/mode " .. m.openvr_mode 
+                .. " does not exist.")
+    return false, "Incorrect mode"
+  end
+  log.info("Initting openvr as " .. m.openvr_mode)
+  local success = addonfuncs.truss_openvr_init(addonptr, vr_modes[m.openvr_mode])
   if success <= 0 then
     local errorstr = "OpenVR init error: " .. ffi.string(addonfuncs.truss_openvr_get_last_error(addonptr))
     log.error(errorstr)
@@ -43,14 +56,41 @@ function m.init()
   end
 
   log.info("VR Init succeeded...")
-  m.sysptr = addonfuncs.truss_openvr_get_system(addonptr)
-  trackables.init(m)
 
-  m.compositorptr = addonfuncs.truss_openvr_get_compositor(addonptr)
-  log.info("sysptr: " .. tostring(m.sysptr))
-  log.info("compositor: " .. tostring(m.compositorptr))
+  m._init_sys()
+  m.vr_event = terralib.new(openvr_c.VREvent_t)
+  m._event_handlers = {}
+
   m.addonfuncs = addonfuncs
   m.addonptr = addonptr
+
+  if m.openvr_mode == "scene" then
+    m._init_compositor()
+    m._init_trackables()
+    modelloader.init(m)
+  elseif m.openvr_mode == "other" then
+    m._init_trackables()
+  elseif m.openvr_mode == "overlay" then
+    -- no special inits
+  end
+
+  log.info("Finished Vr init")
+  -- normally I would not care overly much about shutting down stuff on
+  -- exit, but steamvr will show the app as unresponsive forever unless
+  -- openvr actually shuts down
+  truss.on_quit(m.shutdown)
+  return true, ""
+end
+
+function m._init_sys()
+  m.sysptr = addonfuncs.truss_openvr_get_system(addonptr)
+  log.info("sysptr: " .. tostring(m.sysptr))
+end
+
+function m._init_compositor()
+  log.info("Initializing compositor")
+  m.compositorptr = m.addonfuncs.truss_openvr_get_compositor(addonptr)
+  log.info("compositor: " .. tostring(m.compositorptr))
 
   m.eye_poses = {math.Matrix4():identity(), math.Matrix4():identity()}
   m.eye_offsets = {math.Matrix4():identity(), math.Matrix4():identity()}
@@ -63,20 +103,14 @@ function m.init()
   }
 
   m.eye_ids = {openvr_c.EVREye_Eye_Left, openvr_c.EVREye_Eye_Right}
+end
 
-  m.vr_event = terralib.new(openvr_c.VREvent_t)
+function m._init_trackables()
+  log.info("Initializing trackables")
+  trackables.init(m)
   m.MAX_TRACKABLES = const.k_unMaxTrackedDeviceCount
   m.trackable_poses = terralib.new(openvr_c.TrackedDevicePose_t[m.MAX_TRACKABLES])
   m.trackables = {}
-  m._event_handlers = {}
-  modelloader.init(m)
-
-  log.info("Finished Vr init")
-  -- normally I would not care overly much about shutting down stuff on
-  -- exit, but steamvr will show the app as unresponsive forever unless
-  -- openvr actually shuts down
-  truss.on_quit(m.shutdown)
-  return true, ""
 end
 
 function m.shutdown()
@@ -91,16 +125,23 @@ end
 function m.begin_frame()
   if not m.available then return false end
 
-  local err = openvr_c.tr_ovw_WaitGetPoses(m.compositorptr, m.trackable_poses, m.MAX_TRACKABLES, nil, 0)
-  if err ~= openvr_c.EVRCompositorError_VRCompositorError_None then
-    log.error("WaitGetPoses error: " .. tostring(err))
-    return false
+  if m.openvr_mode == "scene" then
+    local err = openvr_c.tr_ovw_WaitGetPoses(m.compositorptr, m.trackable_poses, m.MAX_TRACKABLES, nil, 0)
+    if err ~= openvr_c.EVRCompositorError_VRCompositorError_None then
+      log.error("WaitGetPoses error: " .. tostring(err))
+      return false
+    end
+    m._update_trackables()
+    m._update_projections()
+    m._update_eye_poses()
+    modelloader.update()
+    m._update_vr_events()
+  elseif m.openvr_mode == "other" then
+    openvr_c.tr_ovw_GetDeviceToAbsoluteTrackingPose(m.sysptr, 
+      openvr_c.ETrackingUniverseOrigin_TrackingUniverseStanding, 
+      0.0, m.trackable_poses, m.MAX_TRACKABLES)
+    m._update_trackables()
   end
-
-  m._update_trackables()
-  m._update_projections()
-  m._update_eye_poses()
-  modelloader.update()
 end
 
 function m.submit_frame(eye_texes)
@@ -123,7 +164,6 @@ function m._process_vr_event()
   local evt = m.vr_event
   if evt.eventType == openvr_c.EVREventType_VREvent_Quit then
     log.info("Openvr requested application quit!")
-    --if m.on_quit then m.on_quit() end
     openvr_c.tr_ovw_AcknowledgeQuit_Exiting(m.sysptr)
     truss.quit()
   end
@@ -135,17 +175,6 @@ function m._update_vr_events()
     m._process_vr_event()
   end
 end
-
--- function m.device_idxToController(idx)
---   local controllerIdx = m.controllerIDMapping[idx]
---   if not controllerIdx then
---     m.maxControllers = m.maxControllers + 1
---     controllerIdx = m.maxControllers
---     m.controllerIDMapping[idx] = controllerIdx
---     m.controllers[controllerIdx] = Controller(idx)
---   end
---   return m.controllers[controllerIdx]
--- end
 
 function m.on(evt_name, f)
   m._event_handlers[evt_name] = m._event_handlers[evt_name] or {}
