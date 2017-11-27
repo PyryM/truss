@@ -1,20 +1,22 @@
-# Minimal makefile for Sphinx documentation
-#
+CWD := $(shell pwd)
+DOCKER_IMAGE := truss/slate
 
-# You can set these variables from the command line.
-SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = truss
-SOURCEDIR     = .
-BUILDDIR      = _build
+.PHONY: build serve
 
-# Put it first so that "make" without argument is like "make help".
-help:
-	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+all: build
 
-.PHONY: help Makefile
+image:
+	docker build -t $(DOCKER_IMAGE) .
 
-# Catch-all target: route all unknown targets to Sphinx using the new
-# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+build: image
+	docker run --rm \
+		-v $(CWD):/usr/src/app/source:ro \
+		-v $(CWD)/build:/usr/src/app/build \
+		$(DOCKER_IMAGE) \
+		bundle exec middleman build --clean
+
+serve: image
+	docker run --rm \
+		-v $(CWD):/usr/src/app/source:ro \
+		-p 4567:4567 \
+		$(DOCKER_IMAGE)
