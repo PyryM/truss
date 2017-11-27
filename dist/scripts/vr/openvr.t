@@ -57,12 +57,12 @@ function m.init(options)
 
   log.info("VR Init succeeded...")
 
+  m.addonfuncs = addonfuncs
+  m.addonptr = addonptr
+
   m._init_sys()
   m.vr_event = terralib.new(openvr_c.VREvent_t)
   m._event_handlers = {}
-
-  m.addonfuncs = addonfuncs
-  m.addonptr = addonptr
 
   if m.openvr_mode == "scene" then
     m._init_compositor()
@@ -71,7 +71,7 @@ function m.init(options)
   elseif m.openvr_mode == "other" then
     m._init_trackables()
   elseif m.openvr_mode == "overlay" then
-    -- no special inits
+    m._init_overlay()
   end
 
   log.info("Finished Vr init")
@@ -82,14 +82,20 @@ function m.init(options)
   return true, ""
 end
 
+function m._init_overlay()
+  local overlay = require("vr/overlay.t")
+  overlay.init(m)
+  m.create_overlay = overlay.create_overlay
+end
+
 function m._init_sys()
-  m.sysptr = addonfuncs.truss_openvr_get_system(addonptr)
+  m.sysptr = m.addonfuncs.truss_openvr_get_system(m.addonptr)
   log.info("sysptr: " .. tostring(m.sysptr))
 end
 
 function m._init_compositor()
   log.info("Initializing compositor")
-  m.compositorptr = m.addonfuncs.truss_openvr_get_compositor(addonptr)
+  m.compositorptr = m.addonfuncs.truss_openvr_get_compositor(m.addonptr)
   log.info("compositor: " .. tostring(m.compositorptr))
 
   m.eye_poses = {math.Matrix4():identity(), math.Matrix4():identity()}
@@ -240,6 +246,14 @@ function m.openvr_mat34_to_mat(m_3x4, target)
   d[1], d[5], d[ 9], d[13] = m[1][0], m[1][1], m[1][2], m[1][3]
   d[2], d[6], d[10], d[14] = m[2][0], m[2][1], m[2][2], m[2][3]
   d[3], d[7], d[11], d[15] =     0.0,     0.0,     0.0,     1.0
+end
+
+function m.mat_to_openvr_mat34(mat, target)
+  local s = mat.data
+  local d = target.m
+  d[0][0], d[0][1], d[0][2], d[0][3] = s[0], s[4], s[ 8], s[12]
+  d[1][0], d[1][1], d[1][2], d[1][3] = s[1], s[5], s[ 9], s[13]
+  d[2][0], d[2][1], d[2][2], d[2][3] = s[2], s[6], s[10], s[14]
 end
 
 -- local terra derefInt(x: &uint32) : uint32
