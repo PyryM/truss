@@ -32,12 +32,12 @@ local function rounded_text(ctx, x, y, text)
   ctx:Text(x, y + th/2, text, nil)
 end
 
+local t = 0.0
 function nanovg_render(stage, ctx)
-  rounded_text(ctx, 70, 50, "NanoVG: Initialized")
-  local ocam = {theta = math.random(), phi = math.random(), rad = 2.0}
-  local tstr = string.format("theta = % .4f", ocam.theta)
-  local pstr = string.format("phi   = % .4f", ocam.phi)
-  local rstr = string.format("rad   = % .4f", ocam.rad)
+  rounded_text(ctx, 70, 50, "truss overlay")
+  local tstr = string.format("time  = % .4f", t)
+  local pstr = string.format("rand  = % .4f", math.random())
+  local rstr = string.format("const = % .4f", 3.1415926)
   rounded_text(ctx, 70, 50 + FONT_SIZE*1.1, tstr)
   rounded_text(ctx, 70, 50 + 2*FONT_SIZE*1.1, pstr)
   rounded_text(ctx, 70, 50 + 3*FONT_SIZE*1.1, rstr)
@@ -45,7 +45,7 @@ end
 
 function init()
   myapp = app.VROverlayApp{title = "nanovg example", width = 512, height = 512,
-                           msaa = true, stats = false, clear_color = 0x404080ff,
+                           msaa = true, stats = false, clear_color = 0x00000000,
                            nvg_setup = nanovg_setup, nvg_render = nanovg_render}
 
   local tf = math.Matrix4():compose(math.Vector(0.0, 0.0, -1.0), 
@@ -56,5 +56,6 @@ function init()
 end
 
 function update()
+  t = t + 1.0 / 60.0
   myapp:update()
 end

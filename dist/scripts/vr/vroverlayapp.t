@@ -16,6 +16,9 @@ local VROverlayApp = app.App:extend("VROverlayApp")
 
 function VROverlayApp:init(options)
   VROverlayApp.super.init(self, options)
+  -- default to 20 fps updates?
+  self._overlay_update_decimate = options.decimate or 3
+  self._overlay_frame = 0
   self:_create_overlay(options)
   -- The backing texture might not be created for some
   -- frames (due to multithreaded bgfx), so schedule 
@@ -48,7 +51,7 @@ function VROverlayApp:init_pipeline(options)
   p:add_stage(graphics.Stage{
     name = "forward",
     always_clear = true,
-    clear = {color = self.clear_color or 0x000000ff, depth = 1.0},
+    clear = {color = self.clear_color or 0x00000000, depth = 1.0},
     globals = p.globals,
     render_target = overlay_target,
     render_ops = {graphics.GenericRenderOp(), graphics.CameraControlOp()}
@@ -88,7 +91,10 @@ end
 
 function VROverlayApp:update()
   VROverlayApp.super.update(self)
-  self.overlay:update_texture()
+  self._overlay_frame = self._overlay_frame + 1
+  if self._overlay_frame % self._overlay_update_decimate == 0 then
+    self.overlay:update_texture()
+  end
 end
 
 local m = {}
