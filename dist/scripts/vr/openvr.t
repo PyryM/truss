@@ -124,6 +124,9 @@ function m.shutdown()
   if not m.available then return end
   local addonfuncs = truss.addons.openvr.functions
   local addonptr   = truss.addons.openvr.pointer
+  if m.create_overlay then -- we had initialized overlays
+    require("vr/overlay.t").shutdown()
+  end
   addonfuncs.truss_openvr_shutdown(addonptr)
   m.available = false
 end
