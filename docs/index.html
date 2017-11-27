@@ -6,29 +6,22 @@ layout: default
 {% for collection in sorted_collections %}
 	{% assign sorted_docs = collection.docs | sort: "position" %}
 	{% for doc in sorted_docs %}
-		<div class="ui vertical segment">
-			<div class="left-docs">
-				<h1>
-					<a id="{{ doc.id | replace: '/', '' | replace: '.', '' }}"
-					   href="#{{ doc.id | replace: '/', '' | replace: '.', '' }}">
-						{{ doc.title }}
-						{% if doc.type %}
-							<span class="endpoint {{ doc.type }}"></span>
-						{% endif %}
-					</a>
-				</h1>
-				{% if doc.description %}
-					<p class="description">{{doc.description}}</p>
+		<div class="ui vertical segment"
+				 id="{{ doc.id | replace: '/', '' | replace: '.', '' }}">
+			<h1>
+				{{ doc.title }}
+				{% if doc.type %}
+					<span class="endpoint {{ doc.type }}"></span>
 				{% endif %}
-
-				{{ doc.content | replace: "<dl>", "<h6>Parameters</h6><dl>" }}
-			</div>
-
-			{% if doc.right_code %}
-				<div class="ui right rail">
-					{{ doc.right_code | markdownify }}
-				</div>
+				<a href="#{{ doc.id | replace: '/', '' | replace: '.', '' }}">
+					 <i class="tiny linkify icon"></i>
+				</a>
+			</h1>
+			{% if doc.description %}
+				<p class="description">{{doc.description}}</p>
 			{% endif %}
-		</section>
+
+			{{ doc.content | replace: "<dl>", "<h6>Parameters</h6><dl>" }}
+		</div>
 	{% endfor %}
 {% endfor %}

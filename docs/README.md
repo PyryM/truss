@@ -11,3 +11,11 @@ update as changes are made to this site. The locally hosted docs can be viewed
 at http://localhost:4000.
 
 Based on: https://github.com/CloudCannon/aviator-jekyll-template
+
+**TL;DR:**
+
+```
+# Step 0: Install `docker` and `make`
+# Step 1:
+$ make
+```

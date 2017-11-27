@@ -2,5 +2,26 @@
 layout: null
 sitemap: false
 ---
-@import "borland";
-@import "monaki";
+@mixin border-radius($radius) {
+  -webkit-border-radius: $radius;
+  -moz-border-radius: $radius;
+  -ms-border-radius: $radius;
+  border-radius: $radius;
+}
+
+.highlight pre {
+  @include border-radius(0.3em);
+  padding: 1em;
+  background-color: #eee;
+}
+
+.ui.right.rail {
+  width: 100% !important;
+}
+
+.ui.right.rail > .highlight pre {
+  background-color: #1b1c1d !important;
+}
+
+@import 'monaki';
+@import 'borland';

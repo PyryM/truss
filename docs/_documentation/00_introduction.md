@@ -49,6 +49,7 @@ in a neighboring `truss.zip` or its local directory.
 > A local-directory Truss application package
 
 ```
+.
 ├── truss.exe
 ├── font
 ├── include

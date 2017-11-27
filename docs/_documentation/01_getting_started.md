@@ -21,6 +21,7 @@ makes very few assumptions about what you are trying to do.
 **Let's look at some sample code that renders and displays a sphere.**
 
 > A simple example program that displays a sphere
+{:.ui.right.rail}
 
 ```lua
 local AppScaffold = require("utils/appscaffold.t").AppScaffold
@@ -41,6 +42,7 @@ function update()
   app:update()
 end
 ```
+{:.ui.right.rail}
 
 # Random boilerplate
 
