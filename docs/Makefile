@@ -1,22 +1,28 @@
+# Docker-ized Jekyll build
+#
+# Based on:
+# https://kristofclaes.github.io/2016/06/19/running-jekyll-locally-with-docker/
+
 CWD := $(shell pwd)
-DOCKER_IMAGE := truss/slate
+DOCKER_IMAGE := jekyll/jekyll:pages
 
-.PHONY: build serve
+.PHONY: image serve
 
-all: build
+all: serve
 
 image:
-	docker build -t $(DOCKER_IMAGE) .
+	docker pull $(DOCKER_IMAGE)
 
-build: image
+serve:
 	docker run --rm \
-		-v $(CWD):/usr/src/app/source:ro \
-		-v $(CWD)/build:/usr/src/app/build \
+		-v $(CWD):/srv/jekyll:ro \
+		-p 4000:4000 \
 		$(DOCKER_IMAGE) \
-		bundle exec middleman build --clean
+		jekyll serve --watch --incremental
 
-serve: image
-	docker run --rm \
-		-v $(CWD):/usr/src/app/source:ro \
-		-p 4567:4567 \
-		$(DOCKER_IMAGE)
+shell:
+	docker run --rm -it \
+		-v $(CWD):/srv/jekyll \
+		-p 4000:4000 \
+		$(DOCKER_IMAGE) \
+		/bin/bash
