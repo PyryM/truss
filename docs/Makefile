@@ -14,15 +14,15 @@ image:
 	docker pull $(DOCKER_IMAGE)
 
 serve:
-	docker run --rm \
-		-v $(CWD):/srv/jekyll:ro \
+	docker run --rm -it \
+		--mount type=bind,src=$(CWD),dst=/srv/jekyll \
 		-p 4000:4000 \
 		$(DOCKER_IMAGE) \
-		jekyll serve --watch --incremental
+		jekyll serve --watch --incremental --destination /tmp/site
 
 shell:
 	docker run --rm -it \
-		-v $(CWD):/srv/jekyll \
+		--mount type=bind,src=$(CWD),dst=/srv/jekyll \
 		-p 4000:4000 \
 		$(DOCKER_IMAGE) \
 		/bin/bash
