@@ -1,0 +1,34 @@
+---
+title: API Docs
+layout: default
+---
+{% assign sorted_collections = site.collections | sort: "position" %}
+{% for collection in sorted_collections %}
+	{% assign sorted_docs = collection.docs | sort: "position" %}
+	{% for doc in sorted_docs %}
+		<div class="ui vertical segment">
+			<div class="left-docs">
+				<h1>
+					<a id="{{ doc.id | replace: '/', '' | replace: '.', '' }}"
+					   href="#{{ doc.id | replace: '/', '' | replace: '.', '' }}">
+						{{ doc.title }}
+						{% if doc.type %}
+							<span class="endpoint {{ doc.type }}"></span>
+						{% endif %}
+					</a>
+				</h1>
+				{% if doc.description %}
+					<p class="description">{{doc.description}}</p>
+				{% endif %}
+
+				{{ doc.content | replace: "<dl>", "<h6>Parameters</h6><dl>" }}
+			</div>
+
+			{% if doc.right_code %}
+				<div class="ui right rail">
+					{{ doc.right_code | markdownify }}
+				</div>
+			{% endif %}
+		</section>
+	{% endfor %}
+{% endfor %}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" >
+
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/semantic-ui@2.2.13/dist/semantic.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="//code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="//cdn.jsdelivr.net/npm/semantic-ui@2.2.13/dist/semantic.min.js"></script>
+    {% if jekyll.environment == 'production' %}
+    <!-- Insert analytics here -->
+    {% endif %}
+  </head>
+  <body>
+    <div>
+      {% include sidebar.html %}
+      <div class="ui container">
+        <div class="ui segment">
+          {{ content }}
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

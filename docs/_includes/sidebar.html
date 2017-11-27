@@ -1,0 +1,45 @@
+<div class="ui left fixed vertical menu">
+	<div class="item">
+		<a href="/">
+			<!--<img src="/images/logo.png" height="40" alt="{{ site.title }} logo">-->
+			<h1 class="ui header">Truss</h1>
+		</a>
+	</div>
+
+	<div class="ui category search item">
+		<div class="ui transparent icon input">
+			<form action="/search/" method="get">
+				<input class="prompt" type="text" name="q" id="search-input" placeholder="Search...">
+				<i class="search link icon"></i>
+				<input type="submit" value="Search" style="display: none;">
+			</form>
+		</div>
+		<div class="results"></div>
+	</div>
+
+	{%- assign sorted_collections = site.collections | sort: "position" -%}
+	{%- for collection in sorted_collections -%}
+		{%- if collection.label != "posts" %}
+		<div class="item">
+			<h4 class="ui header">{{ collection.title }}</h4>
+			<div class="menu">
+				{% assign sorted_docs = collection.docs | sort: "position" %}
+				{% for doc in sorted_docs %}
+					<a class="item" href="{% if page.url != '/' %}/{% endif %}#{{ doc.id | replace: '/', '' | replace: '.', ''}}">
+						{{ doc.title }}
+						{% if doc.type %}<span class="endpoint {{ doc.type }}"></span>{% endif %}
+					</a>
+				{% endfor %}
+			</div>
+		</div>
+		{% endif -%}
+	{%- endfor -%}
+
+	<div class="item">
+  	<p class="copyright">
+    	<a href="https://github.com/PyryM/truss">
+      	Truss GitHub
+    	</a>
+  	</p>
+	</div>
+</div>
