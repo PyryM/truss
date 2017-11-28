@@ -3,7 +3,7 @@
 -- demonstration of using vrapp for vr
 
 local VRApp = require("vr/vrapp.t").VRApp
-local icosphere = require("geometry/icosphere.t")
+local geometry = require("geometry")
 local pbr = require("shaders/pbr.t")
 local gfx = require("gfx")
 
@@ -12,7 +12,7 @@ function randu(magnitude)
 end
 
 function createGeometry()
-    local geo = icosphere.icosphereGeo(0.5, 3, "sphere")
+    local geo = geometry.icosphere_geo(0.5, 3)
     local mat = pbr.PBRMaterial("solid"):roughness(0.8):tint(0.1,0.1,0.1)
 
     local nspheres = 1000
