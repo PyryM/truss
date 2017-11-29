@@ -1,8 +1,8 @@
-<div class="ui left fixed vertical menu">
+<div class="ui left fixed large vertical menu" id="sidebar">
 	<div class="item">
 		<a href="/">
 			<!--<img src="/images/logo.png" height="40" alt="{{ site.title }} logo">-->
-			<h1 class="ui header">Truss</h1>
+			<h1 class="ui header">TRUSS</h1>
 		</a>
 	</div>
 
@@ -14,7 +14,7 @@
 				<input type="submit" value="Search" style="display: none;">
 			</form>
 		</div>
-		<div class="results"></div>
+		<div id="results"></div>
 	</div>
 
 	{%- assign sorted_collections = site.collections | sort: "position" -%}
@@ -25,7 +25,8 @@
 			<div class="menu">
 				{% assign sorted_docs = collection.docs | sort: "position" %}
 				{% for doc in sorted_docs %}
-					<a class="item" href="{% if page.url != '/' %}/{% endif %}#{{ doc.id | replace: '/', '' | replace: '.', ''}}">
+					<a class="item docs-link"
+						 href="{% if page.url != '/' %}/{% endif %}#{{ doc.id | replace: '/', '' | replace: '.', ''}}">
 						{{ doc.title }}
 						{% if doc.type %}<span class="endpoint {{ doc.type }}"></span>{% endif %}
 					</a>

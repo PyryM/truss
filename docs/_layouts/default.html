@@ -8,18 +8,23 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="//code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="//cdn.jsdelivr.net/npm/semantic-ui@2.2.13/dist/semantic.min.js"></script>
+    <script src="https://unpkg.com/lunr/lunr.js"></script>
+
+    <script src="/js/sidebar.js"></script>
+    <!--<script src="/js/search.js"></script>-->
+
     {% if jekyll.environment == 'production' %}
     <!-- Insert analytics here -->
     {% endif %}
   </head>
   <body>
     <div class="ui grid">
-      <div class="ui column" style="width: 18rem;">
+      <div class="ui column" style="width: 20rem;">
         {% include sidebar.html %}
       </div>
       <div class="ui column">
         <div class="ui text container">
-          <div class="">
+          <div id="main">
             {{ content }}
           </div>
         </div>
