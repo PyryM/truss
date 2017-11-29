@@ -1,5 +1,5 @@
 ---
-title: API Docs
+title: Docs
 layout: default
 ---
 {% assign sorted_collections = site.collections | sort: "position" %}
@@ -10,9 +10,6 @@ layout: default
 				 id="{{ doc.id | replace: '/', '' | replace: '.', '' }}">
 			<h1>
 				{{ doc.title }}
-				{% if doc.type %}
-					<span class="endpoint {{ doc.type }}"></span>
-				{% endif %}
 				<a href="#{{ doc.id | replace: '/', '' | replace: '.', '' }}">
 					 <i class="tiny linkify icon"></i>
 				</a>
@@ -21,7 +18,7 @@ layout: default
 				<p class="description">{{doc.description}}</p>
 			{% endif %}
 
-			{{ doc.content | replace: "<dl>", "<h6>Parameters</h6><dl>" }}
+			{{ doc.content }}
 		</div>
 	{% endfor %}
 {% endfor %}

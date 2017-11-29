@@ -1,5 +1,6 @@
 const docLinkSelector = '.docs-link';
 const docContentSelector = '#content';
+const titleBase = 'TRUSS - ';
 
 // Highlight the current section of the documentation that we are in.
 jQuery(function() {
@@ -21,7 +22,7 @@ function setActiveSidebarLink() {
   $(docLinkSelector).removeClass('active');
   const $closest = getClosestHeader();
   $closest.addClass('active');
-  document.title = $closest.text();
+  document.title = titleBase + $closest.text();
 }
 
 // Looks for a link that contains the `docs-link` class and uses the position

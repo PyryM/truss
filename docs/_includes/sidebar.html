@@ -6,16 +6,15 @@
 		</a>
 	</div>
 
-	<div class="ui category search item">
-		<div class="ui transparent icon input">
-			<form action="/search/" method="get">
-				<input class="prompt" type="text" name="q" id="search-input" placeholder="Search...">
-				<i class="search link icon"></i>
-				<input type="submit" value="Search" style="display: none;">
-			</form>
+	<form action="/search/" method="get">
+		<div class="ui category search item">
+			<div class="ui transparent icon input">
+					<input class="prompt" type="text" name="q" id="search-input" placeholder="Search...">
+					<i class="search link icon"></i>
+					<input type="submit" value="Search" style="display: none;">
+			</div>
 		</div>
-		<div id="results"></div>
-	</div>
+	</form>
 
 	{%- assign sorted_collections = site.collections | sort: "position" -%}
 	{%- for collection in sorted_collections -%}
