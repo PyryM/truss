@@ -10,6 +10,17 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://truss.github.io"
 permalink: pretty
 
+begin_sidebar: |
+  <!-- Begin Sidebar -->
+  <div class="ui right rail">
+  <div class="ui inverted segment" markdown="1">
+  <!-- Begin Sidebar -->
+end_sidebar: |
+  <!-- End Sidebar -->
+  </div>
+  </div>
+  <!-- End Sidebar -->
+
 # Collections define the broad categories of documentation.
 collections:
   documentation:

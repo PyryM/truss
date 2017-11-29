@@ -20,8 +20,7 @@ makes very few assumptions about what you are trying to do.
 
 **Let's look at some sample code that renders and displays a sphere.**
 
-<div class="ui right rail">
-<div class="ui inverted segment" markdown="1">
+{{ site.begin_sidebar }}
 #### A simple example program that displays a sphere
 
 ```lua
@@ -43,8 +42,7 @@ function update()
   app:update()
 end
 ```
-</div>
-</div>
+{{ site.end_sidebar }}
 
 # Random boilerplate
 

@@ -18,8 +18,6 @@ Truss is an opinionated game/visualization engine built upon a cross-platform
 core of libraries bound together with the powerful **lua**/**terra** language
 engines.
 
-> ![Image of Yaktocat](images/logo.png)
-
 # Installation
 
 Truss can be installed in a few different ways. You can **download a pre-built
@@ -31,12 +29,6 @@ Truss is designed to require minimal host dependencies once built. It does this
 by being organized into a `truss[.exe]` executable which can load everything
 else it needs from an application package. By default, it looks for this package
 in a neighboring `truss.zip` or its local directory.
-
-<div class="ui right rail">
-  <div class="ui segment">
-    <img src="images/logo.png" />
-  </div>
-</div>
 
 > A zipped Truss application package
 
@@ -59,6 +51,10 @@ in a neighboring `truss.zip` or its local directory.
 ├── shaders
 └── textures
 ```
+
+{{ site.begin_sidebar }}
+<img class="ui centered large image" src="images/logo.png" /> {{
+site.end_sidebar }}
 
 This means that using a pre-built Truss package is as simple as downloading the
 package, and putting the `truss[.exe]` alongside its application resources. Then
