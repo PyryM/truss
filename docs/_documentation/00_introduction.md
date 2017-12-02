@@ -1,17 +1,5 @@
 ---
 title: Introduction
-
-language_tabs: # must be one of https://git.io/vQNgJ
-  - lua
-
-toc_footers:
-  - <a href='https://github.com/PyryM/truss'>Truss GitHub</a>
-  - <a href='https://github.com/lord/slate'>Documentation Powered by Slate</a>
-
-includes:
-  - errors
-
-search: true
 ---
 
 Truss is an opinionated game/visualization engine built upon a cross-platform

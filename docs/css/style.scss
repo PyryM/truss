@@ -24,8 +24,12 @@ sitemap: false
   background-color: #333;
 }
 
+.docs-link {
+  margin-left: 0.5em;
+}
+
 .docs-sublink {
-  margin-left: 1em;
+  margin-left: 0.5em;
 }
 
 @import 'monaki';
