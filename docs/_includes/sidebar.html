@@ -27,7 +27,6 @@
 					<a class="item docs-link"
 						 href="{% if page.url != '/' %}/{% endif %}#{{ doc.id | replace: '/', '' | replace: '.', ''}}">
 						{{ doc.title }}
-						{% if doc.type %}<span class="endpoint {{ doc.type }}"></span>{% endif %}
 					</a>
 				{% endfor %}
 			</div>
