@@ -30,7 +30,7 @@ by being organized into a `truss[.exe]` executable which can load everything
 else it needs from an application package. By default, it looks for this package
 in a neighboring `truss.zip` or its local directory.
 
-> A zipped Truss application package
+#### A zipped Truss application package
 
 ```
 .
@@ -38,7 +38,7 @@ in a neighboring `truss.zip` or its local directory.
 └── truss.zip
 ```
 
-> A local-directory Truss application package
+#### A local-directory Truss application package
 
 ```
 .
@@ -67,7 +67,7 @@ available, Truss can also be built using CMake. Detailed instructions can be
 [found on GitHub](https://github.com/PyryM/truss/blob/master/build.md), but the
 simple version of it is shown on the right.
 
-> Building the source using CMake
+### Building the source using CMake
 
 ```
 # Install platform dependencies

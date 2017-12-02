@@ -18,7 +18,7 @@ serve:
 		--mount type=bind,src=$(CWD),dst=/srv/jekyll \
 		-p 4000:4000 \
 		$(DOCKER_IMAGE) \
-		jekyll serve --watch --incremental --destination /tmp/site
+		jekyll serve --destination /tmp/site
 
 shell:
 	docker run --rm -it \

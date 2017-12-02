@@ -19,3 +19,17 @@ Based on: https://github.com/CloudCannon/aviator-jekyll-template
 # Step 1:
 $ make
 ```
+
+## Special Commands
+
+To make content appear the sidebar, use the following commands:
+
+```markdown
+{{ site.begin_sidebar }}
+
+## My Great Sidebar Content
+
+`$ run_a_good_command`
+
+{{ site.end_sidebar }}
+```
