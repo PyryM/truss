@@ -18,10 +18,10 @@
   </head>
   <body>
     <div class="ui grid">
-      <div class="ui column" style="width: 20rem;">
+      <div class="ui column" style="flex: 0 0 20rem;">
         {% include sidebar.html %}
       </div>
-      <div class="ui column">
+      <div class="ui column" style="flex: 1;">
         <div class="ui text container" id="main">
           {{ content }}
         </div>

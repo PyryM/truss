@@ -32,5 +32,9 @@ sitemap: false
   margin-left: 0.5em;
 }
 
+#main {
+  margin-left: 3em !important;
+}
+
 @import 'monaki';
 @import 'borland';
