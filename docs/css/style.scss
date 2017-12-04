@@ -9,10 +9,14 @@ sitemap: false
   border-radius: $radius;
 }
 
+body {
+  background-color: #f8f8f8;
+}
+
 .highlight pre {
   @include border-radius(0.3em);
   padding: 1em;
-  background-color: #f0f8f8;
+  background-color: #e4e4e4;
 }
 
 .ui.right.rail {
