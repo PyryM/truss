@@ -13,7 +13,7 @@ permalink: pretty
 begin_sidebar: |
   <!-- Begin Sidebar -->
   <div class="ui right rail">
-  <div class="ui inverted segment" markdown="1">
+  <div class="ui segment" markdown="1">
   <!-- Begin Sidebar -->
 end_sidebar: |
   <!-- End Sidebar -->
