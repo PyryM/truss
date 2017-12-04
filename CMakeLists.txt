@@ -19,6 +19,7 @@ set(truss_HEADERS
     src/addons/wsclient/wsclient_addon.h
     src/addons/nanovg/nanovg.h
     src/addons/nanovg/nanovg_addon.h
+    src/addons/openvr/openvr_addon.h
 )
 set(truss_SOURCES
     src/main.cpp
@@ -32,15 +33,14 @@ set(truss_SOURCES
     src/addons/nanovg/nanovg.cpp
     src/addons/nanovg/nanovg_addon.cpp
     src/addons/nanovg/nanovg_bgfx_c99.cpp
+    src/addons/openvr/openvr_addon.cpp
+    src/addons/openvr/openvr_wrapper.cpp
 )
 if (${WIN32})
     set(truss_HEADERS ${truss_HEADERS}
-        src/addons/openvr/openvr_addon.h
         src/addons/screencap/screencap_addon.h
     )
     set(truss_SOURCES ${truss_SOURCES}
-        src/addons/openvr/openvr_addon.cpp
-        src/addons/openvr/openvr_wrapper.cpp
         src/addons/screencap/screencap_addon.cpp
     )
 endif()
@@ -54,9 +54,7 @@ include(physfs)
 include(sdl)
 include(stb)
 include(terra)
-if (${WIN32})
-    include(openvr)
-endif()
+include(openvr)
 
 # Configure truss to handle include directories properly.
 target_include_directories(truss
@@ -68,11 +66,8 @@ target_include_directories(truss
 
 # Link against required dependencies.
 target_link_libraries(truss
-    bgfx physfs terra stb sdl
+    bgfx physfs terra stb sdl openvr
 )
-if (${WIN32})
-    target_link_libraries(truss openvr)
-endif()
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     # Fix obscure LuaJIT issue on OSX.
