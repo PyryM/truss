@@ -15,4 +15,21 @@ function m.install_access_guard(target_class, tag, crash_on_nil)
   end
 end
 
+-- deprecate a function to print a warning if it is called
+-- e.g., bla.old_func = deprecate(bla.old_func, "old_func", "new_func")
+function m.deprecate(func, oldname, newname)
+  local called = false
+  return function(...)
+    if not called then
+      local msg = fname .. " is deprecated."
+      if newname then 
+        msg = msg .. " Use " .. newname .. " instead."
+      end
+      truss.warn(msg)
+      called = true
+    end
+    return func(...)
+  end
+end
+
 return m

@@ -16,7 +16,7 @@ function init()
 
   -- scene setup
   local mygrid = myapp.scene:create_child(grid.Grid, {thickness = 0.01, 
-                                                     color = {0.5, 0.2, 0.2}})
+                                                     color = {0.5, 0.2, 0.2, 1.0}})
   mygrid.position:set(0.0, -1.0, 0.0)
   mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
   mygrid:update_matrix()
@@ -81,9 +81,11 @@ function create_line(parent)
     initial_data[i] = {x,z,y}
   end
 
+  local linetex = gfx.Texture("textures/terrible_dashed_line.png")
   local ret = parent:create_child(graphics.Line, "line", {
     maxpoints = npoints, dynamic = true, points = {linedata},
-    color = {0.8,0.8,0.8}, thickness = 0.01
+    color = {0.8,0.8,0.8,0.75}, thickness = 0.05, 
+    texture = linetex, alpha_test = true, u_mult = 360.0
   })
   ret:add_component(Twiddler(initial_data, linedata))
 
