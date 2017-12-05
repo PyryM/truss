@@ -102,6 +102,7 @@ function truss.load_string_from_file(filename)
     return nil
   end
 end
+truss.load_string = truss.load_string_from_file -- alias
 
 -- terra has issues with line numbering with dos line endings (\r\n), so
 -- this function loads a string and then gets rid of carriage returns (\r)
