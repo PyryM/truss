@@ -102,6 +102,7 @@ function truss.load_string_from_file(filename)
     return nil
   end
 end
+truss.load_string = truss.load_string_from_file -- alias
 
 -- terra has issues with line numbering with dos line endings (\r\n), so
 -- this function loads a string and then gets rid of carriage returns (\r)
@@ -148,7 +149,7 @@ function truss.set_app_directories(orgname, appname)
   end 
   local sdl = require("addons/sdl.t")
   local userpath = sdl.create_user_path(orgname, appname)
-  print(userpath)
+  log.info("Setting save dir to: " .. userpath)
   truss.C.set_raw_write_dir(userpath)
 end
 

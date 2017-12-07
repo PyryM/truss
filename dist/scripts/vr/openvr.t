@@ -70,6 +70,7 @@ function m.init(options)
     modelloader.init(m)
   elseif m.openvr_mode == "other" then
     m._init_trackables()
+    modelloader.init(m)
   elseif m.openvr_mode == "overlay" then
     m._init_overlay()
   end
@@ -150,6 +151,7 @@ function m.begin_frame()
       openvr_c.ETrackingUniverseOrigin_TrackingUniverseStanding, 
       0.0, m.trackable_poses, m.MAX_TRACKABLES)
     m._update_trackables()
+    modelloader.update()
   end
 end
 
