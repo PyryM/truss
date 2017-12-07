@@ -1,0 +1,32 @@
+name: truss
+version: "0.0.1-git"
+summary: Truss
+description: |
+  Truss is an opinionated game/visualization engine built upon a cross-platform
+  core of libraries bound together with the powerful **lua**/**terra** language
+  engines.
+confinement: strict
+
+apps:
+  truss:
+    plugs:
+      - x11
+      - opengl
+    command: dist/truss
+
+parts:
+  truss:
+    plugin: cmake
+    source: .
+    build-packages:
+      - g++
+      - libgl1-mesa-dev
+    stage-packages:
+      - libgl1-mesa-dri
+  dist:
+    plugin: dump
+    source: parts/truss/src/dist
+    organize:
+      '*': dist/
+    after:
+      - truss
