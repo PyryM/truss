@@ -95,4 +95,4 @@ set_target_properties(truss PROPERTIES
 )
 
 # If the user attempts to install, politely inform them that it has no effect.
-install(CODE "MESSAGE(\"Truss cannot be installed to the system.\")")
+install(CODE "MESSAGE(WARNING \"\nTruss cannot be installed to the system. Typically, the 'dist' directory is re-distributed as a self-contained application.\")")
