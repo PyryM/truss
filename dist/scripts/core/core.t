@@ -149,7 +149,7 @@ function truss.set_app_directories(orgname, appname)
   end 
   local sdl = require("addons/sdl.t")
   local userpath = sdl.create_user_path(orgname, appname)
-  print(userpath)
+  log.info("Setting save dir to: " .. userpath)
   truss.C.set_raw_write_dir(userpath)
 end
 
