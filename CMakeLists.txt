@@ -93,3 +93,6 @@ set_target_properties(truss PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${DIST_DIR}"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${DIST_DIR}"
 )
+
+# If the user attempts to install, politely inform them that it has no effect.
+install(CODE "MESSAGE(\"Truss cannot be installed to the system.\")")
