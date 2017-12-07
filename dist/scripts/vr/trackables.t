@@ -240,8 +240,6 @@ function Controller:update(src)
   if self.rawstate == nil then
     self.rawstate = terralib.new(openvr_c.VRControllerState_t)
     self.statesize = terralib.sizeof(openvr_c.VRControllerState_t)
-    self.pressed = {}
-    self.touched = {}
   end
 
   local rawstate = self.rawstate
