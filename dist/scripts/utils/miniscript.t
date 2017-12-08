@@ -3,7 +3,7 @@
 -- some co-routine trickery
 
 local class = require("class")
-local queue = require("util/queue.t")
+local queue = require("utils/queue.t")
 local m = {}
 
 local ScriptContext
@@ -11,7 +11,7 @@ local ScriptContext
 local Miniscript = class("Miniscript")
 m.Miniscript = Miniscript
 function Miniscript:init(f, ...)
-  self._f = f
+  self._frame = 0
   self._events = queue.Queue()
   self._in_update = false
   self._co = coroutine.create(f)
@@ -83,7 +83,7 @@ function ScriptContext:wait_event(n_frames)
   while n_frames > 0 do
     local evt = {coroutine.yield()}
     if evt[1] ~= "tick" then return unpack(evt) end 
-    n_frames = n_frames - 1 end
+    n_frames = n_frames - 1
   end
   return "timeout"
 end

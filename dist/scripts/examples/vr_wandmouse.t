@@ -11,11 +11,26 @@ local grid = require("graphics/grid.t")
 local ecs = require("ecs")
 local vrcomps = require("vr/components.t")
 local math = require("math")
+local miniscript = require("utils/miniscript.t")
+local config = require("utils/config.t")
 
 local App = VRTrackingApp:extend("App")
 function App:init(options)
+  self.calib_file = config.Config{
+      appname = "vive_mouse_calib", 
+      use_global_save_dir = false,
+      defaults = {
+        origin = {0, 0, 0},
+        right  = {1, 0, 0},
+        up     = {0, 1, 0}
+      }
+    }:load()
   App.super.init(self, options)
   self.mice = {}
+  self.calib_points = {math.Vector():from_array(self.calib_file.origin), 
+                       math.Vector():from_array(self.calib_file.right), 
+                       math.Vector():from_array(self.calib_file.up)}
+  self:recompute_calib()
 end
 
 function App:keydown(evtname, evt)
@@ -23,14 +38,40 @@ function App:keydown(evtname, evt)
     print("Saving screenshot!")
     gfx.save_screenshot("screenshot.png")
   elseif evt.keyname == "F1" then
-    self:capture_calib_point(1)
-  elseif evt.keyname == "F2" then
-    self:capture_calib_point(2)
-  elseif evt.keyname == "F3" then
-    self:capture_calib_point(3)
-  elseif evt.keyname == "F4" then
-    self:recompute_calib()
+    self:begin_calib()
+  elseif evt.keyname == "F5" then
+    print("Saving calibration")
+    self:save_calib()
   end
+end
+
+function App:save_calib()
+  self.calib_file.origin = self.calib_points[1]:to_array()
+  self.calib_file.right  = self.calib_points[2]:to_array()
+  self.calib_file.up     = self.calib_points[3]:to_array()
+  self.calib_file:save()
+end
+
+function App:begin_calib()
+  local controller = self.calib_target
+  if not controller then return end
+
+  print("Beginning calibration!")
+  self.calib_func = miniscript.Miniscript(function(ctx)
+    local ncaptured = 0
+    local last_trigger = 0
+    while ncaptured < 3 do
+      local trigger = controller.vr_controller.axes.trigger1.x
+      if trigger > 0.5 and last_trigger < 0.5 then
+        ncaptured = ncaptured + 1
+        self:capture_calib_point(ncaptured)
+      end
+      last_trigger = trigger
+      ctx:wait()
+    end
+    self:recompute_calib()
+    print("Calibration complete!")
+  end)
 end
 
 function App:capture_calib_point(n)
@@ -75,9 +116,6 @@ function App:project_cursor(src_mat, fix_center, fix_distance)
     p0.elem.z = 1.0
   end
 
-  -- print("d: " .. tostring(p1))
-  -- print("p: " .. tostring(p0))
-
   local t = p0.elem.z / p1.elem.z
   local x = p0.elem.x - (t * p1.elem.x)
   local y = p0.elem.y - (t * p1.elem.y)
@@ -109,19 +147,21 @@ function App:add_controller(trackable)
   self.calib_target = self.calib_target or controller
   table.insert(self.controllers, controller)
   controller.vr_controller.mouse_id = #(self.controllers)
-
-  self.calib_points = {math.Vector(0, 0, 0), 
-                       math.Vector(1, 0, 0), 
-                       math.Vector(0, 1, 0)}
-  self:recompute_calib()
 end
 
 function App:update()
   App.super.update(self)
+  if self.calib_func then
+    local still_running = self.calib_func:update()
+    if not still_running then
+      self.calib_func = nil
+    end
+    return
+  end
   for idx, controller in ipairs(self.controllers) do
     self.mice[idx] = self.mice[idx] or {x = 0, y = 0}
     local m = self.mice[idx]
-    m.x, m.y = self:project_cursor(controller.matrix_world, false, false)
+    m.x, m.y = self:project_cursor(controller.matrix_world, true, true)
     if self.world_cursor then
       self.world_cursor.position:set(m.x, m.y, 0.0)
       self.world_cursor:update_matrix()
@@ -191,14 +231,15 @@ function init()
 
   local geo = geometry.axis_widget_geo{scale = 0.1}
   local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
-  box = app.scene:create_child(graphics.Mesh, "box", geo, mat)
-  app.calib_marker = box
+  --box = app.scene:create_child(graphics.Mesh, "box", geo, mat)
+  --app.calib_marker = box
+  --box.matrix:copy(app.calib_mat)
 
   local sgeo = geometry.icosphere_geo{radius = 0.02, detail = 1}
   local smat = pbr.FacetedPBRMaterial({0.03,0.03,0.03,1.0},
                                      {0.001, 0.001, 0.001}, 0.7)
-  local world_cursor = box:create_child(graphics.Mesh, "cursor", sgeo, smat)
-  app.world_cursor = world_cursor
+  --local world_cursor = box:create_child(graphics.Mesh, "cursor", sgeo, smat)
+  --app.world_cursor = world_cursor
 
   lines = app.scene:create_child(grid.Grid, {thickness = 0.01, 
                                                 color = {0.5, 0.2, 0.2}})
