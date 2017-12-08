@@ -212,7 +212,8 @@ function VRControllerComponent:preupdate()
       local px, py = self._prev_axes[k].x or 0, self._prev_axes[k].y or 0
       if px ~= v.x or py ~= v.y then
         self.ent:emit("controller_axis", 
-          {name = k, prev_x = px, prev_y = py, x = v.x, y = v.y})
+          {axis = k, prev_x = px, prev_y = py, x = v.x, y = v.y, 
+           component = self})
       end
       self._prev_axes[k].x = v.x
       self._prev_axes[k].y = v.y
@@ -220,7 +221,8 @@ function VRControllerComponent:preupdate()
     for k, v in pairs(self.buttons) do
       local pv = self._prev_buttons[k] or 0
       if pv ~= v then
-        self.ent:emit("controller_button", {name = k, prev = pv, value = v})
+        self.ent:emit("controller_button", {button = k, prev = pv, value = v, 
+                                            component = self})
       end
       self._prev_buttons[k] = v
     end
