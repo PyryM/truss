@@ -162,7 +162,7 @@ end
 
 function WandUI:update(controller)
   local tpad = controller.axes.trackpad1
-  local mx, my = self:_to_pixel_coordinates(tpad.x, tpad.y)
+  local mx, my = self:_to_pixel_coordinates(tpad.x, -tpad.y)
   self.mx, self.my = mx, my
   local touched = controller.buttons.SteamVR_Touchpad >= 1
   local pressed = controller.buttons.SteamVR_Touchpad >= 2

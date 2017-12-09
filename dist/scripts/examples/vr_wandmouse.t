@@ -12,6 +12,7 @@ local ecs = require("ecs")
 local vrcomps = require("vr/components.t")
 local math = require("math")
 local miniscript = require("utils/miniscript.t")
+local wandui = require("vr/wandui.t")
 local config = require("utils/config.t")
 
 local App = VRTrackingApp:extend("App")
@@ -31,6 +32,7 @@ function App:init(options)
                        math.Vector():from_array(self.calib_file.right), 
                        math.Vector():from_array(self.calib_file.up)}
   self:recompute_calib()
+  self.uis = {}
 end
 
 function App:keydown(evtname, evt)
@@ -122,6 +124,58 @@ function App:project_cursor(src_mat, fix_center, fix_distance)
   return x, y
 end
 
+local function ui_evt_loop(ctx, ui, userdata)
+  while true do
+    local evttype, evt = ctx:wait_event(1000)
+    if evttype == "ui_button_down" then
+      if evt.link then
+        return evt.link(ctx, ui, userdata)
+      else 
+        print(evttype .. ": " .. evt.value)
+      end
+    end
+  end
+end
+
+local ui_main, ui_subpanel1, ui_subpanel2
+
+ui_main = function(ctx, ui, userdata)
+  ui:clear()
+  ui:button{text = "Panel 1", link = ui_subpanel1, 
+            gx = 0, gy = 4, gw = 12, gh = 4}
+  ui:button{text = "Panel 2", link = ui_subpanel2,
+            gx = 0, gy = 8, gw = 12, gh = 4}
+  return ui_evt_loop(ctx, ui, userdata)
+end
+
+ui_subpanel1 = function(ctx, ui, userdata)
+  ui:clear()
+  ui:button{text = "Back", link = ui_main, 
+            gx = 0, gy = 0, gw = 4, gh = 3}
+  ui:button{text = "P2", link = ui_subpanel2, 
+            gx = 8, gy = 0, gw = 4, gh = 3}
+  ui:button{text = "Banana", value = "banana",
+            gx = 0, gy = 6, gw = 12, gh = 3}
+  ui:button{text = "Orange", value = "orange",
+            gx = 0, gy = 9, gw = 12, gh = 3}
+  return ui_evt_loop(ctx, ui, userdata)
+end
+
+ui_subpanel2 = function(ctx, ui, userdata)
+  ui:clear()
+  ui:button{text = "P1", link = ui_subpanel1, 
+            gx = 0, gy = 0, gw = 4, gh = 3}
+  ui:button{text = "Back", link = ui_main, 
+            gx = 8, gy = 0, gw = 4, gh = 3}
+  ui:button{text = "Red", value = "r",
+            gx = 0, gy = 6, gw = 4, gh = 3}
+  ui:button{text = "Green", value = "g",
+            gx = 4, gy = 6, gw = 4, gh = 3}
+  ui:button{text = "Blue", value = "b",
+            gx = 8, gy = 6, gw = 4, gh = 3}
+  return ui_evt_loop(ctx, ui, userdata)
+end
+
 function App:add_controller(trackable)
   if trackable.device_class_name ~= "Controller" then
     return
@@ -147,6 +201,13 @@ function App:add_controller(trackable)
   self.calib_target = self.calib_target or controller
   table.insert(self.controllers, controller)
   controller.vr_controller.mouse_id = #(self.controllers)
+
+  local ui = wandui.WandUI{
+    size = 240,
+    offset = {x = 300 * (#(self.controllers)-1), y = 100},
+    f = ui_main
+  }
+  table.insert(self.uis, ui)
 end
 
 function App:update()
@@ -168,14 +229,9 @@ function App:update()
     end
     m.x = m.x * self.calib_scale
     m.y = m.y * self.calib_scale
+    if self.uis[idx] then self.uis[idx]:update(controller.vr_controller) end
   end
 end
-
--- function App:axis_event(evtname, evt)
--- end
-
--- function App:button_event(evtname, evt)
--- end
 
 function nanovg_setup(stage, ctx)
   ctx.bg_color = ctx:RGBAf(0.0, 0.0, 0.0, 0.5) -- semi-transparent black
@@ -185,31 +241,40 @@ function nanovg_setup(stage, ctx)
     ctx:RGBf(1.0, 0.5, 0.5), ctx:RGBf(0.5, 1.0, 0.5),
     ctx:RGBf(0.5, 0.5, 1.0), ctx:RGBf(1.0, 1.0, 0.5)
   }
-end
-
-local FONT_SIZE = 40
-local FONT_X_MARGIN = 5
-local FONT_Y_MARGIN = 8
-
--- Draw text with a rounded-rectangle background
-local function rounded_text(ctx, x, y, text)
-  local tw = #text * FONT_SIZE * 0.55
-  local th = FONT_SIZE
-  ctx:BeginPath()
-  ctx:RoundedRect(x, y, tw, th, 3)
-  ctx:FillColor(ctx.bg_color)
-  ctx:Fill()
-
-  ctx:FontFace("sans")
-  ctx:FontSize(FONT_SIZE)
-  ctx:FillColor(ctx.font_color)
-  ctx:TextAlign(ctx.ALIGN_MIDDLE)
-  ctx:Text(x, y + th/2, text, nil)
+  ctx.colors = {
+    default = {
+      background = ctx:RGBAf(0.0, 0.0, 0.0, 0.5), -- semi-transparent black
+      foreground = ctx:RGBf(1.0, 1.0, 1.0)        -- white
+    },
+    disabled = {
+      background = ctx:RGBAf(0.0, 0.0, 0.0, 0.25), -- semi-transparent black
+      foreground = ctx:RGBf(0.5, 0.5, 0.5)         -- gray
+    },
+    selected = {
+      background = ctx:RGBAf(0.15, 0.5, 0.15, 0.5), -- pastel green
+      foreground = ctx:RGBf(1.0, 1.0, 1.0)          -- white
+    },
+    failed = {
+      background = ctx:RGBAf(0.5, 0.15, 0.15, 0.5), -- pastel red
+      foreground = ctx:RGBf(1.0, 1.0, 1.0)          -- white
+    },
+    disabledselected = {
+      background = ctx:RGBAf(0.0, 0.5, 0.0, 0.25), -- dark green
+      foreground = ctx:RGBf(0.5, 0.5, 0.5)         -- white
+    },
+    inverted = {
+      foreground = ctx:RGBf(0.0, 0.0, 0.0),        -- black
+      background = ctx:RGBAf(1.0, 1.0, 1.0, 0.5)   -- white
+    }
+  }
+  ctx.base_font_size = 32
 end
 
 function nanovg_render(stage, ctx)
-  rounded_text(ctx, 70, 50, "NanoVG: Initialized")
   if not app then return end
+  for i, ui in ipairs(app.uis) do
+    ui:draw(ctx)
+  end
   for i, mouse in ipairs(app.mice) do
     local x, y = mouse.x, mouse.y
     x = (x + 1) * (ctx.width / 2)
@@ -222,24 +287,12 @@ function nanovg_render(stage, ctx)
 end
 
 function init()
-  app = App{title = "vr (tracking only, no hmd)", 
+  app = App{title = "vr (wand mouse, no hmd rendering)", 
             width = 1280, height = 720,
             msaa = true, stats = true, 
             clear_color = 0x404080ff, lowlatency = true,
             nvg_setup = nanovg_setup, nvg_render = nanovg_render}
   app.camera:add_component(orbitcam.OrbitControl({min_rad = 1, max_rad = 4}))
-
-  local geo = geometry.axis_widget_geo{scale = 0.1}
-  local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
-  --box = app.scene:create_child(graphics.Mesh, "box", geo, mat)
-  --app.calib_marker = box
-  --box.matrix:copy(app.calib_mat)
-
-  local sgeo = geometry.icosphere_geo{radius = 0.02, detail = 1}
-  local smat = pbr.FacetedPBRMaterial({0.03,0.03,0.03,1.0},
-                                     {0.001, 0.001, 0.001}, 0.7)
-  --local world_cursor = box:create_child(graphics.Mesh, "cursor", sgeo, smat)
-  --app.world_cursor = world_cursor
 
   lines = app.scene:create_child(grid.Grid, {thickness = 0.01, 
                                                 color = {0.5, 0.2, 0.2}})
