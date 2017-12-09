@@ -142,6 +142,7 @@ m.WandUI = WandUI
 function WandUI:init(options)
   self._widgets = {}
   self.size = options.size
+  self._offset = options.offset or {x = 0, y = 0}
   self._script = Miniscript(options.f, self, options)
 end
 
@@ -177,6 +178,9 @@ function WandUI:update(controller)
 end
 
 function WandUI:draw(ctx)
+  ctx:Save()
+  ctx:Translate(self._offset.x, self._offset.y)
+  ctx:Scissor(0, 0, self.size, self.size)
   for _, widget in pairs(self._widgets) do
     if widget.draw then widget:draw(ctx) end
   end
@@ -184,6 +188,7 @@ function WandUI:draw(ctx)
   ctx:Circle(self.mx, self.my, 20)
   ctx:FillColor(ctx.colors.default.foreground)
   ctx:Fill()
+  ctx:Restore()
 end
 
 function WandUI:clear()
