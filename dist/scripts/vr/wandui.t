@@ -109,7 +109,11 @@ local Button = Label:extend("Button")
 function Button:init(parent, options)
   Button.super.init(self, parent, options)
   self.state = 0 -- 0: inactive, 1: hover, 2: down
-  self.value = options.value or options.text
+  self.value = options.value
+  -- explicitly check nil instead of 'text or value' because
+  -- user might want to use *false* as a value
+  if self.value == nil then self.value = options.text end
+  self.link = options.link
 end
 
 function Button:update(x, y, touched, pressed)
@@ -184,10 +188,12 @@ function WandUI:draw(ctx)
   for _, widget in pairs(self._widgets) do
     if widget.draw then widget:draw(ctx) end
   end
-  ctx:BeginPath()
-  ctx:Circle(self.mx, self.my, 20)
-  ctx:FillColor(ctx.colors.default.foreground)
-  ctx:Fill()
+  if self.touched or self.pressed then
+    ctx:BeginPath()
+    ctx:Circle(self.mx, self.my, self.size / 32)
+    ctx:FillColor(ctx.colors.default.foreground)
+    ctx:Fill()
+  end
   ctx:Restore()
 end
 
