@@ -39,6 +39,7 @@ function m.init(options)
   end
 
   if options.use_linux_hacks then
+    print("Using linux hacks!")
     m.bad_structs = require("vr/linux_hacks.t").init_bad_structs(openvr_c)
   end
 

@@ -186,6 +186,7 @@ local Controller = Trackable:extend("Controller")
 m.Controller = Controller
 function Controller:init(device_idx, device_class)
   Controller.super.init(self, device_idx, device_class)
+  log.info("Creating new controller")
   self._has_vibrated = false
   self:_parse_axes_and_buttons()
 end
@@ -241,8 +242,9 @@ function Controller:update(src)
     if openvr.bad_structs then
       -- Hack around valve's TERRIBLE AND BAD **MISALIGNED** STRUCTS
       self.rawstate = openvr.bad_structs.VRControllerState_t:clone()
-      self.rawstate_ptr = terralib.cast(self.rawstate, &openvr_c.VRControllerState_t)
+      self.rawstate_ptr = terralib.cast(&openvr_c.VRControllerState_t, self.rawstate._data)
       self.statesize = self.rawstate._size
+      print("Statesize? " .. self.statesize)
     else
       self.rawstate = terralib.new(openvr_c.VRControllerState_t)
       self.statesize = terralib.sizeof(openvr_c.VRControllerState_t)

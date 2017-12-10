@@ -15,7 +15,7 @@ m.VRTrackingApp = VRTrackingApp
 
 function VRTrackingApp:init(options)
   VRTrackingApp.super.init(self, options)
-  openvr.init{mode = "other"}
+  openvr.init{mode = "other", use_linux_hacks = options.use_linux_hacks}
   self.controllers = {}
   openvr.on("trackable_connected", function(trackable)
     self:add_controller(trackable)
