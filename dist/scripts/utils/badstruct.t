@@ -52,12 +52,26 @@ function BadStruct:decode()
   for fname, field in pairs(self._fields) do
     self[fname] = field.get(self._data)
   end
+  return self
 end
 
 function BadStruct:encode()
   for fname, field in pairs(self._fields) do
     field.set(self._data, self[fname])
   end
+  return self
+end
+
+function BadStruct:overlay(ptr)
+  local ret = BadStruct()
+  ret._size = self._size
+  ret._fields = self._fields
+  ret._data = terralib.cast(&uint8, ptr)
+  return ret
+end
+
+function BadStruct:release()
+  self._data = nil
 end
 
 function BadStruct:clone()
