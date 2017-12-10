@@ -238,14 +238,28 @@ function Controller:update(src)
 
   local openvr_c = openvr.c_api
   if self.rawstate == nil then
-    self.rawstate = terralib.new(openvr_c.VRControllerState_t)
-    self.statesize = terralib.sizeof(openvr_c.VRControllerState_t)
+    if openvr.bad_structs then
+      -- Hack around valve's TERRIBLE AND BAD **MISALIGNED** STRUCTS
+      self.rawstate = openvr.bad_structs.VRControllerState_t:clone()
+      self.rawstate_ptr = terralib.cast(self.rawstate, &openvr_c.VRControllerState_t)
+      self.statesize = self.rawstate._size
+    else
+      self.rawstate = terralib.new(openvr_c.VRControllerState_t)
+      self.statesize = terralib.sizeof(openvr_c.VRControllerState_t)
+    end
+    self.pressed = {}
+    self.touched = {}
   end
 
   local rawstate = self.rawstate
+  local stateptr = self.rawstate_ptr or self.rawstate
   local statesize = self.statesize
-  openvr_c.tr_ovw_GetControllerState(openvr.sysptr, self.device_idx, rawstate,
+  openvr_c.tr_ovw_GetControllerState(openvr.sysptr, self.device_idx, stateptr,
                                      statesize)
+  if self.rawstate_ptr then
+    -- using horrible misaligned structures on linux
+    rawstate:decode()
+  end
   if self.parts then self:update_parts() end
 
   for bname, bmask in pairs(self._buttons) do

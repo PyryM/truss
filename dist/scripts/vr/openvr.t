@@ -38,6 +38,10 @@ function m.init(options)
     return false, "OpenVR support not built."
   end
 
+  if options.use_linux_hacks then
+    m.bad_structs = require("vr/linux_hacks.t").init_bad_structs(openvr_c)
+  end
+
   local addonfuncs = truss.addons.openvr.functions
   local addonptr   = truss.addons.openvr.pointer
   m.openvr_mode = options.mode or "scene"
