@@ -7,6 +7,7 @@ local math = require("math")
 local graphics = require("graphics")
 local ecs = require("ecs")
 local openvr = require("vr/openvr.t")
+local stateutils = require("utils/state.t")
 local m = {}
 
 local EYES = {left = 1, right = 2}
@@ -141,6 +142,8 @@ m.VRControllerComponent = VRControllerComponent
 function VRControllerComponent:init(trackable)
   VRControllerComponent.super.init(self, trackable)
   self.mount_name = "vr_controller"
+  self._prev_axes = {}
+  self._prev_buttons = {}
 end
 
 function VRControllerComponent:create_parts()
@@ -192,12 +195,37 @@ function VRControllerComponent:load_part_model(partname, on_load, on_fail, load_
   self._trackable:load_part_model(partname, on_load, on_fail, load_textures)
 end
 
+function VRControllerComponent:enable_events(enabled)
+  self._emit_events = (enabled == nil) or enabled
+end
+
 function VRControllerComponent:preupdate()
   self.axes = self._trackable.axes
   self.buttons = self._trackable.buttons
   self.ent.matrix:copy(self._trackable.pose)
   if self.parts and self._trackable.parts then
     self:_update_parts()
+  end
+  if self._emit_events then
+    -- compare and copy old state
+    for k, v in pairs(self.axes) do
+      local px, py = self._prev_axes[k].x or 0, self._prev_axes[k].y or 0
+      if px ~= v.x or py ~= v.y then
+        self.ent:emit("controller_axis", 
+          {axis = k, prev_x = px, prev_y = py, x = v.x, y = v.y, 
+           component = self})
+      end
+      self._prev_axes[k].x = v.x
+      self._prev_axes[k].y = v.y
+    end
+    for k, v in pairs(self.buttons) do
+      local pv = self._prev_buttons[k] or 0
+      if pv ~= v then
+        self.ent:emit("controller_button", {button = k, prev = pv, value = v, 
+                                            component = self})
+      end
+      self._prev_buttons[k] = v
+    end
   end
 end
 

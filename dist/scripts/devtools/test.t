@@ -39,6 +39,12 @@ local function TERMINAL_HANDLER(e, test, msg)
   end
 end
 
+-- floating point approximate equality
+local function approx_eq(a, b, tolerance)
+  tolerance = tolerance or 1e-6
+  return math.abs(a - b) < tolerance
+end
+
 local function deepeq(a, b)
   -- Different types: false
   if type(a) ~= type(b) then return false end
@@ -130,6 +136,7 @@ function m.test(name, f, async)
 
     local funcs = {}
     funcs.eq = deepeq
+    funcs.approx_eq = approx_eq
     funcs.spy = spy
     funcs.mem_spy = mem_spy
     funcs.ok = function(cond, msg)
