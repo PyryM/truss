@@ -185,7 +185,8 @@ local header = [[
 ]]
 
 -- link the dynamic library (should only happen once ideally)
-terralib.linklibrary("libzmq")
+
+truss.link_library("libzmq")
 local zmq_c = terralib.includecstring(header)
 m.C_raw = zmq_c
 local C = {}
@@ -198,9 +199,11 @@ m.C = C
 local major_int = terralib.new(int32[2])
 local minor_int = terralib.new(int32[2])
 local patch_int = terralib.new(int32[2])
-m.VERSION = major_int[0] .. "." .. minor_int[0] .. "." .. patch_int[0]
 
 C.version(major_int, minor_int, patch_int)
+m.VERSION = major_int[0] .. "." .. minor_int[0] .. "." .. patch_int[0]
+log.info("zmq runtime version: " .. m.VERSION)
+
 if major_int[0] ~= 4 or minor_int[0] < 1 then
   truss.error("Version mismatch: expected 4.2.4 got " .. m.VERSION)
   return {}
@@ -222,8 +225,6 @@ function m.shutdown()
     context = nil
   end
 end
-
-local function 
 
 local Socket = class("Socket")
 m.Socket = Socket
