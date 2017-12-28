@@ -32,7 +32,7 @@ local header = [[
   int zmq_ctx_shutdown (void *context);
   int zmq_ctx_set (void *context, int option, int optval);
   int zmq_ctx_get (void *context, int option);
-      
+
   typedef struct zmq_msg_t {
       unsigned char _ [64];
   } zmq_msg_t;
@@ -67,7 +67,7 @@ local header = [[
   #define ZMQ_XPUB 9
   #define ZMQ_XSUB 10
   #define ZMQ_STREAM 11
-      
+
   #define ZMQ_AFFINITY 4
   #define ZMQ_ROUTING_ID 5
   #define ZMQ_SUBSCRIBE 6
@@ -184,6 +184,29 @@ local header = [[
   int zmq_socket_monitor (void *s, const char *addr, int events);
 ]]
 
+local ERRORS = {
+  EINTR = 4,
+  EIO = 5,
+  ENXIO = 6,
+  E2BIG = 7,
+  ENOEXEC = 8,
+  EBADF = 9,
+  ECHILD = 10,
+  EAGAIN = 11,
+  ENOMEM =  12,
+  EACCES = 13,
+  EFAULT = 14,
+  EOSERR = 15,
+  EBUSY = 16,
+  EEXIST = 17,
+  EXDEV = 18,
+  ENODEV = 19,
+  ENOTDIR = 20,
+  EISDIR = 21,
+  EINVAL = 22,
+  ENFILE = 23
+}
+
 -- link the dynamic library (should only happen once ideally)
 
 truss.link_library("libzmq")
@@ -193,6 +216,7 @@ local C = {}
 modutils.reexport_without_prefix(zmq_c, "zmq_", C)
 modutils.reexport_without_prefix(zmq_c, "ZMQ_", C)
 m.C = C
+m.ERRORS = ERRORS
 
 -- check version compatibility
 -- (this is 4.2.4)
@@ -212,11 +236,11 @@ end
 -- create a context for this thing
 local context
 function m.init()
-  if context then
-    log.warn("ZMQ should not have .init called twice")
-    return
+  if not context then
+    log.info("Creating ZMQ context.")
+    context = C.ctx_new()
   end
-  context = C.ctx_new()
+  return m
 end
 
 function m.shutdown()
@@ -226,12 +250,25 @@ function m.shutdown()
   end
 end
 
+local function ok(e, verbose)
+  if e == 0 then
+    return true
+  else
+    local err_msg = ffi.string(C.strerror(C.errno()))
+    if verbose ~= false then
+      log.error("ZMQ: " .. err_msg)
+    end
+    return false, err_msg
+  end
+end
+
 local Socket = class("Socket")
 m.Socket = Socket
 
 function Socket:init(mode)
-  if not context then 
-    log.error("Cannot create socket without context!")
+  if not context then
+    truss.error("Cannot create socket without context!"
+             .. " (Did you forget zmq.init()?)")
     return
   end
   self._sock = C.socket(context, mode)
@@ -243,18 +280,22 @@ function Socket:recv(block)
   if not self._sock then return -1 end
   local flags = (block and 0) or C.DONTWAIT
   local err = C.msg_recv(self._msg, self._sock, flags)
+  if err ~= 0 then err = C.errno() end
   if err == 0 then
     local msg_size = C.msg_size(self._msg)
     local msg_data = C.msg_data(self._msg)
     return msg_size, msg_data
-  else
-    return -1
+  elseif err == ERRORS.EAGAIN then
+    return 0
+  else -- an actual unexpected error
+    local errmsg = ffi.string(C.strerror(err))
+    return false, errmsg
   end
 end
 
 function Socket:recv_string(block)
   local msg_size, msg_data = self:recv(block)
-  if msg_size > 0 then
+  if msg_size and msg_data then
     return ffi.string(msg_data, msg_size)
   else
     return nil
@@ -263,8 +304,7 @@ end
 
 function Socket:send(data, data_len)
   if not self._sock then return end
-  local err = C.send(self._sock, data, data_len, 0)
-  return self
+  return ok(C.send(self._sock, data, data_len, 0))
 end
 
 function Socket:send_string(s)
@@ -273,8 +313,22 @@ end
 
 function Socket:bind(url)
   if not self._sock then return end
-  C.bind(self._sock, url)
-  return self
+  return ok(C.bind(self._sock, url))
+end
+
+function Socket:connect(url)
+  if not self._sock then return end
+  return ok(C.connect(self._sock, url))
+end
+
+function Socket:unbind(url)
+  if not self._sock then return end
+  return ok(C.unbind(self._sock, url))
+end
+
+function Socket:disconnect(url)
+  if not self._sock then return end
+  return ok(C.disconnect(self._sock, url))
 end
 
 function Socket:close()
@@ -286,6 +340,7 @@ function Socket:close()
     C.msg_close(self._msg)
     self._msg = nil
   end
+  return true
 end
 
 return m
