@@ -343,4 +343,21 @@ function Socket:close()
   return true
 end
 
+local ReplySocket = Socket:extend("ReplySocket")
+m.ReplySocket = ReplySocket
+
+function ReplySocket:init(url, handler)
+  ReplySocket.super.init(self, C.REP)
+  self:bind(url)
+  self._handler = handler
+end
+
+function ReplySocket:update()
+  local msg_size, msg_data = self:recv(block)
+  if msg_size and msg_size > 0 then
+    local datasize, data = self._handler(msg_size, msg_data)
+    self:send(data, datasize)
+  end
+end
+
 return m
