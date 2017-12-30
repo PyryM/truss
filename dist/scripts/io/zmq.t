@@ -178,33 +178,18 @@ local header = [[
   int zmq_connect (void *s, const char *addr);
   int zmq_unbind (void *s, const char *addr);
   int zmq_disconnect (void *s, const char *addr);
-  int zmq_send (void *s, const void *buf, size_t len, int flags);
+  // hack: changed zmq_send to take 'const char*' to avoid having
+  // to do casts from lua strings
+  int zmq_send (void *s, const char *buf, size_t len, int flags);
   int zmq_send_const (void *s, const void *buf, size_t len, int flags);
   int zmq_recv (void *s, void *buf, size_t len, int flags);
   int zmq_socket_monitor (void *s, const char *addr, int events);
 ]]
 
+-- TODO: how to make these portable?
+-- (e.g., EAGAIN = 35 is osx specific)
 local ERRORS = {
-  EINTR = 4,
-  EIO = 5,
-  ENXIO = 6,
-  E2BIG = 7,
-  ENOEXEC = 8,
-  EBADF = 9,
-  ECHILD = 10,
-  EAGAIN = 11,
-  ENOMEM =  12,
-  EACCES = 13,
-  EFAULT = 14,
-  EOSERR = 15,
-  EBUSY = 16,
-  EEXIST = 17,
-  EXDEV = 18,
-  ENODEV = 19,
-  ENOTDIR = 20,
-  EISDIR = 21,
-  EINVAL = 22,
-  ENFILE = 23
+  EAGAIN = 35
 }
 
 -- link the dynamic library (should only happen once ideally)
@@ -251,12 +236,13 @@ function m.shutdown()
 end
 
 local function ok(e, verbose)
-  if e == 0 then
+  if e >= 0 then
     return true
   else
-    local err_msg = ffi.string(C.strerror(C.errno()))
+    local err_no = C.errno()
+    local err_msg = ffi.string(C.strerror(err_no))
     if verbose ~= false then
-      log.error("ZMQ: " .. err_msg)
+      log.error("ZMQ: " .. err_no .. " " .. err_msg)
     end
     return false, err_msg
   end
@@ -271,25 +257,31 @@ function Socket:init(mode)
              .. " (Did you forget zmq.init()?)")
     return
   end
+  print(mode)
   self._sock = C.socket(context, mode)
   self._msg = terralib.new(C.msg_t)
   C.msg_init(self._msg)
+  self._buff = terralib.new(uint8[1000])
 end
 
 function Socket:recv(block)
   if not self._sock then return -1 end
   local flags = (block and 0) or C.DONTWAIT
-  local err = C.msg_recv(self._msg, self._sock, flags)
-  if err ~= 0 then err = C.errno() end
-  if err == 0 then
+  local nbytes = C.msg_recv(self._msg, self._sock, flags)
+  --local err = C.recv(self._sock, self._buff, 1000, int flags);
+  if nbytes >= 0 then
     local msg_size = C.msg_size(self._msg)
     local msg_data = C.msg_data(self._msg)
     return msg_size, msg_data
-  elseif err == ERRORS.EAGAIN then
-    return 0
-  else -- an actual unexpected error
-    local errmsg = ffi.string(C.strerror(err))
-    return false, errmsg
+  else
+    local err = C.errno()
+    if err == ERRORS.EAGAIN then
+      return 0
+    else -- an actual unexpected error
+      local errmsg = ffi.string(C.strerror(err))
+      log.error("ZMQ: " .. err .. " " .. errmsg)
+      return false, errmsg
+    end
   end
 end
 
@@ -304,11 +296,7 @@ end
 
 function Socket:send(data, data_len)
   if not self._sock then return end
-  return ok(C.send(self._sock, data, data_len, 0))
-end
-
-function Socket:send_string(s)
-  return self:send(s, #s)
+  return ok(C.send(self._sock, data, data_len or #data, 0))
 end
 
 function Socket:bind(url)
@@ -348,16 +336,25 @@ m.ReplySocket = ReplySocket
 
 function ReplySocket:init(url, handler)
   ReplySocket.super.init(self, C.REP)
-  self:bind(url)
+  local happy, err = self:bind(url)
+  if happy then log.debug("Successfully bound " .. url) end
   self._handler = handler
 end
 
-function ReplySocket:update()
+function ReplySocket:update(block)
   local msg_size, msg_data = self:recv(block)
   if msg_size and msg_size > 0 then
-    local datasize, data = self._handler(msg_size, msg_data)
+    local ret1, ret2 = self._handler(msg_size, msg_data)
+    local data, datasize
+    if ret2 then
+      datasize, data = ret1, ret2
+    else
+      data = ret1
+    end 
     self:send(data, datasize)
+    return true
   end
+  return false
 end
 
 return m
