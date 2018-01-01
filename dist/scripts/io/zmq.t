@@ -257,18 +257,15 @@ function Socket:init(mode)
              .. " (Did you forget zmq.init()?)")
     return
   end
-  print(mode)
   self._sock = C.socket(context, mode)
   self._msg = terralib.new(C.msg_t)
   C.msg_init(self._msg)
-  self._buff = terralib.new(uint8[1000])
 end
 
 function Socket:recv(block)
-  if not self._sock then return -1 end
+  if not self._sock then return false, "No socket" end
   local flags = (block and 0) or C.DONTWAIT
   local nbytes = C.msg_recv(self._msg, self._sock, flags)
-  --local err = C.recv(self._sock, self._buff, 1000, int flags);
   if nbytes >= 0 then
     local msg_size = C.msg_size(self._msg)
     local msg_data = C.msg_data(self._msg)
@@ -295,27 +292,27 @@ function Socket:recv_string(block)
 end
 
 function Socket:send(data, data_len)
-  if not self._sock then return end
+  if not self._sock then return false, "No socket" end
   return ok(C.send(self._sock, data, data_len or #data, 0))
 end
 
 function Socket:bind(url)
-  if not self._sock then return end
+  if not self._sock then return false, "No socket" end
   return ok(C.bind(self._sock, url))
 end
 
 function Socket:connect(url)
-  if not self._sock then return end
+  if not self._sock then return false, "No socket" end
   return ok(C.connect(self._sock, url))
 end
 
 function Socket:unbind(url)
-  if not self._sock then return end
+  if not self._sock then return false, "No socket" end
   return ok(C.unbind(self._sock, url))
 end
 
 function Socket:disconnect(url)
-  if not self._sock then return end
+  if not self._sock then return false, "No socket" end
   return ok(C.disconnect(self._sock, url))
 end
 
