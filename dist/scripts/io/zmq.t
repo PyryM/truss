@@ -187,13 +187,12 @@ local header = [[
 ]]
 
 -- TODO: how to make these portable?
--- (e.g., EAGAIN = 35 is osx specific)
+-- (e.g., EAGAIN = 35 is osx specific, EAGAIN = 11 on Win/Linux)
 local ERRORS = {
   EAGAIN = 35
 }
 
 -- link the dynamic library (should only happen once ideally)
-
 truss.link_library("libzmq")
 local zmq_c = terralib.includecstring(header)
 m.C_raw = zmq_c
@@ -204,21 +203,23 @@ m.C = C
 m.ERRORS = ERRORS
 
 -- check version compatibility
--- (this is 4.2.4)
-local major_int = terralib.new(int32[2])
-local minor_int = terralib.new(int32[2])
-local patch_int = terralib.new(int32[2])
+local MAJOR_VER, MINOR_VER, PATCH_VER = 4, 2, 4
 
+-- workaround in luajit/terra to get int*: 1-element arrays 
+local major_int = terralib.new(int32[1])
+local minor_int = terralib.new(int32[1])
+local patch_int = terralib.new(int32[1])
 C.version(major_int, minor_int, patch_int)
+
 m.VERSION = major_int[0] .. "." .. minor_int[0] .. "." .. patch_int[0]
 log.info("zmq runtime version: " .. m.VERSION)
 
-if major_int[0] ~= 4 or minor_int[0] < 1 then
-  truss.error("Version mismatch: expected 4.2.4 got " .. m.VERSION)
+if major_int[0] ~= MAJOR_VER or minor_int[0] < MINOR_VER then
+  truss.error("Version mismatch: expected " 
+              .. MAJOR_VER .. "." .. MINOR_VER .. ".* got " .. m.VERSION)
   return {}
 end
 
--- create a context for this thing
 local context
 function m.init()
   if not context then
@@ -235,15 +236,13 @@ function m.shutdown()
   end
 end
 
-local function ok(e, verbose)
-  if e >= 0 then
+local function ok(retval)
+  if retval >= 0 then
     return true
   else
     local err_no = C.errno()
     local err_msg = ffi.string(C.strerror(err_no))
-    if verbose ~= false then
-      log.error("ZMQ: " .. err_no .. " " .. err_msg)
-    end
+    log.error("ZMQ: " .. err_no .. " " .. err_msg)
     return false, err_msg
   end
 end
@@ -275,9 +274,7 @@ function Socket:recv(block)
     if err == ERRORS.EAGAIN then
       return 0
     else -- an actual unexpected error
-      local errmsg = ffi.string(C.strerror(err))
-      log.error("ZMQ: " .. err .. " " .. errmsg)
-      return false, errmsg
+      return ok(-1)
     end
   end
 end
@@ -295,6 +292,7 @@ function Socket:send(data, data_len)
   if not self._sock then return false, "No socket" end
   return ok(C.send(self._sock, data, data_len or #data, 0))
 end
+Socket.send_string = Socket.send
 
 function Socket:bind(url)
   if not self._sock then return false, "No socket" end
