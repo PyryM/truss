@@ -75,7 +75,7 @@ function m.combine_duplicate_vertices(srcdata, precision)
   local newpositions = {}
   local positions = srcdata.attributes.position
   for i, v in ipairs(positions) do
-    local str_pos = canonize_vertex(v)
+    local str_pos = canonize_vertex(v, precision)
     local new_vid = ctable[str_pos]
     if not new_vid then
       new_vid = nextVIdx

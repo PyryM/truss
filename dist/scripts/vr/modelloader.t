@@ -81,8 +81,14 @@ local function load_model_task(task)
   if loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_None then
     -- loaded
     log.debug("Async load returned for model " .. task.model_name)
-    local geo = m._ovr_model_to_geo(task.model_name, m.targets.model)
-    local texid = m.targets.model.diffuse_tex_id
+    local model = m.targets.model
+    if openvr.bad_structs then
+      log.debug("modelloader: Using linux struct hack")
+      model = openvr.bad_structs.RenderModel_t:overlay(m.targets.model)
+      model:decode()
+    end
+    local geo = m._ovr_model_to_geo(task.model_name, model)
+    local texid = model.diffuse_tex_id
     task.geo = geo
     task.texid = texid
     m.cache[geo_name] = task.geo
