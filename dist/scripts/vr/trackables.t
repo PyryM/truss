@@ -240,11 +240,10 @@ function Controller:update(src)
   local openvr_c = openvr.c_api
   if self.rawstate == nil then
     if openvr.bad_structs then
-      -- Hack around valve's TERRIBLE AND BAD **MISALIGNED** STRUCTS
+      -- Deal with non-default alignment in these structs just in Linux
       self.rawstate = openvr.bad_structs.VRControllerState_t:clone()
       self.rawstate_ptr = terralib.cast(&openvr_c.VRControllerState_t, self.rawstate._data)
       self.statesize = self.rawstate._size
-      print("Statesize? " .. self.statesize)
     else
       self.rawstate = terralib.new(openvr_c.VRControllerState_t)
       self.statesize = terralib.sizeof(openvr_c.VRControllerState_t)
