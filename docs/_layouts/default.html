@@ -17,14 +17,10 @@
     {% endif %}
   </head>
   <body>
-    <div class="ui grid">
-      <div class="ui column" style="flex: 0 0 20rem;">
-        {% include sidebar.html %}
-      </div>
-      <div class="ui column" style="flex: 1;">
-        <div class="ui text container" id="main">
-          {{ content }}
-        </div>
+    {% include sidebar.html %}
+    <div class="pusher">
+      <div class="ui text container" id="main">
+        {{ content }}
       </div>
     </div>
   </body>

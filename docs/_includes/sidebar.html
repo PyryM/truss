@@ -1,43 +1,41 @@
-<div class="ui left fixed large vertical inverted menu" id="sidebar">
-	<div class="item">
-		<a href="/">
-			<!--<img src="/images/logo.png" height="40" alt="{{ site.title }} logo">-->
-			<h1 class="ui inverted header">TRUSS</h1>
-		</a>
-	</div>
+<div class="ui left vertical inverted menu visible sidebar" id="sidebar">
+  <div class="item">
+    <a href="/">
+      <!--<img src="/images/logo.png" height="40" alt="{{ site.title }} logo">-->
+      <h1 class="ui inverted header">TRUSS</h1>
+    </a>
+  </div>
 
-	<form action="/search/" method="get">
-		<div class="ui category inverted search item">
-			<div class="ui inverted transparent icon input">
-				<input class="prompt" type="text" name="q" id="search-input" placeholder="Search...">
-				<i class="search link inverted icon"></i>
-				<input type="submit" value="Search" style="display: none;">
-			</div>
-		</div>
-	</form>
+  <div class="ui category search item">
+    <form action="/search/" method="get" class="ui inverted transparent icon input">
+      <input class="prompt" type="text" name="q" id="search-input" placeholder="Search...">
+      <input type="submit" value="Search" style="display: none;">
+      <i class="search link inverted icon"></i>
+    </form>
+  </div>
 
-	{%- assign sorted_collections = site.collections | sort: "position" -%}
-	{%- for collection in sorted_collections -%}
-		{%- if collection.label != "posts" %}
-		<div class="item">
-			<div class="header">{{ collection.title }}</div>
-			<div class="menu">
-				{% assign sorted_docs = collection.docs | sort: "position" %}
-				{% for doc in sorted_docs %}
-					<a class="item docs-link"
-						 href="{% if page.url != '/' %}/{% endif %}#{{ doc.id | replace: '/', '' | replace: '.', ''}}">
-						{{ doc.title }}
-					</a>
-				{% endfor %}
-			</div>
-		</div>
-		{% endif -%}
-	{%- endfor -%}
+  {%- assign sorted_collections = site.collections | sort: "position" -%}
+  {%- for collection in sorted_collections -%}
+    {%- if collection.label != "posts" %}
+    <div class="item">
+      <div class="header">{{ collection.title }}</div>
+      <div class="menu">
+        {% assign sorted_docs = collection.docs | sort: "position" %}
+        {% for doc in sorted_docs %}
+          <a class="item docs-link"
+             href="{% if page.url != '/' %}/{% endif %}#{{ doc.id | replace: '/', '' | replace: '.', ''}}">
+            {{ doc.title }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif -%}
+  {%- endfor -%}
 
-	<a href="https://github.com/PyryM/truss" class="item">
+  <a href="https://github.com/PyryM/truss" class="item">
     <i class="github icon"></i>
     <div class="content">
-    	View on GitHub
-	  </div>
-	</a>
+      View on GitHub
+    </div>
+  </a>
 </div>
