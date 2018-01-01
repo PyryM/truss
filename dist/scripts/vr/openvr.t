@@ -38,7 +38,7 @@ function m.init(options)
     return false, "OpenVR support not built."
   end
 
-  if options.use_linux_hacks then
+  if (truss.os or ffi.os) == "Linux" then
     print("Using linux hacks!")
     m.bad_structs = require("vr/linux_hacks.t").init_bad_structs(openvr_c)
   end
