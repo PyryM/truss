@@ -33,14 +33,20 @@ set(truss_SOURCES
     src/addons/nanovg/nanovg_addon.cpp
     src/addons/nanovg/nanovg_bgfx_c99.cpp
 )
-if (${WIN32})
+if(NOT APPLE)
     set(truss_HEADERS ${truss_HEADERS}
         src/addons/openvr/openvr_addon.h
-        src/addons/screencap/screencap_addon.h
     )
     set(truss_SOURCES ${truss_SOURCES}
         src/addons/openvr/openvr_addon.cpp
         src/addons/openvr/openvr_wrapper.cpp
+    )
+endif()
+if(WIN32)
+    set(truss_HEADERS ${truss_HEADERS}
+        src/addons/screencap/screencap_addon.h
+    )
+    set(truss_SOURCES ${truss_SOURCES}
         src/addons/screencap/screencap_addon.cpp
     )
 endif()
@@ -54,7 +60,8 @@ include(physfs)
 include(sdl)
 include(stb)
 include(terra)
-if (${WIN32})
+
+if(NOT APPLE)
     include(openvr)
 endif()
 
@@ -70,7 +77,7 @@ target_include_directories(truss
 target_link_libraries(truss
     bgfx physfs terra stb sdl
 )
-if (${WIN32})
+if(NOT APPLE)
     target_link_libraries(truss openvr)
 endif()
 
@@ -93,3 +100,6 @@ set_target_properties(truss PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${DIST_DIR}"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${DIST_DIR}"
 )
+
+# If the user attempts to install, politely inform them that it has no effect.
+install(CODE "MESSAGE(WARNING \"\nTruss cannot be installed to the system. Typically, the 'dist' directory is re-distributed as a self-contained application.\")")

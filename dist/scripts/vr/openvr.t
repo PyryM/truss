@@ -38,6 +38,11 @@ function m.init(options)
     return false, "OpenVR support not built."
   end
 
+  if (truss.os or ffi.os) == "Linux" then
+    log.info("OpenVR: Using linux workarounds")
+    m.bad_structs = require("vr/linux_hacks.t").init_bad_structs(openvr_c)
+  end
+
   local addonfuncs = truss.addons.openvr.functions
   local addonptr   = truss.addons.openvr.pointer
   m.openvr_mode = options.mode or "scene"
@@ -70,6 +75,7 @@ function m.init(options)
     modelloader.init(m)
   elseif m.openvr_mode == "other" then
     m._init_trackables()
+    modelloader.init(m)
   elseif m.openvr_mode == "overlay" then
     m._init_overlay()
   end
@@ -150,6 +156,7 @@ function m.begin_frame()
       openvr_c.ETrackingUniverseOrigin_TrackingUniverseStanding, 
       0.0, m.trackable_poses, m.MAX_TRACKABLES)
     m._update_trackables()
+    modelloader.update()
   end
 end
 

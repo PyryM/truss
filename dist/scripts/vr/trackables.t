@@ -186,6 +186,7 @@ local Controller = Trackable:extend("Controller")
 m.Controller = Controller
 function Controller:init(device_idx, device_class)
   Controller.super.init(self, device_idx, device_class)
+  log.info("Creating new controller")
   self._has_vibrated = false
   self:_parse_axes_and_buttons()
 end
@@ -238,16 +239,28 @@ function Controller:update(src)
 
   local openvr_c = openvr.c_api
   if self.rawstate == nil then
-    self.rawstate = terralib.new(openvr_c.VRControllerState_t)
-    self.statesize = terralib.sizeof(openvr_c.VRControllerState_t)
+    if openvr.bad_structs then
+      -- Deal with non-default alignment in these structs just in Linux
+      self.rawstate = openvr.bad_structs.VRControllerState_t:clone()
+      self.rawstate_ptr = terralib.cast(&openvr_c.VRControllerState_t, self.rawstate._data)
+      self.statesize = self.rawstate._size
+    else
+      self.rawstate = terralib.new(openvr_c.VRControllerState_t)
+      self.statesize = terralib.sizeof(openvr_c.VRControllerState_t)
+    end
     self.pressed = {}
     self.touched = {}
   end
 
   local rawstate = self.rawstate
+  local stateptr = self.rawstate_ptr or self.rawstate
   local statesize = self.statesize
-  openvr_c.tr_ovw_GetControllerState(openvr.sysptr, self.device_idx, rawstate,
+  openvr_c.tr_ovw_GetControllerState(openvr.sysptr, self.device_idx, stateptr,
                                      statesize)
+  if self.rawstate_ptr then
+    -- using horrible misaligned structures on linux
+    rawstate:decode()
+  end
   if self.parts then self:update_parts() end
 
   for bname, bmask in pairs(self._buttons) do
