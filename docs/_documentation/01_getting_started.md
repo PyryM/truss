@@ -2,35 +2,34 @@
 title: Getting Started
 ---
 
-Truss is essentially an extensive set of `lua` bindings for the pieces that you
-would need to create a game or visualization engine. Beyond that, it generally
-makes very few assumptions about what you are trying to do.
+The majority of truss, including core rendering logic like the scenegraph
+and ECS implementations, is contained in lua/terra scripts. At its most
+minimal, the main script run by truss.exe has to define two functions:
+`init`, called once at startup, and `update`, which is called in a loop.
 
-**Let's look at some sample code that renders and displays a sphere.**
+**Let's look at probably the most minimal program possible:**
+
+Note that truss does not automatically create a graphical window, 
+so this script will simply print "Hello World!" to the console and then
+terminate. If the `truss.quit()` function call were left out, then 
+`update` would be called in a hot loop and the program would effectively 
+hang.
 
 {{ site.begin_sidebar }}
-#### A simple example program that displays a sphere
+#### Hello World
 
 ```lua
-local AppScaffold = require("utils/appscaffold.t").AppScaffold
-local icosphere = require("geometry/icosphere.t")
-local pbr = require("shaders/pbr.t")
-local gfx = require("gfx")
-
 function init()
-  app = AppScaffold({title = "minimal_example",
-                     width = 1280, height = 720})
-  local geo = icosphere.icosphere_geo(1.0, 2, "icosphere")
-  local mat = pbr.PBRMaterial("solid"):roughness(0.8):tint(0.1,0.1,0.1)
-  local sphere = gfx.Object3D(geo, mat)
-  app.scene:add(sphere)
+  print("Hello World!")
 end
 
 function update()
-  app:update()
+  truss.quit()
 end
 ```
 {{ site.end_sidebar }}
+
+
 
 "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 

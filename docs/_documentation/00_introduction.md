@@ -2,9 +2,33 @@
 title: Introduction
 ---
 
-Truss is an opinionated game/visualization engine built upon a cross-platform
-core of libraries bound together with the powerful **lua**/**terra** language
-engines.
+Truss is a lightweight framework and flexible set of libraries 
+for creating interactive 3d/VR desktop experiences such as games, 
+visualizations, and tools.
+
+What it looks like:
+```lua
+local App = require("vr/vrapp.t").VRApp
+local geometry = require("geometry")
+local graphics = require("graphics")
+local pbr = require("shaders/pbr.t")
+
+function init()
+  app = App{title = "VR Icosphere", create_controllers = true}
+  local geo = geometry.icosphere_geo{radius = 0.5, detail = 2}
+  local mat = pbr.FacetedPBRMaterial{diffuse = {0.9, 0.6, 0.6}, 
+                                     tint = {0.001, 0.001, 0.001}, 
+                                     roughness = 0.8}
+  mesh = app.scene:create_child(graphics.Mesh, "todd mcicosphere", geo, mat)
+  mesh.position:set(0, 0.5, 0) -- in VR floor is at y=0 height
+end
+
+function update()
+  mesh.quaternion:euler{x = 0, y = app.time, z = 0}
+  mesh:update_matrix()
+  app:update()
+end
+```
 
 # Installation
 
@@ -16,7 +40,8 @@ application package** or **build it from source**.
 Truss is designed to require minimal host dependencies once built. It does this
 by being organized into a `truss[.exe]` executable which can load everything
 else it needs from an application package. By default, it looks for this package
-in a neighboring `truss.zip` or its local directory.
+in a neighboring `truss.zip` or its local directory, with loose files taking
+precedence over those in the archive.
 
 #### A zipped Truss application package
 
