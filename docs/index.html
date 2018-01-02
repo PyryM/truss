@@ -2,23 +2,32 @@
 title: Docs
 layout: default
 ---
-{% assign sorted_collections = site.collections | sort: "position" %}
-{% for collection in sorted_collections %}
-  {% assign sorted_docs = collection.docs | sort: "position" %}
-  {% for doc in sorted_docs %}
-    <div class="ui vertical segment"
-         id="{{ doc.id | replace: '/', '' | replace: '.', '' }}">
-      <h1>
-        {{ doc.title }}
-        <a href="#{{ doc.id | replace: '/', '' | replace: '.', '' }}">
-           <i class="tiny linkify icon"></i>
-        </a>
-      </h1>
-      {% if doc.description %}
-        <p class="description">{{doc.description}}</p>
-      {% endif %}
+<div class="ui stackable grid">
+  <div class="row">
+    <div class="eight wide column" id="main">
+      {% assign sorted_collections = site.collections | sort: "position" %}
+      {% for collection in sorted_collections %}
+        {% assign sorted_docs = collection.docs | sort: "position" %}
+        {% for doc in sorted_docs %}
+          <div class="ui vertical segment"
+               id="{{ doc.id | replace: '/', '' | replace: '.', '' }}">
+            <h1>
+              {{ doc.title }}
+              <a href="#{{ doc.id | replace: '/', '' | replace: '.', '' }}">
+                 <i class="tiny linkify icon"></i>
+              </a>
+            </h1>
+            {% if doc.description %}
+              <p class="description">{{doc.description}}</p>
+            {% endif %}
 
-      {{ doc.content }}
+            {{ doc.content }}
+          </div>
+        {% endfor %}
+      {% endfor %}
     </div>
-  {% endfor %}
-{% endfor %}
+    <div class="eight wide column" id="rail">
+      <!-- Placeholder for rail content -->
+    </div>
+  </div>
+</div>
