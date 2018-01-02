@@ -11,15 +11,15 @@ url: "https://truss.github.io"
 permalink: pretty
 
 begin_sidebar: |
-  <!-- Begin Sidebar -->
-  <div class="ui right rail">
-  <div class="ui inverted segment" markdown="1">
-  <!-- Begin Sidebar -->
+  <!-- Begin Rail -->
+  <div class="figure-wrapper">
+  <div class="ui inverted segment figure" markdown="1">
+  <!-- Begin Rail -->
 end_sidebar: |
-  <!-- End Sidebar -->
+  <!-- End Rail -->
   </div>
   </div>
-  <!-- End Sidebar -->
+  <!-- End Rail -->
 
 # Collections define the broad categories of documentation.
 collections:

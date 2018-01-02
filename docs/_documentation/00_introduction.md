@@ -67,8 +67,8 @@ precedence over those in the archive.
 ```
 
 {{ site.begin_sidebar }}
-<img class="ui centered large image" src="images/logo.png" /> {{
-site.end_sidebar }}
+<img class="ui centered large image" src="images/logo.png" />
+{{ site.end_sidebar }}
 
 This means that using a pre-built Truss package is as simple as downloading the
 package, and putting the `truss[.exe]` alongside its application resources. Then

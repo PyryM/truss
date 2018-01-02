@@ -36,8 +36,40 @@ body {
   margin-left: 0.5em;
 }
 
+#content {
+  // Create padding behind sidebar.
+  margin-left: 18em !important;
+}
+
 #main {
-  margin-left: 3em !important;
+  padding-left: 2em;
+  padding-right: 2em;
+}
+
+#rail {
+  // Darken background behind rail column.
+  background-color: #777;
+  margin-top: -2.75em;
+}
+
+#sidebar {
+  // Make fixed menu go to bottom of screen.
+  min-height: 100%;
+}
+
+.figure-wrapper {
+  position: relative !important;
+}
+
+// Overlay figures on the right column only when showing two columns.
+// https://stackoverflow.com/a/40997339
+@media only screen and (min-width: 768px) {
+  .figure {
+    position: absolute !important;
+    width: 100%;
+    right: calc(-100% - 1.5em - 2em);
+    z-index: 10;
+  }
 }
 
 @import 'monaki';
