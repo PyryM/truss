@@ -7,16 +7,8 @@ and ECS implementations, is contained in lua/terra scripts. At its most
 minimal, the main script run by truss.exe has to define two functions:
 `init`, called once at startup, and `update`, which is called in a loop.
 
-**Let's look at probably the most minimal program possible:**
-
-Note that truss does not automatically create a graphical window, 
-so this script will simply print "Hello World!" to the console and then
-terminate. If the `truss.quit()` function call were left out, then 
-`update` would be called in a hot loop and the program would effectively 
-hang.
-
 {{ site.begin_sidebar }}
-#### Hello World
+### `Hello World` - The most minimal program possible.
 
 ```lua
 function init()
@@ -29,6 +21,13 @@ end
 ```
 {{ site.end_sidebar }}
 
+**Let's look at probably the most minimal program possible:**
+
+Note that truss does not automatically create a graphical window, so this
+script will simply print "Hello World!" to the console and then
+terminate. If the `truss.quit()` function call were left out, then
+`update` would be called in a hot loop and the program would effectively
+hang.
 
 
 "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
