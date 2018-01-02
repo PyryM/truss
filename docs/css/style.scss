@@ -17,6 +17,7 @@ body {
   @include border-radius(0.3em);
   padding: 1em;
   background-color: #e4e4e4;
+  overflow-x: auto;
 }
 
 .ui.right.rail {
