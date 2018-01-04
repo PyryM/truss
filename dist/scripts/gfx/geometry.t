@@ -477,7 +477,7 @@ function DynamicGeometry:bind_partial(start_v, n_v, start_i, n_i)
   if not check_committed(self) then return end
 
   bgfx.set_dynamic_vertex_buffer(0, self._vbh, start_v, n_v)
-  bgfx.set_dynamic_index_buffer(self._ibh, start_v, n_i)
+  bgfx.set_dynamic_index_buffer(self._ibh, start_i, n_i)
 end
 
 function DynamicGeometry:update()
