@@ -4,7 +4,23 @@ local msgpack = require("lib/messagepack.lua")
 local m = {}
 
 local ZRemote = class("ZRemote")
+local Task = class("Task")
+
 m.ZRemote = ZRemote
+m.Task = Task
+
+local function wait(n)
+  for i = 1, (n or 1) do
+    coroutine.yield()
+  end
+end
+
+local function wait_condition(condition_func)
+  while not condition_func() do
+    coroutine.yield()
+  end
+end
+
 function ZRemote:init(options)
   self._sock = zmq.ReplySocket(options.url, 
                               function(...) 
@@ -17,7 +33,9 @@ function ZRemote:init(options)
 
   self._tasks = {}
   self._next_id = 1
-  self._env = {} -- TODO: create an environment
+  self._env = truss.extend_table({wait = wait, 
+                                  wait_condition = wait_condition}, 
+                                  truss.clean_subenv)
 end
 
 function ZRemote:update()
@@ -54,7 +72,7 @@ end
 
 function ZRemote:_call(msg)
   local f = self._env[msg.funcname]
-  local t = ZTask(f, msg.funcargs)
+  local t = Task(f, msg.funcargs)
   local new_task_id = self._next_id
   self._next_id = self._next_id + 1
   self._tasks[new_task_id] = t
@@ -72,16 +90,40 @@ function ZRemote:_get(msg)
     return {rep = "running", task_id = msg.task_id}
   else
     task.returned = true
-    return {rep = "error", msg = task.error or "???"}
+    return {rep = "error", msg = task.error or "unknown error"}
   end
 end
 
 function ZRemote:_stop(msg)
   local task = self._tasks[msg.task_id or -1]
   if not task then return {rep = "error", msg = "No such task."} end
-  -- stop the task
-  -- TODO
+  self._tasks[msg.task_id] = nil
   return {rep = "stopped", task_id = msg.task_id}
+end
+
+function Task:init(func, args)
+  self._co = coroutine.create(func)
+  self.running = true
+  self:_continue(args)
+end
+
+function Task:_continue(args)
+  if not self._co then return end
+  local happy, res = coroutine.resume(self._co, unpack(args or {}))
+  self.running = coroutine.status(self._co) ~= "dead"
+  if not happy then
+    self._co = nil
+    self.error = res
+  end
+  if not running then
+    self._co = nil
+    self.complete = true
+    self.value = res
+  end
+end
+
+function Task:update()
+  self:_continue()
 end
 
 return m
