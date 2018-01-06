@@ -3,28 +3,16 @@ local zmq = require("io/zmq.t")
 local msgpack = require("lib/messagepack.lua")
 local m = {}
 
-local ZRemote = class("ZRemote")
+local Remote = class("Remote")
 local Task = class("Task")
 
-m.ZRemote = ZRemote
+m.Remote = Remote
 m.Task = Task
 
-local function wait(n)
-  for i = 1, (n or 1) do
-    coroutine.yield()
-  end
-end
-
-local function wait_condition(condition_func)
-  while not condition_func() do
-    coroutine.yield()
-  end
-end
-
-function ZRemote:init(options)
+function Remote:init(options)
   self._sock = zmq.ReplySocket(options.url, 
                               function(...) 
-                                self:_handle_request(...) 
+                                return self:_handle_request(...) 
                               end)
   self._ops = {load = self._load, 
                call = self._call, 
@@ -33,12 +21,10 @@ function ZRemote:init(options)
 
   self._tasks = {}
   self._next_id = 1
-  self._env = truss.extend_table({wait = wait, 
-                                  wait_condition = wait_condition}, 
-                                  truss.clean_subenv)
+  self._env = options.env or truss.extend_table({}, truss.clean_subenv)
 end
 
-function ZRemote:update()
+function Remote:update()
   for task_id, task in pairs(self._tasks) do
     task:update()
     if task.returned then self._tasks[task_id] = nil end
@@ -46,18 +32,23 @@ function ZRemote:update()
   self._sock:update()
 end
 
-function ZRemote:_handle_request(datasize, data)
+function Remote:_handle_request(datasize, data)
   local msg = msgpack.unpack(ffi.string(data, datasize))
+  print("got message: " .. msg.op or "?")
   local reply = (self._ops[msg.op or ""] or self._error)(self, msg)
-  return msgpack.pack(reply)
+  if reply == nil then print("nil reply???") end
+  local packed = msgpack.pack(reply)
+  if packed == nil then print("nil packed???") end
+  print(packed)
+  return packed
 end
 
-function ZRemote:_error(msg)
+function Remote:_error(msg)
   return {rep = "error"}
 end
 
-function ZRemote:_load(msg)
-  local f, err = truss.load_named_string(msg.source, "ZRemote:_load")
+function Remote:_load(msg)
+  local f, err = truss.load_named_string(msg.source, "Remote:_load")
   if not f then
     return {rep = "error", msg = err}
   end
@@ -70,7 +61,7 @@ function ZRemote:_load(msg)
   end
 end
 
-function ZRemote:_call(msg)
+function Remote:_call(msg)
   local f = self._env[msg.funcname]
   local t = Task(f, msg.funcargs)
   local new_task_id = self._next_id
@@ -80,7 +71,7 @@ function ZRemote:_call(msg)
   return self:_get{task_id = new_task_id}
 end
 
-function ZRemote:_get(msg)
+function Remote:_get(msg)
   local task = self._tasks[msg.task_id or -1]
   if not task then return {rep = "error", msg = "No such task."} end
   if task.complete then
@@ -94,7 +85,7 @@ function ZRemote:_get(msg)
   end
 end
 
-function ZRemote:_stop(msg)
+function Remote:_stop(msg)
   local task = self._tasks[msg.task_id or -1]
   if not task then return {rep = "error", msg = "No such task."} end
   self._tasks[msg.task_id] = nil
@@ -124,6 +115,49 @@ end
 
 function Task:update()
   self:_continue()
+end
+
+-- init+update to allow this to be called as a main script
+local remote = nil
+local remote_env = nil
+
+local function wait(n)
+  for i = 1, (n or 1) do
+    coroutine.yield()
+  end
+end
+
+local function wait_condition(condition_func)
+  while not condition_func() do
+    coroutine.yield()
+  end
+end
+
+function m.init()
+  local url = truss.args[3]
+  if not url then
+    print("Remote: no host url specified")
+    truss.quit()
+    return
+  end
+  remote_env = {
+    wait = wait,
+    wait_condition = wait_condition 
+  }
+  zmq.init()
+  remote = Remote{url = url, 
+                  env = truss.extend_table(remote_env, truss.clean_subenv)}
+end
+
+function m.update()
+  remote:update()
+  if remote_env.update then
+    -- assume the loaded update will do frame timing
+    remote_env.update()
+  else
+    -- don't burn too much CPU
+    truss.sleep(0.2)
+  end
 end
 
 return m

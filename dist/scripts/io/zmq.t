@@ -188,9 +188,12 @@ local header = [[
 
 -- TODO: how to make these portable?
 -- (e.g., EAGAIN = 35 is osx specific, EAGAIN = 11 on Win/Linux)
-local ERRORS = {
-  EAGAIN = 35
-}
+local ERRORS = nil
+if truss.os == "OSX" then
+  ERRORS = {EAGAIN = 35}
+else
+  ERRORS = {EAGAIN = 11}
+end
 
 -- link the dynamic library (should only happen once ideally)
 truss.link_library("libzmq")
