@@ -122,7 +122,7 @@ function VRApp:init_pipeline()
                               x1 = 1.0, y1 = 1.0}}
   end
 
-  local clear = {color = 0x303050ff, depth = 1.0}
+  local clear = {color = self.options.clear_color or 0x303050ff, depth = 1.0}
   local p = graphics.Pipeline({verbose = true})
   p:add_stage(graphics.MultiviewStage{
     name = "stereo_forward",
