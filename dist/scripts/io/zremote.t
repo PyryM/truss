@@ -105,8 +105,9 @@ function Task:_continue(args)
   if not happy then
     self._co = nil
     self.error = res
+    log.error("zremote task error: " .. self.error)
   end
-  if not running then
+  if not self.running then
     self._co = nil
     self.complete = true
     self.value = res
