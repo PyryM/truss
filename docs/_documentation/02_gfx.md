@@ -221,11 +221,74 @@ must be committed already.
 Update just the GPU indices from the CPU indices (.indices). The geometry
 must be committed already.
 
-### TransientGeometry
+### Uniforms
+The `Uniform` constructor should not be used directly. Instead, create a
+`VecUniform`, `MatUniform` or `TexUniform`.
 
-### Uniform
+#### VecUniform(name, count, value)
+Create a vector-typed uniform (always Vec4) with the given name (exactly
+as it appears in the shader, e.g., `u_diffuseColor`), count (>1 for a 
+an array, defaults to 1), and initial value.
 
-### UniformSet
+#### MatUniform(name, count, value)
+Create a matrix-typed uniform (always Mat4).
+
+#### TexUniform(name, sampler_index, value)
+Create a texture (sampler) uniform. Both `name` and `sampler_index` must
+match how the uniform is declared in the shader.
+
+#### Uniform:clone()
+Clone this uniform. The cloned uniform will share the same underlying uniform handle,
+but can be independently set to a different value.
+
+#### Uniform:set(value, index)
+Set this uniform to a value; in the case of uniform arrays, and index also has
+to be given (0-indexed, defaults to 0). For vector uniforms, the value can either
+be a lua list or a math.Vector.
+
+#### Uniform:set_multiple(values)
+Set multiple values in a uniform array.
+
+#### Uniform:bind()
+Bind the value of this uniform for the next submit call.
+
+#### Uniform:bind_global(global)
+Bind the 'global' uniform, or if nil, this uniform's value.
+
+#### UniformSet(uniform_list)
+Create a set of uniforms. `uniform_list` can be either a list
+of `Uniform`s, or a table of name: value pairs (in which
+case `Uniform`s will be automatically created based on the
+types of the values). To create a texture uniform using the
+table syntax, the value must be a {sampler_index, texture}
+tuple. In table syntax, vector uniforms must be `math.Vectors`.
+
+Example:
+```lua
+-- create empty, :add
+local uset = gfx.UniformSet()
+uset:add(gfx.TexUniform("s_noiseMap", 0, gfx.Texture("textures/noise.png")))
+uset:add(gfx.VecUniform("u_lightHeight", 1, {1.0, 1.0}))
+uset:add(gfx.VecUniform("u_mapScale", 1, {0.5}))
+
+-- list syntax
+local uset = gfx.UniformSet{
+  gfx.TexUniform("s_noiseMap", 0, gfx.Texture("textures/noise.png")),
+  gfx.VecUniform("u_lightHeight", 1, {1.0, 1.0}),
+  gfx.VecUniform("u_mapScale", 1, {0.5})
+}
+
+-- table/dictionary syntax
+local uset = gfx.UniformSet{
+  s_noiseMap = {0, gfx.Texture("textures/noise.png")},
+  u_lightHeight = math.Vector(0.5),
+  u_mapScale = math.Vector(1.0, 1.0)
+}
+```
+
+#### UniformSet:clone()
+Create a clone of the UniformSet, which `:clone`s every contained
+`Uniform`.
 
 ### RenderTarget
 
