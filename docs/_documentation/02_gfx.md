@@ -255,8 +255,8 @@ Bind the value of this uniform for the next submit call.
 #### Uniform:bind_global(global)
 Bind the 'global' uniform, or if nil, this uniform's value.
 
-#### UniformSet(uniform_list)
-Create a set of uniforms. `uniform_list` can be either a list
+#### UniformSet(uniforms)
+Create a set of uniforms. The argument `uniforms` can be either a list
 of `Uniform`s, or a table of name: value pairs (in which
 case `Uniform`s will be automatically created based on the
 types of the values). To create a texture uniform using the
@@ -284,14 +284,101 @@ local uset = gfx.UniformSet{
   u_lightHeight = math.Vector(0.5),
   u_mapScale = math.Vector(1.0, 1.0)
 }
+
+-- the created uniforms are available directly on the object in all cases
+uset.u_mapScale:set(math.Vector(2.0, 3.0))
 ```
 
 #### UniformSet:clone()
 Create a clone of the UniformSet, which `:clone`s every contained
 `Uniform`.
 
+#### UniformSet:bind()
+Bind all the uniforms in this set for the next submit call.
+
+#### UniformSet:bind_as_fallbacks(globals)
+For each uniform in this set, bind the global version if it is present
+in `globals`, otherwise bind the value in this set.
+
+#### UniformSet:merge(rhs)
+Merge (in-place) the uniforms in another `UniformSet` into this one.
+The merged uniforms are cloned.
+
+#### UniformSet:set(values)
+Set uniforms in the set from a table of name: value pairs.
+
 ### RenderTarget
 
 ### View
 
-### Texture
+#### Texture(filename, flags)
+Create a texture from the given filename with the provided bgfx flags.
+
+#### Texture:is_valid()
+Returns true if this texture is valid.
+
+#### Texture:load(filename, flags)
+Load the image in `filename` into this Texture with the given bgfx flags.
+
+#### Texture:create_copy_target(src, options)
+Allocate this Texture as a copy target for the `src` texture. This
+texture will then have the same dimensions and format as the source
+texture.
+
+#### Texture:create(options)
+Allocate a 2d texture. Note that the only ways to get data into this
+texture will be either by copying (blitting) into it, or by rendering
+into it. For a texture that can be updated from CPU memory, use
+`MemTexture`.
+
+| Option        | Description           | Default  |
+| ------------- |---------------------- | -------- |
+| width        | texture width (pixels) | (required) |
+| height         | texture height (pixels) | (required) |
+| format        | texture format | bgfx.TEXTURE_FORMAT_BGRA8 |
+| flags       | additional bgfx flags | 0 |
+| blit_dest    | can blit into this texture | true |
+| render_target | can render into this texture | false |
+
+#### Texture:create_cubemap(options)
+Allocate a cubemap texture. Shares most options with `Texture:create`,
+except that the `.size` parameter must be set instead of `.width` and 
+`.height` (because cubemap faces are always square).
+
+#### Texture:copy(src, options)
+Copy the source texture into this texture by blitting. This texture must
+be blittable. If this texture wasn't allocated, it will automatically be
+allocated as a blit destination of the same dimensions and format as src.
+
+If this texture is a cubemap, the target face can be specified in options.
+
+Note that in bgfx, blit operations do not happen 'immediately', but happen
+within views like other drawing operations. Unless specified in options,
+this blit/copy will attempt to take place in viewid 0 (i.e., as early
+in the frame as possible).
+
+| Option        | Description             | Default |
+| ------------- |------------------------ | ------- |
+| cubeface      | destination cube face   |    0    |
+| viewid        | viewid in which to blit |    0    |
+
+#### MemTexture(width, height, format, flags)
+Create a texture that can be dynamically updated from CPU memory.
+
+```lua
+local mtex = MemTexture(32, 32, "BGRA8")
+for x = 0, 31 do
+  for y = 0, 31 do
+    -- note 0-indexing of data
+    local pos = (y*32 + x)*4 -- 4 bytes/pixel in BGRA8
+    mtex.data[pos+0] = math.random() * 255.0
+    mtex.data[pos+1] = math.random() * 255.0
+    mtex.data[pos+2] = math.random() * 255.0
+    mtex.data[pos+3] = 255 -- alpha
+  end
+end
+mtex:update()
+```
+
+#### MemTexture:update()
+Update the GPU texture from the CPU-side `.data` buffer.
