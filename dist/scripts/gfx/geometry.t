@@ -272,15 +272,16 @@ function StaticGeometry:clone(name)
 end
 DynamicGeometry.clone = StaticGeometry.clone
 
--- release the cpu memory backing this geometry
--- if the geometry has been committed (uploaded to gpu), then the backing memory
--- will be released only three frames later
-function StaticGeometry:release_backing()
+-- release CPU memory for vertex and index buffers
+function StaticGeometry:deallocate()
   local verts, indices = self.verts, self.indices
   self.verts, self.indices = nil, nil
   self.allocated = false
 
-  -- if the geometry has been committed, then to be safe need to wait 3 frames
+  -- edge case: after being committed, buffers can't be safely released
+  -- until bgfx is done with them, which in multithreaded mode may be
+  -- several frames later, so instead schedule the deletion by moving
+  -- the buffer references into closure 'upvalues' that are cleared later
   if not self.committed then return self end
   gfx = gfx or require("gfx")
   gfx.schedule(function()
@@ -288,7 +289,11 @@ function StaticGeometry:release_backing()
   end)
   return self
 end
-DynamicGeometry.release_backing = StaticGeometry.release_backing
+DynamicGeometry.deallocate = StaticGeometry.deallocate
+
+-- deprecated aliases for deallocate
+StaticGeometry.release_backing = StaticGeometry.deallocate
+DynamicGeometry.release_backing = DynamicGeometry.deallocate
 
 function StaticGeometry:compute_bounds()
   if not self.allocated then 
@@ -411,7 +416,6 @@ function StaticGeometry:commit()
     flags = bgfx.BUFFER_INDEX32
   end
 
-  -- Create static bgfx buffers
   self:_create_bgfx_buffers(flags)
 
   if not bgfx.check_handle(self._vbh) then truss.error("invalid vbh") end
