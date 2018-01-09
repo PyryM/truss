@@ -269,14 +269,15 @@ m.MemTexture = MemTexture
 
 local formats = {
   R8 = {uint8, bgfx.TEXTURE_FORMAT_R8, 1, 1},
-  RGBA8 = {uint8, bgfx.TEXTURE_FORMAT_BGRA8, 4, 4},
+  RGBA8 = {uint8, bgfx.TEXTURE_FORMAT_RGBA8, 4, 4},
+  BGRA8 = {uint8, bgfx.TEXTURE_FORMAT_BGRA8, 4, 4},
   RG16  = {uint16, bgfx.TEXTURE_FORMAT_RG16, 2, 4}
 }
 
 function MemTexture:init(w,h,fmt,flags)
   self.width = w or 64
   self.height = h or 64
-  self.fmt = fmt or "RGBA8"
+  self.fmt = fmt or "BGRA8"
   local fmtinfo = formats[self.fmt]
   local datatype, bgfxformat, nchannels, psize =
         fmtinfo[1], fmtinfo[2], fmtinfo[3], fmtinfo[4]
