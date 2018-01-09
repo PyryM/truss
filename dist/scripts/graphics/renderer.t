@@ -100,6 +100,7 @@ function GenericRenderOp:matches(component)
 end
 
 local function generic_render(geo, mat, entity, context)
+  if not entity.visible_world then return end
   if (not geo) or (not mat) then return end
   if not mat.program then return end
   gfx.set_transform(entity.matrix_world)
@@ -122,6 +123,7 @@ local function generic_multi_render(geo, mat, entity, contexts)
   -- render to multiple contexts/views, using the 'preserve_state' flag
   -- in bgfx.submit to try to minimize the number of bgfx function calls
   -- (in most cases will greatly reduce the number of uniform set calls)
+  if not entity.visible_world then return end
   if (not geo) or (not mat) then return end
   if not mat.program then return end
   gfx.set_transform(entity.matrix_world)

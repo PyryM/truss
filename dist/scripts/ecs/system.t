@@ -71,7 +71,7 @@ end
 
 function ScenegraphSystem:update(ecs)
   if not ecs.scene then return end
-  ecs.scene:recursive_update_world_mat(self._identity_mat)
+  ecs.scene:recursive_update_world_mat(self._identity_mat, true)
 end
 
 return m
