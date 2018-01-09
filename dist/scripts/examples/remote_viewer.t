@@ -6,6 +6,7 @@ local zmq = require("io/zmq.t")
 local zremote = require("io/zremote.t")
 local geometry = require("geometry")
 local pbr = require("shaders/pbr.t")
+local flat = require("shaders/flat.t")
 local graphics = require("graphics")
 local orbitcam = require("gui/orbitcam.t")
 local grid = require("graphics/grid.t")
@@ -63,6 +64,8 @@ local function geo_from_strings(geodata)
   end
   local nindices = geodata.nindices
   local geo = gfx.StaticGeometry()
+  print("verts: " .. nverts)
+  print("indices: " .. nindices)
   geo:allocate(nverts, nindices, vertex_info)
   copy_verts(to_float_array(geodata.verts), geo.verts, geo.n_verts)
   copy_indices(geodata.indices, geo.indices, geo.n_indices)
@@ -73,6 +76,7 @@ end
 local function mat_from_opts(mat_opts)
   -- todo
   return pbr.FacetedPBRMaterial({0.2, 0.2, 0.2, 1.0}, {0.001, 0.001, 0.001}, 0.7)
+  --return flat.FlatMaterial{color = {0.2, 0.2, 0.2, 1.0}}
 end
 
 local function transform_from_opts(tf)
@@ -134,11 +138,11 @@ function init()
   app = App(cfg)
   georoot = app.scene:create_child(ecs.Entity3d, "georoot")
   georoot.position:set(0.0, 1.0, 0.0)
-  georoot.scale:set(0.001, 0.001, 0.001)
+  --georoot.scale:set(0.001, 0.001, 0.001)
   georoot:update_matrix()
 
   local base_grid = app.scene:create_child(grid.Grid, {thickness = 0.01, 
-                                                       color = {0.5, 0.2, 0.2}})
+                                                       color = {0.5, 0.5, 0.5, 1.0}})
   base_grid.position:set(0.0, 0.0, 0.0)
   base_grid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
   base_grid:update_matrix()
