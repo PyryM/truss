@@ -28,9 +28,13 @@ function Uniform:init(uni_name, uni_type, num, value)
   if not uni_name then return end
 
   num = num or 1
-  uni_type = uni_type or m.UNI_VEC
 
   self._uni_type = uni_type
+  if uni_type == m.UNI_MAT4 then
+    self.set = self.set_mat
+  else
+    self.set = self.set_vec
+  end
   self._handle = m._create_uniform(uni_name, uni_type, num)
   self._num = num
   self._val = terralib.new(uni_type.terra_type[num])
@@ -48,10 +52,11 @@ function Uniform:clone()
     ret._val[i-1] = self._val[i-1]
   end
   ret._uni_name = self._uni_name
+  ret.set = self.set
   return ret
 end
 
-function Uniform:set(v, pos)
+function Uniform:set_vec(v, pos)
   if v.elem then
     self._val[pos or 0] = v.elem
   else
@@ -60,6 +65,21 @@ function Uniform:set(v, pos)
     dv.y = v[2] or 0.0
     dv.z = v[3] or 0.0
     dv.w = v[4] or 0.0
+  end
+  return self
+end
+
+function Uniform:set_mat(v, pos)
+  if v.data then
+    self._val[pos or 0] = v.data
+  elseif #v == 16 then
+    local dv = self._val[pos or 0]
+    for i = 1, 16 do
+      dv[i-1] = v[i]
+    end
+  else
+    truss.error("Uniform:set_mat: value must be either a math.Matrix4 "
+                .. " or a 16-element list")
   end
   return self
 end
@@ -149,8 +169,8 @@ function UniformSet:from_table(uniform_table)
     elseif uni_val.data then -- matrix
       self:add(m.MatUniform(uni_name, 1, uni_val))
     elseif uni_val._handle then -- incorrectly passed texture
-      truss.error("UniformSet(table) must specify textures as {tex, sampler}")
-    elseif uni_val[1] and uni_val[1]._handle then -- texture
+      truss.error("UniformSet(table) must specify textures as {sampler, tex}")
+    elseif uni_val[2] and uni_val[2]._handle then -- texture
       self:add(m.TexUniform(uni_name, uni_val[2], uni_val[1]))
     else
       truss.error("Couldn't infer uniform type")
@@ -174,16 +194,10 @@ function UniformSet:_raw_add(uni_name, uniform)
   self[uni_name] = uniform
 end
 
-function UniformSet:clone(force_clone_shared)
+function UniformSet:clone()
   local ret = UniformSet()
   for k, v in pairs(self._uniforms) do
-    local v_clone
-    if v.is_shared and not force_clone_shared then
-      v_clone = v
-    else
-      v_clone = v:clone()
-    end
-    ret:_raw_add(k, v_clone)
+    ret:_raw_add(k, v:clone())
   end
   return ret
 end
