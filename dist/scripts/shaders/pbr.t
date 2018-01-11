@@ -27,8 +27,8 @@ end
 function m.create_pbr_globals()
   if m._pbr_globals then return m._pbr_globals end
   m._pbr_globals = gfx.UniformSet{
-    gfx.VecUniform("u_lightDir", 4), 
-    gfx.VecUniform("u_lightRgb", 4)
+    gfx.VecArrayUniform("u_lightDir", 4), 
+    gfx.VecArrayUniform("u_lightRgb", 4)
   }
   m._pbr_globals.u_lightDir:set_multiple({
           math.Vector( 1.0,  1.0,  0.0),
@@ -47,7 +47,7 @@ local function _set_pbr_params(uniforms, opts)
   uniforms.u_baseColor:set(opts.diffuse or {0.2, 0.02, 0.02, 1.0})
   local roughness = opts.roughness or 0.7
   local tint = opts.tint or {0.001, 0.001, 0.001}
-  uniforms.u_pbrParams:set({tint[1], tint[2], tint[3], roughness})
+  uniforms.u_pbrParams:set(tint[1], tint[2], tint[3], roughness)
 
   if opts.texture and uniforms.s_texAlbedo then
     uniforms.s_texAlbedo:set(opts.texture)

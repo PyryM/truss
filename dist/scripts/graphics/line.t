@@ -166,7 +166,7 @@ function LineRenderComponent:_create_material(options)
   end
   local thickness = options.thickness or 0.1
   local umult = options.u_mult or 1.0
-  mat.uniforms.u_thickness:set({thickness, umult})
+  mat.uniforms.u_thickness:set(thickness, umult)
   if options.texture then
     mat.uniforms.s_texAlbedo:set(options.texture)
   end

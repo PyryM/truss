@@ -7,43 +7,34 @@ local vec4_ = require("math/types.t").vec4_
 
 local m = {}
 
-m.UNI_VEC = {
+local UNI_VEC = {
   bgfx_type  = bgfx.UNIFORM_TYPE_VEC4,
   terra_type = vec4_
 }
 
-m.UNI_MAT4 = {
+local UNI_MAT4 = {
   bgfx_type  = bgfx.UNIFORM_TYPE_MAT4,
   terra_type = float[16]
 }
 
--- should not be used directly! create a TexUniform!
-m.UNI_TEX = {
+local UNI_TEX = {
   bgfx_type = bgfx.UNIFORM_TYPE_INT1,
   terra_type = nil -- no terra type!
 }
 
+-- base class, not intended to be used directly
 local Uniform = class("Uniform")
-function Uniform:init(uni_name, uni_type, num, value)
+function Uniform:_create(uni_name, uni_type, num)
   if not uni_name then return end
-
-  num = num or 1
-
   self._uni_type = uni_type
-  if uni_type == m.UNI_MAT4 then
-    self.set = self.set_mat
-  else
-    self.set = self.set_vec
-  end
   self._handle = m._create_uniform(uni_name, uni_type, num)
   self._num = num
   self._val = terralib.new(uni_type.terra_type[num])
   self._uni_name = uni_name
-  if num == 1 and value then self:set(value) end
 end
 
 function Uniform:clone()
-  local ret = Uniform()
+  local ret = self.class()
   ret._uni_type = self._uni_type
   ret._handle = self._handle
   ret._num = self._num
@@ -52,44 +43,7 @@ function Uniform:clone()
     ret._val[i-1] = self._val[i-1]
   end
   ret._uni_name = self._uni_name
-  ret.set = self.set
   return ret
-end
-
-function Uniform:set_vec(v, pos)
-  if v.elem then
-    self._val[pos or 0] = v.elem
-  else
-    local dv = self._val[pos or 0]
-    dv.x = v[1] or 0.0
-    dv.y = v[2] or 0.0
-    dv.z = v[3] or 0.0
-    dv.w = v[4] or 0.0
-  end
-  return self
-end
-
-function Uniform:set_mat(v, pos)
-  if v.data then
-    self._val[pos or 0] = v.data
-  elseif #v == 16 then
-    local dv = self._val[pos or 0]
-    for i = 1, 16 do
-      dv[i-1] = v[i]
-    end
-  else
-    truss.error("Uniform:set_mat: value must be either a math.Matrix4 "
-                .. " or a 16-element list")
-  end
-  return self
-end
-
-function Uniform:set_multiple(values)
-  for i = 1,self._num do
-    if not values[i] then break end
-    self:set(values[i], i-1)
-  end
-  return self
 end
 
 function Uniform:bind()
@@ -101,10 +55,86 @@ function Uniform:bind_global(global)
   if global then global:bind() else self:bind() end
 end
 
+function Uniform:set_multiple(values)
+  for i = 1, self._num do
+    if not values[i] then break end
+    self:set(i, values[i])
+  end
+  return self
+end
+
+local VecUniform = Uniform:extend("VecUniform")
+function VecUniform:init(name, value)
+  self:_create(name, UNI_VEC, 1)
+  if value then self:set(value) end
+end
+
+function VecUniform:_set(pos, x, y, z, w)
+  pos = pos - 1 -- zero indexed c data
+  local dv = self._val[pos] 
+  if type(x) == "number" then
+    dv.x = x or 0
+    dv.y = y or 0
+    dv.z = z or 0
+    dv.w = w or 0
+  elseif x.elem then
+    self._val[pos] = x.elem
+  else -- assume x is a list or table
+    dv.x = x[1] or x.x or 0.0
+    dv.y = x[2] or x.y or 0.0
+    dv.z = x[3] or x.z or 0.0
+    dv.w = x[4] or x.w or 0.0
+  end
+  return self
+end
+
+function VecUniform:set(x, y, z, w)
+  self:_set(1, x, y, z, w)
+end
+
+local VecArrayUniform = VecUniform:extend("VecArrayUniform")
+function VecArrayUniform:init(name, count, values)
+  self:_create(name, UNI_VEC, count)
+  if values then self:set_multiple(values) end
+end
+VecArrayUniform.set = VecArrayUniform._set
+
+local MatUniform = Uniform:extend("MatUniform")
+function MatUniform:init(name, value)
+  self:_create(name, UNI_MAT, 1)
+  if value then self:set(value) end
+end
+
+function MatUniform:_set(pos, v)
+  pos = pos - 1 -- zero indexed c data
+  if v.data then
+    self._val[pos] = v.data
+  elseif #v == 16 then
+    local dv = self._val[pos]
+    for i = 1, 16 do
+      dv[i-1] = v[i]
+    end
+  else
+    truss.error("MatUniform:set: value must be either a math.Matrix4 "
+                .. " or a 16-element list")
+  end
+  return self
+end
+
+function MatUniform:set(v)
+  self:_set(1, v)
+end
+
+local MatArrayUniform = MatUniform:extend("MatArrayUniform")
+function MatArrayUniform:init(name, count)
+  self:_create(name, UNI_MAT, count)
+end
+MatArrayUniform.set = MatArrayUniform._set
+
 local TexUniform = class("TexUniform")
 function TexUniform:init(uni_name, sampler_idx, value)
   if not uni_name then return end
-  self._handle = m._create_uniform(uni_name, m.UNI_TEX, 1)
+  self._handle = m._create_uniform(uni_name, UNI_TEX, 1)
   self._sampler_idx = sampler_idx
   self._uni_name = uni_name
   self:set(value)
@@ -165,9 +195,9 @@ end
 function UniformSet:from_table(uniform_table)
   for uni_name, uni_val in pairs(uniform_table) do
     if uni_val.elem then -- vector
-      self:add(m.VecUniform(uni_name, 1, uni_val))
+      self:add(m.VecUniform(uni_name, uni_val))
     elseif uni_val.data then -- matrix
-      self:add(m.MatUniform(uni_name, 1, uni_val))
+      self:add(m.MatUniform(uni_name, uni_val))
     elseif uni_val._handle then -- incorrectly passed texture
       truss.error("UniformSet(table) must specify textures as {sampler, tex}")
     elseif uni_val[2] and uni_val[2]._handle then -- texture
@@ -245,9 +275,8 @@ function UniformSet:set(vals)
   return self
 end
 
--- in bgfx, uniforms are in some sense global, so keep a cache of uniforms and
--- their types so we can give a useful error if a user tries to define the same
--- uniform with two different types
+-- in bgfx the same uniform name cannot be used with two different types/counts
+-- so keep track of uniform (name, type, counts) to provide useful errors
 
 m._uniform_cache = {}
 function m._create_uniform(uni_name, uni_type, num)
@@ -267,18 +296,12 @@ function m._create_uniform(uni_name, uni_type, num)
   end
 end
 
--- Export the class
-m.Uniform = Uniform
+-- Export classes (note that the base Uniform is not exported)
+m.VecUniform = VecUniform
+m.VecArrayUniform = VecArrayUniform
+m.MatUniform = MatUniform
+m.MatArrayUniform = MatArrayUniform
 m.TexUniform = TexUniform
 m.UniformSet = UniformSet
-
--- convenience versions
-m.VecUniform = function(name, num, value)
-  return m.Uniform(name, m.UNI_VEC, num or 1, value)
-end
-
-m.MatUniform = function(name, num, value)
-  return m.Uniform(name, m.UNI_MAT4, num or 1, value)
-end
 
 return m
