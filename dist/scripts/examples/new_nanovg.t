@@ -50,7 +50,9 @@ function init()
   myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 1, max_rad = 4}))
 
   local geo = geometry.icosphere_geo{radius = 1, detail = 1}
-  local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
+  local mat = pbr.FacetedPBRMaterial{diffuse = {0.2, 0.03, 0.01, 1.0}, 
+                                     tint = {0.001, 0.001, 0.001}, 
+                                     roughness = 0.7}
   mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
   mygrid = myapp.scene:create_child(grid.Grid, {thickness = 0.02, 
                                                 color = {0.5, 0.5, 0.5}})

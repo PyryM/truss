@@ -57,6 +57,16 @@ truss.error = error
 ffi = require("ffi")
 bit = require("bit")
 
+truss.os = ffi.os
+local library_extensions = {Windows = "", Linux = ".so", OSX = ".dylib", 
+                            BSD = ".so", POSIX = ".so", Other = ""}
+truss.library_extension = library_extensions[truss.os] or ""
+
+function truss.link_library(libname)
+  log.info("Linking " .. libname .. truss.library_extension)
+  terralib.linklibrary(libname .. truss.library_extension)
+end
+
 -- timing functions
 -- local t0 = tic()
 -- local dt = toc(t0) -- dt is elapsed seconds as a float

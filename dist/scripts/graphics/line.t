@@ -16,36 +16,6 @@ local m = {}
 local LineRenderComponent = render.RenderComponent:extend("LineRenderComponent")
 m.LineRenderComponent = LineRenderComponent
 
-local internals = {}
-struct internals.VertexType {
-  position: float[3];
-  normal: float[3];
-  color0: float[4];
-}
-
-local terra declare_line_vertex(v_decl: &bgfx.vertex_decl_t)
-  bgfx.vertex_decl_begin(v_decl, bgfx.get_renderer_type())
-  bgfx.vertex_decl_add(v_decl, bgfx.ATTRIB_POSITION, 3,
-                       bgfx.ATTRIB_TYPE_FLOAT, false, false)
-  bgfx.vertex_decl_add(v_decl, bgfx.ATTRIB_NORMAL, 3,
-                       bgfx.ATTRIB_TYPE_FLOAT, false, false)
-  bgfx.vertex_decl_add(v_decl, bgfx.ATTRIB_COLOR0, 4,
-                       bgfx.ATTRIB_TYPE_FLOAT, false, false)
-  bgfx.vertex_decl_end(v_decl)
-end
-
-local function get_vertex_info()
-  if internals.vert_info == nil then
-    local vspec = terralib.new(bgfx.vertex_decl_t)
-    declare_line_vertex(vspec)
-    internals.vert_info = {ttype = internals.VertexType,
-                           vdecl = vspec,
-                           attributes = {position=3, normal=3, color0=4}}
-  end
-
-  return internals.vert_info
-end
-
 function LineRenderComponent:init(options)
   local opts = options or {}
   self._render_ops = {}
@@ -120,7 +90,11 @@ function LineRenderComponent:_append_segment(segpoints, vertidx, idxidx, uscale)
 end
 
 function LineRenderComponent:_create_buffers()
-  local vinfo = get_vertex_info()
+  local vinfo = gfx.create_vertex_type{
+      position = {ctype = float, count = 3},
+      normal   = {ctype = float, count = 3},
+      color0   = {ctype = float, count = 4}
+  }
   local geo
   if self.dynamic then
     geo = gfx.DynamicGeometry()
@@ -166,7 +140,7 @@ function LineRenderComponent:_create_material(options)
   end
   local thickness = options.thickness or 0.1
   local umult = options.u_mult or 1.0
-  mat.uniforms.u_thickness:set({thickness, umult})
+  mat.uniforms.u_thickness:set(thickness, umult)
   if options.texture then
     mat.uniforms.s_texAlbedo:set(options.texture)
   end
