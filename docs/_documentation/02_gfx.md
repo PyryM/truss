@@ -140,6 +140,52 @@ with.
 ### load_file_to_bgfx(filename)
 Loads a file into a `bgfx_memory_t` reference.
 
+### Vertex type definitions
+#### create_vertex_type(attribute_table, order)
+Create (or fetch a cached version) a vertex type. The argument
+`attribute_table` should be a table of `attrib_name= options` attributes.
+If provided, the `order` argument should be a list of attribute names in
+the order that they should be present in the created vertex ctype; if
+left unspecified, attributes will be sorted into a default order.
+Attribute names are fixed by bgfx; see `gfx.ATTRIBUTE_INFO` for the
+list of names.
+Each attribute's options must specify a `ctype` (a terra
+type) of either `float`, `uint8`, or `uint16` and a `count` of 1-4.
+
+Due to C alignment requirements, it is *highly advised* that
+each attribute should occupy a multiple of 4 bytes; e.g., `uint8`
+typed attributes should have a count of 4, and `int16` a count of 2/4.
+
+A `uint8` attribute can also be specified as `normalized`, in which case
+integer values 0-255 will be normalized to 0.0-1.0 when seen in a shader.
+If `normalized` is `false` or unspecified, then 255 in the buffer will be
+seen as a floating-point 255.0 in the shader.
+
+```lua
+local vinfo = gfx.create_vertex_type{
+    position = {ctype = float, count = 3},
+    normal   = {ctype = float, count = 3},
+    color0   = {ctype = uint8, count = 4, normalized = true}
+}
+```
+
+#### create_basic_vertex_type(attribute_list, preserve_order)
+Create (or fetch a cached version) of a vertex type using default options
+for its attributes. `attribute_list` should be a list of attribute names;
+if `preserve_order` is specified then the resulting vertex type will have
+the attributes in the same order, otherwise they will be reordered into the
+default order.
+
+```lua
+local vinfo = gfx.create_basic_vertex_type({"position", "normal"})
+```
+
+#### guess_vertex_type(geometry_data)
+Create a vertex type to hold the information in `geometry_data` (see
+`StaticGeometry:from_data` for details of the organization of this structure).
+Note that this only looks at which attributes are present and uses the default
+types and counts for those attributes.
+
 ### StaticGeometry
 #### StaticGeometry(name)
 Create a new StaticGeometry with the given (optional) name.
@@ -153,7 +199,7 @@ Returns a clone of this geometry. This geometry must still be allocated.
 
 #### StaticGeometry:allocate(n_verts, n_indices, vertinfo)
 Allocate space for a given number of vertices and indices, with the specified
-vertex definition. Assuming default triangle primitives, `n_indices = n_faces * 3`.
+vertex definition (see `create_vertex_type` and `create_basic_vertex_type`). Assuming default triangle primitives, `n_indices = n_faces * 3`.
 
 After allocation, the fields `.verts` and `.indices` exist and can be modified.
 Note that these buffers are *0 indexed C arrays*.
@@ -223,15 +269,23 @@ must be committed already.
 
 ### Uniforms
 The `Uniform` constructor should not be used directly. Instead, create a
-`VecUniform`, `MatUniform` or `TexUniform`.
+`VecUniform`, `MatUniform`, `VecArrayUniform`, `MatArrayUniform`,
+ or `TexUniform`.
 
-#### VecUniform(name, count, value)
+#### VecUniform(name, value)
 Create a vector-typed uniform (always Vec4) with the given name (exactly
-as it appears in the shader, e.g., `u_diffuseColor`), count (>1 for a 
-an array, defaults to 1), and initial value.
+as it appears in the shader, e.g., `u_diffuseColor`) and initial value.
 
-#### MatUniform(name, count, value)
+#### MatUniform(name, value)
 Create a matrix-typed uniform (always Mat4).
+
+#### VecArrayUniform(name, count)
+Create an array-of-vectors uniform (each element is Vec4) with the given
+name and count.
+
+#### MatArrayUniform(name, count)
+Create an array-of-matrices uniform (each element is Mat4) with the given
+name and count.
 
 #### TexUniform(name, sampler_index, value)
 Create a texture (sampler) uniform. Both `name` and `sampler_index` must
@@ -241,13 +295,46 @@ match how the uniform is declared in the shader.
 Clone this uniform. The cloned uniform will share the same underlying uniform handle,
 but can be independently set to a different value.
 
-#### Uniform:set(value, index)
-Set this uniform to a value; in the case of uniform arrays, and index also has
-to be given (0-indexed, defaults to 0). For vector uniforms, the value can either
-be a lua list or a math.Vector.
+#### VecUniform:set(x, y, z, w)
+Set this uniform.
 
-#### Uniform:set_multiple(values)
+```lua
+local gray_list = {0.5, 0.5, 0.5, 1.0}
+local gray_vec = math.Vector(0.5, 0.5, 0.5, 1.0)
+
+local u = gfx.VecUniform("u_diffuseColor")
+u:set(0.5, 0.5, 0.5, 1.0) -- direct
+u:set(gray_list)          -- from list
+u:set(gray_vec)           -- from math.Vector
+```
+
+#### MatUniform:set(m)
+Set this uniform
+
+```lua
+local m = math.Matrix4():identity()
+local u = gfx.MatUniform("u_someMatrix")
+u:set(m)
+```
+
+#### [Vec|Mat]ArrayUniform:set(index, value)
+Set an element of this array to a value; like lua in general,
+indices are 1-indexed, so the first element is at index 1.
+For VecArrayUniforms, the value can be either a `math.Vector` 
+or an `{x, y, z, w}` list. 
+For a MatArrayUniform the value must be a `math.Matrix4`.
+
+#### [Vec|Mat]ArrayUniform:set_multiple(values)
 Set multiple values in a uniform array.
+
+```lua
+local u = gfx.VecArrayUniform("u_lightColors", 4)
+u:set_multiple({
+  math.Vector(1.0, 0.0, 0.0),
+  math.Vector(0.0, 1.0, 0.0),
+  {0.0, 0.0, 1.0} -- mixing math.Vectors and lists is allowed
+})
+```
 
 #### Uniform:bind()
 Bind the value of this uniform for the next submit call.
