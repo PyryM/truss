@@ -73,7 +73,7 @@ m._vertex_types = {}
 function m.create_vertex_type(attrib_table)
   local canon_name, attrib_list = order_attributes(attrib_table)
   if m._vertex_types[canon_name] then 
-    return m._vertex_types[canon_name], canon_name
+    return m._vertex_types[canon_name]
   end
   log.info("Creating vertex type " .. canon_name)
 
@@ -101,8 +101,9 @@ function m.create_vertex_type(attrib_table)
 
   m._vertex_types[canon_name] = {ttype = ntype,
                                  vdecl = vdecl,
+                                 type_id = canon_name,
                                  attributes = acounts}
-  return m._vertex_types[canon_name], canon_name
+  return m._vertex_types[canon_name]
 end
 
 function m.create_basic_vertex_type(attrib_list)
@@ -120,8 +121,8 @@ function m.guess_vertex_type(data)
   for attrib_name, _ in pairs(attributes) do
     table.insert(attrib_list, attrib_name)
   end
-  local vtype, vtypename = m.create_basic_vertex_type(attrib_list)
-  log.info("guessed vertex type [" .. vtypename .. "]")
+  local vtype = m.create_basic_vertex_type(attrib_list)
+  log.info("guessed vertex type [" .. vtype.type_id .. "]")
   return vtype
 end
 
