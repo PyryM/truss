@@ -4,87 +4,114 @@
 
 local m = {}
 
-m.DefaultAttributeInfo = {
-  {"position",  "p",  float, 3, false},
-  {"normal",    "n",  float, 3, false},
-  {"tangent",   "t",  float, 3, false},
-  {"bitangent", "b",  float, 3, false},
-  {"color0",    "c0", uint8, 4, true},
-  {"color1",    "c1", uint8, 4, true},
-  {"indices",   "i",  uint8, 4, false},
-  {"weight",    "w",  float, 4, false},
-  {"texcoord0", "t0", float, 2, false},
-  {"texcoord1", "t1", float, 2, false},
-  {"texcoord2", "t2", float, 2, false},
-  {"texcoord3", "t3", float, 2, false},
-  {"texcoord4", "t4", float, 2, false},
-  {"texcoord5", "t5", float, 2, false},
-  {"texcoord6", "t6", float, 2, false},
-  {"texcoord7", "t7", float, 2, false}
+m.ATTRIBUTE_INFO = {
+  position  = {sn = "p", ctype = float, count = 3},
+  normal    = {sn = "n", ctype = float, count = 3},
+  tangent   = {sn = "tn", ctype = float, count = 3},
+  bitangent = {sn = "b", ctype = float, count = 3},
+  color0    = {sn = "c0", ctype = uint8, count = 4, normalized = true},
+  color1    = {sn = "c1", ctype = uint8, count = 4, normalized = true},
+  indices   = {sn = "i", ctype = uint8, count = 4},
+  weight    = {sn = "w", ctype = float, count = 4},
+  texcoord0 = {sn = "t0", ctype = float, count = 2},
+  texcoord1 = {sn = "t1", ctype = float, count = 2},
+  texcoord2 = {sn = "t2", ctype = float, count = 2},
+  texcoord3 = {sn = "t3", ctype = float, count = 2},
+  texcoord4 = {sn = "t4", ctype = float, count = 2},
+  texcoord5 = {sn = "t5", ctype = float, count = 2},
+  texcoord6 = {sn = "t6", ctype = float, count = 2},
+  texcoord7 = {sn = "t7", ctype = float, count = 2}
 }
 
-m.AttributeBGFXTypes = {
-  [float]  = bgfx.ATTRIB_TYPE_FLOAT,
-  [uint8]  = bgfx.ATTRIB_TYPE_UINT8,
+local ATTRIB_ORDER = {
+  "position", "normal", "tangent", "bitangent", "color0", "color1",
+  "indices", "weight", "texcoord0", "texcoord1", "texcoord2",
+  "texcoord3", "texcoord4", "texcoord5", "texcoord6", "texcoord7"
+}
+
+local BGFX_ATTRIBUTE_TYPES = {
+  [float] = bgfx.ATTRIB_TYPE_FLOAT,
+  [uint8] = bgfx.ATTRIB_TYPE_UINT8,
   [int16] = bgfx.ATTRIB_TYPE_INT16
 }
 
-m.AttributeMap = {}
-m.AttributeBGFXEnums = {}
-for i,attrib_data in ipairs(m.DefaultAttributeInfo) do
-  local attrib_name = attrib_data[1]
+local TYPENAMES = {
+  [float] = "f",
+  [uint8] = "u8",
+  [int16] = "i16"
+}
+
+for attrib_name, attrib_data in pairs(m.ATTRIBUTE_INFO) do
   local enum_val = bgfx["ATTRIB_" .. string.upper(attrib_name)]
   if not enum_val then
     truss.error("attribute has no bgfx enum: " .. attrib_name)
   end
-  m.AttributeBGFXEnums[attrib_name] = enum_val
-  m.AttributeMap[attrib_name] = attrib_data
+  attrib_data.bgfx_enum = enum_val
 end
 
--- reorder attributes into canonical order
-function m.order_attributes(attrib_list)
-  local t, ordered = {}, {}
-  for _,v in ipairs(attrib_list) do
-    t[v] = true
-  end
-  for _,v in ipairs(m.DefaultAttributeInfo) do
-    if t[v[1]] then table.insert(ordered, v[1]) end
-  end
-  return ordered
-end
-
-m._basic_vertex_types = {}
-function m.create_basic_vertex_type(attrib_list)
-  attrib_list = m.order_attributes(attrib_list)
-  local cname = table.concat(attrib_list, "_")
-  if not m._basic_vertex_types[cname] then
-    local entries = {}
-    local ntype = terralib.types.newstruct(cname)
-    local vdecl = terralib.new(bgfx.vertex_decl_t)
-    local acounts = {}
-
-    bgfx.vertex_decl_begin(vdecl, bgfx.get_renderer_type())
-    for i,a_name in ipairs(attrib_list) do
-      local attrib = m.AttributeMap[a_name]
-      local atype = attrib[3]
-      local acount = attrib[4]
-      local normalized = attrib[5]
-      entries[i] = {a_name, atype[acount]}
-      acounts[a_name] = acount
-      local bgfx_enum = m.AttributeBGFXEnums[a_name]
-      local bgfx_type = m.AttributeBGFXTypes[atype]
-      bgfx.vertex_decl_add(vdecl, bgfx_enum, acount, bgfx_type, normalized, false)
+-- to avoid creating a ton of redundant vertex definitions (which are
+-- a limited bgfx resource), reorder the attributes into a 'canonical' order
+local function order_attributes(attrib_table)
+  local alist = {}
+  local name_parts = {}
+  for _, attrib_name in ipairs(ATTRIB_ORDER) do
+    local info = attrib_table[attrib_name]
+    if info then
+      local def_info = m.ATTRIBUTE_INFO[attrib_name]
+      local npart = def_info.sn .. ":" 
+                 .. info.count
+                 .. TYPENAMES[info.ctype]
+      if info.normalized then npart = npart .. "n" end
+      table.insert(alist, {attrib_name, info})
+      table.insert(name_parts, npart)
     end
-    bgfx.vertex_decl_end(vdecl)
-
-    ntype.entries = entries
-    ntype:complete() -- complete the terra type now to avoid cryptic bugs
-
-    m._basic_vertex_types[cname] = {ttype = ntype,
-                                    vdecl = vdecl,
-                                    attributes = acounts}
   end
-  return m._basic_vertex_types[cname], cname
+  return table.concat(name_parts, "_"), alist
+end
+
+m._vertex_types = {}
+function m.create_vertex_type(attrib_table)
+  local canon_name, attrib_list = order_attributes(attrib_table)
+  if m._vertex_types[canon_name] then 
+    return m._vertex_types[canon_name], canon_name
+  end
+  log.info("Creating vertex type " .. canon_name)
+
+  local entries = {}
+  local ntype = terralib.types.newstruct(canon_name)
+  local vdecl = terralib.new(bgfx.vertex_decl_t)
+  local acounts = {}
+
+  bgfx.vertex_decl_begin(vdecl, bgfx.get_renderer_type())
+  for i, atuple in ipairs(attrib_list) do
+    local aname, ainfo = atuple[1], atuple[2]
+    local atype = ainfo.ctype
+    local acount = ainfo.count
+    local normalized = ainfo.normalized or false
+    entries[i] = {aname, atype[acount]}
+    acounts[aname] = acount
+    local bgfx_enum = m.ATTRIBUTE_INFO[aname].bgfx_enum
+    local bgfx_type = BGFX_ATTRIBUTE_TYPES[atype]
+    bgfx.vertex_decl_add(vdecl, bgfx_enum, acount, bgfx_type, normalized, false)
+  end
+  bgfx.vertex_decl_end(vdecl)
+
+  ntype.entries = entries
+  ntype:complete() -- complete the terra type now to avoid cryptic bugs
+
+  m._vertex_types[canon_name] = {ttype = ntype,
+                                 vdecl = vdecl,
+                                 attributes = acounts}
+  return m._vertex_types[canon_name], canon_name
+end
+
+function m.create_basic_vertex_type(attrib_list)
+  -- create attribute table with default types+counts
+  local attrib_table = {} 
+  for _, attrib_name in ipairs(attrib_list) do
+    attrib_table[attrib_name] = m.ATTRIBUTE_INFO[attrib_name]
+  end
+  return m.create_vertex_type(attrib_table)
 end
 
 function m.guess_vertex_type(data)
@@ -96,18 +123,6 @@ function m.guess_vertex_type(data)
   local vtype, vtypename = m.create_basic_vertex_type(attrib_list)
   log.info("guessed vertex type [" .. vtypename .. "]")
   return vtype
-end
-
-function m.create_pos_color_vertex_info()
-  return m.create_basic_vertex_type({"position", "color0"})
-end
-
-function m.create_pos_normal_vertex_info()
-  return m.create_basic_vertex_type({"position", "normal"})
-end
-
-function m.create_pos_normal_uv_vertex_info()
-  return m.create_basic_vertex_type({"position", "normal", "texcoord0"})
 end
 
 return m
