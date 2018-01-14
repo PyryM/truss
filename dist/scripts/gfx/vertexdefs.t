@@ -51,10 +51,10 @@ end
 
 -- to avoid creating a ton of redundant vertex definitions (which are
 -- a limited bgfx resource), reorder the attributes into a 'canonical' order
-local function order_attributes(attrib_table)
+local function order_attributes(attrib_table, attrib_order)
   local alist = {}
   local name_parts = {}
-  for _, attrib_name in ipairs(ATTRIB_ORDER) do
+  for _, attrib_name in ipairs(attrib_order or ATTRIB_ORDER) do
     local info = attrib_table[attrib_name]
     if info then
       local def_info = m.ATTRIBUTE_INFO[attrib_name]
@@ -70,8 +70,8 @@ local function order_attributes(attrib_table)
 end
 
 m._vertex_types = {}
-function m.create_vertex_type(attrib_table)
-  local canon_name, attrib_list = order_attributes(attrib_table)
+function m.create_vertex_type(attrib_table, attrib_order)
+  local canon_name, attrib_list = order_attributes(attrib_table, attrib_order)
   if m._vertex_types[canon_name] then 
     return m._vertex_types[canon_name]
   end
@@ -106,13 +106,13 @@ function m.create_vertex_type(attrib_table)
   return m._vertex_types[canon_name]
 end
 
-function m.create_basic_vertex_type(attrib_list)
+function m.create_basic_vertex_type(attrib_list, attrib_order)
   -- create attribute table with default types+counts
   local attrib_table = {} 
   for _, attrib_name in ipairs(attrib_list) do
     attrib_table[attrib_name] = m.ATTRIBUTE_INFO[attrib_name]
   end
-  return m.create_vertex_type(attrib_table)
+  return m.create_vertex_type(attrib_table, attrib_order)
 end
 
 function m.guess_vertex_type(data)
