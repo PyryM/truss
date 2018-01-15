@@ -75,7 +75,10 @@ end
 
 local function mat_from_opts(mat_opts)
   -- todo
-  return pbr.FacetedPBRMaterial({0.2, 0.2, 0.2, 1.0}, {0.001, 0.001, 0.001}, 0.7)
+  return pbr.FacetedPBRMaterial{
+    diffuse = {0.2, 0.2, 0.2, 1.0}, 
+    tint = {0.001, 0.001, 0.001}, 
+    roughness = 0.7}
   --return flat.FlatMaterial{color = {0.2, 0.2, 0.2, 1.0}}
 end
 
