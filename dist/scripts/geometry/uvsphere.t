@@ -9,7 +9,7 @@ local Vector = math.Vector
 
 -- the "plate carree" projection, a special case of equirectangular
 function m.plate_carree(lat, lon)
-  local u = 1.0 - (lon / (2*math.pi) + 0.5) -- map [-pi,pi]     => [1,0]
+  local u = 1.0 - (lon / (2*math.pi)) -- map [0,2pi]     => [1,0]
   local v = lat / math.pi + 0.5     -- map [-pi/2,pi/2] => [0,1]
   return u,v
 end
