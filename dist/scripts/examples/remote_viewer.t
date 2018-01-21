@@ -135,13 +135,14 @@ function init()
   local App
   if cfg.vr then
     App = require("vr/vrapp.t").VRApp
+    cfg.create_controllers = true
   else
     App = require("app/app.t").App
   end
   app = App(cfg)
   georoot = app.scene:create_child(ecs.Entity3d, "georoot")
   georoot.position:set(0.0, 1.0, 0.0)
-  --georoot.scale:set(0.001, 0.001, 0.001)
+  georoot.scale:set(0.001, 0.001, 0.001)
   georoot:update_matrix()
 
   local base_grid = app.scene:create_child(grid.Grid, {thickness = 0.01, 
@@ -153,6 +154,7 @@ function init()
   if not cfg.vr then
     app.camera:add_component(orbitcam.OrbitControl{min_rad = 0.1, max_rad = 4})
     app.camera.orbit_control.orbitpoint:set(0.0, 1.0, 0.0)
+    app.camera.orbit_control.rad_rate = 0.1
   end
 
   -- fill in vertex stuff
