@@ -39,8 +39,9 @@ end
 -- create a big red ball so that there's something to see at least
 function create_scene(root)
   local geo = geometry.icosphere_geo{detail = 3}
-  local mat = pbr.FacetedPBRMaterial({0.2,0.03,0.01,1.0},
-                                     {0.001, 0.001, 0.001}, 0.7)
+  local mat = pbr.FacetedPBRMaterial{diffuse = {0.2,0.03,0.01,1.0},
+                                    tint = {0.001, 0.001, 0.001}, 
+                                    roughness = 0.7}
 
   local thegrid = root:create_child(grid.Grid, {spacing = 0.5, numlines = 8,
                                                 color = {0.8, 0.8, 0.8}, 
