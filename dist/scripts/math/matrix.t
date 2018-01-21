@@ -483,10 +483,10 @@ function Matrix4:look_at(point, up)
   if up then
     ty:copy(up):normalize3()
   else
-    ty:set(0.0, 1.0, 0.0)
+    ty:set(0.0, 1.0, 0.0, 0.0)
   end
-  tx:crossVecs(ty, tz)
-  ty:crossVecs(tz, tx)
+  tx:cross(ty, tz)
+  ty:cross(tz, tx)
   self:set_column(1, tx)
   self:set_column(2, ty)
   self:set_column(3, tz)

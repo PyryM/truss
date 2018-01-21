@@ -146,10 +146,8 @@ end
 
 -- normalize only the first 3 dimensions, ignoring w
 function Vector:normalize3()
-  local w = self.elem.w
   self.elem.w = 0
   self:normalize()
-  self.elem.w = w
   return self
 end
 
@@ -277,7 +275,7 @@ function Vector:cross(a, b)
   se.x = u2*v3 - u3*v2
   se.y = u3*v1 - u1*v3
   se.z = u1*v2 - u2*v1
-  se.w = 1.0
+  se.w = 0.0
   return self
 end
 
