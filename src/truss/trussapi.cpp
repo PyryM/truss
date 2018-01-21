@@ -53,6 +53,10 @@ int truss_check_file(const char* filename) {
     return Core::instance().checkFile(filename);
 }
 
+const char* truss_get_file_real_path(const char* filename) {
+	return Core::instance().getFileRealPath(filename);
+}
+
 truss_message* truss_load_file(const char* filename) {
     return Core::instance().loadFile(filename);
 }

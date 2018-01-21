@@ -183,6 +183,15 @@ function truss.is_directory(path)
   return truss.C.check_file(path) == 2
 end
 
+-- returns true if the file exists and is inside an archive
+function truss.is_archived(path)
+  local rawpath = truss.C.get_file_real_path(path)
+  if not rawpath then return false end
+  local pathstr = ffi.string(rawpath)
+  local ext = string.sub(pathstr, -4)
+  return ext == ".zip" 
+end
+
 function truss.save_string(filename, s)
   truss.C.save_data(filename, s, #s)
 end

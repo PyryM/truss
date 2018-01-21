@@ -32,6 +32,7 @@ uint64_t truss_get_hp_time();
 uint64_t truss_get_hp_freq();
 void truss_sleep(unsigned int ms);
 int truss_check_file(const char* filename);
+const char* truss_get_file_real_path(const char* filename);
 truss_message* truss_load_file(const char* filename);
 int truss_save_file(const char* filename, truss_message* data);
 int truss_save_data(const char* filename, const char* data, unsigned int datalength);

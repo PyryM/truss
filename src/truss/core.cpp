@@ -267,8 +267,8 @@ void Core::deallocateMessage(truss_message* msg) {
 
 int Core::checkFile(const char* filename) {
     if (!physFSInitted_) {
-        logMessage(TRUSS_LOG_WARNING, "PhysFS not initialized: checkFile always returns 0.");
-        return false;
+        logMessage(TRUSS_LOG_WARNING, "checkFile: PhysFS not initialized");
+        return 0;
     }
 
     if (PHYSFS_exists(filename) == 0) {
@@ -278,6 +278,15 @@ int Core::checkFile(const char* filename) {
     } else {
         return 2;
     }
+}
+
+const char* Core::getFileRealPath(const char* filename) {
+	if (!physFSInitted_) {
+		logMessage(TRUSS_LOG_WARNING, "getFileRealPath: PhysFS not initialized");
+		return NULL;
+	}
+
+	return PHYSFS_getRealDir(filename);
 }
 
 truss_message* Core::loadFileRaw(const char* filename) {

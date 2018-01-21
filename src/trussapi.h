@@ -68,6 +68,7 @@ TRUSS_C_API void truss_sleep(unsigned int ms);
 /* FileIO */
 /* Note that when saving the message_type field is not saved */
 TRUSS_C_API int truss_check_file(const char* filename); /* returns 1 if file exists, 2 if directory, 0 otherwise */
+TRUSS_C_API const char* truss_get_file_real_path(const char* filename);
 TRUSS_C_API truss_message* truss_load_file(const char* filename);
 TRUSS_C_API int truss_save_file(const char* filename, truss_message* data);
 TRUSS_C_API int truss_save_data(const char* filename, const char* data, unsigned int datalength);

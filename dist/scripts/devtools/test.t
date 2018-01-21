@@ -195,7 +195,12 @@ local function make_header(dirpath)
 end
 
 -- this runs a specific file as tests
+local allow_archived = false
 local function _run_test_file(dirpath, fn)
+  local rawfn = "scripts/" .. dirpath .. "/" .. fn
+  if (not allow_archived) and truss.is_archived(rawfn) then
+    return
+  end
   print(make_header(dirpath))
   local tt = require(dirpath .. "/" .. fn)
   tt.run()
@@ -224,7 +229,8 @@ local function _run_tests(dirpath, force)
   end
 end
 
-function m.run_tests(dirpath, verbose)
+function m.run_tests(dirpath, verbose, test_archives)
+  allow_archived = not not test_archives -- coerce to bool
   test_stats.total_failed = 0
   test_stats.total_passed = 0
   test_stats.failed = 0

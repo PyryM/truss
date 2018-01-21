@@ -50,6 +50,7 @@ public:
     void deallocateMessage(truss_message* msg);
 
     int checkFile(const char* filename);
+	const char* getFileRealPath(const char* filename);
     truss_message* loadFile(const char* filename);
     truss_message* loadFileRaw(const char* filename);
     void saveFile(const char* filename, truss_message* data);
