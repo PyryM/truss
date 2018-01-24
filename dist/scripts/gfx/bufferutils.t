@@ -5,17 +5,15 @@
 local m = {}
 local vertexdefs = require("gfx/vertexdefs.t")
 
-local function check_index_size_(geo, nindices)
-  if geo.n_indices ~= nindices then
+local function assert_index_size(geo, n_indices)
+  if geo.n_indices ~= n_indices then
     truss.error("Wrong number of indices, expected "
         .. (geo.n_indices or "nil")
-        .. " got " .. (nindices or "nil"))
-    return false
+        .. " got " .. (n_indices or "nil"))
   end
-  return true
 end
 
--- setIndices
+-- set_indices
 --
 -- sets face indices, checking whether the input is a list of lists
 -- or a flat list
@@ -35,15 +33,15 @@ end
 function m.set_indices_list_of_lists(geo, facelist)
   local nfaces = #facelist
   local nindices = nfaces * 3 -- assume triangles
-  if not check_index_size_(geo, nindices) then return end
+  assert_index_size(geo, nindices)
 
   local dest = geo.indices
-  local destIndex = 0
-  for f = 1,nfaces do
-    dest[destIndex]   = facelist[f][1] or 0
-    dest[destIndex+1] = facelist[f][2] or 0
-    dest[destIndex+2] = facelist[f][3] or 0
-    destIndex = destIndex + 3
+  local dest_idx = 0
+  for f = 1, nfaces do
+    dest[dest_idx]     = facelist[f][1] or 0
+    dest[dest_idx + 1] = facelist[f][2] or 0
+    dest[dest_idx + 2] = facelist[f][3] or 0
+    dest_idx = dest_idx + 3
   end
 end
 
@@ -53,19 +51,18 @@ end
 -- e.g., {0,1,2,  1,2,3,  3,4,5,  5,2,1}
 function m.set_indices_flat_list(geo, indexlist)
   local nindices = #indexlist
-  if not check_index_size_(geo, nindices) then return end
+  assert_index_size(geo, nindices)
 
   local dest = geo.indices
-  local destIndex = 0
-  for idx = 1,nindices do
-    dest[idx-1] = indexlist[idx] or 0
+  for idx = 1, nindices do
+    dest[idx - 1] = indexlist[idx] or 0
   end
 end
 
 -- make_list_setter
 --
 -- makes a function to set an attribute from a list
-function m.make_list_setter(attribname, nvals)
+local function make_list_setter(attribname, nvals)
   if nvals > 1 then
     return function(vertex, attrib_val)
       local tgt = vertex[attribname]
@@ -84,7 +81,7 @@ end
 -- make_vector_setter
 --
 -- make a function to set an attribute from a math.Vector
-function m.make_vector_setter(attribname, nvals)
+local function make_vector_setter(attribname, nvals)
   local keys = {"x", "y", "z", "w"}
   return function(vertex, attrib_val)
     local tgt = vertex[attribname]
@@ -97,21 +94,13 @@ function m.make_vector_setter(attribname, nvals)
 end
 
 -- populate setter list
-m.setters = {}
+local setters = {}
 for attrib_name, _ in pairs(vertexdefs.ATTRIBUTE_INFO) do
-  m.setters[attrib_name .. "_F"] = m.make_list_setter(attrib_name, 1)
+  setters[attrib_name .. "_F"] = make_list_setter(attrib_name, 1)
   for i = 1,4 do
-    m.setters[attrib_name .. "_L" .. i] = m.make_list_setter(attrib_name, i)
-    m.setters[attrib_name .. "_V" .. i] = m.make_vector_setter(attrib_name, i)
+    setters[attrib_name .. "_L" .. i] = make_list_setter(attrib_name, i)
+    setters[attrib_name .. "_V" .. i] = make_vector_setter(attrib_name, i)
   end
-end
-
--- setter for when you just need random colors, ignores attribVal
-m.setters.color0_RAND = function(vertex, attrib_val)
-  vertex.color0[0] = math.random() * 255.0
-  vertex.color0[1] = math.random() * 255.0
-  vertex.color0[2] = math.random() * 255.0
-  vertex.color0[3] = math.random() * 255.0
 end
 
 function m.get_setter(target, attrib_name, attrib_list)
@@ -131,7 +120,7 @@ function m.get_setter(target, attrib_name, attrib_list)
   else                           -- list of lists
     setter_tag = attrib_name .. "_L" .. datanum
   end
-  local setter = m.setters[setter_tag]
+  local setter = setters[setter_tag]
 
   if setter == nil then
     log.error("Could not find setter for attribute type " .. setter_tag)
@@ -159,7 +148,7 @@ function m.set_attribute(target, attrib_name, attrib_list, setter)
   -- actually set the data
   if not target.verts then truss.error("Target not allocated.") end
   local dest = target.verts
-  for v = 1,list_size do
+  for v = 1, list_size do
     -- dest (data.verts) is a C-style array so zero indexed
     setter(dest[v-1], attrib_list[v])
   end
