@@ -9,6 +9,7 @@ local gfx = {}
 moduleutils.include_submodules({
   "gfx/common.t",
   "gfx/geometry.t",
+  "gfx/formats.t",
   "gfx/vertexdefs.t",
   "gfx/shaders.t",
   "gfx/view.t",

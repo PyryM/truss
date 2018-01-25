@@ -164,6 +164,8 @@ function m.init_gfx(options)
   log.info("Short renderer name: " .. gfx.short_backend_name)
   local dt = truss.toc(t0) * 1000.0
   log.info(string.format("bgfx init took %.2f ms.", dt))
+  
+  gfx.BACKBUFFER = require("gfx/rendertarget.t").BackbufferTarget()
 end
 
 function m._translate_backend_type(bgfx_type)

@@ -34,8 +34,8 @@ end
 
 function TaskRunnerStage:_create_scratch(options)
   local scratch = options.scratch or 
-                  gfx.RenderTarget(options.scratch_width  or 1024,
-                                   options.scratch_height or 1024):make_RGB8()
+                  gfx.ColorDepthTarget{width = options.scratch_width or 1024,
+                                       height = options.scratch_height or 1024}
   if self._num_workers > 1 then
     return ring.RingBuffer({scratch, scratch:clone()})
   else

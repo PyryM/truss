@@ -17,6 +17,7 @@ function View:init(options)
   self._projmat = math.Matrix4():identity()
   self._viewmat = math.Matrix4():identity()
   self._sequential = false
+  self._rendertarget = require("gfx").BACKBUFFER
   self.props = options.props or options
   self.name = options.name or "View"
   self:set(options)
