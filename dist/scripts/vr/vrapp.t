@@ -93,12 +93,12 @@ function VRApp:ecs_init()
 end
 
 function VRApp:setup_targets()
-  local w,h = self.vr_width, self.vr_height
-  self.targets = {gfx.RenderTarget(w,h):make_RGB8(true),
-                  gfx.RenderTarget(w,h):make_RGB8(true)}
-  self.backbuffer = gfx.RenderTarget(self.width, self.height):make_backbuffer()
+  local w, h = self.vr_width, self.vr_height
+  self.targets = {gfx.ColorDepthTarget{width = w, height = h},
+                  gfx.ColorDepthTarget{width = w, height = h}}
+  self.backbuffer = gfx.BACKBUFFER
   self.eye_texes = {self.targets[1]:get_attachment_handle(1),
-                   self.targets[2]:get_attachment_handle(1)}
+                    self.targets[2]:get_attachment_handle(1)}
 end
 
 function VRApp:init_pipeline()

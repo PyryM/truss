@@ -78,11 +78,14 @@ function m.BackbufferTarget()
 end
 
 function m.TextureTarget(options)
-  local tex = options.tex
+  local tex = options.texture or options.tex
   if not tex._render_target then truss.error("Provided texture not renderable") end
   local handle = tex._handle
   if not handle then truss.error("Provided texture has no handle") end
-  local layers = {{handle = handle, mip = options.mip, layer = options.layer}}
+  local layers = {{handle = handle, 
+                   mip = options.mip, 
+                   layer = options.layer,
+                   has_color = true}}
 
   if options.depth_format then
     table.insert(layers, depth_stencil_layer(options.depth_format, 
@@ -90,7 +93,9 @@ function m.TextureTarget(options)
   end
 
   return RenderTarget{
-    width = options.width, height = options.height, layers = layers
+    width = tex._info.width, 
+    height = tex._info.height, 
+    layers = layers
   }
 end
 

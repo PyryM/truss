@@ -18,11 +18,15 @@ function CubeRenderApp:init_pipeline()
   local cube_order = {"px", "nx", "py", "ny", "pz", "nz"}
   local ct = {}
   for idx, face_id in ipairs(cube_order) do
-    ct[face_id] = gfx.RenderTarget():from_texture(cubemap, 0, idx - 1)
+    ct[face_id] = gfx.TextureTarget{
+      tex = cubemap,
+      layer = idx - 1,
+      depth_format = gfx.TEX_D24
+    }
   end
 
-  --local colors = {0xaa0000ff, 0x00aa00ff, 0x0000aaff, 0xaaaa00ff, 0x00aaaaff, 0xaa00aaff}
-  local colors = {0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff}
+  local colors = {0xaa0000ff, 0x00aa00ff, 0x0000aaff, 0xaaaa00ff, 0x00aaaaff, 0xaa00aaff}
+  --local colors = {0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff}
 
   local p = graphics.Pipeline({verbose = true})
   p:add_stage(graphics.MultiviewStage{

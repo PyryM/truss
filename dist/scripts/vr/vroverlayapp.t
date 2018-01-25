@@ -39,8 +39,9 @@ function VROverlayApp:init_pipeline(options)
   local Vector = math.Vector
   local pbr = require("shaders/pbr.t")
 
-  local overlay_target = gfx.RenderTarget(self.width, self.height):make_RGB8(true)
-  local backbuffer = gfx.RenderTarget(self.width, self.height):make_backbuffer()
+  local overlay_target = gfx.ColorDepthTarget{width = self.width, 
+                                              height = self.height}
+  local backbuffer = gfx.BACKBUFFER
   self.targets = {overlay = overlay_target, backbuffer = backbuffer}
 
   local p = graphics.Pipeline({verbose = true})
