@@ -7,10 +7,9 @@ $input v_wpos, v_wnormal, v_uv // in...
 
 #include "../common/common.sh"
 
-uniform vec3 u_baseColor;
+uniform vec4 u_baseColor;
 
 void main()
 {
-	gl_FragColor.xyz = u_baseColor;
-	gl_FragColor.w = 1.0;
+	gl_FragColor = u_baseColor;
 }

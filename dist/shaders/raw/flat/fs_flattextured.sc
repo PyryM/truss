@@ -8,12 +8,10 @@ $input v_wpos, v_wnormal, v_uv // in...
 #include "../common/common.sh"
 
 SAMPLER2D(s_texAlbedo, 0);
-uniform vec3 u_baseColor;
+uniform vec4 u_baseColor;
 
 void main()
 {
 	vec4 albedo = texture2D(s_texAlbedo, v_uv);
-
-	gl_FragColor.xyz = albedo.xyz * u_baseColor;
-	gl_FragColor.w = 1.0;
+	gl_FragColor = u_baseColor * albedo;
 }
