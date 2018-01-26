@@ -166,11 +166,7 @@ end
 
 function RenderComponent:configure()
   local render = self.ecs.systems.render
-  if not render then
-    truss.error("No 'render' system present in ecs!")
-    return
-  end
-  self._render_ops = render:match_render_ops(self)
+  self._render_ops = (render and render:match_render_ops(self)) or {}
   self._needs_configure = false
 end
 

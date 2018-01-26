@@ -127,7 +127,7 @@ function m.init_gfx(options)
   local cb_ptr = nil
   local renderer_type = bgfx.RENDERER_TYPE_COUNT
   if options.backend then
-    local rname = "RENDERER_TYPE_" .. options.backend
+    local rname = "RENDERER_TYPE_" .. string.upper(options.backend)
     renderer_type = bgfx[rname]
     if not renderer_type then
       truss.error("Nonexistent backend " .. rname)

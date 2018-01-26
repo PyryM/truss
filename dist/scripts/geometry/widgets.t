@@ -4,6 +4,7 @@
 
 local m = {}
 local geoutils = require("geometry/geoutils.t")
+local merge = require("geometry/merge.t")
 local math = require("math")
 local cylinder = require("geometry/cylinder.t")
 
@@ -34,7 +35,7 @@ function m.geo_from_rotated_lines(lines, positions, rotations, rad, segs)
     end
   end
 
-  return geoutils.merge_data(components, {"position", "normal"})
+  return merge.merge_data(components, {"position", "normal"})
 end
 
 function m.box_widget_data(opts)

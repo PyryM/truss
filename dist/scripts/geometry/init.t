@@ -41,8 +41,10 @@ include_geometry("uvsphere")
 include_geometry("widgets")
 include_geometry("maxvol8")
 
+geometry.util = {}
 module.include_submodules({
-  "geometry/geoutils.t"
-}, geometry)
+  "geometry/geoutils.t",
+  "geometry/merge.t"
+}, geometry.util)
 
 return geometry
