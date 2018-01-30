@@ -53,6 +53,14 @@ function VRApp:init(options)
   self:ecs_init()
   log.info("up to ecs init: " .. tostring(truss.toc(t0) * 1000.0))
 
+  if options.separate_root == false then
+    self.vr_root = self.scene
+  else
+    self.vr_root = self.scene:create_child(ecs.Entity3d, "vr_root")
+  end
+
+  self:init_scene()
+
   if options.create_controllers then
     self.controllers = {}
     self:create_default_controllers()
@@ -89,7 +97,6 @@ function VRApp:ecs_init()
   --ECS.systems.input:on("keydown", self, self.keydown)
 
   self:init_pipeline()
-  self:init_scene()
 end
 
 function VRApp:setup_targets()
@@ -146,7 +153,7 @@ function VRApp:init_pipeline()
 end
 
 function VRApp:init_scene()
-  self.hmd_cam = self.ECS.scene:create_child(vrcomps.VRCamera, "hmd_camera")
+  self.hmd_cam = self.vr_root:create_child(vrcomps.VRCamera, "hmd_camera")
 end
 
 function VRApp:create_default_controllers()
@@ -169,8 +176,8 @@ function VRApp:add_controller_model(trackable)
     roughness = 0.7
   }
   
-  local controller = self.ECS.scene:create_child(ecs.Entity3d, 
-                                                 "controller")
+  local controller = self.vr_root:create_child(ecs.Entity3d, 
+                                               "controller")
   controller:add_component(vrcomps.VRControllerComponent(trackable))
   controller.vr_controller:create_mesh_parts(geo, mat)
   table.insert(self.controllers, controller)
