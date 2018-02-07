@@ -21,7 +21,12 @@ function CanvasComponent:_create_tex(options)
   if self._tex then self._tex:destroy() end
   if not (options.width and options.height) then return nil end
   local gfx = require("gfx")
-  return gfx.Texture():create(options)
+  return gfx.Texture2d{
+    width = options.width, height = options.height,
+    format = options.format or require("gfx").TEX_BGRA8,
+    flags = options.flags or {blit_dest = true},
+    allocate = false
+  }:commit()
 end
 
 function CanvasComponent:get_tex()

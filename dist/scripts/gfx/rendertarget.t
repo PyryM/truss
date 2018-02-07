@@ -79,7 +79,9 @@ end
 
 function m.TextureTarget(options)
   local tex = options.texture or options.tex
-  if not tex._render_target then truss.error("Provided texture not renderable") end
+  if not tex:is_renderable() then 
+    truss.error("Provided texture not renderable") 
+  end
   local handle = tex._handle
   if not handle then truss.error("Provided texture has no handle") end
   local layers = {{handle = handle, 
@@ -93,8 +95,8 @@ function m.TextureTarget(options)
   end
 
   return RenderTarget{
-    width = tex._info.width, 
-    height = tex._info.height, 
+    width = tex.width, 
+    height = tex.height, 
     layers = layers
   }
 end

@@ -100,10 +100,10 @@ function TaskRunnerStage:_scratch_render(context, task)
 
   local scratch = self._scratch_buffer:next()
   local tex = task.tex
-  if not tex._blit_dest then 
+  if not tex:is_blittable() then 
     truss.error("task.target_tex must be blit dest!")
   end
-  local tw, th = tex._info.width, tex._info.height
+  local tw, th = tex.width, tex.height
   local sw = scratch.width 
   local sh = scratch.height
   if tw > sw or th > sh then

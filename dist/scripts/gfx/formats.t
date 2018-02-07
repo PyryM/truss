@@ -11,6 +11,8 @@ local bitformats = {
   ["halffloat"] = {bytes = 2, suffix = "16F", proxy_type = uint16}
 }
 
+local all_formats = {}
+
 local function export_tex_format(channels, n_channels, bitformat, has_color, has_depth, has_stencil)
   local bitinfo = bitformats[bitformat]
   local byte_size = bitinfo.bytes or terralib.sizeof(bitformat)
@@ -32,6 +34,7 @@ local function export_tex_format(channels, n_channels, bitformat, has_color, has
     has_depth = has_depth,
     has_stencil = has_stencil
   }
+  all_formats[export_name] = m[export_name]
   return m[export_name]
 end
 
@@ -56,6 +59,7 @@ local function export_depth_format(name, has_stencil)
     has_depth = true,
     has_stencil = has_stencil or false
   }
+  all_formats[export_name] = m[export_name]
 end
 
 export_depth_format("D16",  false)
@@ -65,5 +69,44 @@ export_depth_format("D32",  false)
 export_depth_format("D16F", false)
 export_depth_format("D24F", false)
 export_depth_format("D32F", false)
+
+-- compressed formats aren't exported, and can only appear when loading
+-- a texture from a ktx, dds, etc.
+local function list_compressed_format(name)
+  local bgfx_enum = bgfx["TEXTURE_FORMAT_" .. name]
+  all_formats["TEX_" .. name] = {
+    name = name,
+    bgfx_enum = bgfx_enum,
+    has_color = true,
+    compressed = true
+  }
+end
+
+list_compressed_format("BC1")
+list_compressed_format("BC2")
+list_compressed_format("BC3")
+list_compressed_format("BC4")
+list_compressed_format("BC5")
+list_compressed_format("BC6H")
+list_compressed_format("BC7")
+list_compressed_format("ETC1")
+list_compressed_format("ETC2")
+list_compressed_format("ETC2A")
+list_compressed_format("ETC2A1")
+list_compressed_format("PTC12")
+list_compressed_format("PTC14")
+list_compressed_format("PTC12A")
+list_compressed_format("PTC14A")
+list_compressed_format("PTC22")
+list_compressed_format("PTC24")
+
+function m.find_format_from_enum(bgfx_enum_val)
+  for _, format in pairs(all_formats) do
+    if format.bgfx_enum == bgfx_enum_val then
+      return format
+    end
+  end
+  return all_formats.unknown_format
+end
 
 return m

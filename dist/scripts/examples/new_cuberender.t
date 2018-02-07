@@ -10,11 +10,11 @@ local filter = require("utils/filter.t")
 
 local CubeRenderApp = app.App:extend("CubeRenderApp")
 function CubeRenderApp:init_pipeline()
-  local cubemap = gfx.Texture():create_cubemap{
+  local cubemap = gfx.TextureCube{
     size = 2048,
-    blit_dest = false,
-    render_target = true
-  }
+    flags = {render_target = true},
+    allocate = false
+  }:commit()
   local cube_order = {"px", "nx", "py", "ny", "pz", "nz"}
   local ct = {}
   for idx, face_id in ipairs(cube_order) do
@@ -86,7 +86,7 @@ function init()
   mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
   mygrid:update_matrix()
 
-  local tartex = gfx.load_texture("textures/test_pattern.png")
+  local tartex = gfx.Texture("textures/test_pattern.png")
   local tarmat = flat.FlatMaterial{texture = tartex}
   local targeo = geometry.plane_geo{width = 1, height = 1}
 
