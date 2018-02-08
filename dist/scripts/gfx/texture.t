@@ -165,7 +165,7 @@ function Texture3d:_create_handle()
   if (not self.dynamic) and (self._bmem or self.cdata) then
     bmem = self._bmem or bgfx.make_ref(self.cdata, self.cdatasize)
   end
-  self._handle = bgfx_create_texture_3d(self.width, self.height, self.depth, 
+  self._handle = bgfx.create_texture_3d(self.width, self.height, self.depth, 
                    self.has_mips or false, self.format.bgfx_enum, 
                    self._cflags, bmem)
   self._bmem = nil

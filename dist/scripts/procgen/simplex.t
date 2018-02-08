@@ -1,4 +1,4 @@
--- math/simplex.t
+-- procgen/simplex.t
 
 --
 -- Based on code in "Simplex noise demystified", by Stefan Gustavson
