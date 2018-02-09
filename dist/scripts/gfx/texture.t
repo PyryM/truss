@@ -114,10 +114,10 @@ function Texture2d:update()
     truss.error("Cannot update non-dynamic texture!")
   end
   local pitch = self.width * self.format.pixel_size
-  bgfx.update_texture_2d(self._handle, 0,
+  bgfx.update_texture_2d(self._handle, 0, 0,
                           0, 0, self.width, self.height,
                           bgfx.make_ref(self.cdata, self.cdatasize),
-                          self.pitch)
+                          pitch)
   return self
 end
 
