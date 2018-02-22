@@ -114,11 +114,14 @@ Sets the state for the next submission; `state` can either be directly created b
 bgfx flags, or through the `gfx.State` and `gfx.create_state` functions.
 
 ### invalid_handle(ctype)
-Creates an 'invalid' bgfx handle of the provided C type. For example,
+Creates an 'invalid' bgfx handle of the provided C type.
+
+{{ site.begin_sidebar }}
 ```lua
-local invalid_framebuffer = gfx.invalid_handle(bgfx.frame_buffer_handle_t)
+-- Note that the invalid framebuffer is the backbuffer
+local invalid = gfx.invalid_handle(bgfx.frame_buffer_handle_t)
 ```
-(Note that in bgfx an invalid framebuffer corresponds to the backbuffer).
+{{ site.end_sidebar }}
 
 ### save_screenshot(filename, rendertarget)
 Save a screenshot of the specified rendertarget (or backbuffer if none specified) to
@@ -161,6 +164,7 @@ integer values 0-255 will be normalized to 0.0-1.0 when seen in a shader.
 If `normalized` is `false` or unspecified, then 255 in the buffer will be
 seen as a floating-point 255.0 in the shader.
 
+{{ site.begin_sidebar }}
 ```lua
 local vinfo = gfx.create_vertex_type{
     position = {ctype = float, count = 3},
@@ -168,6 +172,7 @@ local vinfo = gfx.create_vertex_type{
     color0   = {ctype = uint8, count = 4, normalized = true}
 }
 ```
+{{ site.end_sidebar }}
 
 #### create_basic_vertex_type(attribute_list, preserve_order)
 Create (or fetch a cached version) of a vertex type using default options
@@ -176,9 +181,11 @@ if `preserve_order` is specified then the resulting vertex type will have
 the attributes in the same order, otherwise they will be reordered into the
 default order.
 
+{{ site.begin_sidebar }}
 ```lua
 local vinfo = gfx.create_basic_vertex_type({"position", "normal"})
 ```
+{{ site.end_sidebar }}
 
 #### guess_vertex_type(geometry_data)
 Create a vertex type to hold the information in `geometry_data` (see
@@ -298,6 +305,7 @@ but can be independently set to a different value.
 #### VecUniform:set(x, y, z, w)
 Set this uniform.
 
+{{ site.begin_sidebar }}
 ```lua
 local gray_list = {0.5, 0.5, 0.5, 1.0}
 local gray_vec = math.Vector(0.5, 0.5, 0.5, 1.0)
@@ -307,15 +315,18 @@ u:set(0.5, 0.5, 0.5, 1.0) -- direct
 u:set(gray_list)          -- from list
 u:set(gray_vec)           -- from math.Vector
 ```
+{{ site.end_sidebar }}
 
 #### MatUniform:set(m)
 Set this uniform
 
+{{ site.begin_sidebar }}
 ```lua
 local m = math.Matrix4():identity()
 local u = gfx.MatUniform("u_someMatrix")
 u:set(m)
 ```
+{{ site.end_sidebar }}
 
 #### [Vec|Mat]ArrayUniform:set(index, value)
 Set an element of this array to a value; like lua in general,
@@ -327,6 +338,7 @@ For a MatArrayUniform the value must be a `math.Matrix4`.
 #### [Vec|Mat]ArrayUniform:set_multiple(values)
 Set multiple values in a uniform array.
 
+{{ site.begin_sidebar }}
 ```lua
 local u = gfx.VecArrayUniform("u_lightColors", 4)
 u:set_multiple({
@@ -335,6 +347,7 @@ u:set_multiple({
   {0.0, 0.0, 1.0} -- mixing math.Vectors and lists is allowed
 })
 ```
+{{ site.end_sidebar }}
 
 #### Uniform:bind()
 Bind the value of this uniform for the next submit call.
@@ -350,7 +363,7 @@ types of the values). To create a texture uniform using the
 table syntax, the value must be a {sampler_index, texture}
 tuple. In table syntax, vector uniforms must be `math.Vectors`.
 
-Example:
+{{ site.begin_sidebar }}
 ```lua
 -- create empty, :add
 local uset = gfx.UniformSet()
@@ -375,6 +388,7 @@ local uset = gfx.UniformSet{
 -- the created uniforms are available directly on the object in all cases
 uset.u_mapScale:set(math.Vector(2.0, 3.0))
 ```
+{{ site.end_sidebar }}
 
 #### UniformSet:clone()
 Create a clone of the UniformSet, which `:clone`s every contained
@@ -452,6 +466,7 @@ in the frame as possible).
 #### MemTexture(width, height, format, flags)
 Create a texture that can be dynamically updated from CPU memory.
 
+{{ site.begin_sidebar }}
 ```lua
 local mtex = MemTexture(32, 32, "BGRA8")
 for x = 0, 31 do
@@ -466,6 +481,7 @@ for x = 0, 31 do
 end
 mtex:update()
 ```
+{{ site.end_sidebar }}
 
 #### MemTexture:update()
 Update the GPU texture from the CPU-side `.data` buffer.
