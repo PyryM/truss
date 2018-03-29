@@ -121,6 +121,32 @@ function truss.load_script_from_file(filename)
   if s then return s:gsub("\r", "") else return nil end
 end
 
+-- for debugging, get a specific line out of a script;
+-- if the script doesn't exist, return nil instead of throwing
+-- an error
+function truss.get_script_line(filename, linenumber)
+  if not truss.is_file(filename) then return nil end
+  local source = truss.load_script_from_file(filename)
+
+  -- this is basically stringutils.split but we don't want to require
+  -- extra modules in the middle of an error handler
+  local pos = 1
+  local line = nil
+  local lineidx = 0
+  while lineidx < linenumber do
+    local first, last = string.find(source, "\n", pos)
+    if first then -- found?
+      line = source:sub(pos, first-1)
+      pos = last+1
+      lineidx = lineidx + 1
+    else
+      line = source:sub(pos)
+      break
+    end
+  end
+  return line
+end
+
 -- terralib.loadstring does not take a name parameter (which is needed
 -- to get reasonable error messages), so we have to perform this workaround
 -- to use the lower-level terralib.load which does take a name
@@ -133,7 +159,7 @@ function truss.load_named_string(str, strname)
     s = nil
     return s2
   end
-  return terralib.load(loaderfunc, strname)
+  return terralib.load(loaderfunc, '@' .. strname)
 end
 
 local function extend_table(dest, addition)
@@ -278,9 +304,19 @@ function truss.require_relative(path, filename)
   return ret
 end
 
--- alias ffi and bit in case somebody tries to require them
+-- alias standard lua/luajit libraries so they can be 'required'
 truss.insert_module("ffi", ffi)
 truss.insert_module("bit", bit)
+truss.insert_module("string", string)
+truss.insert_module("io", io)
+truss.insert_module("os", os)
+truss.insert_module("table", table)
+-- hmmm: should 3rd party libraries requiring math get truss math?
+truss.insert_module("luamath", math)
+truss.insert_module("package", package)
+truss.insert_module("debug", debug)
+truss.insert_module("coroutine", coroutine)
+truss.insert_module("jit", jit)
 
 -- alias core/30log.lua to class so we can just require("class")
 truss.require_as("core/30log.lua", "class")
@@ -375,9 +411,17 @@ local function load_and_run(fn)
   truss.mainobj = scriptfunc() or truss.mainenv
 end
 
+-- use stack trace plus if it's available
+if truss.check_module_exists("lib/StackTracePlus.lua") then
+  log.debug("Using StackTracePlus for stacktraces")
+  debug.traceback = truss.require("lib/StackTracePlus.lua").stacktrace
+end
+
 local function error_handler(err)
   log.critical(err)
-  truss.error_trace = debug.traceback(err, 2)
+  local trace = debug.traceback(err, 1)
+  trace = trace:gsub("\r", "")
+  truss.error_trace = trace
   return err
 end
 

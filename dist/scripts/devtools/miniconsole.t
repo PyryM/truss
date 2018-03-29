@@ -429,6 +429,7 @@ function m.fallback_update()
     m.init(math.floor(m.width / 8), math.floor(m.height / 16))
     m.set_header("Something broke: " .. truss.crash_message, 0x83)
     m.print_mini_help()
+    m.trace()
     m._booted = true
   end
 
