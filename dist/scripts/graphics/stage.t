@@ -74,4 +74,33 @@ function Stage:match_render_ops(component, target)
   return target
 end
 
+-- A DirectStage directly renders components matched to it during its
+-- own update(s) instead of adding renderops to them
+local DirectStage = class("DirectStage")
+m.DirectStage = DirectStage
+
+function DirectStage:init(options)
+  self._components = {} -- weak key our components to stop them from b
+  setmetatable(self._components, { __mode = 'k' })
+end
+
+function DirectStage:matches(component)
+  truss.error("Ironically, tried to use DirectStage directly.")
+end
+
+function DirectStage:register_component(component)
+  self._components[component] = true
+end
+
+function DirectStage:match_render_ops(component, target)
+  target = target or {}
+  if self.filter and not (self.filter(component)) then return target end
+  if self:matches(component) then
+    self:register_component(component)
+    self._dirty_components = true
+  end
+  -- Note that in no situation do we actually add a render op
+  return target
+end
+
 return m

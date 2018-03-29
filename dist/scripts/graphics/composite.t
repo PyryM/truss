@@ -47,7 +47,7 @@ end
 
 function CompositeStage:composite(op)
   gfx.set_transform(self._identity_mat) -- not strictly necessary
-  self._quad_geo:quad(op.x0, op.y0, op.x1, op.y1, 0.0):bind()
+  self._quad_geo:quad(op.x0, op.y0, op.x1, op.y1, op.depth or 0.0):bind()
   local mat = op.material or self._material
   if op.source then mat.uniforms.s_srcTex:set(op.source) end
   mat:bind()
