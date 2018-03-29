@@ -75,11 +75,8 @@ int main(int argc, char** argv) {
 	truss_log(0, "Starting interpreter!");
 	// startUnthreaded starts the interpreter in the current thread,
 	// which means the call will block until the interpreter is stopped
-	if (argc > 1) {
-		interpreter->startUnthreaded(argv[1]);
-	} else {
-		interpreter->startUnthreaded("scripts/main.t");
-	}
+	interpreter->startUnthreaded("scripts/main.t");
+
 	int retval = truss::core().getError();
 	if (retval != 0) {
 		std::cout << "Quit with error code: " << retval << std::endl;

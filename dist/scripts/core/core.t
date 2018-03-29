@@ -373,13 +373,27 @@ local function load_and_run(fn)
   end
   setfenv(scriptfunc, truss.mainenv)
   truss.mainobj = scriptfunc() or truss.mainenv
-  truss.mainobj:init()
 end
 
 local function error_handler(err)
   log.critical(err)
-  truss.error_trace = debug.traceback(err, 3)
+  truss.error_trace = debug.traceback(err, 2)
   return err
+end
+
+function truss._import_main(fn)
+  log.info("Importing as main " .. fn)
+  local happy, errmsg = xpcall(load_and_run, error_handler, fn)
+  if not happy then
+    truss.enter_error_state(errmsg)
+  end
+end
+
+local function _call_on_main(funcname, arg)
+  local happy, errmsg = xpcall(truss.mainobj[funcname], error_handler, arg)
+  if not happy then
+    truss.enter_error_state(errmsg)
+  end
 end
 
 -- These functions have to be global because
@@ -388,21 +402,14 @@ function _core_init(argstring)
   add_paths()
   -- Load in argstring
   local t0 = truss.tic()
-  local fn = argstring
-  log.info("Loading " .. fn)
-  local happy, errmsg = xpcall(load_and_run, error_handler, fn)
-  if not happy then
-    truss.enter_error_state(errmsg)
-  end
+  truss._import_main(argstring)
+  _call_on_main("init", truss.mainobj)
   local delta = truss.toc(t0) * 1000.0
   log.info(string.format("Time to init: %.2f ms", delta))
 end
 
 function _core_update()
-  local happy, errmsg = xpcall(truss.mainobj.update, error_handler, truss.mainobj)
-  if not happy then
-    truss.enter_error_state(errmsg)
-  end
+  _call_on_main("update", truss.mainobj)
 end
 
 function _fallback_update()
