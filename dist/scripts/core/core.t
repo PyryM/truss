@@ -419,7 +419,7 @@ end
 
 local function error_handler(err)
   log.critical(err)
-  local trace = debug.traceback(err, 1)
+  local trace = debug.traceback(err, 2)
   trace = trace:gsub("\r", "")
   truss.error_trace = trace
   return err

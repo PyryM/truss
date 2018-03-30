@@ -222,7 +222,7 @@ end
 -- @param level The stack level where the function is.
 --
 function Dumper:DumpLocals (level)
-	local prefix = "\t "
+	local prefix = "     "
 	local i = 1
 
 	if self.dumping_same_thread then
@@ -233,23 +233,23 @@ function Dumper:DumpLocals (level)
 	if not name then
 		return
 	end
-	self:add("\tLocal variables:\r\n")
+	self:add("    Local variables:\n")
 	while name do
 		if type(value) == "number" then
-			self:add_f("%s%s = number: %g\r\n", prefix, name, value)
+			self:add_f("%s%s = number: %g\n", prefix, name, value)
 		elseif type(value) == "boolean" then
-			self:add_f("%s%s = boolean: %s\r\n", prefix, name, tostring(value))
+			self:add_f("%s%s = boolean: %s\n", prefix, name, tostring(value))
 		elseif type(value) == "string" then
-			self:add_f("%s%s = string: %q\r\n", prefix, name, value)
+			self:add_f("%s%s = string: %q\n", prefix, name, value)
 		elseif type(value) == "userdata" then
-			self:add_f("%s%s = %s\r\n", prefix, name, safe_tostring(value))
+			self:add_f("%s%s = %s\n", prefix, name, safe_tostring(value))
 		elseif type(value) == "nil" then
-			self:add_f("%s%s = nil\r\n", prefix, name)
+			self:add_f("%s%s = nil\n", prefix, name)
 		elseif type(value) == "table" then
 			if m_known_tables[value] then
-				self:add_f("%s%s = %s\r\n", prefix, name, m_known_tables[value])
+				self:add_f("%s%s = %s\n", prefix, name, m_known_tables[value])
 			elseif m_user_known_tables[value] then
-				self:add_f("%s%s = %s\r\n", prefix, name, m_user_known_tables[value])
+				self:add_f("%s%s = %s\n", prefix, name, m_user_known_tables[value])
 			else
 				local txt = "{"
 				for k,v in pairs(value) do
@@ -260,13 +260,13 @@ function Dumper:DumpLocals (level)
 					end
 					if next(value, k) then txt = txt..", " end
 				end
-				self:add_f("%s%s = %s  %s\r\n", prefix, name, safe_tostring(value), txt.."}")
+				self:add_f("%s%s = %s  %s\n", prefix, name, safe_tostring(value), txt.."}")
 			end
 		elseif type(value) == "function" then
 			local info = self.getinfo(value, "nS")
 			local fun_name = info.name or m_known_functions[value] or m_user_known_functions[value]
 			if info.what == "C" then
-				self:add_f("%s%s = C %s\r\n", prefix, name, (fun_name and ("function: " .. fun_name) or tostring(value)))
+				self:add_f("%s%s = C %s\n", prefix, name, (fun_name and ("function: " .. fun_name) or tostring(value)))
 			else
 				local source = info.short_src
 				if source:sub(2,7) == "string" then
@@ -274,10 +274,10 @@ function Dumper:DumpLocals (level)
 				end
 				--for k,v in pairs(info) do print(k,v) end
 				fun_name = fun_name or GuessFunctionName(info)
-				self:add_f("%s%s = Lua function '%s' (defined at line %d of chunk %s)\r\n", prefix, name, fun_name, info.linedefined, source)
+				self:add_f("%s%s = Lua function '%s' (defined at line %d of chunk %s)\n", prefix, name, fun_name, info.linedefined, source)
 			end
 		elseif type(value) == "thread" then
-			self:add_f("%sthread %q = %s\r\n", prefix, name, tostring(value))
+			self:add_f("%sthread %q = %s\n", prefix, name, tostring(value))
 		end
 		i = i + 1
 		name, value = self.getlocal(level, i)
