@@ -150,16 +150,17 @@ end
 -- terralib.loadstring does not take a name parameter (which is needed
 -- to get reasonable error messages), so we have to perform this workaround
 -- to use the lower-level terralib.load which does take a name
-function truss.load_named_string(str, strname)
+function truss.load_named_string(str, strname, loader)
   -- create a function which returns str on the first call
   -- and nil on the second (to let terralib.load know it is done)
   local s = str
-  local loaderfunc = function()
+  local generator_func = function()
     local s2 = s
     s = nil
     return s2
   end
-  return terralib.load(loaderfunc, '@' .. strname)
+  loader = loader or terralib.load
+  return loader(generator_func, '@' .. strname)
 end
 
 local function extend_table(dest, addition)
@@ -234,6 +235,19 @@ end
 -- and needs the file extension (e.g., require("core/module.t"))
 -- if no file extension is present and the path is a directory, then truss
 -- tries to load dir/init.t
+local function select_loader(fn)
+  if fn:sub(-2) == ".t" then
+    log.debug("loading " .. fn .. " as terra")
+    return terralib.load
+  elseif fn:sub(-4) == ".lua" then
+    log.debug("loading " .. fn .. " as lua")
+    return load
+  else
+    log.debug("loading " .. fn .. " as terra by default??")
+    return terralib.load
+  end
+end
+
 local loaded_libs = {}
 truss._loaded_libs = loaded_libs
 local require_prefix_path = ""
@@ -259,7 +273,8 @@ function truss.require(filename, force)
       truss.error("require [" .. filename .. "]: file does not exist.")
       return nil
     end
-    local module_def, loaderror = truss.load_named_string(funcsource, filename)
+    local loader = select_loader(fullpath)
+    local module_def, loaderror = truss.load_named_string(funcsource, filename, loader)
     if not module_def then
       truss.error("require [" .. filename .. "]: syntax error: " .. loaderror)
       return nil
