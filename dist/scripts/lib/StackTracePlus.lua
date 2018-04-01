@@ -96,6 +96,15 @@ end
 
 local m_user_known_functions = {}
 
+local function cropstring(s)
+	local slen = #s
+	if slen < 60 then
+		return s
+	else
+		return s:sub(1,60) .. "[+" .. (slen - 60) .. " chars]"
+	end
+end
+
 local function safe_tostring (value)
 	local ok, err = pcall(tostring, value)
 	if ok then return err else return ("<failed to get printable value>: '%s'"):format(err) end
@@ -240,7 +249,7 @@ function Dumper:DumpLocals (level)
 		elseif type(value) == "boolean" then
 			self:add_f("%s%s = boolean: %s\n", prefix, name, tostring(value))
 		elseif type(value) == "string" then
-			self:add_f("%s%s = string: %q\n", prefix, name, value)
+			self:add_f("%s%s = string: %q\n", prefix, name, cropstring(value))
 		elseif type(value) == "userdata" then
 			self:add_f("%s%s = %s\n", prefix, name, safe_tostring(value))
 		elseif type(value) == "nil" then
