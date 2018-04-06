@@ -39,6 +39,7 @@ end
 -- projects the positions of the srcdata in place onto a sphere
 function m.spherize(srcdata, radius)
   m.map_attribute(srcdata.attributes.position, normalize_vertex, radius)
+  return srcdata
 end
 
 local function canonize_vertex(v, precision)

@@ -71,7 +71,6 @@ function Texture:_raw_set_handle(handle, info)
   self.array_count = info.numLayers
   self.is_cubemap = info.cubeMap
   self.dynamic = false
-  print(info.format)
   self.format = fmt.find_format_from_enum(info.format)
 end
 
