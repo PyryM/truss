@@ -13,6 +13,9 @@ local Vector = math.Vector
 
 local m = {}
 
+m.MAX_DYNAMIC_IB_SIZE = 2^20 --math.pow(2, 20)
+m.MAX_DYNAMIC_VB_SIZE = 3 * 2^20
+
 local last_geo_idx = 0
 
 local StaticGeometry = class("StaticGeometry")
@@ -392,10 +395,20 @@ function DynamicGeometry:_mem_ref(data, datasize)
 end
 
 function DynamicGeometry:_create_bgfx_buffers(flags)
+  if self.vert_data_size > m.MAX_DYNAMIC_VB_SIZE then
+    truss.error("Exceeded BGFX maximum dynamic vertex buffer size ("
+                .. m.MAX_DYNAMIC_VB_SIZE .. "): requested " 
+                .. self.vert_data_size)
+  end
   self._vbh = bgfx.create_dynamic_vertex_buffer_mem(
       self:_mem_ref(self.verts, self.vert_data_size),
       self.vertinfo.vdecl, flags )
 
+  if self.index_data_size > m.MAX_DYNAMIC_IB_SIZE then
+    truss.error("Exceeded BGFX maximum dynamic index buffer size ("
+                .. m.MAX_DYNAMIC_IB_SIZE .. "): requested " 
+                .. self.index_data_size)
+  end
   self._ibh = bgfx.create_dynamic_index_buffer_mem(
       self:_mem_ref(self.indices, self.index_data_size), flags )
 end
