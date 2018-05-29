@@ -194,16 +194,20 @@ end
 
 function UniformSet:from_table(uniform_table)
   for uni_name, uni_val in pairs(uniform_table) do
-    if uni_val.data then -- matrix
+    if uni_val.data then 
+      -- matrix
       self:add(m.MatUniform(uni_name, uni_val))
-    elseif uni_val.elem then -- vector
+    elseif uni_val.elem then 
+      -- vector
       self:add(m.VecUniform(uni_name, uni_val))
-    elseif uni_val._handle then -- incorrectly passed texture
+    elseif uni_val._handle then 
+      -- incorrectly passed texture
       truss.error("UniformSet(table) must specify textures as {sampler, tex}")
-    elseif uni_val[2] and uni_val[2]._handle then -- texture
-      self:add(m.TexUniform(uni_name, uni_val[2], uni_val[1]))
+    elseif uni_val[2] and (uni_val[2]._handle or uni_val[2].raw_tex) then
+       -- correctly passed texture
+      self:add(m.TexUniform(uni_name, uni_val[1], uni_val[2]))
     else
-      truss.error("Couldn't infer uniform type")
+      truss.error("Couldn't infer uniform type for [" .. uni_name .. "]")
     end
   end
 end
