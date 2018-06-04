@@ -24,28 +24,13 @@ function m.init()
   m._named_wavs = {}
 end
 
--- local terra wav_to_sound_source(wav: &C.Wav)
---   var result: &C.AudioSource = [&C.AudioSource](wav)
---   return result
--- end
-
--- local terra wavstream_to_sound_source(wav: &C.WavStream)
---   var result: &C.AudioSource = [&C.AudioSource](wav)
---   return result
--- end
-
--- local terra speech_to_sound_source(speech: &C.Speech)
---   var result: &C.AudioSource = [&C.AudioSource](speech)
---   return result
--- end
-
 m._loaded_wavs = {}
 function m._load_wav(filename, stream)
   if m._loaded_wavs[filename] then
     return m._loaded_wavs[filename]
   end
 
-  local data = truss.truss_load_file(filename)
+  local data = truss.C.load_file(filename)
   if data == nil then
     truss.error("Unable to load wavefile " .. filename 
                 .. ": low-level error (file doesn't exist?)")
@@ -59,7 +44,7 @@ function m._load_wav(filename, stream)
   -- the 1,0 args are copy = true, takeOwnership = false
   -- (so that it copies the data and doesn't take ownership of our pointer)
   local result = load_wav(sound, data.data, data.data_length, 1, 0)
-  truss.truss_release_message(data)
+  truss.C.release_message(data)
 
   if result == 0 then
     m._loaded_wavs[filename] = {sound, destroy_wav}
@@ -116,7 +101,7 @@ function Wav:stop()
   end
 end
 
-function Wav:setLooping(looping)
+function Wav:set_looping(looping)
   local loopint = 0
   if looping then loopint = 1 end
   local rawsound = self:_get_wav()
@@ -137,7 +122,7 @@ end
 
 function Speech:say(text, volume, pan)
   C.Speech_setText(self._pointer, text)
-  local sound = speech_to_sound_source(self._pointer)
+  local sound = terralib.cast(&C.AudioSource, self._pointer)
   self._handle = C.Soloud_playEx(m._instance, 
                   sound,
                   volume or -1.0,
