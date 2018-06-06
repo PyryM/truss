@@ -5,7 +5,7 @@ local sdl = require("addons/sdl.t")
 local math = require("math")
 local gfx = require("gfx")
 local geoutils = require("geometry/geoutils.t")
-local simplex = require("math/simplex.t")
+local simplex = require("procgen/simplex.t")
 
 width = 800
 height = 600
@@ -79,7 +79,7 @@ end
 function create_geo()
   local r = 0.75
   --local data = require("geometry/cube.t").cube_data(r,r,r)
-  local data = require("geometry/icosphere.t").icosahedron_data(r)
+  local data = require("geometry").icosahedron_data{radius = r}
   data.attributes.texcoord0 = nil
 
   for i = 1,6 do
