@@ -64,6 +64,30 @@ function m.test_async(t)
   async.update()
   t.ok(p.value == 66, "async nested: returned")
   t.ok(p2.value == 66, "async nested await: returned")
+
+  -- test errors
+  async.clear()
+  local holdup = async.Promise()
+  local p = async.run(function()
+    local happy, err = async.pawait(holdup)
+    return (happy and "happy") or err
+  end)
+  holdup:reject("some error")
+  async.update()
+  t.ok(p.value == "some error", "async errors: direct rejection")
+
+  async.clear()
+  local function inner_error(t)
+    truss.error("intentional error")
+  end
+  local p = async.run(function()
+    local happy, err = async.pawait(async.run(inner_error, {x = "b"}))
+    print(err)
+    return (happy and "happy") or "error"
+  end)
+  async.update()
+  async.update()
+  t.ok(p.value == "error", "async errors: throwing an error")
 end
 
 return m

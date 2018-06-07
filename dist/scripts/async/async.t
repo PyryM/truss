@@ -13,11 +13,16 @@ function m.clear()
 end
 m.clear()
 
-local function _step(proc, args)
-  local happy, ret = coroutine.resume(proc.co, unpack(args))
+local function _step(proc, args, succeeded)
+  local happy, ret
+  if succeeded == nil then
+    happy, ret = coroutine.resume(proc.co, unpack(args))
+  else
+    happy, ret = coroutine.resume(proc.co, succeeded, args)
+  end
   if not happy then
-    truss.error("async error: " .. ret)
     m._procs[proc] = nil -- kill proc?
+    proc.promise:reject(ret)
     return
   end
   if coroutine.status(proc.co) == "dead" then
@@ -46,19 +51,18 @@ function m.run(f, ...)
 end
 
 function m._resolve(proc, ...)
-  m._resolve_queue:push({proc, {...}})
+  m._resolve_queue:push({proc, true, {...}})
 end
 
 function m._reject(proc, err)
-  m._procs[proc] = nil
-  proc.promise:reject(err)
+  m._resolve_queue:push({proc, false, err})
 end
 
 function m.update(maxtime)
   -- TODO: deal with maxtime
   while m._resolve_queue:length() > 0 do
-    local proc, args = unpack(m._resolve_queue:pop())
-    _step(proc, args)
+    local proc, happy, args = unpack(m._resolve_queue:pop())
+    _step(proc, args, happy)
   end
 end
 
@@ -66,6 +70,13 @@ function m.await(p)
   -- we could check if we're actually in a coroutine with
   -- coroutine.running(), and perhaps throw a more useful
   -- error message
+  local happy, ret = coroutine.yield(p)
+  if not happy then truss.error(ret) end
+  return unpack(ret)
+end
+
+-- protected await
+function m.pawait(p)
   return coroutine.yield(p)
 end
 
