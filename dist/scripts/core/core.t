@@ -423,7 +423,9 @@ local function load_and_run(fn)
     return
   end
   setfenv(scriptfunc, truss.mainenv)
-  truss.mainobj = scriptfunc() or truss.mainenv
+  local v = scriptfunc()
+  truss.mainobj = v or truss.mainenv
+  return v
 end
 
 -- use stack trace plus if it's available
@@ -446,6 +448,7 @@ function truss._import_main(fn)
   if not happy then
     truss.enter_error_state(errmsg)
   end
+  return errmsg
 end
 
 local function _call_on_main(funcname, arg)

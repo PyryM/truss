@@ -5,8 +5,8 @@
 if #truss.args >= 2 then
   -- allow other scripts to be invoked like
   -- truss scripts/examples/some_other_script.t
-  truss._import_main(truss.args[2])
+  return truss._import_main(truss.args[2])
 else
   -- otherwise, show the logo
-  truss._import_main("scripts/examples/logo.t")
+  return truss._import_main("scripts/examples/logo.t")
 end
