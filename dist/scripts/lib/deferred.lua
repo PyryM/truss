@@ -214,29 +214,33 @@ end
 ---   end)
 function M.all(args)
 	local d = M.new()
-	if #args == 0 then
+	local nargs = 0
+	for k, p in pairs(args) do
+		nargs = nargs + 1
+	end
+	if nargs == 0 then
 		return d:resolve({})
 	end
 	local method = "resolve"
-	local pending = #args
+	local pending = nargs
 	local results = {}
 
-	local function synchronizer(i, resolved)
+	local function synchronizer(k, resolved)
 		return function(value)
-			results[i] = value
+			results[k] = value
 			if not resolved then
 				method = "reject"
 			end
 			pending = pending - 1
-			if pending == 0 then
+			if pending <= 0 then
 				d[method](d, results)
 			end
 			return value
 		end
 	end
 
-	for i = 1, pending do
-		args[i]:next(synchronizer(i, true), synchronizer(i, false))
+	for k, p in pairs(args) do
+		p:next(synchronizer(k, true), synchronizer(k, false))
 	end
 	return d
 end
@@ -299,6 +303,19 @@ function M.first(args)
 	for _, v in ipairs(args) do
 		v:next(function(res)
 			d:resolve(res)
+		end, function(err)
+			d:reject(err)
+		end)
+	end
+	return d
+end
+
+-- Like first, except resolves to {k, value}
+function M.argfirst(args)
+	local d = M.new()
+	for k, v in pairs(args) do
+		v:next(function(res)
+			d:resolve({k, res})
 		end, function(err)
 			d:reject(err)
 		end)

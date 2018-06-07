@@ -102,6 +102,14 @@ function m.await_event(target, event_name)
   return m.await(m.event_promise(target, event_name))
 end
 
+-- wrap a function so it is async.run'd when called  
+function m.async_function(f)
+  return function(...)
+    return m.run(f, ...)
+  end
+end
+m.afunc = m.async_function -- shorter alias
+
 -- An ECS System that'll call update on the async event pump every frame
 local AsyncSystem = class("AsyncSystem")
 m.AsyncSystem = AsyncSystem

@@ -88,6 +88,33 @@ function m.test_async(t)
   async.update()
   async.update()
   t.ok(p.value == "error", "async errors: throwing an error")
+
+  -- test promise combinations
+  async.clear()
+  local p = async.run(function()
+    local a = async.event_promise(e, "event_a")
+    local b = async.event_promise(e, "event_b")
+    local k, evt = unpack(async.await(async.any{apple = a, banana = b}))
+    return k .. "_" .. evt[2]
+  end)
+  e:emit("event_b", "x")
+  async.update()
+  async.update()
+  t.expect(p.value, "banana_x", "async any: returned k,v")
+
+  async.clear()
+  local p = async.run(function()
+    local a = async.event_promise(e, "event_a")
+    local b = async.event_promise(e, "event_b")
+    local res = async.await(async.all{apple = a, banana = b})
+    return res.apple[2] .. "_" .. res.banana[2]
+  end)
+  e:emit("event_b", "w")
+  async.update()
+  t.ok(p.value == nil, "async combination: all wait for all")
+  e:emit("event_a", "z")
+  async.update()
+  t.expect(p.value, "z_w", "async combination: returned table of results")
 end
 
 return m
