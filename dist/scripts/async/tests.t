@@ -115,6 +115,30 @@ function m.test_async(t)
   e:emit("event_a", "z")
   async.update()
   t.expect(p.value, "z_w", "async combination: returned table of results")
+
+  -- test frame waiting
+  async.clear()
+  local p = async.run(function()
+    async.await_frames(1)
+    return "foo"
+  end)
+  t.ok(p.value == nil, "async has yielded")
+  async.update()
+  t.ok(p.value == "foo", "async returned after one frame")
+
+  -- test longer scheduling
+  async.clear()
+  local p = async.run(function()
+    async.await(async.schedule(17))
+    return "bar"
+  end)
+  local f = 0
+  for i = 1, 20 do
+    if p.value == "bar" then break end
+    f = f + 1
+    async.update()
+  end
+  t.expect(f, 17, "async schedule waited correct number of frames")
 end
 
 return m

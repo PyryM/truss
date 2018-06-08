@@ -7,7 +7,8 @@ local async = {}
 
 moduleutils.include_submodules({
   "async/promise.t",
-  "async/async.t"
+  "async/async.t",
+  "async/scheduler.t"
 }, async)
 
 return async

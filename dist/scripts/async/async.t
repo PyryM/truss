@@ -5,11 +5,14 @@
 local class = require("class")
 local promise = require("async/promise.t")
 local queue = require("utils/queue.t")
+local scheduler = require("async/scheduler.t")
 local m = {}
 
 function m.clear()
   m._procs = {}
+  m._yield_queue = queue.Queue()
   m._resolve_queue = queue.Queue()
+  m._schedule = scheduler.FrameScheduler()
 end
 m.clear()
 
@@ -36,8 +39,13 @@ local function _step(proc, args, succeeded)
       m._reject(proc, err)
     end)
   else
-    truss.error("async function did not yield a promise")
+    -- yielding nothing indicates delay for a frame
+    m._yield_queue:push(proc)
   end
+end
+
+function m.schedule(n, f)
+  return m._schedule:schedule(n, f)
 end
 
 function m.run(f, ...)
@@ -60,6 +68,18 @@ end
 
 function m.update(maxtime)
   -- TODO: deal with maxtime
+
+  m._schedule:update(1)
+
+  -- only process the current number of items in the queue
+  -- because processes might yield again when resumed
+  local nyield = m._yield_queue:length()
+  for i = 1, nyield do
+    local proc = m._yield_queue:pop()
+    _step(proc, {}, true)
+  end
+
+  -- handle resolves
   while m._resolve_queue:length() > 0 do
     local proc, happy, args = unpack(m._resolve_queue:pop())
     _step(proc, args, happy)
@@ -83,6 +103,26 @@ end
 -- convenience for async.await(async.run(f, ...))
 function m.await_run(f, ...)
   return m.await(m.run(f, ...))
+end
+
+function m.await_frames(n)
+  if n == nil or n == 1 then
+    coroutine.yield()
+    return 1
+  else
+    return m.await(m.schedule(n))
+  end
+end
+
+function m.await_condition(cond, timeout)
+  local f = 0
+  while not cond() do
+    f = f + 1
+    if timeout and f >= timeout then 
+      return false 
+    end
+  end
+  return true
 end
 
 function m.event_promise(target, event_name)
