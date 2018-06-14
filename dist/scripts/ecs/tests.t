@@ -209,10 +209,10 @@ end
 local function test_scenegraph(t)
   local Entity3d = ecs.Entity3d
   local ECS = make_test_ecs()
-  local parent = ECS.scene:create_child(Entity3d, "blah")
-  local child = parent:create_child(Entity3d, "foo")
+  local parent = ECS.scene:create_child(Entity3d, "parent")
+  local child = parent:create_child(Entity3d, "child")
   local grandchild = child:create_child(Entity3d, "bobby")
-  local brother = ECS.scene:create_child(Entity3d, "meh")
+  local brother = ECS.scene:create_child(Entity3d, "brother")
   local stranger = ECS.scene:create(Entity3d, "stranger")
 
   -- basic relationships work

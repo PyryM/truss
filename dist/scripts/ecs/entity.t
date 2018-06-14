@@ -21,6 +21,10 @@ function Entity:init(ecs, name, ...)
   end
 end
 
+function Entity:__tostring()
+  return self:log_name()
+end
+
 -- create an entity in the same ecs as this entity
 function Entity:create(constructor, ...)
   return self.ecs:create(constructor, ...)
@@ -33,17 +37,17 @@ end
 
 -- return a string identifying this component for error messages
 function Entity:log_name(funcname)
-  return "Entity[" .. (self.unique_name or self.name or "?") .. "]: "
+  return "Entity[" .. (self.unique_name or self.name or "?") .. "]"
 end
 
 -- throw an error with convenient formatting
 function Entity:error(message)
-  truss.error(self:log_name() .. message)
+  truss.error(self:log_name() .. ": " .. message)
 end
 
 -- throw a warning with convenient formatting
 function Entity:warning(message)
-  truss.warning(self:log_name() .. message)
+  truss.warning(self:log_name() .. ": " .. message)
 end
 
 -- check whether adding a prospective child to a parent
@@ -52,7 +56,8 @@ end
 local function assert_cycle_free(parent, child, err_on_failure)
   if parent:is_in_subtree(child) then
     if err_on_failure then
-      truss.error("Cyclical reparent.")
+      truss.error("Cyclical reparent: new child " .. tostring(child)
+                  .. " is ancestor of parent " .. tostring(parent))
     end
     return false
   else
