@@ -139,6 +139,24 @@ function m.test_async(t)
     async.update()
   end
   t.expect(f, 17, "async schedule waited correct number of frames")
+
+  -- test immediate async
+  async.clear()
+  local p = async.run(function()
+    local vals = {}
+    for i = 1,2 do
+      local a = async.event_promise(e, "event_a")
+      local b = async.event_promise(e, "event_b")
+      local k, evt = unpack(async.await_immediate(async.any{apple = a, banana = b}))
+      vals[k] = evt[2]
+    end
+    return vals
+  end)
+  e:emit("event_b", "x")
+  e:emit("event_a", "y")
+  async.update()
+  t.ok(p.value and p.value.apple and p.value.banana, 
+       "async immediate: got both events")
 end
 
 return m

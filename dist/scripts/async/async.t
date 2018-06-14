@@ -17,11 +17,11 @@ end
 m.clear()
 
 local function _step(proc, args, succeeded)
-  local happy, ret
+  local happy, ret, immediate
   if succeeded == nil then
-    happy, ret = coroutine.resume(proc.co, unpack(args))
+    happy, ret, immediate = coroutine.resume(proc.co, unpack(args))
   else
-    happy, ret = coroutine.resume(proc.co, succeeded, args)
+    happy, ret, immediate = coroutine.resume(proc.co, succeeded, args)
   end
   if not happy then
     m._procs[proc] = nil -- kill proc?
@@ -32,12 +32,21 @@ local function _step(proc, args, succeeded)
     m._procs[proc] = nil
     proc.promise:resolve(ret)
   elseif ret then
-    ret:next(function(...)
-      m._resolve(proc, ...)
-    end,
-    function(err)
-      m._reject(proc, err)
-    end)
+    if immediate then
+      ret:next(function(...)
+        m._resolve_immediate(proc, ...)
+      end,
+      function(err)
+        m._reject_immediate(proc, err)
+      end)
+    else
+      ret:next(function(...)
+        m._resolve(proc, ...)
+      end,
+      function(err)
+        m._reject(proc, err)
+      end)
+    end
   else
     -- yielding nothing indicates delay for a frame
     m._yield_queue:push(proc)
@@ -66,6 +75,14 @@ function m._reject(proc, err)
   m._resolve_queue:push({proc, false, err})
 end
 
+function m._resolve_immediate(proc, ...)
+  _step(proc, {...}, true)
+end
+
+function m._reject_immediate(proj, ...)
+  _step(proc, {...}, false)
+end
+
 function m.update(maxtime)
   -- TODO: deal with maxtime
 
@@ -86,18 +103,22 @@ function m.update(maxtime)
   end
 end
 
-function m.await(p)
+function m.await(p, immediate)
   -- we could check if we're actually in a coroutine with
   -- coroutine.running(), and perhaps throw a more useful
   -- error message
-  local happy, ret = coroutine.yield(p)
+  local happy, ret = coroutine.yield(p, immediate)
   if not happy then truss.error(ret) end
   return unpack(ret)
 end
 
+function m.await_immediate(p)
+  return m.await(p, true)
+end
+
 -- protected await
-function m.pawait(p)
-  return coroutine.yield(p)
+function m.pawait(p, immediate)
+  return coroutine.yield(p, immediate)
 end
 
 -- convenience for async.await(async.run(f, ...))
