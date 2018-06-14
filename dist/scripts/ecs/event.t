@@ -27,6 +27,9 @@ end
 function EventEmitter:emit(evtname, evt)
   local ll = self._listeners[evtname]
   if not ll then return end
+  if self._pending[evtname] then 
+    truss.error("Cannot recursively emit [" .. tostring(evtname) .. "]")
+  end
   self._pending[evtname] = {}
   for receiver, callback in pairs(ll) do
     if receiver._dead then

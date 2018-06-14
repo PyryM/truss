@@ -103,6 +103,19 @@ local function test_events(t)
   evt:on("mupdate", myfoo, false) -- this should clear the callback
   evt:emit("mupdate")
   t.ok(not myfoo.was_called, ":on(evt, recv, false) clears callback")
+
+  -- prevent recursively emitting event from listener for that event
+  local recursive_calls = 0
+  local receiver, f = {}, function()
+    if recursive_calls == 0 then
+      recursive_calls = recursive_calls + 1
+      evt:emit("recursive")
+    end
+  end
+  evt:on("recursive", receiver, f)
+  t.err(function()
+    evt:emit("recursive")
+  end, "recursive emit on same event throws error")
 end
 
 local function test_systems(t)
@@ -260,7 +273,9 @@ local function test_scenegraph(t)
 
   -- creating a cycle should throw an error
   t.err(function()
-    grandchild:add_child(ECS.scene)
+    local child = parent:create_child(Entity3d, "cycle_child")
+    local grandchild = child:create_child(Entity3d, "cycle_grandchild")
+    grandchild:add_child(parent)
   end, "creating a cycle throws an error")
 end
 
