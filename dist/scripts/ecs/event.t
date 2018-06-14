@@ -11,6 +11,7 @@ m.EventEmitter = EventEmitter
 function EventEmitter:init()
   -- TODO
   self._listeners = {}
+  self._pending = {}
 end
 
 local function create_weak_table()
@@ -26,11 +27,21 @@ end
 function EventEmitter:emit(evtname, evt)
   local ll = self._listeners[evtname]
   if not ll then return end
+  self._pending[evtname] = {}
   for receiver, callback in pairs(ll) do
     if receiver._dead then
       ll[receiver] = nil
     else
       callback(receiver, evtname, evt)
+    end
+  end
+  -- have to do this to avoid infinite loops/undefined iteration behavior
+  -- when listeners are added for an event from a callback for that event
+  local additions = self._pending[evtname]
+  self._pending[evtname] = nil
+  if #additions > 0 then
+    for _, addition in ipairs(additions) do
+      self:on(unpack(addition))
     end
   end
 end
@@ -41,6 +52,10 @@ function EventEmitter:on(evtname, receiver, callback)
     truss.error("nil callback! (use false to remove)")
   elseif callback == false then
     return self:remove(evtname, receiver)
+  end
+  if self._pending[evtname] then
+    table.insert(self._pending[evtname], {evtname, receiver, callback})
+    return
   end
   if not self._listeners[evtname] then
     self._listeners[evtname] = create_weak_table()

@@ -31,9 +31,9 @@ local function test_events(t)
   evt:emit("ping") -- just make sure this doesn't crash
   evt:on("ping", receiver, f)
   evt:emit("ping", 12)
-  t.ok(callcount == 1, "receiver had function called")
-  t.ok(receiver.evtname == "ping", "receiever was called with 'ping'")
-  t.ok(receiver.evt == 12, "receiver was called with correct arg")
+  t.expect(callcount, 1, "receiver had function called")
+  t.expect(receiver.evtname, "ping", "receiever was called with 'ping'")
+  t.expect(receiver.evt, 12, "receiver was called with correct arg")
   callcount = 0
   evt:emit("pong")
   t.ok(callcount == 0, "receiver was not called for pong")
@@ -53,6 +53,17 @@ local function test_events(t)
   evt:on("ping2", receiver, f)
   evt:emit("ping2")
   t.ok(callcount == 1, "ping2 was called")
+
+  -- test adding a callback from another callback
+  callcount = 0
+  local f2 = function(recv, evtname, _evt)
+    evt:on("ping_rec", receiver, f)
+  end
+  evt:on("ping_rec", receiver, f2)
+  evt:emit("ping_rec")
+  t.expect(callcount, 0, "listener added in callback not immediately called")
+  evt:emit("ping_rec")
+  t.expect(callcount, 1, "listener added in callback called on next emit")
 
   -- test using an entity as an emitter
   local ECS = make_test_ecs()
