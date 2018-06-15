@@ -157,6 +157,29 @@ function m.test_async(t)
   async.update()
   t.ok(p.value and p.value.apple and p.value.banana, 
        "async immediate: got both events")
+
+  -- test event queue
+  async.clear()
+  local p = async.run(function()
+    local q = async.EventQueue()
+    q:listen(e, "continue")
+    q:listen(e, "stop")
+    local n = 0
+    for src, ename, evt in q:await_iterator() do
+      if ename == "continue" then
+        n = n + 1
+      else
+        return n
+      end
+    end
+  end)
+  e:emit("continue")
+  async.update()
+  e:emit("continue")
+  e:emit("continue")
+  e:emit("stop")
+  async.update()
+  t.expect(p.value, 3, "event queue recieved correct number of events")
 end
 
 return m
