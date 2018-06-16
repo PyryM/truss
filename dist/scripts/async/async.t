@@ -8,16 +8,16 @@ local queue = require("utils/queue.t")
 local scheduler = require("async/scheduler.t")
 local m = {}
 
-local Dispatcher = class("Dispatcher")
-m.Dispatcher = Dispatcher
+local Async = class("Async")
+m.Async = Async
 
 local _instance
 
-function Dispatcher:init()
+function Async:init()
   self:clear()
 end
 
-function Dispatcher:clear()
+function Async:clear()
   self._procs = {}
   self._yield_queue = queue.Queue()
   self._resolve_queue = queue.Queue()
@@ -28,7 +28,7 @@ function m.clear()
   _instance:clear()
 end
 
-function Dispatcher:_step(proc, args, succeeded)
+function Async:_step(proc, args, succeeded)
   local happy, ret, immediate
   if succeeded == nil then
     happy, ret, immediate = coroutine.resume(proc.co, unpack(args))
@@ -65,7 +65,7 @@ function Dispatcher:_step(proc, args, succeeded)
   end
 end
 
-function Dispatcher:schedule(n, f)
+function Async:schedule(n, f)
   return self._schedule:schedule(n, f)
 end
 
@@ -73,7 +73,7 @@ function m.schedule(n, f)
   return _instance:schedule(n, f)
 end
 
-function Dispatcher:run(f, ...)
+function Async:run(f, ...)
   local proc = {
     co = coroutine.create(f),
     promise = promise.Promise()
@@ -87,23 +87,23 @@ function m.run(f, ...)
   return _instance:run(f, ...)
 end
 
-function Dispatcher:_resolve(proc, ...)
+function Async:_resolve(proc, ...)
   self._resolve_queue:push({proc, true, {...}})
 end
 
-function Dispatcher:_reject(proc, err)
+function Async:_reject(proc, err)
   self._resolve_queue:push({proc, false, err})
 end
 
-function Dispatcher:_resolve_immediate(proc, ...)
+function Async:_resolve_immediate(proc, ...)
   self:_step(proc, {...}, true)
 end
 
-function Dispatcher:_reject_immediate(proj, ...)
+function Async:_reject_immediate(proj, ...)
   self:_step(proc, {...}, false)
 end
 
-function Dispatcher:update(maxtime)
+function Async:update(maxtime)
   -- TODO: deal with maxtime
 
   self._schedule:update(1)
@@ -208,6 +208,6 @@ function AsyncSystem:update(ecs)
 end
 
 -- create the default instance
-_instance = Dispatcher()
+_instance = Async()
 
 return m

@@ -180,6 +180,20 @@ function m.test_async(t)
   e:emit("stop")
   async.update()
   t.expect(p.value, 3, "event queue recieved correct number of events")
+
+  -- test separate event queue
+  async.clear()
+  local a2 = async.Async()
+  local p = a2:run(function()
+    async.await_event(e, "continue")
+    return 12
+  end)
+  e:emit("continue")
+  async.update()
+  async.update()
+  t.ok(p.value == nil, "update static async loop didn't dispatch to separate")
+  a2:update()
+  t.expect(p.value, 12, "update separate loop did dispatch")
 end
 
 return m
