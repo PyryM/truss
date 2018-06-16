@@ -8,15 +8,27 @@ local queue = require("utils/queue.t")
 local scheduler = require("async/scheduler.t")
 local m = {}
 
-function m.clear()
-  m._procs = {}
-  m._yield_queue = queue.Queue()
-  m._resolve_queue = queue.Queue()
-  m._schedule = scheduler.FrameScheduler()
-end
-m.clear()
+local Dispatcher = class("Dispatcher")
+m.Dispatcher = Dispatcher
 
-local function _step(proc, args, succeeded)
+local _instance
+
+function Dispatcher:init()
+  self:clear()
+end
+
+function Dispatcher:clear()
+  self._procs = {}
+  self._yield_queue = queue.Queue()
+  self._resolve_queue = queue.Queue()
+  self._schedule = scheduler.FrameScheduler()
+end
+
+function m.clear()
+  _instance:clear()
+end
+
+function Dispatcher:_step(proc, args, succeeded)
   local happy, ret, immediate
   if succeeded == nil then
     happy, ret, immediate = coroutine.resume(proc.co, unpack(args))
@@ -24,83 +36,95 @@ local function _step(proc, args, succeeded)
     happy, ret, immediate = coroutine.resume(proc.co, succeeded, args)
   end
   if not happy then
-    m._procs[proc] = nil -- kill proc?
+    self._procs[proc] = nil -- kill proc?
     proc.promise:reject(ret)
     return
   end
   if coroutine.status(proc.co) == "dead" then
-    m._procs[proc] = nil
+    self._procs[proc] = nil
     proc.promise:resolve(ret)
   elseif ret then
     if immediate then
       ret:next(function(...)
-        m._resolve_immediate(proc, ...)
+        self:_resolve_immediate(proc, ...)
       end,
       function(err)
-        m._reject_immediate(proc, err)
+        self:_reject_immediate(proc, err)
       end)
     else
       ret:next(function(...)
-        m._resolve(proc, ...)
+        self:_resolve(proc, ...)
       end,
       function(err)
-        m._reject(proc, err)
+        self:_reject(proc, err)
       end)
     end
   else
     -- yielding nothing indicates delay for a frame
-    m._yield_queue:push(proc)
+    self._yield_queue:push(proc)
   end
 end
 
-function m.schedule(n, f)
-  return m._schedule:schedule(n, f)
+function Dispatcher:schedule(n, f)
+  return self._schedule:schedule(n, f)
 end
 
-function m.run(f, ...)
+function m.schedule(n, f)
+  return _instance:schedule(n, f)
+end
+
+function Dispatcher:run(f, ...)
   local proc = {
     co = coroutine.create(f),
     promise = promise.Promise()
   }
-  m._procs[proc] = proc
-  _step(proc, {...})
+  self._procs[proc] = proc
+  self:_step(proc, {...})
   return proc.promise
 end
 
-function m._resolve(proc, ...)
-  m._resolve_queue:push({proc, true, {...}})
+function m.run(f, ...)
+  return _instance:run(f, ...)
 end
 
-function m._reject(proc, err)
-  m._resolve_queue:push({proc, false, err})
+function Dispatcher:_resolve(proc, ...)
+  self._resolve_queue:push({proc, true, {...}})
 end
 
-function m._resolve_immediate(proc, ...)
-  _step(proc, {...}, true)
+function Dispatcher:_reject(proc, err)
+  self._resolve_queue:push({proc, false, err})
 end
 
-function m._reject_immediate(proj, ...)
-  _step(proc, {...}, false)
+function Dispatcher:_resolve_immediate(proc, ...)
+  self:_step(proc, {...}, true)
 end
 
-function m.update(maxtime)
+function Dispatcher:_reject_immediate(proj, ...)
+  self:_step(proc, {...}, false)
+end
+
+function Dispatcher:update(maxtime)
   -- TODO: deal with maxtime
 
-  m._schedule:update(1)
+  self._schedule:update(1)
 
   -- only process the current number of items in the queue
   -- because processes might yield again when resumed
-  local nyield = m._yield_queue:length()
+  local nyield = self._yield_queue:length()
   for i = 1, nyield do
-    local proc = m._yield_queue:pop()
-    _step(proc, {}, true)
+    local proc = self._yield_queue:pop()
+    self:_step(proc, {}, true)
   end
 
   -- handle resolves
-  while m._resolve_queue:length() > 0 do
-    local proc, happy, args = unpack(m._resolve_queue:pop())
-    _step(proc, args, happy)
+  while self._resolve_queue:length() > 0 do
+    local proc, happy, args = unpack(self._resolve_queue:pop())
+    self:_step(proc, args, happy)
   end
+end
+
+function m.update(maxtime)
+  return _instance:update(maxtime)
 end
 
 function m.await(p, immediate)
@@ -121,13 +145,12 @@ function m.pawait(p, immediate)
   return coroutine.yield(p, immediate)
 end
 
--- convenience for async.await(async.run(f, ...))
-function m.await_run(f, ...)
-  return m.await(m.run(f, ...))
+function m.yield()
+  coroutine.yield()
 end
 
 function m.await_frames(n)
-  if n == nil or n == 1 then
+  if n == nil or n <= 1 then
     coroutine.yield()
     return 1
   else
@@ -142,6 +165,7 @@ function m.await_condition(cond, timeout)
     if timeout and f >= timeout then 
       return false 
     end
+    m.yield()
   end
   return true
 end
@@ -182,5 +206,8 @@ end
 function AsyncSystem:update(ecs)
   m.update(self.maxtime)
 end
+
+-- create the default instance
+_instance = Dispatcher()
 
 return m

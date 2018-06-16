@@ -56,7 +56,7 @@ function m.test_async(t)
 
   ---- test with inner await
   local p2 = async.run(function()
-    return async.await_run(f_inner, "loaded")
+    return async.await(async.run(f_inner, "loaded"))
   end)
 
   e:emit("loaded", 66)
