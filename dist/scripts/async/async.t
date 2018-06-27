@@ -3,9 +3,9 @@
 -- async event loop
 
 local class = require("class")
-local promise = require("async/promise.t")
+local promise = require("./promise.t")
 local queue = require("utils/queue.t")
-local scheduler = require("async/scheduler.t")
+local scheduler = require("./scheduler.t")
 local m = {}
 
 local Async = class("Async")

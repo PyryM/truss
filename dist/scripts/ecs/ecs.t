@@ -3,7 +3,7 @@
 -- the ecs root object
 
 local class = require("class")
-local entity = require("ecs/entity.t")
+local entity = require("./entity.t")
 
 local m = {}
 

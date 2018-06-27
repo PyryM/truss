@@ -223,9 +223,34 @@ function truss.save_string(filename, s)
   truss.C.save_data(filename, s, #s)
 end
 
-local function create_module_env(module_name)
+local function find_path(file_name)
+  local spos = 0
+  for i = #file_name, 1, -1 do
+    if file_name:sub(i, i) == "/" then
+      spos = i
+      break
+    end
+  end
+  return file_name:sub(1, spos)
+end
+
+local function expand_name(name, path)
+  if name:sub(1,2) == "./" then
+    return path .. "/" .. name:sub(3)
+  else
+    return name
+  end
+end
+
+local function create_module_env(module_name, file_name)
   local modenv = extend_table({}, truss._module_env)
   modenv._module_name = module_name
+  local path = find_path(file_name)
+  modenv._path = path
+  modenv.require = function(_modname, force)
+    local expanded_name = expand_name(_modname, path)
+    return truss.require(expanded_name, force)
+  end
   setmetatable(modenv, disallow_globals_mt)
   return modenv
 end
@@ -251,44 +276,46 @@ end
 local loaded_libs = {}
 truss._loaded_libs = loaded_libs
 local require_prefix_path = ""
-function truss.require(filename, force)
-  if loaded_libs[filename] == false then
-    truss.error("require [" .. filename .. "] : cyclical require")
+function truss.require(modname, force)
+  if loaded_libs[modname] == false then
+    truss.error("require [" .. modname .. "] : cyclical require")
     return nil
   end
-  if loaded_libs[filename] == nil or force then
-    local oldmodule = loaded_libs[filename] -- only relevant if force==true
-    loaded_libs[filename] = false -- prevent possible infinite recursion
+  if loaded_libs[modname] == nil or force then
+    local oldmodule = loaded_libs[modname] -- only relevant if force==true
+    loaded_libs[modname] = false -- prevent possible infinite recursion
 
     -- if the filename is actually a directory, try to load init.t
+    local filename = modname
     local fullpath = "scripts/" .. require_prefix_path .. filename
     if truss.C.check_file(fullpath) == 2 then
       fullpath = fullpath .. "/init.t"
+      filename = filename .. "/init.t"
       log.info("Required directory; trying to load [" .. fullpath .. "]")
     end
 
     local t0 = truss.tic()
     local funcsource = truss.load_script_from_file(fullpath)
     if not funcsource then
-      truss.error("require [" .. filename .. "]: file does not exist.")
+      truss.error("require('" .. filename .. "'): file does not exist.")
       return nil
     end
     local loader = select_loader(fullpath)
     local module_def, loaderror = truss.load_named_string(funcsource, filename, loader)
     if not module_def then
-      truss.error("require [" .. filename .. "]: syntax error: " .. loaderror)
+      truss.error("require('" .. modname .. "'): syntax error: " .. loaderror)
       return nil
     end
-    setfenv(module_def, create_module_env(filename))
+    setfenv(module_def, create_module_env(modname, filename))
     local evaluated_module = module_def()
     if not evaluated_module then 
-      truss.error("Module [" .. filename .. "] did not return a table!")
+      truss.error("Module [" .. modname .. "] did not return a table!")
     end
-    loaded_libs[filename] = evaluated_module
+    loaded_libs[modname] = evaluated_module
     log.info(string.format("Loaded [%s] in %.2f ms",
-                          filename, truss.toc(t0) * 1000.0))
+                          modname, truss.toc(t0) * 1000.0))
   end
-  return loaded_libs[filename]
+  return loaded_libs[modname]
 end
 truss._module_env.require = truss.require
 
