@@ -3,12 +3,12 @@
 -- geometry metamodule
 
 local module = require("core/module.t")
+local geoutils = require("./geoutils.t")
 local geometry = {}
 
 -- creates a geometry from a geometry data using the default vertex type
 function geometry.to_basic_geo(data, name, opts)
   local gfx = require("gfx")
-  local geoutils = require("geometry/geoutils.t")
   if opts.compute_normals ~= false and not data.attributes.normal then 
     geoutils.compute_normals(data) 
   end
@@ -17,7 +17,7 @@ end
 
 local geo_registry = {}
 local function include_geometry(fn)
-  local temp = require("geometry/" .. fn .. ".t")
+  local temp = require("./" .. fn .. ".t")
   if not temp._geometries then return end
   for geo_name, geo_gen in pairs(temp._geometries) do
     if geo_registry[geo_name] then

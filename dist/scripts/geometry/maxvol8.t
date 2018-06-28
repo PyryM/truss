@@ -5,7 +5,7 @@
 
 local m = {}
 local math = require("math")
-local geoutils = require("geometry/geoutils.t")
+local geoutils = require("./geoutils.t")
 
 function m.maxvol8_data()
   local phi = math.acos(math.sqrt((15 + math.sqrt(145)) / 40))

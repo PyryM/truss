@@ -3,10 +3,10 @@
 -- various geometric widgets like axis bars
 
 local m = {}
-local geoutils = require("geometry/geoutils.t")
-local merge = require("geometry/merge.t")
+local geoutils = require("./geoutils.t")
+local merge = require("./merge.t")
 local math = require("math")
-local cylinder = require("geometry/cylinder.t")
+local cylinder = require("./cylinder.t")
 
 function m.create_cylinder_line(y0, y1, radius, segs, target, parentmat)
   local length = y1 - y0
