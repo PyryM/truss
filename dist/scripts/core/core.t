@@ -227,7 +227,7 @@ local function find_path(file_name)
   local spos = 0
   for i = #file_name, 1, -1 do
     if file_name:sub(i, i) == "/" then
-      spos = i
+      spos = i - 1
       break
     end
   end
@@ -237,6 +237,8 @@ end
 local function expand_name(name, path)
   if name:sub(1,2) == "./" then
     return path .. "/" .. name:sub(3)
+  elseif name:sub(1,1) == "/" then
+    return name:sub(2)
   else
     return name
   end
