@@ -181,7 +181,7 @@ function m.test_async(t)
   async.update()
   t.expect(p.value, 3, "event queue recieved correct number of events")
 
-  -- test separate event queue
+  -- test separate async loop
   async.clear()
   local a2 = async.Async()
   local p = a2:run(function()
