@@ -8,34 +8,11 @@ local m = {}
 
 local MAX_GLOBALS = 64
 
-struct GlobalUniforms {
+struct GlobalUniforms_t {
   matrices: mathtypes.mat4_[MAX_GLOBALS];
   vectors: mathtypes.vec4_[MAX_GLOBALS];
   textures: bgfx.texture_handle_t[MAX_GLOBALS];
 }
-
-local CompiledMaterial = class("CompiledMaterial")
-m.CompiledMaterial = CompiledMaterial
-
-function CompiledMaterial:init(uniforms)
-  if not uniforms then return end
-  self:_from_uniform_set(uniforms)
-end
-
-function CompiledMaterial:clone()
-  local ret = CompiledMaterial()
-  ret._ttype = self._ttype
-  ret._value = terralib.new(ret._ttype)
-  self._copy_value(self._value, ret._value)
-  ret._copy_value = self._copy_value
-  ret._binder = self._binder
-  ret._proxies = {}
-  for k, v in pairs(self._proxies) do
-    local p = v:clone(ret)
-    ret[k] = p
-    ret._proxies[k] = p
-  end
-end
 
 local function convert_uniform(u)
   local ret = {
@@ -65,9 +42,72 @@ local function convert_uniforms(uset)
   return uinfo
 end
 
+local GlobalRegistry = class("GlobalRegistry")
+function GlobalRegistry:init()
+  self._indices = {
+    mat4 = {},
+    vec = {},
+    tex = {}
+  }
+end
+
+function GlobalRegistry:find_global_index(uname, ukind)
+end
+
+local registry = GlobalRegistry()
+m.registry = registry
+
+local CompiledGlobals = class("CompiledGlobals")
+m.CompiledGlobals = CompiledGlobals
+
+function CompiledGlobals:init(uniforms)
+  local uset = convert_uniforms(uniforms)
+  self._value = terralib.new(GlobalUniforms_t)
+  for _, u in ipairs(uset) do
+    local idx, arr = registry:find_global_index(u.name, u.kind)
+    if u.kind == 'vec' then
+      self._value[arr][idx] = 
+    elseif u.kind == 'mat4' then
+    else
+    end
+  end
+end
+
+function CompiledGlobals:set(uname, val)
+  local idx, arr, kind = registry:find_global(uname)
+  if kind == 'vec' then
+    
+  elseif kind == 'mat4' then
+
+  end
+end
+
+local CompiledMaterial = class("CompiledMaterial")
+m.CompiledMaterial = CompiledMaterial
+
+function CompiledMaterial:init(options)
+  if not options then return end
+  self:_from_uniform_set(options.uniforms, options.globals, options.state) 
+end
+
+function CompiledMaterial:clone()
+  local ret = CompiledMaterial()
+  ret._ttype = self._ttype
+  ret._value = terralib.new(ret._ttype)
+  self._copy_value(self._value, ret._value)
+  ret._copy_value = self._copy_value
+  ret._binder = self._binder
+  ret._proxies = {}
+  for k, v in pairs(self._proxies) do
+    local p = v:clone(ret)
+    ret[k] = p
+    ret._proxies[k] = p
+  end
+end
+
 function CompiledMaterial:_from_uniform_sets(uset, gset)
-  local u = convert_uniforms(uset)
-  local g = convert_uniforms(gset)
+  local u = convert_uniforms(uset or {})
+  local g = convert_uniforms(gset or {})
   self:_make_type(u, g)
   self:_make_proxies(u, g)
 end
@@ -125,7 +165,7 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
   local function make_global_binds(bindables, src, globals)
     local statements = terralib.newlist()
     for uniform in bindables do
-      local uindex = registry:find_global_index(uniform.name)
+      local uindex = registry:find_global_index(uniform.name, uniform.kind)
       if uniform.kind == "mat4" then
         statements:insert(quote
           bgfx.set_uniform( src.[uniform.handle_name], 
@@ -152,7 +192,7 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
     return statements
   end
 
-  self._binder = terra(src: &t, globals: &GlobalUniforms)
+  self._binder = terra(src: &t, globals: &GlobalUniforms_t)
     bgfx.set_state(src.state, 0)
     [ make_bind_calls(uniform_info, src) ]
     if globals == nil then
