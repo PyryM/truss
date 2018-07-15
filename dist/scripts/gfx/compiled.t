@@ -6,22 +6,24 @@ local _uniforms = require("./uniforms.t")
 local mathtypes = require("math/types.t")
 local m = {}
 
+local MAX_GLOBALS = 64
+
 struct GlobalUniforms {
   matrices: mathtypes.mat4_[MAX_GLOBALS];
   vectors: mathtypes.vec4_[MAX_GLOBALS];
   textures: bgfx.texture_handle_t[MAX_GLOBALS];
 }
 
-local CompiledUniformSet = class("CompiledUniformSet")
-m.CompiledUniformSet = CompiledUniformSet
+local CompiledMaterial = class("CompiledMaterial")
+m.CompiledMaterial = CompiledMaterial
 
-function CompiledUniformSet:init(uniforms)
+function CompiledMaterial:init(uniforms)
   if not uniforms then return end
   self:_from_uniform_set(uniforms)
 end
 
-function CompiledUniformSet:clone()
-  local ret = CompiledUniformSet()
+function CompiledMaterial:clone()
+  local ret = CompiledMaterial()
   ret._ttype = self._ttype
   ret._value = terralib.new(ret._ttype)
   self._copy_value(self._value, ret._value)
@@ -63,14 +65,14 @@ local function convert_uniforms(uset)
   return uinfo
 end
 
-function CompiledUniformSet:_from_uniform_sets(uset, gset)
+function CompiledMaterial:_from_uniform_sets(uset, gset)
   local u = convert_uniforms(uset)
   local g = convert_uniforms(gset)
   self:_make_type(u, g)
   self:_make_proxies(u, g)
 end
 
-function CompiledUniformSet:_make_type(uniform_info, global_info, dname)
+function CompiledMaterial:_make_type(uniform_info, global_info, dname)
   local t = terralib.types.newstruct(dname)
   t:insert({field = state, type = uint64})
   local function add_uni(u)
