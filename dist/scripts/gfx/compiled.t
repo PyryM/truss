@@ -76,9 +76,11 @@ end
 function CompiledGlobals:set(uname, val)
   local idx, arr, kind = registry:find_global(uname)
   if kind == 'vec' then
-    
+    self._value[arr][idx] = val.elem
   elseif kind == 'mat4' then
-
+    self._value[arr][idx] = val.data
+  elseif kind == 'tex' then
+    self._value[arr][idx] = (val.raw_tex or val._handle)
   end
 end
 
