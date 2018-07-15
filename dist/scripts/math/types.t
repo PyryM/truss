@@ -21,4 +21,6 @@ struct m.vec4d_ {
   w: double;
 }
 
+m.mat4_ = float[16]
+
 return m
