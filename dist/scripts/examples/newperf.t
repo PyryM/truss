@@ -7,6 +7,7 @@ local sdl = require("addons/sdl.t")
 local math = require("math")
 local geometry = require("geometry")
 local pbr = require("shaders/pbr.t")
+local compiled = require("gfx/compiled.t")
 
 local width, height
 local view
@@ -16,7 +17,10 @@ local pbr_globals
 local box_geometry
 local box_material
 
+local mc_box_material
+
 local c_lights, c_drawcall
+local mc_lights
 
 function init()
   sdl.create_window(1280, 720, 'perftest')
@@ -53,8 +57,12 @@ function init()
     roughness = 0.7
   }
 
+  mc_box_material = compiled.CompiledMaterial(box_material)
+
   c_lights = terralib.new(light_info_t)
   c_drawcall = terralib.new(draw_info_t)
+  mc_lights = compiled.CompiledGlobals(pbr_globals)
+
   stage_lights(pbr_globals, c_lights)
   stage_draw(box_geometry, box_material, view_mat, c_drawcall)
 end

@@ -23,6 +23,11 @@ function UniformProxy:init(target, field, kind, index, count)
   self._count = count or 1
 end
 
+function UniformProxy:clone(newtarget)
+  return self.class(newtarget, self._field, self._kind, 
+                    self._start_index, self._count)
+end
+
 function UniformProxy:set_multiple(values)
   for i, v in ipairs(values) do
     self:_set(i, v)
@@ -90,6 +95,12 @@ function TexProxy:set(tex)
   self._target[self._field][self._start_index] = texhandle
 end
 
+local proxy_constructors = {
+  vec = VecProxy,
+  mat4 = MatProxy,
+  tex = TexProxy
+}
+
 local function convert_uniform(u)
   local ret = {
     name = u._uni_name,
@@ -129,6 +140,7 @@ end
 
 function GlobalRegistry:_create_global(uname, ukind, count)
   if not self._counts[kind] then truss.error("Unknown kind " .. ukind) end
+  log.debug("Registering compiled global " .. uname .. " " .. ukind .. " " .. count)
   local nextcount = self._counts[kind] + count
   if nextcount > MAX_GLOBALS then
     truss.error("Exceeded maximum number of globals: " 
@@ -159,14 +171,8 @@ function CompiledGlobals:init(uniforms)
   self._value = terralib.new(GlobalUniforms_t)
   for _, u in ipairs(uset) do
     local idx, kind = registry:find_global(u.name, u.kind, u.count)
-    local proxy = nil
-    if kind == 'vec' then
-      proxy = VecProxy(self._value, 'vec', 'vec', idx, u.count)
-    elseif kind == 'mat4' then
-      proxy = MatProxy(self._value, 'mat4', 'mat4', idx, u.count)
-    elseif kind == 'tex' then
-      proxy = TexProxy(self._value, 'tex', 'tex', idx, 1)
-    end
+    local proxy = proxy_constructors[kind](self._value, kind, kind, 
+                                           idx, u.count or 1)
     self[u.name] = proxy
   end
 end
@@ -176,7 +182,9 @@ m.CompiledMaterial = CompiledMaterial
 
 function CompiledMaterial:init(options)
   if not options then return end
-  self:_from_uniform_sets(options.uniforms, options.globals, options.state) 
+  self:_from_uniform_sets(options.uniforms, 
+                          options.globals or options.global_uniforms, 
+                          options.state) 
 end
 
 function CompiledMaterial:clone()
@@ -188,7 +196,7 @@ function CompiledMaterial:clone()
   ret._binder = self._binder
   ret._proxies = {}
   for k, v in pairs(self._proxies) do
-    local p = v:clone(ret)
+    local p = v:clone(ret._value)
     ret[k] = p
     ret._proxies[k] = p
   end
@@ -198,15 +206,20 @@ function CompiledMaterial:_from_uniform_sets(uset, gset)
   local u = convert_uniforms(uset or {})
   local g = convert_uniforms(gset or {})
   self:_make_type(u, g)
-  --self:_make_proxies(u, g)
+end
+
+function CompiledMaterial:bind(globals)
+  self._binder(self._value, (globals or {})._value)
 end
 
 function CompiledMaterial:_make_type(uniform_info, global_info, dname)
   local t = terralib.types.newstruct(dname)
   t:insert({field = state, type = uint64})
+  local proxy_info = {}
   local function add_uni(u)
     t:insert({field = u.handle_name, type = bgfx.uniform_handle_t})
     t:insert({field = u.value_name, type = u.value_type[u.count or 1]})
+    table.insert(proxy_info, {u.name, u.kind, u.count or 1})
   end
   for _, uniform in ipairs(uniform_info) do
     add_uni(uniform)
@@ -291,6 +304,16 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
     else
       [ make_global_binds(global_info, src, globals) ]
     end
+  end
+
+  -- populate proxies
+  self._proxies = {}
+  for _, pinfo in ipairs(proxy_info) do
+    local name, kind, count = unpack(pinfo)
+    local proxy = proxy_constructors[kind](self._value, kind, kind, 
+                                           0, count or 1)
+    self._proxies[name] = proxy
+    self[name] = proxy
   end
 end
 
