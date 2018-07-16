@@ -9,10 +9,86 @@ local m = {}
 local MAX_GLOBALS = 64
 
 struct GlobalUniforms_t {
-  matrices: mathtypes.mat4_[MAX_GLOBALS];
-  vectors: mathtypes.vec4_[MAX_GLOBALS];
-  textures: bgfx.texture_handle_t[MAX_GLOBALS];
+  mat4: mathtypes.mat4_[MAX_GLOBALS];
+  vec: mathtypes.vec4_[MAX_GLOBALS];
+  tex: bgfx.texture_handle_t[MAX_GLOBALS];
 }
+
+local UniformProxy = class("UniformProxy")
+function UniformProxy:init(target, field, kind, index, count)
+  self._target = target
+  self._field = field
+  self._start_index = index or 0
+  self._kind = kind
+  self._count = count or 1
+end
+
+function UniformProxy:set_multiple(values)
+  for i, v in ipairs(values) do
+    self:_set(i, v)
+  end
+end
+
+local VecProxy = UniformProxy:extend("VecProxy")
+function VecProxy:_set(pos, x, y, z, w)
+  pos = self._start_index + pos - 1 -- zero indexed c data
+  local dv = self._target[self._field][pos] 
+  if type(x) == "number" then
+    -- x, y, z, w are directly numbers
+    dv.x = x or 0
+    dv.y = y or 0
+    dv.z = z or 0
+    dv.w = w or 0
+  elseif x.elem then
+    -- x is a math.Vector
+    self._target[self._field][pos] = x.elem
+  else 
+    -- hope that x is a list or table
+    dv.x = x[1] or x.x or 0.0
+    dv.y = x[2] or x.y or 0.0
+    dv.z = x[3] or x.z or 0.0
+    dv.w = x[4] or x.w or 0.0
+  end
+  return self
+end
+
+function VecProxy:set(x, y, z, w)
+  self:_set(1, x, y, z, w)
+end
+
+local MatProxy = UniformProxy:extend("MatProxy")
+function MatProxy:_set(pos, v)
+  pos = self._start_index + pos - 1 -- zero indexed c data
+  if v.data then
+    self._target[self._field][pos] = v.data
+  elseif #v == 16 then
+    local dv = self._target[self._field][pos]
+    for i = 1, 16 do
+      dv[i-1] = v[i]
+    end
+  else
+    truss.error("MatProxy:set: value must be either a math.Matrix4 "
+                .. " or a 16-element list")
+  end
+  return self
+end
+
+local TexProxy = UniformProxy:extend("TexProxy")
+function TexProxy:_set(pox, v)
+  truss.error("TexProxy: tex arrays not supported.")
+end
+
+function TexProxy:set(tex)
+  if not tex then truss.error("Cannot set tex to nil") end
+  local texhandle = nil
+  if type(tex) == "cdata" then
+    texhandle = tex
+  else
+    texhandle = tex._handle or tex.raw_tex
+  end
+  if not texhandle then truss.error("No texture handle?") end
+  self._target[self._field][self._start_index] = texhandle
+end
 
 local function convert_uniform(u)
   local ret = {
@@ -21,7 +97,8 @@ local function convert_uniform(u)
     value_name = u._uni_name,
     handle = u._handle,
     kind = u._uni_type.kind,
-    value_type = u._uni_type.terra_type
+    value_type = u._uni_type.terra_type,
+    value = u.value
   }
   if u._sampler_idx then
     ret.sampler = u._sampler_idx
@@ -44,14 +121,31 @@ end
 
 local GlobalRegistry = class("GlobalRegistry")
 function GlobalRegistry:init()
-  self._indices = {
-    mat4 = {},
-    vec = {},
-    tex = {}
+  self._indices = {}
+  self._counts = {
+    mat4 = 0, vec = 0, tex = 0
   }
 end
 
-function GlobalRegistry:find_global_index(uname, ukind)
+function GlobalRegistry:_create_global(uname, ukind, count)
+  if not self._counts[kind] then truss.error("Unknown kind " .. ukind) end
+  local nextcount = self._counts[kind] + count
+  if nextcount > MAX_GLOBALS then
+    truss.error("Exceeded maximum number of globals: " 
+                .. uname .. " " .. ukind)
+  end
+  self._indices[uname] = {self._counts[kind], ukind, ukind}
+  self._counts[kind] = nextcount
+end
+
+function GlobalRegistry:find_global(uname, ukind, count)
+  if self._indices[uname] then
+    return unpack(self._indices[uname])
+  elseif ukind and count then
+    return unpack(self:_create_global(uname, ukind, count))
+  else
+    return nil
+  end
 end
 
 local registry = GlobalRegistry()
@@ -64,23 +158,16 @@ function CompiledGlobals:init(uniforms)
   local uset = convert_uniforms(uniforms)
   self._value = terralib.new(GlobalUniforms_t)
   for _, u in ipairs(uset) do
-    local idx, arr = registry:find_global_index(u.name, u.kind)
-    if u.kind == 'vec' then
-      self._value[arr][idx] = 
-    elseif u.kind == 'mat4' then
-    else
+    local idx, kind = registry:find_global(u.name, u.kind, u.count)
+    local proxy = nil
+    if kind == 'vec' then
+      proxy = VecProxy(self._value, 'vec', 'vec', idx, u.count)
+    elseif kind == 'mat4' then
+      proxy = MatProxy(self._value, 'mat4', 'mat4', idx, u.count)
+    elseif kind == 'tex' then
+      proxy = TexProxy(self._value, 'tex', 'tex', idx, 1)
     end
-  end
-end
-
-function CompiledGlobals:set(uname, val)
-  local idx, arr, kind = registry:find_global(uname)
-  if kind == 'vec' then
-    self._value[arr][idx] = val.elem
-  elseif kind == 'mat4' then
-    self._value[arr][idx] = val.data
-  elseif kind == 'tex' then
-    self._value[arr][idx] = (val.raw_tex or val._handle)
+    self[u.name] = proxy
   end
 end
 
@@ -89,7 +176,7 @@ m.CompiledMaterial = CompiledMaterial
 
 function CompiledMaterial:init(options)
   if not options then return end
-  self:_from_uniform_set(options.uniforms, options.globals, options.state) 
+  self:_from_uniform_sets(options.uniforms, options.globals, options.state) 
 end
 
 function CompiledMaterial:clone()
@@ -111,7 +198,7 @@ function CompiledMaterial:_from_uniform_sets(uset, gset)
   local u = convert_uniforms(uset or {})
   local g = convert_uniforms(gset or {})
   self:_make_type(u, g)
-  self:_make_proxies(u, g)
+  --self:_make_proxies(u, g)
 end
 
 function CompiledMaterial:_make_type(uniform_info, global_info, dname)
@@ -119,11 +206,7 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
   t:insert({field = state, type = uint64})
   local function add_uni(u)
     t:insert({field = u.handle_name, type = bgfx.uniform_handle_t})
-    if u.kind == "tex" then
-      t:insert({field = u.value_name, type = bgfx.texture_handle_t})
-    else
-      t:insert({field = u.value_name, type = u.value_type[u.count]})
-    end
+    t:insert({field = u.value_name, type = u.value_type[u.count or 1]})
   end
   for _, uniform in ipairs(uniform_info) do
     add_uni(uniform)
@@ -154,7 +237,7 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
         statements:insert(quote
           bgfx.set_texture( [uniform.sampler],
                             src.[uniform.handle_name],
-                            src.[uniform.value_name],
+                            src.[uniform.value_name][0],
                             [uniform.texture_flags or bgfx.UINT32_MAX] )
         end)
       else
@@ -167,24 +250,30 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
   local function make_global_binds(bindables, src, globals)
     local statements = terralib.newlist()
     for uniform in bindables do
-      local uindex = registry:find_global_index(uniform.name, uniform.kind)
+      local uindex, gkind = registry:find_global(uniform.name, 
+                                                 uniform.kind,
+                                                 uniform.count or 1)
+      if uniform.kind ~= gkind then
+        truss.error("Global uniform type mismatch: " 
+                    .. uniform.kind .. " vs " .. gkind)
+      end
       if uniform.kind == "mat4" then
         statements:insert(quote
           bgfx.set_uniform( src.[uniform.handle_name], 
-                           &globals.matrices[ [uindex] ], 
+                           &globals.mat4[ [uindex] ], 
                            [uniform.count or 1])
         end)
       elseif uniform.kind == "vec" then
         statements:insert(quote
           bgfx.set_uniform( src.[uniform.handle_name], 
-                           &globals.vectors[ [uindex] ], 
+                           &globals.vec[ [uindex] ], 
                            [uniform.count or 1])
         end)
       elseif uniform.kind == "tex" then
         statements:insert(quote
           bgfx.set_texture( [uniform.sampler],
                             src.[uniform.handle_name],
-                            globals.textures[ [uindex] ],
+                            globals.tex[ [uindex] ],
                             [uniform.texture_flags or bgfx.UINT32_MAX] )
         end)
       else
