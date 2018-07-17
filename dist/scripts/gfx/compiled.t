@@ -2,13 +2,14 @@
 --
 -- compiled/metaprogrammed gfx bindings
 
+local class = require("class")
 local _uniforms = require("./uniforms.t")
 local mathtypes = require("math/types.t")
 local m = {}
 
 local MAX_GLOBALS = 64
 
-struct GlobalUniforms_t {
+local struct GlobalUniforms_t {
   mat4: mathtypes.mat4_[MAX_GLOBALS];
   vec: mathtypes.vec4_[MAX_GLOBALS];
   tex: bgfx.texture_handle_t[MAX_GLOBALS];
@@ -138,19 +139,21 @@ function GlobalRegistry:init()
   }
 end
 
-function GlobalRegistry:_create_global(uname, ukind, count)
-  if not self._counts[kind] then truss.error("Unknown kind " .. ukind) end
-  log.debug("Registering compiled global " .. uname .. " " .. ukind .. " " .. count)
+function GlobalRegistry:_create_global(uname, kind, count)
+  if not self._counts[kind] then truss.error("Unknown kind " .. kind) end
+  log.debug("Registering compiled global " .. uname .. " " .. kind .. " " .. count)
   local nextcount = self._counts[kind] + count
   if nextcount > MAX_GLOBALS then
     truss.error("Exceeded maximum number of globals: " 
-                .. uname .. " " .. ukind)
+                .. uname .. " " .. kind)
   end
-  self._indices[uname] = {self._counts[kind], ukind, ukind}
+  self._indices[uname] = {self._counts[kind], kind, kind}
   self._counts[kind] = nextcount
+  return self._indices[uname]
 end
 
 function GlobalRegistry:find_global(uname, ukind, count)
+  log.debug("Finding global " .. uname)
   if self._indices[uname] then
     return unpack(self._indices[uname])
   elseif ukind and count then
@@ -214,11 +217,11 @@ end
 
 function CompiledMaterial:_make_type(uniform_info, global_info, dname)
   local t = terralib.types.newstruct(dname)
-  t:insert({field = state, type = uint64})
+  t.entries:insert({field = 'state', type = uint64})
   local proxy_info = {}
   local function add_uni(u)
-    t:insert({field = u.handle_name, type = bgfx.uniform_handle_t})
-    t:insert({field = u.value_name, type = u.value_type[u.count or 1]})
+    t.entries:insert({field = u.handle_name, type = bgfx.uniform_handle_t})
+    t.entries:insert({field = u.value_name, type = u.value_type[u.count or 1]})
     table.insert(proxy_info, {u.name, u.kind, u.count or 1})
   end
   for _, uniform in ipairs(uniform_info) do
@@ -230,7 +233,10 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
   t:complete()
   self._ttype = t
   self._value = terralib.new(self._ttype)
-  for uniform in uniform_info do
+  for _, uniform in ipairs(uniform_info) do
+    self._value[uniform.handle_name] = uniform.handle
+  end
+  for _, uniform in ipairs(global_info) do
     self._value[uniform.handle_name] = uniform.handle
   end
   self._copy_value = terra(src: &t, dest: &t)
@@ -239,7 +245,7 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
 
   local function make_binds(bindables, src)
     local statements = terralib.newlist()
-    for uniform in bindables do
+    for _, uniform in ipairs(bindables) do
       if uniform.kind == "mat4" or uniform.kind == "vec" then
         statements:insert(quote
           bgfx.set_uniform( src.[uniform.handle_name], 
@@ -262,10 +268,14 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
 
   local function make_global_binds(bindables, src, globals)
     local statements = terralib.newlist()
-    for uniform in bindables do
+    for _, uniform in ipairs(bindables) do
+      log.debug("Making global bind: " .. uniform.name)
+      log.debug(registry)
+      print(registry)
       local uindex, gkind = registry:find_global(uniform.name, 
                                                  uniform.kind,
                                                  uniform.count or 1)
+      log.debug("Done?")
       if uniform.kind ~= gkind then
         truss.error("Global uniform type mismatch: " 
                     .. uniform.kind .. " vs " .. gkind)
@@ -298,9 +308,9 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
 
   self._binder = terra(src: &t, globals: &GlobalUniforms_t)
     bgfx.set_state(src.state, 0)
-    [ make_bind_calls(uniform_info, src) ]
+    [ make_binds(uniform_info, src) ]
     if globals == nil then
-      [ make_bind_calls(global_info, src) ] 
+      [ make_binds(global_info, src) ] 
     else
       [ make_global_binds(global_info, src, globals) ]
     end
