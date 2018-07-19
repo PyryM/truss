@@ -32,6 +32,7 @@ function DynamicGeometry:init(name)
   last_geo_idx = last_geo_idx + 1
   self.allocated = false
   self.committed = false
+  self.is_dynamic = true
 end
 
 local TransientGeometry = class("TransientGeometry")

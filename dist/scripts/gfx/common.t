@@ -260,6 +260,10 @@ function m.invalid_handle(ttype)
   return ret
 end
 
+function m.invalidate_handle(v)
+  v.idx = bgfx.INVALID_HANDLE
+end
+
 function m.set_state(state)
   bgfx.set_state(state or bgfx.STATE_DEFAULT, 0)
 end

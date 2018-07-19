@@ -141,13 +141,15 @@ end
 
 function GlobalRegistry:_create_global(uname, kind, count)
   if not self._counts[kind] then truss.error("Unknown kind " .. kind) end
-  log.debug("Registering compiled global " .. uname .. " " .. kind .. " " .. count)
   local nextcount = self._counts[kind] + count
   if nextcount > MAX_GLOBALS then
     truss.error("Exceeded maximum number of globals: " 
                 .. uname .. " " .. kind)
   end
   self._indices[uname] = {self._counts[kind], kind, kind}
+  log.debug("Registering compiled global " .. uname 
+            .. " " .. kind .. " " .. count
+            .. " -> " .. self._counts[kind])
   self._counts[kind] = nextcount
   return self._indices[uname]
 end
@@ -183,11 +185,35 @@ end
 local CompiledMaterial = class("CompiledMaterial")
 m.CompiledMaterial = CompiledMaterial
 
+local created_material_types = {}
+m._created_material_types = {}
+
 function CompiledMaterial:init(options)
   if not options then return end
+  if not options.name then
+    truss.error("CompiledMaterial: .name missing!")
+  elseif created_material_types[options.name] then
+    truss.error("CompiledMaterial: " .. options.name .. " already defined.")
+  else
+    created_material_types[options.name] = true
+  end
   self:_from_uniform_sets(options.uniforms, 
-                          options.globals or options.global_uniforms, 
-                          options.state) 
+                          options.globals or options.global_uniforms,
+                          options.typename or 'compiled_material_t')
+  self:set_state(options.state)
+  if options.program then self:set_program(options.program) end
+end
+
+function CompiledMaterial:set_state(s)
+  self._value.state = s or gfx.create_state()
+end
+
+function CompiledMaterial:set_program(p)
+  if p then
+    self._value.program = p
+  else
+    gfx.invalidate_handle(self._value.program)
+  end
 end
 
 function CompiledMaterial:clone()
@@ -205,10 +231,10 @@ function CompiledMaterial:clone()
   end
 end
 
-function CompiledMaterial:_from_uniform_sets(uset, gset)
+function CompiledMaterial:_from_uniform_sets(uset, gset, dname)
   local u = convert_uniforms(uset or {})
   local g = convert_uniforms(gset or {})
-  self:_make_type(u, g)
+  self:_make_type(u, g, dname)
 end
 
 function CompiledMaterial:bind(globals)
@@ -218,6 +244,7 @@ end
 function CompiledMaterial:_make_type(uniform_info, global_info, dname)
   local t = terralib.types.newstruct(dname)
   t.entries:insert({field = 'state', type = uint64})
+  t.entries:insert({field = 'program', type = bgfx.program_handle_t})
   local proxy_info = {}
   local function add_uni(u)
     t.entries:insert({field = u.handle_name, type = bgfx.uniform_handle_t})
@@ -315,16 +342,104 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
       [ make_global_binds(global_info, src, globals) ]
     end
   end
+  print(self._ttype)
+  print(self._binder:disas())
 
   -- populate proxies
   self._proxies = {}
   for _, pinfo in ipairs(proxy_info) do
     local name, kind, count = unpack(pinfo)
-    local proxy = proxy_constructors[kind](self._value, kind, kind, 
+    local proxy = proxy_constructors[kind](self._value, name, kind, 
                                            0, count or 1)
     self._proxies[name] = proxy
     self[name] = proxy
   end
+end
+
+local function compile_draw_call(opts)
+  local material_t, bind_material = opts.material_type, opts.material_binder
+  local vert_t, index_t, set_vert, set_index
+  if opts.geo_type == "static" then
+    vert_t, set_vert = bgfx.vertex_buffer_handle_t, bgfx.set_vertex_buffer
+    index_t, set_index = bgfx.index_buffer_handle_t, bgfx.set_index_buffer
+  elseif opts.geo_type == "dynamic" then
+    vert_t, set_vert = bgfx.dynamic_vertex_buffer_handle_t, bgfx.set_dynamic_vertex_buffer
+    index_t, set_index = bgfx.dynamic_index_buffer_handle_t, bgfx.set_dynamic_index_buffer
+  else
+    truss.error("Unsupported geometry type: " .. tostring(opts.geo_type))
+  end
+  local struct geo_t {
+    tf: float[16];
+    vtx_start: uint32;
+    vtx_count: uint32;
+    idx_start: uint32;
+    idx_count: uint32;
+    vbh: vert_t;
+    ibh: index_t; 
+  }
+  local terra draw(view: uint8, geo: &geo_t, mat: &material_t, globals: &GlobalUniforms_t)
+    bgfx.set_transform(&geo.tf, 1)
+    set_vert(0, geo.vbh, geo.vtx_start, geo.vtx_count)
+    set_index(geo.ibh, geo.idx_start, geo.idx_count)
+    bind_material(mat, globals)
+    bgfx.set_state(mat.state, 0)
+    bgfx.submit(view, mat.program, 0.0, false)
+  end
+  return geo_t, draw
+end
+
+local Drawcall = class("Drawcall")
+m.Drawcall = Drawcall
+
+function Drawcall:init(geo, mat)
+  self.geo = geo
+  self.mat = mat
+  self._cmat = mat._value
+  self:_recompile()
+end
+
+function Drawcall:_recompile()
+  -- TODO: cache these compiled functions
+  local geo_type = "static"
+  if self.geo.is_dynamic then geo_type = "dynamic" end
+  local geo_t, draw = compile_draw_call{
+    geo_type = geo_type,
+    material_type = self.mat._ttype,
+    material_binder = self.mat._binder
+  }
+  self._cgeo = terralib.new(geo_t)
+  self._cgeo.vbh = self.geo._vbh
+  self._cgeo.ibh = self.geo._ibh
+  self._cgeo.vtx_start = 0
+  self._cgeo.vtx_count = bgfx.UINT32_MAX
+  self._cgeo.idx_start = 0
+  self._cgeo.idx_count = bgfx.UINT32_MAX
+  self._draw = draw
+
+  print(self._cgeo.vbh.idx)
+  print(self._cgeo.ibh.idx)
+  print(self._cmat.program.idx)
+  print(self._cmat.state)
+end
+
+function Drawcall:set_geometry(geo)
+  self.geo = geo
+  self:_recompile()
+end
+
+function Drawcall:set_material(mat)
+  self.mat = mat
+  self._cmat = mat._value
+  self:_recompile()
+end
+
+function Drawcall:clone()
+  return Drawcall(self.geo, self.mat)
+end
+
+function Drawcall:submit(viewid, view_globals, tf)
+  self._cgeo.tf = tf.data
+  self._draw(viewid, self._cgeo, self._cmat, view_globals._value)
 end
 
 return m
