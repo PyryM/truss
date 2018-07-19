@@ -197,6 +197,7 @@ function CompiledMaterial:init(options)
   else
     created_material_types[options.name] = true
   end
+  log.debug("Compiling material: " .. options.name)
   self:_from_uniform_sets(options.uniforms, 
                           options.globals or options.global_uniforms,
                           options.typename or 'compiled_material_t')
@@ -333,7 +334,7 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
     return statements
   end
 
-  self._binder = terra(src: &t, globals: &GlobalUniforms_t)
+  local terra material_binder(src: &t, globals: &GlobalUniforms_t)
     bgfx.set_state(src.state, 0)
     [ make_binds(uniform_info, src) ]
     if globals == nil then
@@ -342,6 +343,7 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
       [ make_global_binds(global_info, src, globals) ]
     end
   end
+  self._binder = material_binder
   print(self._ttype)
   print(self._binder:disas())
 
@@ -407,6 +409,7 @@ function Drawcall:_recompile()
     material_type = self.mat._ttype,
     material_binder = self.mat._binder
   }
+  print(draw:disas())
   self._cgeo = terralib.new(geo_t)
   self._cgeo.vbh = self.geo._vbh
   self._cgeo.ibh = self.geo._ibh

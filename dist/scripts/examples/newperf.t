@@ -18,6 +18,7 @@ local box_geometry
 local box_material
 
 local mc_box_material
+local mc_drawcall
 
 local c_lights, c_drawcall
 local mc_lights
@@ -58,10 +59,27 @@ function init()
   }
 
   mc_box_material = compiled.CompiledMaterial(box_material)
+  mc_box_material.u_baseColor:set(0.2, 0.03, 0.01, 1.0)
+  mc_box_material.u_pbrParams:set(0.001, 0.001, 0.001, 0.7)
+  --mc_box_material._value.state = box_material.state
 
   c_lights = terralib.new(light_info_t)
   c_drawcall = terralib.new(draw_info_t)
   mc_lights = compiled.CompiledGlobals(pbr_globals)
+  mc_lights.u_lightDir:set_multiple({
+    math.Vector( 1.0,  1.0,  0.0),
+    math.Vector(-1.0,  1.0,  0.0),
+    math.Vector( 0.0, -1.0,  1.0),
+    math.Vector( 0.0, -1.0, -1.0)
+  })
+  mc_lights.u_lightRgb:set_multiple({
+    math.Vector(0.8, 0.8, 0.8),
+    math.Vector(1.0, 1.0, 1.0),
+    math.Vector(0.1, 0.1, 0.1),
+    math.Vector(0.1, 0.1, 0.1)
+  })
+
+  mc_drawcall = compiled.Drawcall(box_geometry, mc_box_material)
 
   stage_lights(pbr_globals, c_lights)
   stage_draw(box_geometry, box_material, view_mat, c_drawcall)
@@ -79,6 +97,17 @@ function draw_box_old(x, y, theta)
   box_material:bind(pbr_globals)
   box_geometry:bind()
   gfx.submit(view, box_material.program)
+end
+
+function draw_box_compiled(x, y, theta)
+  pos:set(x, y, -4.0)
+  rot:euler({x = 0, y = theta, z = 0}, 'ZYX')
+  tf:compose(pos, rot, scale)
+  mc_drawcall:submit(view._viewid, mc_lights, tf)
+  --gfx.set_transform(tf)
+  --mc_box_material:bind(mc_lights)
+  --box_geometry:bind()
+  --gfx.submit(view, box_material.program)
 end
 
 struct light_info_t {
@@ -112,7 +141,7 @@ terra fast_submit(lights: &light_info_t, draw: &draw_info_t)
   bgfx.submit(0, draw.program, 0.0, false)
 end
 
-function draw_box_fully_compiled(x, y, theta)
+function draw_box_hand_compiled(x, y, theta)
   pos:set(x, y, -4.0)
   rot:euler({x = 0, y = theta, z = 0}, 'ZYX')
   tf:compose(pos, rot, scale)
@@ -164,7 +193,8 @@ function update()
   view:touch()
 
   --local drawfunc = draw_box_old
-  local drawfunc = draw_box_fully_compiled
+  --local drawfunc = draw_box_hand_compiled
+  local drawfunc = draw_box_compiled
 
   local t0 = truss.tic()
   for row = 1, 50 do
