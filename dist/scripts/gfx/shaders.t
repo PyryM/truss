@@ -44,7 +44,7 @@ end
 
 function m.load_program(vshadername, fshadername)
   local pname = vshadername .. "|" .. fshadername
-  if m._programs[pname] == nil then
+  if not m._programs[pname] then
     local vshader = m.load_shader(vshadername)
     local fshader = m.load_shader(fshadername)
     m._programs[pname] = bgfx.create_program(vshader, fshader, true)

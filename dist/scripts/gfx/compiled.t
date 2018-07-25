@@ -4,10 +4,50 @@
 
 local class = require("class")
 local _uniforms = require("./uniforms.t")
+local _shaders = require("./shaders.t")
 local mathtypes = require("math/types.t")
 local m = {}
 
 local MAX_GLOBALS = 64
+
+m.uniform_types = {
+  mat4 = {
+    kind       = "mat4",
+    bgfx_type  = bgfx.UNIFORM_TYPE_MAT4,
+    terra_type = mathtypes.mat4_
+  },
+  vec  = {
+    kind       = "vec",
+    bgfx_type  = bgfx.UNIFORM_TYPE_VEC4,
+    terra_type = mathtypes.vec4_
+  },
+  tex  = {
+    kind       = "tex",
+    bgfx_type  = bgfx.UNIFORM_TYPE_INT1,
+    terra_type = bgfx.texture_handle_t
+  } 
+}
+
+-- in bgfx the same uniform name cannot be used with two different types/counts
+-- so keep track of uniform (name, type, counts) to provide useful errors
+m._uniform_cache = {}
+function m._define_uniform(uni_name, uni_type, count)
+  local v = m._uniform_cache[uni_name]
+  if v then
+    if v.uni_type ~= uni_type or v.count ~= count then
+      truss.error("Tried to recreate uniform " .. uni_name
+             .. " with different type or count!")
+      return nil
+    end
+    return v.handle
+  else -- not registered
+    v = {uni_type = uni_type, count = count}
+    v.handle = bgfx.create_uniform(uni_name, uni_type.bgfx_type, count)
+    m._uniform_cache[uni_name] = v
+    return v.handle
+  end
+end
+
 
 local struct GlobalUniforms_t {
   mat4: mathtypes.mat4_[MAX_GLOBALS];
@@ -80,7 +120,7 @@ function MatProxy:_set(pos, v)
 end
 
 local TexProxy = UniformProxy:extend("TexProxy")
-function TexProxy:_set(pox, v)
+function TexProxy:_set(pos, v)
   truss.error("TexProxy: tex arrays not supported.")
 end
 
@@ -102,33 +142,39 @@ local proxy_constructors = {
   tex = TexProxy
 }
 
-local function convert_uniform(u)
-  local ret = {
-    name = u._uni_name,
-    handle_name = "h_" .. u._uni_name,
-    value_name = u._uni_name,
-    handle = u._handle,
-    kind = u._uni_type.kind,
-    value_type = u._uni_type.terra_type,
-    value = u.value
+local function _resolve_uniform(uname, u)
+  local uprime = {
+    name = uname,
+    handle_name = "h_" .. uname,
+    value_name = uname,
+    count = 1,
+    global = false
   }
-  if u._sampler_idx then
-    ret.sampler = u._sampler_idx
-    ret.texture_flags = u._flags
-  elseif u._num then
-    ret.count = u._num
+  if type(u) == 'string' then
+    uprime.kind = u
+    uprime.count = 1
+    uprime.global = false
+  elseif u and u.kind then -- assume table
+    truss.extend_table(uprime, u)
   else
-    truss.error("Not sure what this uniform is: " .. tostring(u))
+    truss.error("Unknown uniform specification: " .. tostring(u))
   end
-  return ret
+  uprime.typeinfo = uniform_types[uprime.kind]
+  if not uprime.typeinfo then
+    truss.error("Unknown uniform kind: " .. uprime.kind)
+  end
+  if uprime.kind == "tex" and (not uprime.sampler) then
+    truss.error("Tex uniform " .. uname .. " does not specify a sampler.")
+  end
+  return uprime
 end
 
-local function convert_uniforms(uset)
-  local uinfo = {}
-  for k, u in pairs(uset._uniforms) do
-    table.insert(uinfo, convert_uniform(u))
+local function resolve_uniforms(utable)
+  local ret = {}
+  for uname, u in ipairs(utable) do
+    ret[uname] = _resolve_uniform(uname, u)
   end
-  return uinfo
+  return ret
 end
 
 local GlobalRegistry = class("GlobalRegistry")
@@ -172,13 +218,13 @@ local CompiledGlobals = class("CompiledGlobals")
 m.CompiledGlobals = CompiledGlobals
 
 function CompiledGlobals:init(uniforms)
-  local uset = convert_uniforms(uniforms)
+  local uset = resolve_uniforms(uniforms)
   self._value = terralib.new(GlobalUniforms_t)
-  for _, u in ipairs(uset) do
-    local idx, kind = registry:find_global(u.name, u.kind, u.count)
+  for uname, u in pairs(uset) do
+    local idx, kind = registry:find_global(uname, u.kind, u.count)
     local proxy = proxy_constructors[kind](self._value, kind, kind, 
                                            idx, u.count or 1)
-    self[u.name] = proxy
+    self[uname] = proxy
   end
 end
 
@@ -188,86 +234,40 @@ m.CompiledMaterial = CompiledMaterial
 local created_material_types = {}
 m._created_material_types = {}
 
-function CompiledMaterial:init(options)
-  if not options then return end
-  if not options.name then
-    truss.error("CompiledMaterial: .name missing!")
-  elseif created_material_types[options.name] then
-    truss.error("CompiledMaterial: " .. options.name .. " already defined.")
-  else
-    created_material_types[options.name] = true
+local function order_uniforms(utable)
+  local ulist = {}
+  for _, u in pairs(utable) do
+    table.insert(ulist, u)
   end
-  log.debug("Compiling material: " .. options.name)
-  self:_from_uniform_sets(options.uniforms, 
-                          options.globals or options.global_uniforms,
-                          options.typename or 'compiled_material_t')
-  self:set_state(options.state)
-  if options.program then self:set_program(options.program) end
+  return ulist
 end
 
-function CompiledMaterial:set_state(s)
-  self._value.state = s or gfx.create_state()
-end
-
-function CompiledMaterial:set_program(p)
-  if p then
-    self._value.program = p
-  else
-    gfx.invalidate_handle(self._value.program)
+local function select_globals(ulist, isglobal)
+  local ret = {}
+  for _, u in ipairs(ulist) do
+    if u.global == isglobal then
+      table.insert(ret, u)
+    end
   end
+  return ret
 end
 
-function CompiledMaterial:clone()
-  local ret = CompiledMaterial()
-  ret._ttype = self._ttype
-  ret._value = terralib.new(ret._ttype)
-  self._copy_value(self._value, ret._value)
-  ret._copy_value = self._copy_value
-  ret._binder = self._binder
-  ret._proxies = {}
-  for k, v in pairs(self._proxies) do
-    local p = v:clone(ret._value)
-    ret[k] = p
-    ret._proxies[k] = p
-  end
-end
-
-function CompiledMaterial:_from_uniform_sets(uset, gset, dname)
-  local u = convert_uniforms(uset or {})
-  local g = convert_uniforms(gset or {})
-  self:_make_type(u, g, dname)
-end
-
-function CompiledMaterial:bind(globals)
-  self._binder(self._value, (globals or {})._value)
-end
-
-function CompiledMaterial:_make_type(uniform_info, global_info, dname)
-  local t = terralib.types.newstruct(dname)
-  t.entries:insert({field = 'state', type = uint64})
-  t.entries:insert({field = 'program', type = bgfx.program_handle_t})
-  local proxy_info = {}
-  local function add_uni(u)
-    t.entries:insert({field = u.handle_name, type = bgfx.uniform_handle_t})
-    t.entries:insert({field = u.value_name, type = u.value_type[u.count or 1]})
-    table.insert(proxy_info, {u.name, u.kind, u.count or 1})
-  end
-  for _, uniform in ipairs(uniform_info) do
-    add_uni(uniform)
-  end
-  for _, uniform in ipairs(global_info or {}) do
-    add_uni(uniform)
+local function compile_uniforms(material_name, uniforms)
+  local mtype = terralib.types.newstruct(material_name)
+  mtype.entries:insert({field = 'state', type = uint64})
+  mtype.entries:insert({field = 'program', type = bgfx.program_handle_t})
+  -- Uniform order might matter for cache/performance reasons, so go ahead
+  -- and sort them
+  local ordered_uniforms = order_uniforms(uniforms)
+  for _, u in ipairs(ordered_uniforms) do
+    mtype.entries:insert({field = u.handle_name, 
+                          type = bgfx.uniform_handle_t})
+    mtype.entries:insert({field = u.value_name, 
+                          type = u.value_type[u.count or 1]})
   end
   t:complete()
-  self._ttype = t
-  self._value = terralib.new(self._ttype)
-  for _, uniform in ipairs(uniform_info) do
-    self._value[uniform.handle_name] = uniform.handle
-  end
-  for _, uniform in ipairs(global_info) do
-    self._value[uniform.handle_name] = uniform.handle
-  end
-  self._copy_value = terra(src: &t, dest: &t)
+
+  local terra material_copy(src: &t, dest: &t)
     @dest = @src
   end
 
@@ -297,9 +297,6 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
   local function make_global_binds(bindables, src, globals)
     local statements = terralib.newlist()
     for _, uniform in ipairs(bindables) do
-      log.debug("Making global bind: " .. uniform.name)
-      log.debug(registry)
-      print(registry)
       local uindex, gkind = registry:find_global(uniform.name, 
                                                  uniform.kind,
                                                  uniform.count or 1)
@@ -334,28 +331,79 @@ function CompiledMaterial:_make_type(uniform_info, global_info, dname)
     return statements
   end
 
+  local local_uniforms = select_globals(ordered_uniforms, false)
+  local global_uniforms = select_globals(ordered_uniforms, true)
+
   local terra material_binder(src: &t, globals: &GlobalUniforms_t)
     bgfx.set_state(src.state, 0)
-    [ make_binds(uniform_info, src) ]
+    [ make_binds(local_uniforms, src) ]
+    -- if a null pointer is provided to the global uniforms, then
+    -- bind against our local values
     if globals == nil then
-      [ make_binds(global_info, src) ] 
+      [ make_binds(global_uniforms, src) ] 
     else
-      [ make_global_binds(global_info, src, globals) ]
+      [ make_global_binds(global_uniforms, src, globals) ]
     end
   end
-  self._binder = material_binder
-  print(self._ttype)
-  print(self._binder:disas())
 
-  -- populate proxies
-  self._proxies = {}
-  for _, pinfo in ipairs(proxy_info) do
-    local name, kind, count = unpack(pinfo)
-    local proxy = proxy_constructors[kind](self._value, name, kind, 
-                                           0, count or 1)
-    self._proxies[name] = proxy
-    self[name] = proxy
+  return material_type, material_binder, material_copy
+end
+
+local BaseMaterial = class("BaseMaterial")
+
+function BaseMaterial:clone()
+  return self.class(self)
+end
+
+function BaseMaterial:set_state(s)
+  self._value.state = s
+end
+
+function BaseMaterial:set_program(p)
+  self._value.program = s
+end
+
+local function stage_handles(target, uniforms)
+  for _, uinfo in pairs(uniforms) do
+    local handle = m._define_uniform(uinfo.name, uinfo.typeinfo, uinfo.count)
+    target[uinfo.handle_name] = handle
   end
+end
+
+function m.define_base_material(options)
+  if not options.name then
+    truss.error("No .name provided")
+  end
+  if not options.uniforms then
+    truss.error("No .uniforms provided")
+  end
+
+  local uniforms = resolve_uniforms(options.uniforms)
+  local material_t, material_bind, material_copy = compile_uniforms(uniforms)
+
+  local Material = BaseMaterial:extend(options.name)
+  function Material:init(_options)
+    self._value = terralib.new(material_t)
+    self._ttype = material_t
+    self._binder = material_bind
+    self._copy_value = material_copy
+    if _options._value then
+      self._copy_value(src._value, self._value)
+    end
+    stage_handles(self._value, uniforms)
+    self.uniforms = {}
+    for uname, uniform in pairs(uniforms) do
+      local pcon = proxy_constructors[uniform.kind]
+      self.uniforms[uname] = pcon(self._value, uname, uniform.kind, 
+                                  0, uniform.count or 1)
+    end
+    if options.state then self:set_state(state) end
+    if options.program then
+      self:set_program(_shaders.load_program(unpack(options.program)))
+    end
+  end
+
+  return Material
 end
 
 local function compile_draw_call(opts)

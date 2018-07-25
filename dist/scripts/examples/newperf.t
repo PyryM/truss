@@ -23,6 +23,16 @@ local mc_drawcall
 local c_lights, c_drawcall
 local mc_lights
 
+local PbrMaterial = compiled.define_base_material{
+  name = "PbrMaterial",
+  uniforms = {
+    u_baseColor = 'vec',
+    u_pbrParams = 'vec',
+    u_lightDir = {kind = 'vec', count = 4, global = true},
+    u_lightRgb = {kind = 'vec', count = 4, global = true}
+  }
+}
+
 function init()
   sdl.create_window(1280, 720, 'perftest')
   width, height = sdl.get_window_size()
@@ -58,14 +68,20 @@ function init()
     roughness = 0.7
   }
 
-  mc_box_material = compiled.CompiledMaterial(box_material)
-  mc_box_material.u_baseColor:set(0.2, 0.03, 0.01, 1.0)
-  mc_box_material.u_pbrParams:set(0.001, 0.001, 0.001, 0.7)
+  --mc_box_material = compiled.CompiledMaterial(box_material)
+  mc_box_material = PbrMaterial()
+  mc_box_material:set_state(box_material.state)
+  mc_box_material:set_program(box_material.program)
+  mc_box_material.uniforms.u_baseColor:set(0.2, 0.03, 0.01, 1.0)
+  mc_box_material.uniforms.u_pbrParams:set(0.001, 0.001, 0.001, 0.7)
   --mc_box_material._value.state = box_material.state
 
   c_lights = terralib.new(light_info_t)
   c_drawcall = terralib.new(draw_info_t)
-  mc_lights = compiled.CompiledGlobals(pbr_globals)
+  mc_lights = compiled.CompiledGlobals{
+    u_lightDir = {kind = 'vec', count = 4},
+    u_lightRgb = {kind = 'vec', count = 4}
+  }
   mc_lights.u_lightDir:set_multiple({
     math.Vector( 1.0,  1.0,  0.0),
     math.Vector(-1.0,  1.0,  0.0),
