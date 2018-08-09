@@ -3,6 +3,7 @@
 -- frame timer stuff
 
 local class = require("class")
+local bgfx = require("gfx/bgfx.t")
 local m = {}
 
 local DebugTextStats = class("DebugTextStats")

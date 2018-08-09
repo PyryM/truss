@@ -3,7 +3,7 @@
 -- utility functions for managing bgfx buffers
 
 local m = {}
-local vertexdefs = require("gfx/vertexdefs.t")
+local vertexdefs = require("./vertexdefs.t")
 
 local function assert_index_size(geo, n_indices)
   if geo.n_indices ~= n_indices then

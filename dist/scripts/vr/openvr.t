@@ -6,6 +6,7 @@ local m = {}
 local class = require("class")
 local math = require("math")
 local openvr_c = nil
+local bgfx = require("gfx/bgfx.t")
 local const = require("vr/constants.t")
 local trackables = require("vr/trackables.t")
 local modelloader = require("vr/modelloader.t")

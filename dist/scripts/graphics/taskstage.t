@@ -7,6 +7,7 @@ local Queue = require("utils/queue.t").Queue
 local functable = require("utils/functable.t")
 local renderer = require("graphics/renderer.t")
 local gfx = require("gfx")
+local bgfx = require("gfx/bgfx.t")
 local ring = require("utils/ring.t")
 local m = {}
 
