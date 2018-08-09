@@ -200,7 +200,6 @@ function registry:_create_global(uname, kind, count)
 end
 
 function registry:find_global(uname, ukind, count)
-  log.debug("Finding global " .. uname)
   if self._indices[uname] then
     return unpack(self._indices[uname])
   elseif ukind and count then
@@ -232,10 +231,8 @@ function CompiledGlobals:update_globals_list()
 end
 
 local function order_uniforms(utable)
-  print("ordering!")
   local ulist = {}
   for _, u in pairs(utable) do
-    print("yay")
     table.insert(ulist, u)
   end
   return ulist
@@ -258,14 +255,11 @@ local function compile_uniforms(material_name, uniforms)
   -- Uniform order might matter for cache/performance reasons, so go ahead
   -- and sort them
   local ordered_uniforms = order_uniforms(uniforms)
-  print("stufff??????????????????????")
   for _, u in ipairs(ordered_uniforms) do
-    print(".................................")
     mtype.entries:insert({field = u.handle_name, 
                           type = bgfx.uniform_handle_t})
     mtype.entries:insert({field = u.value_name, 
                           type = u.typeinfo.terra_type[u.count or 1]})
-    print(u.value_name)
   end
   mtype:complete()
 
@@ -302,7 +296,6 @@ local function compile_uniforms(material_name, uniforms)
       local uindex, gkind = registry:find_global(uniform.name, 
                                                  uniform.kind,
                                                  uniform.count or 1)
-      log.debug("Done?")
       if uniform.kind ~= gkind then
         truss.error("Global uniform type mismatch: " 
                     .. uniform.kind .. " vs " .. gkind)
@@ -384,13 +377,11 @@ function m.define_base_material(options)
   if not options.uniforms then
     truss.error("No .uniforms provided")
   end
+  local canonical_name = options.name .. "__" .. _material_count
+  log.info("Defining base material " .. options.name .. " -> " .. canonical_name)
 
   local uniforms = resolve_uniforms(options.uniforms)
-  local canonical_name = options.name .. "__" .. _material_count
   _material_count = _material_count + 1
-
-  print("options? " .. tostring(uniforms))
-  for k, v in pairs(options.uniforms) do print(k) end
   local material_t, material_bind, material_copy = compile_uniforms(canonical_name, uniforms)
 
   local Material = BaseMaterial:extend(options.name)
@@ -495,7 +486,6 @@ function Drawcall:_recompile()
     geo_type = geo_type,
     material = self.mat
   }
-  print(draw:disas())
   self._cgeo = terralib.new(geo_t)
   self._cgeo.vbh = self.geo._vbh
   self._cgeo.ibh = self.geo._ibh
@@ -504,11 +494,6 @@ function Drawcall:_recompile()
   self._cgeo.idx_start = 0
   self._cgeo.idx_count = bgfx.UINT32_MAX
   self._draw = draw
-
-  print(self._cgeo.vbh.idx)
-  print(self._cgeo.ibh.idx)
-  print(self._cmat.program.idx)
-  print(self._cmat.state)
 end
 
 function Drawcall:set_geometry(geo)
