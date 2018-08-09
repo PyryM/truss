@@ -5,6 +5,7 @@
 local class = require("class")
 local _uniforms = require("./uniforms.t")
 local _shaders = require("./shaders.t")
+local _common = require("./common.t")
 local mathtypes = require("math/types.t")
 local m = {}
 
@@ -40,14 +41,13 @@ function m._define_uniform(uni_name, uni_type, count)
       return nil
     end
     return v.handle
-  else -- not registered
+  else
     v = {uni_type = uni_type, count = count}
     v.handle = bgfx.create_uniform(uni_name, uni_type.bgfx_type, count)
     m._uniform_cache[uni_name] = v
     return v.handle
   end
 end
-
 
 local struct GlobalUniforms_t {
   mat4: mathtypes.mat4_[MAX_GLOBALS];
@@ -159,7 +159,7 @@ local function _resolve_uniform(uname, u)
   else
     truss.error("Unknown uniform specification: " .. tostring(u))
   end
-  uprime.typeinfo = uniform_types[uprime.kind]
+  uprime.typeinfo = m.uniform_types[uprime.kind]
   if not uprime.typeinfo then
     truss.error("Unknown uniform kind: " .. uprime.kind)
   end
@@ -171,28 +171,27 @@ end
 
 local function resolve_uniforms(utable)
   local ret = {}
-  for uname, u in ipairs(utable) do
+  for uname, u in pairs(utable or {}) do
     ret[uname] = _resolve_uniform(uname, u)
   end
   return ret
 end
 
-local GlobalRegistry = class("GlobalRegistry")
-function GlobalRegistry:init()
-  self._indices = {}
-  self._counts = {
+local registry = {
+  _indices = {},
+  _counts = {
     mat4 = 0, vec = 0, tex = 0
   }
-end
+}
 
-function GlobalRegistry:_create_global(uname, kind, count)
+function registry:_create_global(uname, kind, count)
   if not self._counts[kind] then truss.error("Unknown kind " .. kind) end
   local nextcount = self._counts[kind] + count
   if nextcount > MAX_GLOBALS then
     truss.error("Exceeded maximum number of globals: " 
                 .. uname .. " " .. kind)
   end
-  self._indices[uname] = {self._counts[kind], kind, kind}
+  self._indices[uname] = {self._counts[kind], kind, count}
   log.debug("Registering compiled global " .. uname 
             .. " " .. kind .. " " .. count
             .. " -> " .. self._counts[kind])
@@ -200,7 +199,7 @@ function GlobalRegistry:_create_global(uname, kind, count)
   return self._indices[uname]
 end
 
-function GlobalRegistry:find_global(uname, ukind, count)
+function registry:find_global(uname, ukind, count)
   log.debug("Finding global " .. uname)
   if self._indices[uname] then
     return unpack(self._indices[uname])
@@ -211,32 +210,32 @@ function GlobalRegistry:find_global(uname, ukind, count)
   end
 end
 
-local registry = GlobalRegistry()
-m.registry = registry
+m.global_registry = registry
 
 local CompiledGlobals = class("CompiledGlobals")
 m.CompiledGlobals = CompiledGlobals
 
-function CompiledGlobals:init(uniforms)
-  local uset = resolve_uniforms(uniforms)
+function CompiledGlobals:init()
   self._value = terralib.new(GlobalUniforms_t)
-  for uname, u in pairs(uset) do
-    local idx, kind = registry:find_global(uname, u.kind, u.count)
-    local proxy = proxy_constructors[kind](self._value, kind, kind, 
-                                           idx, u.count or 1)
-    self[uname] = proxy
+  self:update_globals_list()
+end
+
+function CompiledGlobals:update_globals_list()
+  for uname, udata in pairs(registry._indices) do
+    if not self[uname] then
+      local idx, kind, count = unpack(udata)
+      local proxy = proxy_constructors[kind](self._value, kind, kind, 
+                                             idx, count or 1)
+      self[uname] = proxy
+    end
   end
 end
 
-local CompiledMaterial = class("CompiledMaterial")
-m.CompiledMaterial = CompiledMaterial
-
-local created_material_types = {}
-m._created_material_types = {}
-
 local function order_uniforms(utable)
+  print("ordering!")
   local ulist = {}
   for _, u in pairs(utable) do
+    print("yay")
     table.insert(ulist, u)
   end
   return ulist
@@ -259,15 +258,18 @@ local function compile_uniforms(material_name, uniforms)
   -- Uniform order might matter for cache/performance reasons, so go ahead
   -- and sort them
   local ordered_uniforms = order_uniforms(uniforms)
+  print("stufff??????????????????????")
   for _, u in ipairs(ordered_uniforms) do
+    print(".................................")
     mtype.entries:insert({field = u.handle_name, 
                           type = bgfx.uniform_handle_t})
     mtype.entries:insert({field = u.value_name, 
-                          type = u.value_type[u.count or 1]})
+                          type = u.typeinfo.terra_type[u.count or 1]})
+    print(u.value_name)
   end
-  t:complete()
+  mtype:complete()
 
-  local terra material_copy(src: &t, dest: &t)
+  local terra material_copy(src: &mtype, dest: &mtype)
     @dest = @src
   end
 
@@ -334,7 +336,7 @@ local function compile_uniforms(material_name, uniforms)
   local local_uniforms = select_globals(ordered_uniforms, false)
   local global_uniforms = select_globals(ordered_uniforms, true)
 
-  local terra material_binder(src: &t, globals: &GlobalUniforms_t)
+  local terra material_binder(src: &mtype, globals: &GlobalUniforms_t)
     bgfx.set_state(src.state, 0)
     [ make_binds(local_uniforms, src) ]
     -- if a null pointer is provided to the global uniforms, then
@@ -346,7 +348,7 @@ local function compile_uniforms(material_name, uniforms)
     end
   end
 
-  return material_type, material_binder, material_copy
+  return mtype, material_binder, material_copy
 end
 
 local BaseMaterial = class("BaseMaterial")
@@ -356,11 +358,14 @@ function BaseMaterial:clone()
 end
 
 function BaseMaterial:set_state(s)
+  if s == nil or type(s) == "table" then
+    s = _common.create_state(s)
+  end
   self._value.state = s
 end
 
 function BaseMaterial:set_program(p)
-  self._value.program = s
+  self._value.program = p
 end
 
 local function stage_handles(target, uniforms)
@@ -369,6 +374,8 @@ local function stage_handles(target, uniforms)
     target[uinfo.handle_name] = handle
   end
 end
+
+local _material_count = 0
 
 function m.define_base_material(options)
   if not options.name then
@@ -379,10 +386,16 @@ function m.define_base_material(options)
   end
 
   local uniforms = resolve_uniforms(options.uniforms)
-  local material_t, material_bind, material_copy = compile_uniforms(uniforms)
+  local canonical_name = options.name .. "__" .. _material_count
+  _material_count = _material_count + 1
+
+  print("options? " .. tostring(uniforms))
+  for k, v in pairs(options.uniforms) do print(k) end
+  local material_t, material_bind, material_copy = compile_uniforms(canonical_name, uniforms)
 
   local Material = BaseMaterial:extend(options.name)
   function Material:init(_options)
+    _options = _options or {}
     self._value = terralib.new(material_t)
     self._ttype = material_t
     self._binder = material_bind
@@ -397,7 +410,7 @@ function m.define_base_material(options)
       self.uniforms[uname] = pcon(self._value, uname, uniform.kind, 
                                   0, uniform.count or 1)
     end
-    if options.state then self:set_state(state) end
+    if options.state then self:set_state(options.state) end
     if options.program then
       self:set_program(_shaders.load_program(unpack(options.program)))
     end
@@ -406,18 +419,11 @@ function m.define_base_material(options)
   return Material
 end
 
-local function compile_draw_call(opts)
-  local material_t, bind_material = opts.material_type, opts.material_binder
-  local vert_t, index_t, set_vert, set_index
-  if opts.geo_type == "static" then
-    vert_t, set_vert = bgfx.vertex_buffer_handle_t, bgfx.set_vertex_buffer
-    index_t, set_index = bgfx.index_buffer_handle_t, bgfx.set_index_buffer
-  elseif opts.geo_type == "dynamic" then
-    vert_t, set_vert = bgfx.dynamic_vertex_buffer_handle_t, bgfx.set_dynamic_vertex_buffer
-    index_t, set_index = bgfx.dynamic_index_buffer_handle_t, bgfx.set_dynamic_index_buffer
-  else
-    truss.error("Unsupported geometry type: " .. tostring(opts.geo_type))
-  end
+local function geo_funcs(vname, iname)
+  local vert_t = bgfx[vname ..'_handle_t']
+  local index_t = bgfx[iname .. '_handle_t']
+  local set_vert = bgfx['set_' .. vname]
+  local set_index = bgfx['set_' .. iname]
   local struct geo_t {
     tf: float[16];
     vtx_start: uint32;
@@ -427,6 +433,39 @@ local function compile_draw_call(opts)
     vbh: vert_t;
     ibh: index_t; 
   }
+  return {geo_t, set_vert, set_index}
+end
+
+local _geo_type_structs = nil
+local function get_geo_functions(geo_type)
+  if not _geo_type_structs then
+    _geo_type_structs = {
+      static = geo_funcs("vertex_buffer", "index_buffer"),
+      dynamic = geo_funcs("dynamic_vertex_buffer", "dynamic_index_buffer")
+    }
+  end
+  if not _geo_type_structs[geo_type] then
+    truss.error("Unsupported geometry type: " .. tostring(geo_type))
+  end
+  return unpack(_geo_type_structs[geo_type])
+end
+
+local function name_drawcall(opts)
+  return opts.geo_type .. "|" .. opts.material._ttype.name
+end
+
+m._draw_call_cache = {}
+local function compile_draw_call(opts)
+  local call_name = name_drawcall(opts)
+  local cache_val = m._draw_call_cache[call_name]
+  if cache_val then
+    return unpack(cache_val)
+  end
+
+  local material = opts.material
+  local material_t, bind_material = material._ttype, material._binder
+  local geo_t, set_vert, set_index = get_geo_functions(opts.geo_type)
+
   local terra draw(view: uint8, geo: &geo_t, mat: &material_t, globals: &GlobalUniforms_t)
     bgfx.set_transform(&geo.tf, 1)
     set_vert(0, geo.vbh, geo.vtx_start, geo.vtx_count)
@@ -435,6 +474,7 @@ local function compile_draw_call(opts)
     bgfx.set_state(mat.state, 0)
     bgfx.submit(view, mat.program, 0.0, false)
   end
+  m._draw_call_cache[call_name] = {geo_t, draw}
   return geo_t, draw
 end
 
@@ -449,13 +489,11 @@ function Drawcall:init(geo, mat)
 end
 
 function Drawcall:_recompile()
-  -- TODO: cache these compiled functions
   local geo_type = "static"
   if self.geo.is_dynamic then geo_type = "dynamic" end
   local geo_t, draw = compile_draw_call{
     geo_type = geo_type,
-    material_type = self.mat._ttype,
-    material_binder = self.mat._binder
+    material = self.mat
   }
   print(draw:disas())
   self._cgeo = terralib.new(geo_t)
