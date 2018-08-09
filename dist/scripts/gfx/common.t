@@ -2,6 +2,8 @@
 --
 -- basic gfx stuff
 
+local bgfx = require("./bgfx.t")
+
 local m = {}
 m.frame_index = 0
 m.bgfx_frame_index = 0

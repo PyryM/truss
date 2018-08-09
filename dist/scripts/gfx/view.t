@@ -2,9 +2,10 @@
 --
 -- view management functions
 
-local m = {}
 local class = require("class")
 local math = require("math")
+local bgfx = require("./bgfx.t")
+local m = {}
 
 local View = class("View")
 m.View = View

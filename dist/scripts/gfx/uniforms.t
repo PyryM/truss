@@ -3,6 +3,7 @@
 -- class for conveniently setting up uniforms
 
 local class = require("class")
+local bgfx = require("./bgfx.t")
 local vec4_ = require("math/types.t").vec4_
 
 local m = {}

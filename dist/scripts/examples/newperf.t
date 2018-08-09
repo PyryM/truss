@@ -8,6 +8,7 @@ local math = require("math")
 local geometry = require("geometry")
 local pbr = require("shaders/pbr.t")
 local compiled = require("gfx/compiled.t")
+local bgfx = require("gfx/bgfx.t")
 
 local width, height
 local view

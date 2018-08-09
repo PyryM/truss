@@ -7,6 +7,7 @@ local _uniforms = require("./uniforms.t")
 local _shaders = require("./shaders.t")
 local _common = require("./common.t")
 local mathtypes = require("math/types.t")
+local bgfx = require("./bgfx.t")
 local m = {}
 
 local MAX_GLOBALS = 64

@@ -385,20 +385,7 @@ truss.addons = addons
 local vstr = ffi.string(truss.C.get_version())
 truss.VERSION = vstr
 
--- do some name mangling on bgfx to avoid awkward constructs like
--- bgfx.bgfx_do_something(bgfx.BGFX_SOME_CONSTANT)
-local bgfx_c = terralib.includec("bgfx_truss.c99.h")
-local bgfx_const = truss.require("core/bgfx_constants.t")
-
-bgfx = {}
 local modutils = truss.require("core/module.t")
-modutils.reexport_without_prefix(bgfx_c, "bgfx_", bgfx)
-modutils.reexport_without_prefix(bgfx_c, "BGFX_", bgfx)
-modutils.reexport_without_prefix(bgfx_const, "BGFX_", bgfx)
-bgfx.raw_functions = bgfx_c
-bgfx.raw_constants = bgfx_const
-function bgfx.check_handle(h) return h.idx ~= bgfx.INVALID_HANDLE end
-
 modutils.reexport(truss.require("core/memory.t"), truss)
 
 -- replace lua require with truss require

@@ -2,6 +2,7 @@
 --
 -- bgfx vertex definitions
 
+local bgfx = require("./bgfx.t")
 local m = {}
 
 m.ATTRIBUTE_INFO = {

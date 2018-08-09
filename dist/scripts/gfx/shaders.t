@@ -1,6 +1,8 @@
 -- gfx/shaders.t
 --
 -- shader management functions
+
+local bgfx = require("./bgfx.t")
 local m = {}
 
 m._programs = {}

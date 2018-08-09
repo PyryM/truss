@@ -2,6 +2,7 @@
 --
 -- encapsulations of bgfx formats
 
+local bgfx = require("./bgfx.t")
 local m = {}
 
 local bitformats = {

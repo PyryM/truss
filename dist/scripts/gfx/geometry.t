@@ -4,7 +4,8 @@
 
 local class = require("class")
 local math = require("math")
-local bufferutils = require("gfx/bufferutils.t")
+local bufferutils = require("./bufferutils.t")
+local bgfx = require("./bgfx.t")
 local gfx = nil -- need to delay load
 
 local Quaternion = math.Quaternion

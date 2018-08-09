@@ -4,7 +4,8 @@
 
 local math = require("math")
 local class = require("class")
-local fmt = require("gfx/formats.t")
+local fmt = require("./formats.t")
+local bgfx = require("./bgfx.t")
 
 local m = {}
 local RenderTarget = class("RenderTarget")

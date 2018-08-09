@@ -4,7 +4,8 @@
 
 local class = require("class")
 local math = require("math")
-local fmt = require("gfx/formats.t")
+local fmt = require("./formats.t")
+local bgfx = require("./bgfx.t")
 
 local m = {}
 
