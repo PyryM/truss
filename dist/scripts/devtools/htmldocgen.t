@@ -40,15 +40,20 @@ end
 --     </tfoot>
 -- </table>
 
+-- This is a different unicode character, although it doesn't look it
+local EM_SPACE = " "
+
 local function format_table_args(argtable)
   local inner = html.tbody()
   inner:add(html.tr{
-    html.td{"name"}, html.td{"type"}, html.td{"desc"}, html.td{"default"}
+    html.td{"name"}, html.td{EM_SPACE .. "type"}, 
+    html.td{EM_SPACE .. "desc"}, html.td{EM_SPACE .. "default"}
   })
   for argname, arg in pairs(argtable) do
     local row = html.tr{
-      html.td{argname}, html.td{arg.kind}, 
-      html.td{arg.name}, html.td{tostring(arg.default) or "nil"}
+      html.td{argname}, html.td{EM_SPACE .. arg.kind}, 
+      html.td{EM_SPACE .. arg.name}, 
+      html.td{EM_SPACE .. tostring(arg.default) or "nil"}
     }
     inner:add(row)
   end
