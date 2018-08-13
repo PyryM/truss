@@ -113,7 +113,7 @@ local function make_type(tname)
   end
 end
 
-for _, tname in ipairs{"number", "string", "object", "table", "callable", "bool", "enum"} do
+for _, tname in ipairs{"number", "string", "object", "table", "callable", "bool", "enum", "ctype", "cdata"} do
   DocParser[tname] = make_type(tname)
 end
 
@@ -128,6 +128,7 @@ end
 DocParser.sourcefile = section_like("sourcefile")
 DocParser.classdef = section_like("classdef")
 DocParser.func = section_like("func")
+DocParser.funcdef = DocParser.func
 DocParser.description = property_like("description", unwrap_string)
 DocParser.returns = property_like("returns")
 DocParser.args = property_like("args")
@@ -135,9 +136,10 @@ DocParser.table_args = property_like("table_args")
 DocParser.example = property_like("example", unwrap_string)
 
 m.doc_keywords = {
-  "module", "sourcefile", "classdef", "func",
+  "module", "sourcefile", "classdef", "func", "funcdef",
   "description", "args", "table_args", "returns", "example",
-  "bool", "number", "enum", "string", "object", "callable"
+  "bool", "number", "enum", "string", "object", "callable",
+  "ctype", "cdata"
 }
 
 function DocParser:bind_functions(env)
@@ -156,6 +158,11 @@ function DocParser:parse_string(s)
   setfenv(f, self:bind_functions())
   f()
   return self.structure
+end
+
+function DocParser:parse_file(fn)
+  local s = truss.load_string_from_file(fn)
+  return self:parse_string(s)
 end
 
 function m.init()

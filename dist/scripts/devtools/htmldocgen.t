@@ -21,6 +21,15 @@ function generators.module(item)
   return ret
 end
 
+function generators.sourcefile(item)
+  local ret = html.group{
+    html.h3{item.info.name}
+  }
+  if item.description then ret:add(html.p{item.description}) end
+  ret:add(gen(item.items))
+  return ret
+end
+
 -- <table>
 --     <thead>
 --         <tr>
