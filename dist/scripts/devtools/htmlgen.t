@@ -17,6 +17,10 @@ function node_proto:add(child)
   return self
 end
 
+local nonbreaking = {
+  td = true, span = true
+}
+
 function node_proto:chunkify(fragments, indent)
   fragments = fragments or {}
   indent = indent or ""
@@ -29,19 +33,29 @@ function node_proto:chunkify(fragments, indent)
   end
   table.insert(fragments, opening)
   local nextindent = indent .. "  "
+  local broke_line = false
   for _, child in ipairs(self.children or {}) do
     if type(child) == "string" then
-      table.insert(fragments, nextindent .. child)
+      table.insert(fragments, child)
     else
-      child:chunkify(fragments, nextindent)
+      if nonbreaking[child.kind] then
+        child:chunkify(fragments, "")
+      else
+        broke_line = true
+        table.insert(fragments, "\n")
+        child:chunkify(fragments, nextindent)
+      end
     end
   end
-  table.insert(fragments, string.format("%s</%s>", indent, self.kind))
+  if broke_line then 
+    table.insert(fragments, string.format("\n%s", indent)) 
+  end
+  table.insert(fragments, string.format("</%s>", self.kind))
   return fragments
 end
 
 function node_proto:__tostring()
-  return table.concat(self:chunkify(), "\n")
+  return table.concat(self:chunkify(), " ")
 end
 
 function html.tag(kind, options)
@@ -71,7 +85,7 @@ end
 
 local tagnames = {
   'body', 'p', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-  'section'
+  'section', 'table', 'tr', 'td', 'thead', 'tbody', 'tfoot'
 }
 for _, tname in ipairs(tagnames) do html[tname] = make_tag(tname) end
 

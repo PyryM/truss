@@ -98,6 +98,9 @@ local function parse_type_arg(arg)
   elseif type(arg) == "table" then
     local ret = truss.extend_table({}, arg)
     ret.name, ret.description = arg[1], arg[2]
+    if not ret.description then
+      ret.name, ret.description = unpack(stringutils.split(":", ret.name))
+    end
     return ret
   else
     truss.error("Type argument makes no sense: " .. tostring(arg))

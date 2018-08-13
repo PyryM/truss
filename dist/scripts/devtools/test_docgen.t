@@ -16,13 +16,28 @@ function init()
   func "whatever"
   description "has some mysterious side effects"
 
+  func "foobars"
+  args { string 'black_box' }
+  returns { string 'mystery' }
+  description "who knows what this function does"
+
   module "testmodule"
   func "solve_something_else"
   description "Solve something else"
   args {
-    bool 'obvious_arg'
+    bool{'obvious_arg', default = 12.0},
+    number{'another_arg', optional = true},
+    string{'arg3: tokyo drift', default = 'vin diesel'}
   }
   returns {string 'hmmmm'}
+
+  func "something_complicated"
+  table_args{
+    rbg_write = bool{'write color to target', default = true},
+    depth_write = bool{'write depth to target', default = true},
+    alpha_write = bool{'write alpha to target', default = true}
+  }
+  description "Has complicated arguments"
   ]=]
 
   local docgen = require("devtools/docgen.t")
