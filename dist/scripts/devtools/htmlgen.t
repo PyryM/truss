@@ -26,7 +26,9 @@ function node_proto:chunkify(fragments, indent)
   indent = indent or ""
   local attribs = "" -- TODO: generate attributes
   local opening
-  if #attribs > 0 then
+  if self.kind == "none" then
+    opening = ""
+  elseif #attribs > 0 then
     opening = string.format("%s<%s %s>", indent, self.kind, attribs)
   else
     opening = string.format("%s<%s>", indent, self.kind)
@@ -50,7 +52,9 @@ function node_proto:chunkify(fragments, indent)
   if broke_line then 
     table.insert(fragments, string.format("\n%s", indent)) 
   end
-  table.insert(fragments, string.format("</%s>", self.kind))
+  if self.kind ~= "none" then
+    table.insert(fragments, string.format("</%s>", self.kind))
+  end
   return fragments
 end
 
@@ -88,5 +92,6 @@ local tagnames = {
   'section', 'table', 'tr', 'td', 'thead', 'tbody', 'tfoot'
 }
 for _, tname in ipairs(tagnames) do html[tname] = make_tag(tname) end
+html.group = make_tag("none")
 
 return html

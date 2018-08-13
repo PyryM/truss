@@ -17,7 +17,7 @@ function init()
   description "has some mysterious side effects"
 
   func "foobars"
-  args { string 'black_box' }
+  args { string 'black_box', enum{'thingy', options={'petrol', 'cheese'}, default='cheese'} }
   returns { string 'mystery' }
   description "who knows what this function does"
 
@@ -35,7 +35,8 @@ function init()
   table_args{
     rbg_write = bool{'write color to target', default = true},
     depth_write = bool{'write depth to target', default = true},
-    alpha_write = bool{'write alpha to target', default = true}
+    alpha_write = bool{'write alpha to target', default = true},
+    should_petrol = enum{'whether to petrol', options={'petrol', 'cheese'}, default='cheese'}
   }
   description "Has complicated arguments"
   ]=]

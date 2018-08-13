@@ -151,7 +151,8 @@ function DocParser:bind_functions(env)
 end
 
 function DocParser:parse_string(s)
-  local f = loadstring(s)
+  local f, had_err = loadstring(s)
+  if had_err then truss.error(had_err) end
   setfenv(f, self:bind_functions())
   f()
   return self.structure

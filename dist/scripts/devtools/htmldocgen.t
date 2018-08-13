@@ -43,6 +43,23 @@ end
 -- This is a different unicode character, although it doesn't look it
 local EM_SPACE = " "
 
+local function format_value(v)
+  if type(v) == "string" then
+    return "'" .. v .. "'"
+  else
+    return tostring(v)
+  end
+end
+
+local function format_enum_options(options)
+  local t = {}
+  print(options)
+  for _, k in ipairs(options) do
+    table.insert(t, format_value(k))
+  end
+  return table.concat(t, ", ")
+end
+
 local function format_table_args(argtable)
   local inner = html.tbody()
   inner:add(html.tr{
@@ -50,9 +67,13 @@ local function format_table_args(argtable)
     html.td{EM_SPACE .. "desc"}, html.td{EM_SPACE .. "default"}
   })
   for argname, arg in pairs(argtable) do
+    local desc = EM_SPACE .. arg.name
+    if arg.kind == "enum" and arg.options then
+      desc = desc .. ". Can be: " .. format_enum_options(arg.options)
+    end
     local row = html.tr{
       html.td{argname}, html.td{EM_SPACE .. arg.kind}, 
-      html.td{EM_SPACE .. arg.name}, 
+      html.td{desc}, 
       html.td{EM_SPACE .. tostring(arg.default) or "nil"}
     }
     inner:add(row)
@@ -67,12 +88,15 @@ local function format_args(arglist)
   for _, arg in ipairs(arglist or {}) do
     local astr = string.format("%s: %s", arg.name, arg.kind)
     table.insert(frags, astr)
-    if arg.description or arg.default or arg.optional then
+    if arg.description or arg.default or arg.optional or arg.kind == 'enum' then
       local desc = string.format("%s — %s", arg.name, arg.description or "")
       if arg.default then
-        desc = desc .. string.format(" (default: %s)", tostring(arg.default))
+        desc = desc .. string.format(" (default: %s)", format_value(arg.default))
       elseif arg.optional then
         desc = desc .. " (optional)"
+      end
+      if arg.kind == 'enum' and arg.options then
+        desc = desc .. ". Can be: " .. format_enum_options(arg.options)
       end
       descriptions:add(html.li{desc})
     end
