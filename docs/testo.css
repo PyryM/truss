@@ -127,9 +127,44 @@ cite
 	font-weight: bold;
 }
 
-table
-{
-  font-size: small;
+/* spacing */
+
+table {
+	font-size: small;
+	table-layout: fixed;
+	width: 100%;
+	border-collapse: collapse;
+}
+
+caption {
+	caption-side: top;
+	text-align: left;
+	visibility: hidden;
+}
+  
+thead th:nth-child(1) {
+	width: 20%;
+}
+
+thead th:nth-child(2) {
+	width: 20%;
+}
+
+thead th:nth-child(3) {
+	width: 45%;
+}
+
+thead th:nth-child(4) {
+	width: 20%;
+}
+
+tr {
+	border-bottom: 1px solid #ccc;
+}
+
+th, td {
+	padding: 0em 1em 0em 1em;
+	text-align: left;
 }
 
 pre,code,xmp

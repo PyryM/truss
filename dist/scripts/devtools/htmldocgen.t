@@ -39,9 +39,6 @@ function generators.sourcefile(item, parent)
   return ret
 end
 
--- This is a different unicode character, although it doesn't look it
-local EM_SPACE = " "
-
 local function format_value(v)
   if type(v) == "string" then
     return "'" .. v .. "'"
@@ -62,20 +59,20 @@ local function format_table_args(argtable)
   local caption = html.caption{"Options"}
   local head = html.thead{
     html.tr{
-      html.th{"name"}, html.th{EM_SPACE .. "type"}, 
-      html.th{EM_SPACE .. "desc"}, html.th{EM_SPACE .. "default"}
+      html.th{"name"}, html.th{"type"}, 
+      html.th{"desc"}, html.th{"default"}
     }
   }
   local body = html.tbody()
   for argname, arg in pairs(argtable) do
-    local desc = EM_SPACE .. arg.name
+    local desc = arg.name
     if arg.kind == "enum" and arg.options then
       desc = desc .. ": " .. format_enum_options(arg.options)
     end
     local row = html.tr{
-      html.td{argname}, html.td{EM_SPACE .. arg.kind}, 
+      html.td{argname}, html.td{arg.kind}, 
       html.td{desc}, 
-      html.td{EM_SPACE .. format_value(arg.default) or "nil"}
+      html.td{format_value(arg.default) or "nil"}
     }
     body:add(row)
   end
