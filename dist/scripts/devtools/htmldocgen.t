@@ -15,10 +15,14 @@ function generators.generic(item, parent)
   return html.p{item.kind .. ": " .. tostring(item.info.name)}
 end
 
+local function module_id(item)
+  return "module-" .. item.info.name
+end
+
 function generators.module(item, parent)
-  local ret = html.section{html.h2{item.info.name}}
+  local ret = html.section{html.h2{"◈ " .. item.info.name}}
   ret:add(gen(item.items, item))
-  ret.attributes.id = "module-" .. item.info.name
+  ret.attributes.id = module_id(item)
   return ret
 end
 
@@ -50,25 +54,6 @@ local function format_enum_options(options)
   end
   return table.concat(t, ", ")
 end
-
--- <table>
---     <thead>
---         <tr>
---             <th colspan="2">The table header</th>
---         </tr>
---     </thead>
---     <tbody>
---         <tr>
---             <td>The table body</td>
---             <td>with two columns</td>
---         </tr>
---     </tbody>
---     <tfoot>
---         <tr>
---             <td colspan="2">The table footer</td>
---         </tr>
---     </tfoot>
--- </table>
 
 local function format_table_args(argtable)
   local caption = html.caption{"Options"}
@@ -122,17 +107,19 @@ end
 
 function generators.func(item)
   local arg_list, arg_descriptions
+  local sig
   if item.table_args then
     arg_list, arg_descriptions = format_table_args(item.table_args)
+    sig = string.format("%s { %s }", item.info.name, arg_list)
   else
     arg_list, arg_descriptions = format_args(item.args)
+    sig = string.format("%s ( %s )", item.info.name, arg_list)
   end
   local ret_list, ret_descriptions = format_args(item.returns)
-  local sig = string.format("%s ( %s )", item.info.name, arg_list)
   if item.returns then
     sig = sig .. " → " .. ret_list
   end
-  local ret = {html.h4(sig), arg_descriptions}
+  local ret = {html.h4{sig, class = 'function-signature'}, arg_descriptions}
   if item.description then
     table.insert(ret, html.p(item.description))
   end
@@ -142,11 +129,26 @@ function generators.func(item)
   return ret
 end
 
+-- <nav class="menu">
+--   <ul>
+--     <li><a href="#">Home</a></li>
+--     <li><a href="#">About</a></li>
+--     <li><a href="#">Contact</a></li>
+--   </ul>
+-- </nav>
+
+local function nav_link(module)
+  return html.a{module.info.name, href="#" .. module_id(module)}
+end
+
 local function generate_html(modules)
-  local body = html.body()
+  local nav_inner = html.ul()
+  local main = html.main()
   for k, module in pairs(modules) do
-    body:add(gen({module}))
+    nav_inner:add(html.li{nav_link(module)})
+    main:add(gen({module}))
   end
+  local body = html.body{html.nav{nav_inner}, main}
   return [[
   <!DOCTYPE html>
   <html>

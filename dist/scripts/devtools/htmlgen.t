@@ -98,7 +98,7 @@ end
 local tagnames = {
   'body', 'p', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
   'section', 'table', 'tr', 'td', 'thead', 'tbody', 'tfoot', 'th', 'caption',
-  'code', 'pre'
+  'code', 'pre', 'main', 'a', 'nav'
 }
 for _, tname in ipairs(tagnames) do html[tname] = make_tag(tname) end
 html.group = make_tag("none")
