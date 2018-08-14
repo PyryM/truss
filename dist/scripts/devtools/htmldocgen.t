@@ -21,6 +21,9 @@ end
 
 function generators.module(item, parent)
   local ret = html.section{html.h2{"◈ " .. item.info.name}}
+  if item.description then
+    ret:add(html.p{item.description})
+  end
   ret:add(gen(item.items, item))
   ret.attributes.id = module_id(item)
   return ret
@@ -142,13 +145,16 @@ local function nav_link(module)
 end
 
 local function generate_html(modules)
-  local nav_inner = html.ul()
+  local nav_inner = html.group()
   local main = html.main()
   for k, module in pairs(modules) do
-    nav_inner:add(html.li{nav_link(module)})
+    nav_inner:add(nav_link(module))
     main:add(gen({module}))
   end
-  local body = html.body{html.nav{nav_inner}, main}
+  local body = html.body{html.nav{
+    html.h3{"Modules"},
+    nav_inner}, 
+  main}
   return [[
   <!DOCTYPE html>
   <html>
