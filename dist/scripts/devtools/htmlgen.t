@@ -21,10 +21,18 @@ local nonbreaking = {
   td = true, span = true
 }
 
+local function format_attributes(attribs)
+  local ret = {}
+  for k, v in pairs(attribs) do
+    table.insert(ret, string.format('%s="%s"', k, v))
+  end
+  return table.concat(ret, " ")
+end
+
 function node_proto:chunkify(fragments, indent)
   fragments = fragments or {}
   indent = indent or ""
-  local attribs = "" -- TODO: generate attributes
+  local attribs = format_attributes(self.attributes)
   local opening
   if self.kind == "none" then
     opening = ""
@@ -89,7 +97,8 @@ end
 
 local tagnames = {
   'body', 'p', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-  'section', 'table', 'tr', 'td', 'thead', 'tbody', 'tfoot'
+  'section', 'table', 'tr', 'td', 'thead', 'tbody', 'tfoot', 'th', 'caption',
+  'code', 'pre'
 }
 for _, tname in ipairs(tagnames) do html[tname] = make_tag(tname) end
 html.group = make_tag("none")

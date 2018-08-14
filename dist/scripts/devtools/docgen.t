@@ -108,14 +108,43 @@ local function parse_type_arg(arg)
 end
 
 local function make_type(tname)
-  return function(_, arg)
+  return function(arg)
     return truss.extend_table({kind = tname}, parse_type_arg(arg))
   end
 end
 
-for _, tname in ipairs{"number", "string", "object", "table", "callable", "bool", "enum", "ctype", "cdata"} do
+local function make_metatype(tname)
+  local template_metatable = {
+    __index = function(t, k)
+      local qualified_name = string.format("%s[%s]", tname, k)
+      print("Qualified type to: " .. qualified_name)
+      return make_type(qualified_name)
+    end,
+    __call = function(_, arg)
+      return truss.extend_table({kind = tname}, parse_type_arg(arg))
+    end
+  }
+  local m = {}
+  setmetatable(m, template_metatable)
+  return m
+end
+
+m.doc_keywords = {
+  "module", "sourcefile", "classdef", "func", "funcdef",
+  "description", "args", "table_args", "returns", "example"
+}
+
+m.doc_types = {
+  "bool", "number", "enum", "string", "callable",
+  "object", "ctype", "cdata"
+}
+
+for _, tname in ipairs(m.doc_types) do
   DocParser[tname] = make_type(tname)
 end
+DocParser.object = make_metatype("object")
+DocParser.ctype = make_metatype("ctype")
+DocParser.cdata = make_metatype("cdata")
 
 function DocParser:module(module_name)
   module_name = unwrap_string(module_name)
@@ -135,13 +164,6 @@ DocParser.args = property_like("args")
 DocParser.table_args = property_like("table_args")
 DocParser.example = property_like("example", unwrap_string)
 
-m.doc_keywords = {
-  "module", "sourcefile", "classdef", "func", "funcdef",
-  "description", "args", "table_args", "returns", "example",
-  "bool", "number", "enum", "string", "object", "callable",
-  "ctype", "cdata"
-}
-
 function DocParser:bind_functions(env)
   local ret = env or {}
   for _, funcname in ipairs(m.doc_keywords) do
@@ -149,6 +171,11 @@ function DocParser:bind_functions(env)
       return self[funcname](self, options)
     end
   end
+  for _, tname in ipairs(m.doc_types) do
+    ret[tname] = DocParser[tname]
+  end
+  ret.tostring = tostring
+  ret.print = print
   return ret
 end
 

@@ -1,33 +1,54 @@
 local html = require("./htmlgen.t")
 
 local generators = {}
-local function gen(items)
+local function gen(items, parent)
   if not items then return "" end
   local fragments = {}
   for _, item in ipairs(items) do
-    local frag = (generators[item.kind] or generators.generic)(item)
+    local frag = (generators[item.kind] or generators.generic)(item, parent)
     table.insert(fragments, frag)
   end
   return fragments
 end
 
-function generators.generic(item)
+function generators.generic(item, parent)
   return html.p{item.kind .. ": " .. tostring(item.info.name)}
 end
 
-function generators.module(item)
+function generators.module(item, parent)
   local ret = html.section{html.h2{item.info.name}}
-  ret:add(gen(item.items))
+  ret:add(gen(item.items, item))
+  ret.attributes.id = "module-" .. item.info.name
   return ret
 end
 
-function generators.sourcefile(item)
+function generators.sourcefile(item, parent)
   local ret = html.group{
     html.h3{item.info.name}
   }
+  item.parent = parent
   if item.description then ret:add(html.p{item.description}) end
-  ret:add(gen(item.items))
+  ret:add(gen(item.items, item))
   return ret
+end
+
+-- This is a different unicode character, although it doesn't look it
+local EM_SPACE = " "
+
+local function format_value(v)
+  if type(v) == "string" then
+    return "'" .. v .. "'"
+  else
+    return tostring(v)
+  end
+end
+
+local function format_enum_options(options)
+  local t = {}
+  for _, k in ipairs(options) do
+    table.insert(t, format_value(k))
+  end
+  return table.concat(t, ", ")
 end
 
 -- <table>
@@ -49,46 +70,29 @@ end
 --     </tfoot>
 -- </table>
 
--- This is a different unicode character, although it doesn't look it
-local EM_SPACE = " "
-
-local function format_value(v)
-  if type(v) == "string" then
-    return "'" .. v .. "'"
-  else
-    return tostring(v)
-  end
-end
-
-local function format_enum_options(options)
-  local t = {}
-  print(options)
-  for _, k in ipairs(options) do
-    table.insert(t, format_value(k))
-  end
-  return table.concat(t, ", ")
-end
-
 local function format_table_args(argtable)
-  local inner = html.tbody()
-  inner:add(html.tr{
-    html.td{"name"}, html.td{EM_SPACE .. "type"}, 
-    html.td{EM_SPACE .. "desc"}, html.td{EM_SPACE .. "default"}
-  })
+  local caption = html.caption{"Options"}
+  local head = html.thead{
+    html.tr{
+      html.th{"name"}, html.th{EM_SPACE .. "type"}, 
+      html.th{EM_SPACE .. "desc"}, html.th{EM_SPACE .. "default"}
+    }
+  }
+  local body = html.tbody()
   for argname, arg in pairs(argtable) do
     local desc = EM_SPACE .. arg.name
     if arg.kind == "enum" and arg.options then
-      desc = desc .. ". Can be: " .. format_enum_options(arg.options)
+      desc = desc .. ": " .. format_enum_options(arg.options)
     end
     local row = html.tr{
       html.td{argname}, html.td{EM_SPACE .. arg.kind}, 
       html.td{desc}, 
-      html.td{EM_SPACE .. tostring(arg.default) or "nil"}
+      html.td{EM_SPACE .. format_value(arg.default) or "nil"}
     }
-    inner:add(row)
+    body:add(row)
   end
 
-  return "options", html.table{inner}
+  return "options", html.table{caption, head, body}
 end
 
 local function format_args(arglist)
@@ -105,7 +109,7 @@ local function format_args(arglist)
         desc = desc .. " (optional)"
       end
       if arg.kind == 'enum' and arg.options then
-        desc = desc .. ". Can be: " .. format_enum_options(arg.options)
+        desc = desc .. ": " .. format_enum_options(arg.options)
       end
       descriptions:add(html.li{desc})
     end
@@ -131,6 +135,9 @@ function generators.func(item)
   local ret = {html.h4(sig), arg_descriptions}
   if item.description then
     table.insert(ret, html.p(item.description))
+  end
+  if item.example then
+    table.insert(ret, html.code(item.example))
   end
   return ret
 end
