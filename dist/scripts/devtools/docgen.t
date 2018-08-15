@@ -136,7 +136,7 @@ m.doc_keywords = {
 
 m.doc_types = {
   "bool", "number", "enum", "string", "callable",
-  "object", "ctype", "cdata"
+  "object", "ctype", "cdata", "list", "table", "dict"
 }
 
 for _, tname in ipairs(m.doc_types) do
@@ -146,13 +146,19 @@ DocParser.object = make_metatype("object")
 DocParser.ctype = make_metatype("ctype")
 DocParser.cdata = make_metatype("cdata")
 
-function DocParser:module(module_name)
+function DocParser:_module(module_name, module_kind)
   module_name = unwrap_string(module_name)
   if not self.modules[module_name] then
-    self.modules[module_name] = {kind = 'module', info = {name = module_name}}
+    self.modules[module_name] = {kind = module_kind, info = {name = module_name}}
   end
   self.structure = self.modules[module_name]
   self.open_stack = {}
+end
+function DocParser:module(module_name)
+  self:_module(module_name, "module")
+end
+function DocParser:article(article_name)
+  self:_module(article_name, "article")
 end
 DocParser.sourcefile = section_like("sourcefile")
 DocParser.classdef = section_like("classdef")

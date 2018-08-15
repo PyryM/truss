@@ -124,7 +124,7 @@ function generators.func(item)
     table.insert(ret, html.p(item.description))
   end
   if item.example then
-    table.insert(ret, html.code(item.example))
+    table.insert(ret, html.code{item.example, class="language-lua"})
   end
   return ret
 end
@@ -141,7 +141,8 @@ local function nav_link(module)
   return html.a{module.info.name, href="#" .. module_id(module)}
 end
 
-local function generate_html(modules)
+local function generate_html(modules, options)
+  options = options or {}
   local nav_inner = html.group()
   local main = html.main()
   for k, module in pairs(modules) do
@@ -152,14 +153,22 @@ local function generate_html(modules)
     html.h3{"Modules"},
     nav_inner}, 
   main}
+  for _, script in ipairs(options.scripts or {}) do
+    body:add(html.script{"", src = script})
+  end
+  local css = {}
+  for i, fn in ipairs(options.css or {}) do
+    css[i] = string.format('<link rel="stylesheet" href="%s">', fn)
+  end
+  css = table.concat(css, '\n  ')
   return [[
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta charset="utf-8">
-    <title>Truss Documentation</title>
-  </head>
-  ]] .. tostring(body) .. "</html>"
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Truss Documentation</title>]]
+  .. "\n  " .. css .. "\n</head>\n"
+  .. tostring(body) .. "</html>"
 end
 
 return generate_html

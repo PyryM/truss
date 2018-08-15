@@ -65,7 +65,10 @@ function init()
   parser:parse_file("scripts/gfx/doc.lua")
 
   -- log.info(json:encode(parser:get_modules()))
-  log.info(htmlgen(parser:get_modules()))
+  log.info(htmlgen(parser:get_modules(), {
+    css = {"testo.css", "prism.css"},
+    scripts = {"prism.js"}
+  }))
 end
 
 function update()

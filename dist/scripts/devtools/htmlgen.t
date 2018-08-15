@@ -17,10 +17,6 @@ function node_proto:add(child)
   return self
 end
 
-local nonbreaking = {
-  td = true, span = true
-}
-
 local function format_attributes(attribs)
   local ret = {}
   for k, v in pairs(attribs) do
@@ -29,26 +25,45 @@ local function format_attributes(attribs)
   return table.concat(ret, " ")
 end
 
+local default_format = function(tagname, attribs)
+  local end_tag = string.format("</%s>", tagname)
+  if #attribs > 0 then
+    return string.format("<%s %s>", tagname, attribs), end_tag
+  else
+    return string.format("<%s>", tagname), end_tag
+  end
+end
+
+local elements = {
+  td = {nonbreaking = true, indent = " ", format = default_format}, 
+  span = {nonbreaking = true, indent = " ", format = default_format},
+  code = {
+    indent = "", 
+    format = function(_, a)
+      return string.format("<pre><code %s>", a), "</code></pre>"
+    end
+  },
+  default = {indent = "  ", format = default_format},
+  none = {indent = "", format = function() 
+    return "", "" 
+  end}
+}
+
 function node_proto:chunkify(fragments, indent)
   fragments = fragments or {}
   indent = indent or ""
+  local einfo = elements[self.kind] or elements.default
   local attribs = format_attributes(self.attributes)
-  local opening
-  if self.kind == "none" then
-    opening = ""
-  elseif #attribs > 0 then
-    opening = string.format("%s<%s %s>", indent, self.kind, attribs)
-  else
-    opening = string.format("%s<%s>", indent, self.kind)
-  end
+  local opening, closing = einfo.format(self.kind, attribs)
+  opening = indent .. opening
   table.insert(fragments, opening)
-  local nextindent = indent .. "  "
+  local nextindent = indent .. einfo.indent
   local broke_line = false
   for _, child in ipairs(self.children or {}) do
     if type(child) == "string" then
       table.insert(fragments, child)
     else
-      if nonbreaking[child.kind] then
+      if einfo.nonbreaking then
         child:chunkify(fragments, "")
       else
         broke_line = true
@@ -60,14 +75,12 @@ function node_proto:chunkify(fragments, indent)
   if broke_line then 
     table.insert(fragments, string.format("\n%s", indent)) 
   end
-  if self.kind ~= "none" then
-    table.insert(fragments, string.format("</%s>", self.kind))
-  end
+  table.insert(fragments, closing)
   return fragments
 end
 
 function node_proto:__tostring()
-  return table.concat(self:chunkify(), " ")
+  return table.concat(self:chunkify(), "")
 end
 
 function html.tag(kind, options)
@@ -95,10 +108,35 @@ local function make_tag(tagname)
   end
 end
 
+
+function html.markdownish(text)
+  -- only want to deal with real \n newlines
+  text = (text or ""):gsub("\r", "")
+  text = text:gsub("<", "&lt")
+  text = text:gsub(">", "&gt") 
+
+  local ret = html.group()
+  local paragraph = html.p()
+
+  local cursor = 1
+  local line_was_empty = true
+  for i = 1, #text do
+    local char = text:sub(i, i)
+    if char == "\n" then
+      if line_was_empty then
+      else
+      end
+    end
+  end
+
+  if paragraph then ret:add(paragraph) end
+  return ret
+end
+
 local tagnames = {
   'body', 'p', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
   'section', 'table', 'tr', 'td', 'thead', 'tbody', 'tfoot', 'th', 'caption',
-  'code', 'pre', 'main', 'a', 'nav'
+  'code', 'pre', 'main', 'a', 'nav', 'script'
 }
 for _, tname in ipairs(tagnames) do html[tname] = make_tag(tname) end
 html.group = make_tag("none")
