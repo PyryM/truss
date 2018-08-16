@@ -38,28 +38,33 @@ function RenderSystem:_match(renderable)
   return ops
 end
 
-function RenderSystem:_tree_render(entity)
+function RenderSystem:_tree_render(entity, parentmat)
   if not entity.visible then return end
+  if not entity.matrix then return end
+
+  local mw = entity.matrix_world
+  mw:multiply(parentmat, entity.matrix)
+
   local renderable = entity.renderable
   if renderable then
     local ops = self:_match(renderable)
     local nops = #ops
     for i = 1, nops do
-      ops[i](renderable, entity.matrix_world)
+      ops[i](renderable, mw)
     end
   end
   for _, child in pairs(entity.children) do
-    self:_tree_render(child)
+    self:_tree_render(child, mw)
   end
 end
 
 function RenderSystem:update()
   if not self.pipeline then return end
   self.pipeline:pre_render()
-  self.ecs.scene:recursive_update_world_mat(self._identity_mat, true)
+  --self.ecs.scene:recursive_update_world_mat(self._identity_mat)
   self.ecs:insert_timing_event("render_sg")
   self:_clear_op_cache()
-  self:_tree_render(self.ecs.scene)
+  self:_tree_render(self.ecs.scene, self._identity_mat)
   self.ecs:insert_timing_event("render_traverse")
   self.pipeline:post_render()
   self.ecs:insert_timing_event("render_post")
