@@ -49,16 +49,12 @@ function Pipeline:add_stage(stage, stage_name)
   stage_name = stage_name or stage.stage_name
   if stage_name then self.stages[stage_name] = stage end
   local nviews = stage:num_views() or 1
-  local view_ids = {}
   if self.verbose then
     log.debug("Giving stage [" .. tostring(stage) .. "] views " ..
               self._next_view .. " to " .. (self._next_view + nviews - 1))
   end
-  for i = 1, nviews do
-    view_ids[i] = self._next_view
-    self._next_view = self._next_view + 1
-  end
-  stage:bind_view_ids(view_ids)
+  stage:bind_view_ids(self._next_view, nviews)
+  self._next_view = self._next_view + nviews
   return stage
 end
 

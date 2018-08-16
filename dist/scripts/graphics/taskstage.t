@@ -44,16 +44,17 @@ function TaskRunnerStage:_create_scratch(options)
   end
 end
 
-function TaskRunnerStage:bind_view_ids(view_ids)
-  if #view_ids < 2 then truss.error("Not enough views: got " .. #view_ids) end
+function TaskRunnerStage:bind_view_ids(start_id, num_views)
+  if num_views < 2 then truss.error("Not enough views: got " .. num_views) end
   self._contexts = {}
-  for idx = 1, (#view_ids - 1) do
-    self._contexts[idx] = {
-      viewid = view_ids[idx],
-      view = gfx.View():bind(view_ids[idx])
+  for idx = 0, (num_views - 2) do
+    self._contexts[idx+1] = {
+      viewid = start_id + idx,
+      view = gfx.View():bind(start_id + idx)
     }
   end
-  self._extra_blit_view:bind(view_ids[#view_ids]) -- reserve last id for blit
+  -- reserve last id for blit
+  self._extra_blit_view:bind(start_id + num_views - 1) 
 end
 
 function TaskRunnerStage:bind()

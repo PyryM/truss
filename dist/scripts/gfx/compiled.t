@@ -516,6 +516,15 @@ function Drawcall:init(geo, mat)
   self:_recompile()
 end
 
+local function stage_geo(geo, target)
+  target.vbh = geo._vbh
+  target.ibh = geo._ibh
+  target.vtx_start = 0
+  target.vtx_count = bgfx.UINT32_MAX
+  target.idx_start = 0
+  target.idx_count = bgfx.UINT32_MAX
+end
+
 function Drawcall:_recompile()
   local geo_type = "static"
   if self.geo.is_dynamic then geo_type = "dynamic" end
@@ -527,12 +536,7 @@ function Drawcall:_recompile()
   if not (self.geo._vbh and self.geo._ibh) then
     truss.error("Geometry has no buffers!")
   end
-  self._cgeo.vbh = self.geo._vbh
-  self._cgeo.ibh = self.geo._ibh
-  self._cgeo.vtx_start = 0
-  self._cgeo.vtx_count = bgfx.UINT32_MAX
-  self._cgeo.idx_start = 0
-  self._cgeo.idx_count = bgfx.UINT32_MAX
+  stage_geo(self.geo, self._cgeo)
   self._draw = draw
   self._multi_draw = multi_draw
 end
@@ -561,6 +565,32 @@ function Drawcall:multi_submit(start_viewid, n_views, globals, tf)
   self._cgeo.tf = tf.data
   self._multi_draw(start_viewid, n_views, 
                    self._cgeo, self._cmat, view_globals._value)
+end
+
+local PartialDrawcall = class("PartialDrawcall")
+m.PartialDrawcall = PartialDrawcall
+
+function PartialDrawcall:init(material)
+  self._calls = {}
+  for _, geo_type in ipairs({"static", "dynamic"}) do
+    local geo_t, draw = compile_draw_call{
+      geo_type = geo_type,
+      material = material
+    }
+    local cgeo = terralib.new(geo_t)
+    self._calls[geo_type] = {cgeo, draw}
+  end
+  self.mat = material
+  self._cmat = material._value
+end
+
+function PartialDrawcall:submit(geo, viewid, globals, tf)
+  local geo_type = (geo.is_dynamic and "dynamic") or "static"
+  local cgeo, draw = unpack(self._calls[geo_type])
+  cgeo.tf = tf.data
+  cgeo.vbh = geo._vbh
+  cgeo.ibh = geo._ibh
+  draw(viewid, cgeo, self._cmat, globals)
 end
 
 return m

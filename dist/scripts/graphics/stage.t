@@ -49,8 +49,9 @@ function Stage:bind()
   self.view:bind()
 end
 
-function Stage:bind_view_ids(view_ids)
-  self.view:bind(view_ids[1])
+function Stage:bind_view_ids(start_view_id, num_views)
+  self._start_view_id = start_view_id
+  self.view:bind(start_view_id)
 end
 
 function Stage:add_render_op(op)

@@ -105,35 +105,23 @@ function CameraControlOp:apply(component, tf)
   self.stage.view:set_matrices(component:get_matrices())
 end
 
--- TODO: figure out multirendering in the new system
---[[
-local MultiCameraControlOp = renderop.MultiRenderOperation:extend("MultiCameraControlOp")
-m.MultiCameraControlOp = MultiCameraControlOp
+local MultiCameraOp = renderop.RenderOperation:extend("MultiCameraOp")
+m.MultiCameraOp = MultiCameraOp
 
-function MultiCameraControlOp:init()
-  -- hmmm, maybe need to think about this a bit
-  -- right now this will match *every* camera, and only in the actual
-  -- :multi_render() call does it apply the matrices to the correct view
-  -- 
-  -- Probably you'll never have enough cameras and multistages that this 
-  -- is a performance problem, but nonetheless it's inelegant.
-  -- Perhaps the right way to do it would be to change :matches() to also take
-  -- the stage as an argument, so this could check stage._contexts...
+function MultiCameraOp:init()
+  -- No special init here
 end
 
-function MultiCameraControlOp:matches(component)
-  if not component.camera_tag then return false end
-  return (component.view_mat ~= nil) and (component.proj_mat ~= nil)
+function MultiCameraOp:matches(tags)
+  if not (tags.is_camera and tags.camera_tag) then return nil end
+  if not self.stage.named_views[tags.camera_tag] then return nil end
+  return self.opfunc
 end
 
-function MultiCameraControlOp:multi_render(contexts, component)
-  for _, ctx in ipairs(contexts) do
-    if ctx.name == component.camera_tag then
-      ctx.view:set_matrices(component.view_mat, component.proj_mat)
-    end
-  end
+function MultiCameraOp:apply(component, tf)
+  local target = self.stage.named_views[component.tags.camera_tag]
+  target:set_matrices(component:get_matrices())
 end
-]]
 
 -- convenience Camera entity
 m.Camera = ecs.promote("Camera", CameraComponent)
