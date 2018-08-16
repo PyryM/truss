@@ -210,7 +210,7 @@ function registry:find_global(uname, ukind, count)
   end
 end
 
-m.global_registry = registry
+m._global_registry = registry
 
 local CompiledGlobals = class("CompiledGlobals")
 m.CompiledGlobals = CompiledGlobals
@@ -362,6 +362,11 @@ function BaseMaterial:set_state(s)
 end
 
 function BaseMaterial:set_program(p)
+  if type(p) == 'table' then
+    local vshader = p.vertex or p.vshader or p[1]
+    local fshader = p.fragment or p.fshader or p[2]
+    p = _shaders.load_program(vshader, fshader)
+  end
   self._value.program = p
   return self
 end
@@ -411,7 +416,7 @@ function m.define_base_material(options)
     end
     self:set_state(options.state or {})
     if options.program then
-      self:set_program(_shaders.load_program(unpack(options.program)))
+      self:set_program(options.program)
     else
       self:set_program(_shaders.error_program())
     end
@@ -519,6 +524,9 @@ function Drawcall:_recompile()
     material = self.mat
   }
   self._cgeo = terralib.new(geo_t)
+  if not (self.geo._vbh and self.geo._ibh) then
+    truss.error("Geometry has no buffers!")
+  end
   self._cgeo.vbh = self.geo._vbh
   self._cgeo.ibh = self.geo._ibh
   self._cgeo.vtx_start = 0

@@ -36,8 +36,9 @@ function LineRenderComponent:init(options)
   self.mat = self:_create_material(opts)
   self.tags = gfx.tagset{compiled = true}
   self.tags:extend(options.tags or {})
-  self.drawcall = gfx.Drawcall(self.geo, self.mat)
   if opts.points then self:set_points(opts.points) end
+  -- Need to create drawcall last so that buffers have been created
+  self.drawcall = gfx.Drawcall(self.geo, self.mat)
 end
 
 local function pack_v3(dest, arr)

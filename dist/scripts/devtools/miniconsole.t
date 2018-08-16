@@ -5,6 +5,7 @@
 local m = {}
 local stringutils = require("utils/stringutils.t")
 local class = require("class")
+local bgfx = require("gfx/bgfx.t")
 
 m.colors = {
   default = 0x8f,

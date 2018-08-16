@@ -15,7 +15,7 @@ function Pipeline:init(options)
   self._ordered_stages = {}
   self._next_view = 0
   self.verbose = options.verbose
-  self.globals = options.globals or gfx.UniformSet()
+  self.globals = options.globals or gfx.CompiledGlobals()
 end
 
 function Pipeline:bind()
@@ -25,7 +25,7 @@ function Pipeline:bind()
 end
 
 function Pipeline:match(tags)
-  ret = ret or {}
+  local ret = {}
   for _, stage in ipairs(self._ordered_stages) do
     stage:match(tags, ret)
   end

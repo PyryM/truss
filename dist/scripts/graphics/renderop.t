@@ -2,6 +2,9 @@
 --
 -- an individual rendering operation
 
+local class = require("class")
+local m = {}
+
 local RenderOperation = class("RenderOperation")
 m.RenderOperation = RenderOperation
 
@@ -20,21 +23,21 @@ function RenderOperation:bind_to(stage)
   end
 end
 
-local CompiledOp = RenderOperation:extend("CompiledOp")
-m.CompiledOp = CompiledOp
+local DrawOp = RenderOperation:extend("DrawOp")
+m.DrawOp = DrawOp
 
-function CompiledOp:init(options)
+function DrawOp:init(options)
   options = options or {}
   self._filter = options.filter
 end
 
-function CompiledOp:bind_to(stage)
+function DrawOp:bind_to(stage)
   return function(renderable, tf)
     renderable.drawcall:submit(stage.view._viewid, stage.globals, tf)
   end
 end
 
-function CompiledOp:bind_stage(stage)
+function DrawOp:bind_stage(stage)
   if self._func then truss.error("Render op already bound!") end
   self._func = self:bind_to(stage)
   self._multi_func = function(renderable, tf)
@@ -43,11 +46,13 @@ function CompiledOp:bind_stage(stage)
   end
 end
 
-function CompiledOp:matches(tags)
+function DrawOp:matches(tags)
   if not tags.compiled then return nil end
   if self._filter and not self._filter(tags) then return nil end
   return self._func, self._multi_func
 end
+
+return m
 
 -- TODO: compiled multirendering
 --[[

@@ -20,7 +20,7 @@ function Stage:init(options)
   end
   self.enabled = true
   self.filter = options.filter
-  self.globals = options.globals or {}
+  self.globals = options.globals or nil
   self._exclusive = options.exclusive
   self.stage_name = options.name or options.stage_name or "Stage"
   self.options = options

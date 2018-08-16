@@ -44,7 +44,7 @@ end
 
 function OrbitControl:mount()
   OrbitControl.super.mount(self)
-  self:add_to_systems({"preupdate"})
+  self:add_to_systems({"update"})
   self.input = self.input or self.ecs.systems.input
   if self.input then
     self.input:on("mousewheel", self, self.mousewheel)
@@ -127,8 +127,7 @@ function OrbitControl:mousemove(evtname, evt)
   end
 end
 
--- use the preupdate system to update camera position before scenegraph
-function OrbitControl:preupdate()
+function OrbitControl:update()
   local dt = 1.0 / 60.0
   local alpha, tolerance = self.alpha, self.tolerance
   self.phi = tween_to(self.phi, self.phi_target, alpha, tolerance, dt)

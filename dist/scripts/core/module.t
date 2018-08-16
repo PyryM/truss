@@ -6,13 +6,18 @@ local m = {}
 
 -- copy all public exports from module srcname into destination table
 -- if the returned module object has an explicit .exports, use that
+-- anything prefixed with _ isn't exported
 function m.reexport(srcmodule, desttable)
   local src = srcmodule.exports or srcmodule
   for k,v in pairs(src) do
-    if not desttable[k] then
-      desttable[k] = v
+    if k:sub(1,1) ~= "_" then
+      if not desttable[k] then
+        desttable[k] = v
+      else
+        truss.error("core/module.t: reexport: destination already has " .. k)
+      end
     else
-      truss.error("core/module.t: reexport: destination already has " .. k)
+      log.debug("Skipping " .. k)
     end
   end
 end

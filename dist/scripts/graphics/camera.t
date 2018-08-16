@@ -6,6 +6,7 @@ local class = require("class")
 local math = require("math")
 local gfx = require("gfx")
 local renderer = require("./renderer.t")
+local renderop = require("./renderop.t")
 local ecs = require("ecs")
 
 local m = {}
@@ -60,7 +61,7 @@ function CameraComponent:update_matrices()
   self.view_mat:invert(self.ent.matrix_world)
   return self.view_mat, self.proj_mat
 end
-CameraComponent.get_matrices = update_matrices
+CameraComponent.get_matrices = CameraComponent.update_matrices
 
 function CameraComponent:get_view_proj_mat(target)
   local view, proj = self:update_matrices()
@@ -87,7 +88,7 @@ function CameraComponent:unproject(ndcX, ndcY, origin, direction)
   return p, d
 end
 
-local CameraControlOp = renderer.RenderOperation:extend("CameraControlOp")
+local CameraControlOp = renderop.RenderOperation:extend("CameraControlOp")
 m.CameraControlOp = CameraControlOp
 function CameraControlOp:init(tag)
   self._tag = tag or "primary"
@@ -96,7 +97,7 @@ end
 function CameraControlOp:matches(tags)
   if not tags.is_camera then return nil end
   if self._tag ~= tags.camera_tag then return nil end
-  return self._func
+  return self.opfunc
 end
 
 function CameraControlOp:apply(component, tf)
@@ -104,7 +105,9 @@ function CameraControlOp:apply(component, tf)
   self.stage.view:set_matrices(component:get_matrices())
 end
 
-local MultiCameraControlOp = renderer.MultiRenderOperation:extend("MultiCameraControlOp")
+-- TODO: figure out multirendering in the new system
+--[[
+local MultiCameraControlOp = renderop.MultiRenderOperation:extend("MultiCameraControlOp")
 m.MultiCameraControlOp = MultiCameraControlOp
 
 function MultiCameraControlOp:init()
@@ -130,6 +133,7 @@ function MultiCameraControlOp:multi_render(contexts, component)
     end
   end
 end
+]]
 
 -- convenience Camera entity
 m.Camera = ecs.promote("Camera", CameraComponent)

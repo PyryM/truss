@@ -72,8 +72,8 @@ function TaskRunnerStage:update_end()
   self:render()
 end
 
-function TaskRunnerStage:match_render_ops(component, oplist)
-  if not component.is_task_submitter then return oplist end
+function TaskRunnerStage:match(tags, oplist)
+  if not tags.is_task_submitter then return oplist end
   -- abuse the render op system a bit
   table.insert(oplist, self._dummy_op)
   return oplist

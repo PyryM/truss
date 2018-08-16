@@ -55,4 +55,12 @@ function m.load_program(vshadername, fshadername)
   return m._programs[pname]
 end
 
+local _error_program = nil
+function m.error_program()
+  if not _error_program then
+    _error_program = m.load_program("vs_error", "fs_error")
+  end
+  return _error_program
+end
+
 return m
