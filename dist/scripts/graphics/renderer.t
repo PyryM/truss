@@ -12,195 +12,100 @@ function RenderSystem:init(options)
   options = options or {}
   self.auto_frame_advance = options.auto_frame_advance
   self.mount_name = "render" -- allow direct use of a RenderSystem as a system
+  self._identity_mat = math.Matrix4():identity()
 end
 
-function RenderSystem:match_render_ops(component, ret)
+function RenderSystem:match_component(component, ret)
   return self._pipeline:match_render_ops(component, ret)
 end
 
 function RenderSystem:set_pipeline(p)
-  self._pipeline = p
-  self._pipeline:bind()
   self.pipeline = p
-  self:call_on_components("configure")
+  self.pipeline:bind()
   return self
 end
 
+function RenderSystem:_clear_op_cache()
+  self._op_cache = {}
+end
+
+function RenderSystem:_match(renderable)
+  local ops = self._op_cache[renderable.tags.hash]
+  if not ops then
+    ops = self.pipeline:match(renderable.tags)
+    self._op_cache[renderable.tags.hash] = ops
+  end
+  return ops
+end
+
+function RenderSystem:_tree_render(entity)
+  if not entity.visible then return end
+  local renderable = entity.renderable
+  if renderable then
+    local ops = self:_match(renderable)
+    local nops = #ops
+    for i = 1, nops do
+      ops[i](renderable, entity.matrix_world)
+    end
+  end
+  for _, child in pairs(entity.children) do
+    self:_tree_render(child)
+  end
+end
+
 function RenderSystem:update()
-  if not self._pipeline then return end
-
-  self._pipeline:pre_render()
-  self:call_on_components("render")
-  self._pipeline:post_render()
-
-  self.ecs:insert_timing_event("render_submit")
+  if not self.pipeline then return end
+  self.pipeline:pre_render()
+  self.ecs.scene:recursive_update_world_mat(self._identity_mat, true)
+  self.ecs:insert_timing_event("render_sg")
+  self:_clear_op_cache()
+  self:_tree_render(self.ecs.scene)
+  self.ecs:insert_timing_event("render_traverse")
+  self.pipeline:post_render()
+  self.ecs:insert_timing_event("render_post")
 
   if self.auto_frame_advance ~= false then
     gfx.frame()
   end
 end
 
-local RenderOperation = class("RenderOperation")
-m.RenderOperation = RenderOperation
-
-function RenderOperation:init()
-  -- nothing in particular to do
-end
-
-function RenderOperation:duplicate()
-  return self.class()
-end
-
-function RenderOperation:matches(component)
-  log.warn("Base RenderOperation shouldn't actually be added to a stage!")
-  log.warn("Did you forget to implement op:matches()?")
-  return false
-end
-
-function RenderOperation:render(context, component)
-  truss.error("Base RenderOperation should never actually :render!")
-end
-
-function RenderOperation:to_function(context)
-  return function(component)
-    self:render(context, component)
-  end
-end
-
-local MultiRenderOperation = RenderOperation:extend("MultiRenderOperation")
-m.MultiRenderOperation = MultiRenderOperation
-
-function MultiRenderOperation:multi_render(contexts, component)
-  truss.error("Base MultiRenderOperation should never actually :multi_render!")
-end
-
-function MultiRenderOperation:to_multiview_function(contexts)
-  return function(component)
-    self:multi_render(contexts, component)
-  end
-end
-
-local GenericRenderOp = MultiRenderOperation:extend("GenericRenderOp")
-m.GenericRenderOp = GenericRenderOp
-
-function GenericRenderOp:init(options)
-  options = options or {}
-  self._filter = options.filter
-  if options.override_material then
-    self._replacement_mat = options.override_material
-    self.render = self._replacement_render
-    self.multi_render = self._replacement_multi_render
-  end
-end
-
-function GenericRenderOp:matches(component)
-  if component.geo == nil or component.mat == nil then return false end
-  if self._filter and not self._filter(component) then return false end
-  return true
-end
-
-local function generic_render(geo, mat, entity, context)
-  if not entity.visible_world then return end
-  if (not geo) or (not mat) then return end
-  if not mat.program then return end
-  gfx.set_transform(entity.matrix_world)
-  geo:bind()
-  mat:bind(context.globals)
-  gfx.submit(context.view, mat.program)
-end
-
-function GenericRenderOp:render(context, component)
-  local geo, mat = component.geo, component.mat
-  generic_render(geo, mat, component.ent, context)
-end
-
-function GenericRenderOp:_replacement_render(context, component)
-  local geo, mat = component.geo, self._replacement_mat
-  generic_render(geo, mat, component.ent, context)
-end
-
-local function generic_multi_render(geo, mat, entity, contexts)
-  -- render to multiple contexts/views, using the 'preserve_state' flag
-  -- in bgfx.submit to try to minimize the number of bgfx function calls
-  -- (in most cases will greatly reduce the number of uniform set calls)
-  if not entity.visible_world then return end
-  if (not geo) or (not mat) then return end
-  if not mat.program then return end
-  gfx.set_transform(entity.matrix_world)
-  geo:bind()
-  mat:bind()
-  local nctx = #contexts
-  local last_globals = nil
-  for idx, ctx in ipairs(contexts) do
-    if ctx.globals ~= last_globals then
-      mat:bind_globals(ctx.globals)
-    end
-    last_globals = ctx.globals
-    local preserve_state = (idx ~= nctx)
-    gfx.submit(ctx.view, mat.program, nil, preserve_state)
-  end
-end
-
-function GenericRenderOp:multi_render(contexts, component)
-  local geo, mat = component.geo, component.mat
-  generic_multi_render(geo, mat, component.ent, contexts)
-end
-
-function GenericRenderOp:_replacement_multi_render(context, component)
-  local geo, mat = component.geo, self._replacement_mat
-  generic_multi_render(geo, mat, component.ent, context)
-end
-
 local RenderComponent = ecs.Component:extend("RenderComponent")
 m.RenderComponent = RenderComponent
 function RenderComponent:init()
-  self._render_ops = {}
+  self.tags = gfx.tagset{}
 end
 
 function RenderComponent:mount()
   RenderComponent.super.mount(self)
-  self:add_to_systems({"render"})
-  self:wake()
-  self:configure()
-end
-
-function RenderComponent:configure()
-  local render = self.ecs.systems.render
-  self._render_ops = (render and render:match_render_ops(self)) or {}
-  self._needs_configure = false
-end
-
-function RenderComponent:render()
-  if self.visible == false then return end
-  if self._needs_configure then self:configure() end
-  for _, op in ipairs(self._render_ops) do
-    op(self)
+  if self.ent.renderable and self.ent.renderable ~= self then
+    truss.error("One entity cannot have two renderables!")
   end
+  self.ent.renderable = self
 end
 
-local MeshRenderComponent = RenderComponent:extend("MeshRenderComponent")
-m.MeshRenderComponent = MeshRenderComponent
+local MeshComponent = RenderComponent:extend("MeshComponent")
+m.MeshComponent = MeshComponent
 
-function MeshRenderComponent:init(geo, mat)
-  self.geo = geo
-  self.mat = mat
-  self._render_ops = {}
+function MeshComponent:init(geo, mat)
+  self.tags = gfx.tagset{compiled = true}
+  self.tags:extend(mat.tags or {})
+  self.tags:extend(geo.tags or {})
   self.mount_name = "mesh"
+  self.drawcall = gfx.Drawcall(geo, mat)
 end
 
-function MeshRenderComponent:set_geometry(geo)
+function MeshComponent:set_geometry(geo)
   if not geo then truss.error("No geo provided to set_geometry!") end
-  self.geo = geo
-  self._needs_configure = true
+  self.drawcall:set_geometry(geo)
 end
 
-function MeshRenderComponent:set_material(mat)
+function MeshComponent:set_material(mat)
   if not mat then truss.error("No mat provided to set_material!") end
-  self.mat = mat
-  self._needs_configure = true
+  self.drawcall:set_material(mat)
+  self.tags:extend(mat.tags or {})
 end
 
 -- convenience Mesh entity
-m.Mesh = ecs.promote("Mesh", MeshRenderComponent)
+m.Mesh = ecs.promote("Mesh", MeshComponent)
 
 return m

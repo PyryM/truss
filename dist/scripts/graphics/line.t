@@ -8,8 +8,7 @@ local Matrix4 = math.Matrix4
 local Quaternion = math.Quaternion
 local Vector = math.Vector
 local gfx = require("gfx")
-local render = require("graphics/renderer.t")
-local Material = require("graphics/material.t").Material
+local render = require("./renderer.t")
 
 local m = {}
 
@@ -35,6 +34,9 @@ function LineRenderComponent:init(options)
   self.dynamic = not not opts.dynamic -- coerce to boolean
   self.geo = self:_create_buffers()
   self.mat = self:_create_material(opts)
+  self.tags = gfx.tagset{compiled = true}
+  self.tags:extend(options.tags or {})
+  self.drawcall = gfx.Drawcall(self.geo, self.mat)
   if opts.points then self:set_points(opts.points) end
 end
 
@@ -105,45 +107,38 @@ function LineRenderComponent:_create_buffers()
   return geo
 end
 
-local line_uniforms = {}
+local function line_uniforms(has_texture)
+  local u = {u_baseColor = 'vec', u_thickness = 'vec'}
+  if has_texture then u.s_texAlbedo = {kind = 'tex', sampler = 0} end
+  return u
+end
+
+local line_materials = {}
+line_materials[false] = gfx.define_base_material{
+  name = "LineMaterial", uniforms = line_uniforms(false)
+}
+line_materials[true] = gfx.define_base_material{
+  name = "LineTexMaterial", uniforms = line_uniforms(true)
+}
+
 function LineRenderComponent:_create_material(options)
   local mat = options.material
   if not mat then
     local has_texture = options.texture ~= nil
-    local uniforms = line_uniforms[has_texture]
-    if not uniforms then
-      uniforms = gfx.UniformSet{gfx.VecUniform("u_baseColor"),
-                                gfx.VecUniform("u_thickness")}
-      if has_texture then uniforms:add(gfx.TexUniform("s_texAlbedo", 0)) end
-      line_uniforms[has_texture] = uniforms
-    end
+    mat = line_materials[has_texture]()
 
     local fsname = "fs_line"
-    if has_texture then
-      if options.alpha_test then
-        fsname = "fs_line_textured_atest"
-      else
-        fsname = "fs_line_textured"
-      end
-    end
+    if has_texture then fsname = fsname .. "_textured" end
+    if options.alpha_test then fsname = fsname .. "_atest" end
 
-    mat = Material{
-      state = options.state or gfx.create_state(),
-      uniforms = options.uniforms or uniforms:clone(),
-      program = options.program or gfx.load_program("vs_line", fsname),
-      tags = options.tags
-    }
+    if options.state then mat:set_state(options.state) end
+    mat.tags = options.tags
+    mat:set_program(options.program or gfx.load_program("vs_line", fsname))
   end
 
-  if options.color then
-    mat.uniforms.u_baseColor:set(options.color)
-  end
-  local thickness = options.thickness or 0.1
-  local umult = options.u_mult or 1.0
-  mat.uniforms.u_thickness:set(thickness, umult)
-  if options.texture then
-    mat.uniforms.s_texAlbedo:set(options.texture)
-  end
+  mat.uniforms.u_baseColor:set(options.color or {1, 1, 0, 1})
+  mat.uniforms.u_thickness:set(options.thickness or 0.1, options.u_mult or 1.0)
+  if options.texture then mat.uniforms.s_texAlbedo:set(options.texture) end
 
   return mat
 end

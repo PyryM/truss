@@ -348,7 +348,9 @@ end
 local BaseMaterial = class("BaseMaterial")
 
 function BaseMaterial:clone()
-  return self.class(self)
+  local ret = self.class()
+  ret:_copy(self)
+  return ret
 end
 
 function BaseMaterial:set_state(s)
@@ -356,10 +358,18 @@ function BaseMaterial:set_state(s)
     s = _common.create_state(s)
   end
   self._value.state = s
+  return self
 end
 
 function BaseMaterial:set_program(p)
   self._value.program = p
+  return self
+end
+
+function BaseMaterial:bind(globals)
+  self._binder(self._value, globals)
+  bgfx.set_state(self._value.state, 0)
+  return self
 end
 
 local function stage_handles(target, uniforms)
@@ -386,15 +396,12 @@ function m.define_base_material(options)
   local material_t, material_bind, material_copy = compile_uniforms(canonical_name, uniforms)
 
   local Material = BaseMaterial:extend(options.name)
-  function Material:init(_options)
-    _options = _options or {}
+  function Material:_init()
     self._value = terralib.new(material_t)
     self._ttype = material_t
     self._binder = material_bind
     self._copy_value = material_copy
-    if _options._value then
-      self._copy_value(src._value, self._value)
-    end
+
     stage_handles(self._value, uniforms)
     self.uniforms = {}
     for uname, uniform in pairs(uniforms) do
@@ -402,10 +409,19 @@ function m.define_base_material(options)
       self.uniforms[uname] = pcon(self._value, uname, uniform.kind, 
                                   0, uniform.count or 1)
     end
-    if options.state then self:set_state(options.state) end
+    self:set_state(options.state or {})
     if options.program then
       self:set_program(_shaders.load_program(unpack(options.program)))
+    else
+      self:set_program(_shaders.error_program())
     end
+  end
+  Material.init = Material._init
+
+  function Material:_copy(other)
+    if not other._value then truss.error("Tried to copy invalid material") end
+    self._copy_value(other._value, self._value)
+    if other.tags then self.tags = other.tags:clone() end
   end
 
   return Material
@@ -466,8 +482,23 @@ local function compile_draw_call(opts)
     bgfx.set_state(mat.state, 0)
     bgfx.submit(view, mat.program, 0.0, false)
   end
-  m._draw_call_cache[call_name] = {geo_t, draw}
-  return geo_t, draw
+
+  local terra multi_draw(start_view: uint8, n_views: uint8, geo: &geo_t, 
+                          mat: &material_t, globals: &GlobalUniforms_t)
+    -- this assumes all state can be shared
+    bgfx.set_transform(&geo.tf, 1)
+    set_vert(0, geo.vbh, geo.vtx_start, geo.vtx_count)
+    set_index(geo.ibh, geo.idx_start, geo.idx_count)
+    bind_material(mat, globals)
+    bgfx.set_state(mat.state, 0)
+    for i = 0, n_views do
+      var viewid: uint8 = start_view + i
+      var preserve: bool = ((i + 1) < n_views)
+      bgfx.submit(viewid, mat.program, 0.0, preserve)
+    end
+  end
+  m._draw_call_cache[call_name] = {geo_t, draw, multi_draw}
+  return geo_t, draw, multi_draw
 end
 
 local Drawcall = class("Drawcall")
@@ -483,7 +514,7 @@ end
 function Drawcall:_recompile()
   local geo_type = "static"
   if self.geo.is_dynamic then geo_type = "dynamic" end
-  local geo_t, draw = compile_draw_call{
+  local geo_t, draw, multi_draw = compile_draw_call{
     geo_type = geo_type,
     material = self.mat
   }
@@ -495,6 +526,7 @@ function Drawcall:_recompile()
   self._cgeo.idx_start = 0
   self._cgeo.idx_count = bgfx.UINT32_MAX
   self._draw = draw
+  self._multi_draw = multi_draw
 end
 
 function Drawcall:set_geometry(geo)
@@ -515,6 +547,12 @@ end
 function Drawcall:submit(viewid, view_globals, tf)
   self._cgeo.tf = tf.data
   self._draw(viewid, self._cgeo, self._cmat, view_globals._value)
+end
+
+function Drawcall:multi_submit(start_viewid, n_views, globals, tf)
+  self._cgeo.tf = tf.data
+  self._multi_draw(start_viewid, n_views, 
+                   self._cgeo, self._cmat, view_globals._value)
 end
 
 return m

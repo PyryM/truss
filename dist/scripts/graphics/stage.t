@@ -14,7 +14,11 @@ m.Stage = Stage
 function Stage:init(options)
   options = options or {}
   self._num_views = 1
-  self._render_ops = options.render_ops or {}
+  self._render_ops = {}
+  for _, op in ipairs(options.render_ops or {}) do
+    self:add_render_op(op)
+  end
+  self.enabled = true
   self.filter = options.filter
   self.globals = options.globals or {}
   self._exclusive = options.exclusive
@@ -51,55 +55,25 @@ end
 
 function Stage:add_render_op(op)
   table.insert(self._render_ops, op)
+  op:bind_stage(self)
 end
 
-function Stage:update_begin()
+function Stage:pre_render()
   if self._always_clear and self.view then
     self.view:touch()
   end
   if self._user_update then self:_user_update() end
 end
 
-function Stage:match_render_ops(component, target)
+function Stage:match(tags, target)
   target = target or {}
-
-  if self.filter and not (self.filter(component)) then return target end
-
+  if not self.enabled then return target end
+  if self.filter and not (self.filter(tags)) then return target end
   for _, op in ipairs(self._render_ops) do
-    if op:matches(component) then
-      table.insert(target, op:to_function(self))
-      if self._exclusive then return target end
-    end
+    local match = op:matches(tags)
+    if match then table.insert(target, match) end
+    if self._exclusive then break end
   end
-  return target
-end
-
--- A DirectStage directly renders components matched to it during its
--- own update(s) instead of adding renderops to them
-local DirectStage = class("DirectStage")
-m.DirectStage = DirectStage
-
-function DirectStage:init(options)
-  self._components = {} -- weak key our components to stop them from b
-  setmetatable(self._components, { __mode = 'k' })
-end
-
-function DirectStage:matches(component)
-  truss.error("Ironically, tried to use DirectStage directly.")
-end
-
-function DirectStage:register_component(component)
-  self._components[component] = true
-end
-
-function DirectStage:match_render_ops(component, target)
-  target = target or {}
-  if self.filter and not (self.filter(component)) then return target end
-  if self:matches(component) then
-    self:register_component(component)
-    self._dirty_components = true
-  end
-  -- Note that in no situation do we actually add a render op
   return target
 end
 

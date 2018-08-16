@@ -43,7 +43,7 @@ function NanoVGStage:bind_view_ids(view_ids)
   end
 end
 
-function NanoVGStage:update_begin()
+function NanoVGStage:pre_render()
   if not self._ctx then return end
   if self._need_setup and self.nvg_setup then 
     self:nvg_setup(self._ctx)
@@ -53,7 +53,7 @@ function NanoVGStage:update_begin()
   if self.nvg_render then self:nvg_render(self._ctx) end
 end
 
-function NanoVGStage:update_end()
+function NanoVGStage:post_render()
   if not self._ctx then return end
   self._ctx:end_frame()
 end

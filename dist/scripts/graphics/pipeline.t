@@ -24,23 +24,23 @@ function Pipeline:bind()
   end
 end
 
-function Pipeline:match_render_ops(component, ret)
+function Pipeline:match(tags)
   ret = ret or {}
   for _, stage in ipairs(self._ordered_stages) do
-    stage:match_render_ops(component, ret)
+    stage:match(tags, ret)
   end
   return ret
 end
 
 function Pipeline:pre_render()
   for _, stage in ipairs(self._ordered_stages) do
-    if stage.update_begin then stage:update_begin() end
+    if stage.pre_render then stage:pre_render() end
   end
 end
 
 function Pipeline:post_render()
   for _, stage in ipairs(self._ordered_stages) do
-    if stage.update_end then stage:update_end() end
+    if stage.post_render then stage:post_render() end
   end
 end
 

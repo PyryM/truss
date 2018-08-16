@@ -254,7 +254,6 @@ function Entity3d:init(ecs, name, ...)
   self.scale = math.Vector(1.0, 1.0, 1.0, 0.0)
   self.quaternion = math.Quaternion():identity()
   self.visible = true
-  self.visible_world = true
   self.matrix = math.Matrix4():identity()
   self.matrix_world = math.Matrix4():identity()
   -- call super.init after adding these fields, because some component might
@@ -266,13 +265,13 @@ function Entity3d:update_matrix()
   self.matrix:compose(self.position, self.quaternion, self.scale)
 end
 
--- recursively calculate world matrices and visibility
-function Entity3d:recursive_update_world_mat(parentmat, visible)
+-- recursively calculate world matrices
+function Entity3d:recursive_update_world_mat(parentmat)
+  if not self.visible then return end
   if not self.matrix then return end
-  self.visible_world = visible and self.visible 
   self.matrix_world:multiply(parentmat, self.matrix)
-  for _,child in pairs(self.children) do
-    child:recursive_update_world_mat(self.matrix_world, self.visible_world)
+  for _, child in pairs(self.children) do
+    child:recursive_update_world_mat(self.matrix_world)
   end
 end
 

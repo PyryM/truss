@@ -19,7 +19,11 @@ function MultiviewStage:init(options)
   self._num_views = #(options.views)
   self._contexts = {}
   self.contexts = {}
-  self._render_ops = options.render_ops or {}
+  self.enabled = true
+  self._render_ops = {}
+  for _, op in ipairs(options.render_ops or {}) do
+    self:add_render_op(op)
+  end
   self.filter = options.filter
   self.globals = options.globals or {}
   self._exclusive = options.exclusive
@@ -30,9 +34,12 @@ function MultiviewStage:init(options)
     local view = ctx.view or ctx
     if not view.bind then view = gfx.View(view) end
     ctx.view = view
+    -- Todo: view-specific globals?
+    --[[
     if not ctx.globals then ctx.globals = self.globals end
     self._contexts[idx] = ctx
     self.contexts[ctx.name or ("context_" .. idx)] = ctx
+    ]]
   end
 end
 
@@ -54,6 +61,7 @@ function MultiviewStage:bind_view_ids(view_ids)
   if #view_ids ~= self._num_views then 
     truss.error("Wrong number of views!") 
   end
+  self._start_view_id = view_ids[1]
   for idx, view_id in ipairs(view_ids) do
     self._contexts[idx].view:bind(view_id)
   end
@@ -61,6 +69,7 @@ end
 
 function MultiviewStage:add_render_op(op)
   table.insert(self._render_ops, op)
+  op:bind_to_stage(self)
 end
 
 function MultiviewStage:update_begin()
@@ -71,24 +80,21 @@ function MultiviewStage:update_begin()
   end
 end
 
-function MultiviewStage:match_render_ops(component, target)
+function MultiviewStage:match(tags, target)
   target = target or {}
-
-  if self.filter and not (self.filter(component)) then return target end
+  if not self.enabled then return target end
+  if self.filter and not (self.filter(tags)) then return target end
 
   for _, op in ipairs(self._render_ops) do
-    if op:matches(component) then
-      local multi_op = op.to_multiview_function and 
-                       op:to_multiview_function(self._contexts)
-      if multi_op then -- supports multiview
-        table.insert(target, multi_op)
-      else -- shove in the same op n times
-        for _, ctx in ipairs(self._contexts) do
-          table.insert(target, op:to_function(ctx))
-        end
+    local f, multi_f = op:matches(component)
+    if multi_f then -- supports multiview
+      table.insert(target, multi_f)
+    elseif f then -- shove in the same op n times
+      for _, ctx in ipairs(self._contexts) do
+        table.insert(target, op:bind_to(ctx))
       end
-      if self._exclusive then return target end
     end
+    if (f or multi_f) and self._exclusive then break end
   end
   return target
 end

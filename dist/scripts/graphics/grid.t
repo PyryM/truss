@@ -2,7 +2,7 @@
 --
 -- creates a basic grid
 
-local line = require("graphics/line.t")
+local line = require("./line.t")
 local m = {}
 
 local function add_line_circle(dest, rad)

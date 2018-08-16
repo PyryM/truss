@@ -4,7 +4,8 @@
 
 local class = require("class")
 local math = require("math")
-local renderer = require("graphics/renderer.t")
+local gfx = require("gfx")
+local renderer = require("./renderer.t")
 local ecs = require("ecs")
 
 local m = {}
@@ -15,7 +16,7 @@ function CameraComponent:init(options)
   CameraComponent.super.init(self)
   options = options or {}
   self.mount_name = "camera"
-  self.camera_tag = options.tag or "primary"
+  self.tags = gfx.tagset{is_camera = true, camera_tag = options.tag or "primary"}
   self.view_mat = math.Matrix4():identity()
   self.proj_mat = math.Matrix4():identity()
   self.inv_proj_mat = math.Matrix4():identity()
@@ -59,11 +60,7 @@ function CameraComponent:update_matrices()
   self.view_mat:invert(self.ent.matrix_world)
   return self.view_mat, self.proj_mat
 end
-
-function CameraComponent:render()
-  self:update_matrices()
-  CameraComponent.super.render(self)
-end
+CameraComponent.get_matrices = update_matrices
 
 function CameraComponent:get_view_proj_mat(target)
   local view, proj = self:update_matrices()
@@ -96,13 +93,15 @@ function CameraControlOp:init(tag)
   self._tag = tag or "primary"
 end
 
-function CameraControlOp:matches(component)
-  if self._tag ~= component.camera_tag then return false end
-  return (component.view_mat ~= nil) and (component.proj_mat ~= nil)
+function CameraControlOp:matches(tags)
+  if not tags.is_camera then return nil end
+  if self._tag ~= tags.camera_tag then return nil end
+  return self._func
 end
 
-function CameraControlOp:render(context, component)
-  context.view:set_matrices(component.view_mat, component.proj_mat)
+function CameraControlOp:apply(component, tf)
+  -- TODO: not terribly efficient to reinvert the view matrix for every stage
+  self.stage.view:set_matrices(component:get_matrices())
 end
 
 local MultiCameraControlOp = renderer.MultiRenderOperation:extend("MultiCameraControlOp")
