@@ -2,6 +2,8 @@
 --
 -- defines a basic pbr shader and material
 
+truss.error("Deprecated!")
+
 local m = {}
 local class = require("class")
 local math = require("math")

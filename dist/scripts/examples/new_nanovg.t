@@ -1,6 +1,6 @@
 local app = require("app/app.t")
 local geometry = require("geometry")
-local pbr = require("shaders/pbr.t")
+local pbr = require("material/pbr.t")
 local graphics = require("graphics")
 local orbitcam = require("gui/orbitcam.t")
 local grid = require("graphics/grid.t")
@@ -11,7 +11,7 @@ function nanovg_setup(stage, ctx)
   ctx:load_font("font/VeraMono.ttf", "sans")
 end
 
-local FONT_SIZE = 40
+local FONT_SIZE = 20
 local FONT_X_MARGIN = 5
 local FONT_Y_MARGIN = 8
 
@@ -31,8 +31,20 @@ local function rounded_text(ctx, x, y, text)
   ctx:Text(x, y + th/2, text, nil)
 end
 
+local lowlatency = true
+local mouse_state = {x = 0, y = 0}
+function on_mouse(mstate, evtname, evt)
+  mstate.x, mstate.y = evt.x, evt.y
+end
+
 function nanovg_render(stage, ctx)
-  rounded_text(ctx, 70, 50, "NanoVG: Initialized")
+  local t = "SDL + vsync"
+  if lowlatency then
+    t = t .. " + BGFX Single-Threaded"
+  else
+    t = t .. " + BGFX Multi-Threaded"
+  end
+  rounded_text(ctx, 10, 10, t)
   local ocam = myapp.camera.orbit_control
   local tstr = string.format("theta = % .4f", ocam.theta)
   local pstr = string.format("phi   = % .4f", ocam.phi)
@@ -40,13 +52,24 @@ function nanovg_render(stage, ctx)
   rounded_text(ctx, 70, 50 + FONT_SIZE*1.1, tstr)
   rounded_text(ctx, 70, 50 + 2*FONT_SIZE*1.1, pstr)
   rounded_text(ctx, 70, 50 + 3*FONT_SIZE*1.1, rstr)
+  ctx:BeginPath()
+  ctx:Circle(mouse_state.x, mouse_state.y, 3)
+  ctx:FillColor(ctx:RGB(255, 255, 255))
+  ctx:Fill()
+  ctx:BeginPath()
+  ctx:Circle(mouse_state.x, mouse_state.y, 10)
+  ctx:StrokeColor(ctx:RGB(255, 255, 255))
+  ctx:StrokeWidth(2)
+  ctx:Stroke()
 end
 
 function init()
-  myapp = app.App{title = "nanovg example", width = 1280, height = 720,
+  myapp = app.App{title = "nanovg example", width = 640, height = 480,
                   msaa = true, stats = false, clear_color = 0x404080ff,
-                  nvg_setup = nanovg_setup, nvg_render = nanovg_render}
+                  nvg_setup = nanovg_setup, nvg_render = nanovg_render,
+                  lowlatency = lowlatency}
 
+  myapp.ECS.systems.input:on("mousemove", mouse_state, on_mouse)
   myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 1, max_rad = 4}))
 
   local geo = geometry.icosphere_geo{radius = 1, detail = 1}
