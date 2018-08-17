@@ -45,14 +45,14 @@ function MultiviewApp:init_pipeline()
 end
 
 function MultiviewApp:init_scene()
-  print("bwuH?????")
   local fov = 65
   local aspect = 0.5 * self.width / self.height
   self.left_camera = self.ECS.scene:create_child(graphics.Camera,
                                                 "Leftcamera",
                                                 {fov = fov, tag = "left",
                                                 orthographic = true,
-                                                 aspect = aspect})
+                                                 left = -aspect, right = aspect,
+                                                top = 1.0, bottom = -1.0})
   self.right_camera = self.ECS.scene:create_child(graphics.Camera,
                                                   "Rightcamera",
                                                  {fov = fov, tag = "right",

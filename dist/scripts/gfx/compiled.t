@@ -432,6 +432,43 @@ function m.define_base_material(options)
   return Material
 end
 
+-- used to directly instantiate a single 'anonymous' material rather than
+-- creating a class/factory
+function m.anonymous_material(options)
+  local uniforms = {}
+  local uvals = {}
+  for uni_name, uni_val in pairs(options.uniforms) do
+    if uni_val.data then  -- matrix
+      uniforms[uni_name] = 'mat4'
+      uvals[uni_name] = uni_val
+    elseif uni_val.elem then -- vector
+      uniforms[uni_name] = 'vec'
+      uvals[uni_name] = uni_val
+    elseif uni_val._handle then 
+      truss.error("anonymous_material{} must specify textures as {sampler, tex}")
+    elseif uni_val[2] and (uni_val[2]._handle or uni_val[2].raw_tex) then
+      -- correctly passed texture
+      uniforms[uni_name] = {kind = 'tex', sampler = uni_val[1]}
+      uvals[uni_name] = uni_val[2]
+    else
+      truss.error("Couldn't infer uniform type for [" .. uni_name .. "]")
+    end
+  end
+
+  local instance = m.define_base_material{
+    name = "AnonymousMaterial",
+    uniforms = uniforms,
+    state = options.state or {},
+    program = options.program
+  }()
+
+  for uname, val in pairs(uvals) do
+    instance.uniforms[uname]:set(val)
+  end
+
+  return instance
+end
+
 local function geo_funcs(vname, iname)
   local vert_t = bgfx[vname ..'_handle_t']
   local index_t = bgfx[iname .. '_handle_t']

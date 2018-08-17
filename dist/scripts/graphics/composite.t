@@ -102,7 +102,7 @@ function CompositeStage:composite(op)
   gfx.submit(self.view, mat._value.program)
 end
 
-function CompositeStage:update_begin()
+function CompositeStage:pre_render()
   for _, op in pairs(self.composite_ops) do
     if op.visible ~= false then
       self:composite(op)

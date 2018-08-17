@@ -1,12 +1,11 @@
 local app = require("app/app.t")
 local geometry = require("geometry")
-local pbr = require("shaders/pbr.t")
-local flat = require("shaders/flat.t")
+local pbr = require("material/pbr.t")
+local flat = require("material/flat.t")
 local graphics = require("graphics")
 local orbitcam = require("gui/orbitcam.t")
 local grid = require("graphics/grid.t")
 local gfx = require("gfx")
-local filter = require("utils/filter.t")
 
 local CubeRenderApp = app.App:extend("CubeRenderApp")
 function CubeRenderApp:init_pipeline()
@@ -32,11 +31,12 @@ function CubeRenderApp:init_pipeline()
   p:add_stage(graphics.MultiviewStage{
     name = "cube_render",
     globals = p.globals,
-    filter = filter.material_not_tagged("cube"),
+    filter = function(tags) return (not tags.cube) end,
     render_ops = {
-      graphics.GenericRenderOp(), 
-      graphics.MultiCameraControlOp()
+      graphics.MultiDrawOp(), 
+      graphics.MultiCameraOp()
     },
+    always_clear = true,
     views = {
       {name = "cube_px", clear = {color = colors[1], depth = 1.0}, render_target = ct.px}, 
       {name = "cube_nx", clear = {color = colors[2], depth = 1.0}, render_target = ct.nx},
@@ -51,7 +51,6 @@ function CubeRenderApp:init_pipeline()
     shader = "fs_fullscreen_panoflatten",
     input = cubemap
   })
-  p.globals:merge(pbr.create_pbr_globals())
   local Vector = require("math").Vector
   p.globals.u_lightDir:set_multiple({
       Vector( 1.0,  1.0,  0.0),
@@ -75,7 +74,7 @@ function init()
                   msaa = true, stats = true, clear_color = 0x404080ff}
 
   myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 1, max_rad = 4}))
-  cubecam = myapp.ECS.scene:create_child(graphics.CubeCamera, {})
+  cubecam = myapp.ECS.scene:create_child(graphics.CubeCamera, "CubeCam", {})
 
   local geo = geometry.axis_widget_geo{}
   local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
