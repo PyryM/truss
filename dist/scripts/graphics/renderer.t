@@ -110,7 +110,14 @@ function MeshComponent:set_material(mat)
   self.tags:extend(mat.tags or {})
 end
 
+local DummyMeshComponent = ecs.Component:extend("DummyMeshComponent")
+function DummyMeshComponent:init(geo, mat)
+  self.geo, self.mat = geo, mat
+  self.mount_name = "mesh"
+end
+
 -- convenience Mesh entity
 m.Mesh = ecs.promote("Mesh", MeshComponent)
+m.DummyMesh = ecs.promote("DummyMesh", DummyMeshComponent)
 
 return m

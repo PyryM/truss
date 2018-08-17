@@ -12,7 +12,7 @@ end
 
 local function add_tentacle(node, geo, n)
   for i = 1, n do
-    node = node:create_child(graphics.Mesh, "nnn", geo)
+    node = node:create_child(graphics.DummyMesh, "nnn", geo)
     if i == 1 then
       node.quaternion:euler({x = srand(6), y = srand(6), z = srand(6)})
     else

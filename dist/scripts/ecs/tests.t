@@ -14,7 +14,6 @@ local m = {}
 
 local function make_test_ecs()
   local ECS = ecs.ECS()
-  ECS:add_system(ecs.ScenegraphSystem())
   ECS:add_system(ecs.System("update", "update"))
   return ECS
 end
