@@ -1,6 +1,6 @@
 local app = require("app/app.t")
 local geometry = require("geometry")
-local pbr = require("shaders/pbr.t")
+local pbr = require("material/pbr.t")
 local graphics = require("graphics")
 local orbitcam = require("gui/orbitcam.t")
 local math = require("math")
@@ -15,24 +15,20 @@ function MultiviewApp:init_pipeline()
   local clear_r = {color = 0x000000ff, depth = 1.0}
 
   local Vector = math.Vector
-  local pbr = require("shaders/pbr.t")
   local p = graphics.Pipeline({verbose = true})
-
-  local mat = pbr.FacetedPBRMaterial({0.01, 0.2, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
 
   p:add_stage(graphics.MultiviewStage{
     name = "forward",
     globals = p.globals,
     render_ops = {
-      graphics.GenericRenderOp{override_material = mat}, 
-      graphics.MultiCameraControlOp()
+      graphics.MultiDrawOp(), 
+      graphics.MultiCameraOp()
     },
     views = {
       {name = "left", clear = clear_l, viewport = left}, 
       {name = "right", clear = clear_r, viewport = right}
     }
   })
-  p.globals:merge(pbr.create_pbr_globals())
   p.globals.u_lightDir:set_multiple({
       Vector( 1.0,  1.0,  0.0),
       Vector(-1.0,  1.0,  0.0),
@@ -49,13 +45,16 @@ function MultiviewApp:init_pipeline()
 end
 
 function MultiviewApp:init_scene()
+  print("bwuH?????")
   local fov = 65
   local aspect = 0.5 * self.width / self.height
   self.left_camera = self.ECS.scene:create_child(graphics.Camera,
+                                                "Leftcamera",
                                                 {fov = fov, tag = "left",
                                                 orthographic = true,
                                                  aspect = aspect})
   self.right_camera = self.ECS.scene:create_child(graphics.Camera,
+                                                  "Rightcamera",
                                                  {fov = fov, tag = "right",
                                                   aspect = aspect})
   self.right_camera.position:set(0, 0, 5)

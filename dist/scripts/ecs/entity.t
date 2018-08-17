@@ -12,6 +12,9 @@ function Entity:init(ecs, name, ...)
   self.ecs = ecs
   self._components = {}
   self.children = {}
+  if name and type(name) ~= 'string' then
+    truss.error("Entity name not a string; did you forget it?")
+  end
   self.name = name or "entity"
   self.unique_name = ecs:_get_unique_name(self)
   self.event = false -- to prevent overriding of this

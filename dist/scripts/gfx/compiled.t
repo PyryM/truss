@@ -561,7 +561,7 @@ function Drawcall:submit(viewid, view_globals, tf)
   self._draw(viewid, self._cgeo, self._cmat, view_globals._value)
 end
 
-function Drawcall:multi_submit(start_viewid, n_views, globals, tf)
+function Drawcall:multi_submit(start_viewid, n_views, view_globals, tf)
   self._cgeo.tf = tf.data
   self._multi_draw(start_viewid, n_views, 
                    self._cgeo, self._cmat, view_globals._value)
