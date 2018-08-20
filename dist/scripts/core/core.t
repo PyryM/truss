@@ -169,6 +169,18 @@ local function extend_table(dest, addition)
 end
 truss.extend_table = extend_table
 
+local function slice_table(src, start_idx, stop_idx)
+  local dest = {}
+  if stop_idx < 0 then
+    stop_idx = #src + 1 + stop_idx
+  end
+  for i = start_idx, stop_idx do
+    dest[i - start_idx + 1] = src[i]
+  end
+  return dest
+end
+truss.slice_table = slice_table
+
 truss._module_env = extend_table({}, _G)
 local disallow_globals_mt = {
   __newindex = function (t,k,v)
@@ -191,6 +203,9 @@ function truss.set_app_directories(orgname, appname)
 end
 
 function truss.list_directory(path)
+  if type(path) == 'table' then
+    path = table.concat(path, '/')
+  end
   local nresults = truss.C.list_directory(TRUSS_ID, path)
   if nresults < 0 then return nil end
   local ret = {}
@@ -203,10 +218,16 @@ function truss.list_directory(path)
 end
 
 function truss.is_file(path)
+  if type(path) == 'table' then
+    path = table.concat(path, '/')
+  end
   return truss.C.check_file(path) == 1
 end
 
 function truss.is_directory(path)
+  if type(path) == 'table' then
+    path = table.concat(path, '/')
+  end
   return truss.C.check_file(path) == 2
 end
 

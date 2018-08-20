@@ -196,36 +196,24 @@ end
 
 -- this runs a specific file as tests
 local allow_archived = false
-local function _run_test_file(dirpath, fn)
-  local rawfn = "scripts/" .. dirpath .. "/" .. fn
+local function _run_test_file(dirpath)
+  local req_path = table.concat(truss.slice_table(dirpath, 2, -1), "/")
+  local rawfn = table.concat(dirpath, "/")
+  -- "scripts/" .. dirpath .. "/" .. fn
   if (not allow_archived) and truss.is_archived(rawfn) then
     return
   end
-  print(make_header(dirpath))
-  local tt = require(dirpath .. "/" .. fn)
+  print(make_header(req_path))
+  local tt = require(req_path)
   tt.run()
 end
 
--- recursively iterate through a directory structure, looking for
--- either tests.t or subdirectory tests/
+-- run tests on any files names _test*
 local function _run_tests(dirpath, force)
-  if truss.is_file("scripts/" .. dirpath .. "/tests.t") then
-    -- if path/tests.t exists run it
-    _run_test_file(dirpath, "tests.t")
-  elseif truss.is_directory("scripts/" .. dirpath .. "/tests") then
-    -- otherwise, if path/tests/ exists, run all scripts in it
-    _run_tests(dirpath .. "/tests", true)
-  else
-    -- otherwise, recurse on subdirectories
-    local subfiles = truss.list_directory("scripts/" .. dirpath)
-    for _, fn in ipairs(subfiles) do
-      local full_fn = "scripts/" .. dirpath .. "/" .. fn
-      if (not force) and truss.is_directory(full_fn) then
-        _run_tests(dirpath .. "/" .. fn)
-      elseif force and truss.is_file(full_fn) then
-        _run_test_file(dirpath, fn)
-      end
-    end
+  local futils = require("utils/fileutils.t")
+  local file_filter = futils.filter_file_prefix("_test")
+  for path in futils.iter_walk_files(dirpath, nil, file_filter) do
+    _run_test_file(path)
   end
 end
 
@@ -238,7 +226,7 @@ function m.run_tests(dirpath, verbose, test_archives)
   test_stats.errors = 0
   test_stats.verbose = verbose
   print("verbose? " .. tostring(verbose))
-  _run_tests(dirpath)
+  _run_tests({"scripts", dirpath})
   print(make_header("TOTAL"))
   print("PASSED: " .. test_stats.total_passed)
   print("FAILED: " .. test_stats.total_failed)
@@ -258,7 +246,7 @@ function m.init()
   if truss.args[3] then
     tt.run_tests(truss.args[3], true)
   else -- if no path specified, run all tests, but non-verbose
-    tt.run_tests("", false)
+    tt.run_tests(nil, false)
   end
 end
 
