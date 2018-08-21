@@ -9,6 +9,9 @@ function nanovg_setup(stage, ctx)
   ctx.bg_color = ctx:RGBAf(0.0, 0.0, 0.0, 0.5) -- semi-transparent black
   ctx.font_color = ctx:RGBf(1.0, 1.0, 1.0)     -- white
   ctx:load_font("font/VeraMono.ttf", "sans")
+
+  ctx.test_image = ctx:load_image("textures/bad_green_cursor.png")
+  print("Test image size: ", ctx.test_image.w, ctx.test_image.h)
 end
 
 local FONT_SIZE = 20
@@ -52,6 +55,7 @@ function nanovg_render(stage, ctx)
   rounded_text(ctx, 70, 50 + FONT_SIZE*1.1, tstr)
   rounded_text(ctx, 70, 50 + 2*FONT_SIZE*1.1, pstr)
   rounded_text(ctx, 70, 50 + 3*FONT_SIZE*1.1, rstr)
+  ctx:Image(ctx.test_image, mouse_state.x, mouse_state.y, 60, 60)
   ctx:BeginPath()
   ctx:Circle(mouse_state.x, mouse_state.y, 3)
   ctx:FillColor(ctx:RGB(255, 255, 255))

@@ -8,6 +8,9 @@ local m = {}
 
 local nanovg_c_raw = terralib.includec("nanovg_terra.h")
 
+local nvg_utils = truss.addons.nanovg.functions
+local nvg_utils_pointer = truss.addons.nanovg.pointer
+
 local nvg_c_funcs = {}
 local nvg_c = {}
 local nvg_constants = {}
@@ -34,6 +37,7 @@ function NVGContext:init(view, edgeaa)
   self._ctx = nvg_c_funcs.Create((edgeaa and 1) or 0, self._viewid)
   self._fonts = {}
   self._font_aliases = {}
+  self._images = {}
   if view then view:set_sequential(true) end
 
   self.resources = {} -- a public table to hold context-bound resources (images)
@@ -79,6 +83,34 @@ function NVGContext:load_font(filename, alias)
   self._fonts[filename] = {id = font_id, data = data}
   self._font_aliases[alias] = self._fonts[filename]
   return font_id
+end
+
+function NVGContext:load_image(filename)
+  self:assert_valid()
+  if not self._images[filename] then
+    local w = terralib.new(int32[2])
+    local h = terralib.new(int32[2])
+    local n = terralib.new(int32[2])
+    local msg = nvg_utils.truss_nanovg_load_image(nvg_utils_pointer, filename, w, h, n)
+    if msg == nil then truss.error("Texture load error: " .. filename) end
+    local handle = nvg_c_funcs.CreateImageRGBA(self._ctx, w[0], h[0], 0, msg.data)
+    truss.C.release_message(msg)
+    self._images[filename] = {handle = handle, w = w[0], h = h[0]}
+  end
+  return self._images[filename]
+end
+
+-- convenience function to draw an image
+function NVGContext:Image(im, x, y, w, h, alpha)
+  if type(im) == "string" then
+    im = self:load_image(im)
+  end
+  self:BeginPath()
+  local patt = self:ImagePattern(x, y, w or im.w, h or im.h, 0.0,
+                                 im.handle, alpha or 1.0)
+  self:FillPaint(patt)
+  self:Rect(x, y, w, h)
+  self:Fill()
 end
 
 function NVGContext:begin_frame(view)
