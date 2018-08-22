@@ -164,7 +164,7 @@ classfunc 'clone'
 description[[
 Returns a clone of this geometry. This geometry must still be allocated.
 ]]
-returns[clone]
+returns{clone}
 
 classfunc 'allocate'
 description[[

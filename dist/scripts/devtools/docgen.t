@@ -76,20 +76,6 @@ local function unwrap_string(s)
   if type(s) == "string" then return s else return s[1] end
 end
 
-local function section_like(name, parent)
-  return function(self, arg)
-    self:open(name, parent)
-    self:cursor().info = unwrap_name_table(arg)
-  end
-end
-
-local function property_like(name, arg_handler)
-  return function(self, arg)
-    if arg_handler then arg = arg_handler(arg) end
-    self:cursor()[name] = arg
-  end
-end
-
 local function parse_type_arg(arg)
   if type(arg) == "string" then
     -- try to split "name: description"
@@ -129,22 +115,52 @@ local function make_metatype(tname)
   return m
 end
 
-m.doc_keywords = {
-  "module", "sourcefile", "classdef", "func", "funcdef",
-  "description", "args", "table_args", "returns", "example"
+local type_functions = {}
+local basic_types = {
+  "bool", "number", "enum", "string", "callable", "list", "table", "dict",
+  "int", "classproto"
 }
-
-m.doc_types = {
-  "bool", "number", "enum", "string", "callable",
-  "object", "ctype", "cdata", "list", "table", "dict"
-}
-
-for _, tname in ipairs(m.doc_types) do
-  DocParser[tname] = make_type(tname)
+for _, tname in ipairs(basic_types) do
+  type_functions[tname] = make_type(tname)
 end
-DocParser.object = make_metatype("object")
-DocParser.ctype = make_metatype("ctype")
-DocParser.cdata = make_metatype("cdata")
+type_functions.object = make_metatype("object")
+type_functions.ctype = make_metatype("ctype")
+type_functions.cdata = make_metatype("cdata")
+type_functions.self = {kind = 'self'}
+type_functions.clone = {kind = 'clone'}
+
+local function section_like(name, parent)
+  return function(parser, arg)
+    parser:open(name, parent)
+    parser:cursor().info = unwrap_name_table(arg)
+  end
+end
+
+local function property_like(name, arg_handler)
+  return function(parser, arg)
+    if arg_handler then arg = arg_handler(arg) end
+    parser:cursor()[name] = arg
+  end
+end
+
+local keyword_functions = {}
+function keyword_functions.module(parser, module_name)
+  parser:_module(module_name, "module")
+end
+function keyword_functions.article(parser, article_name)
+  parser:_module(article_name, "article")
+end
+keyword_functions.sourcefile = section_like("sourcefile")
+keyword_functions.classdef = section_like("classdef")
+keyword_functions.func = section_like("func")
+keyword_functions.classfunc = section_like("classfunc", "classdef")
+keyword_functions.funcdef = keyword_functions.func
+keyword_functions.description = property_like("description", unwrap_string)
+keyword_functions.extends = property_like("extends", unwrap_string)
+keyword_functions.returns = property_like("returns")
+keyword_functions.args = property_like("args")
+keyword_functions.table_args = property_like("table_args")
+keyword_functions.example = property_like("example", unwrap_string)
 
 function DocParser:_module(module_name, module_kind)
   module_name = unwrap_string(module_name)
@@ -154,32 +170,15 @@ function DocParser:_module(module_name, module_kind)
   self.structure = self.modules[module_name]
   self.open_stack = {}
 end
-function DocParser:module(module_name)
-  self:_module(module_name, "module")
-end
-function DocParser:article(article_name)
-  self:_module(article_name, "article")
-end
-DocParser.sourcefile = section_like("sourcefile")
-DocParser.classdef = section_like("classdef")
-DocParser.func = section_like("func")
-DocParser.funcdef = DocParser.func
-DocParser.description = property_like("description", unwrap_string)
-DocParser.returns = property_like("returns")
-DocParser.args = property_like("args")
-DocParser.table_args = property_like("table_args")
-DocParser.example = property_like("example", unwrap_string)
 
 function DocParser:bind_functions(env)
   local ret = env or {}
-  for _, funcname in ipairs(m.doc_keywords) do
+  for funcname, func in pairs(keyword_functions) do
     ret[funcname] = function(options)
-      return self[funcname](self, options)
+      return func(self, options)
     end
   end
-  for _, tname in ipairs(m.doc_types) do
-    ret[tname] = DocParser[tname]
-  end
+  truss.extend_table(ret, type_functions)
   ret.tostring = tostring
   ret.print = print
   return ret
