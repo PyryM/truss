@@ -99,10 +99,14 @@ local function make_type(tname)
   end
 end
 
-local function make_metatype(tname)
+local function def_qualifier(tname, k)
+  return string.format("%s[%s]", tname, k)
+end
+
+local function make_metatype(tname, qualifier)
   local template_metatable = {
     __index = function(t, k)
-      local qualified_name = string.format("%s[%s]", tname, k)
+      local qualified_name = (qualifier or def_qualifier)(tname, k)
       print("Qualified type to: " .. qualified_name)
       return make_type(qualified_name)
     end,
@@ -123,7 +127,7 @@ local basic_types = {
 for _, tname in ipairs(basic_types) do
   type_functions[tname] = make_type(tname)
 end
-type_functions.object = make_metatype("object")
+type_functions.object = make_metatype("object", function(_, k) return k end)
 type_functions.ctype = make_metatype("ctype")
 type_functions.cdata = make_metatype("cdata")
 type_functions.self = {kind = 'self'}

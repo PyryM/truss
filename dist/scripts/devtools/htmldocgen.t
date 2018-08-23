@@ -84,7 +84,12 @@ local function format_args(arglist)
   local frags = {}
   local descriptions = html.ul{}
   for _, arg in ipairs(arglist or {}) do
-    local astr = string.format("%s: %s", arg.name, arg.kind)
+    local astr
+    if arg.name then
+      astr = string.format("%s: %s", arg.name, arg.kind)
+    else
+      astr = arg.kind
+    end
     table.insert(frags, astr)
     if arg.description or arg.default or arg.optional or arg.kind == 'enum' then
       local desc = string.format("%s — %s", arg.name, arg.description or "")
@@ -126,6 +131,25 @@ function generators.func(item)
   if item.example then
     table.insert(ret, html.code{item.example, class="language-lua"})
   end
+  return ret
+end
+generators.classfunc = generators.func
+
+function generators.classdef(item)
+  local ret = html.group()
+  ret:add(html.h3{"class " .. item.info.name, class = 'class-signature'})
+  if item.description then
+    ret:add(html.p(item.description))
+  end
+  local classname = item.info.name
+  for _, subitem in ipairs(item.items) do
+    if subitem.info.name == classname or subitem.info.name == "init" then
+      subitem.info.name = classname
+    else
+      subitem.info.name = classname .. ":" .. subitem.info.name
+    end
+  end
+  ret:add(gen(item.items, item))
   return ret
 end
 

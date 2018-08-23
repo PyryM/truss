@@ -148,6 +148,11 @@ Classes representing indexed geometyr.
 
 classdef 'StaticGeometry'
 description[[
+Holds indexed geometry that, once committed to GPU, will not change.
+]]
+
+classfunc 'init'
+description[[
 Create a new StaticGeometry.
 ]]
 args{string 'name: optional name for the geometry'}
@@ -236,13 +241,13 @@ returns{self}
 example[[
 -- make a quad from two triangles
 local data = {
-    indices = {{0, 1, 2}, {2, 3, 0}},
-    attributes = {
-        position = {
-          math.Vector(0, 0, 0), math.Vector(1, 0, 0),
-          math.Vector(0, 1, 0), math.Vector(1, 1, 0)
-        }
+  indices = {{0, 1, 2}, {2, 3, 0}},
+  attributes = {
+    position = {
+      math.Vector(0, 0, 0), math.Vector(1, 0, 0),
+      math.Vector(0, 1, 0), math.Vector(1, 1, 0)
     }
+  }
 }
 local quad = gfx.StaticGeometry("quad_patch"):from_data(data)
 ]]
@@ -255,9 +260,9 @@ Set indices for this geometry from a lua (1-indexed) list of lists.
 Note that the index values themselves are 0-indexed into .vertices.
 ]]
 example[[
-  -- assume geo was allocated with space for six indices
-  local indices = {{0, 1, 2}, {2, 3, 0}}
-  geo:set_indices(indices)
+-- assume geo was allocated with space for six indices
+local indices = {{0, 1, 2}, {2, 3, 0}}
+geo:set_indices(indices)
 ]]
 
 classfunc 'set_attribute'
@@ -275,13 +280,18 @@ example[[
 
 classdef 'DynamicGeometry'
 extends 'StaticGeometry'
+description[[
+Indexed geometry that can be updated after being committed to GPU.
+Updating a DynamicGeometry is more performant than uncommitting 
+and recommitting a StaticGeometry.
+
+DynamicGeometry has all of StaticGeometry's functions.
+]]
+
+classfunc 'init'
 args{string 'name'}
 description[[
-Create a DynamicGeometry that can be updated after creation. Updating 
-a DynamicGeometry is more performant than uncommitting and recommitting
-a StaticGeometry.
-
-DynamicGeometry shares all of StaticGeometry's methods, and adds the following.
+Create a DynamicGeometry.
 ]]
 
 classfunc 'update'
