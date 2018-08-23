@@ -312,12 +312,12 @@ Update just the GPU indices from the CPU indices (.indices). The geometry
 must be committed already.
 ]]
 
-sourcefile{"compiled.t"}
+sourcefile 'compiled.t'
 description[[
 Compiled materials.
 ]]
 
-funcdef "define_base_material"
+funcdef 'define_base_material'
 description[[
 Compile a material class that can efficiently hold and bind a fixed
 set of uniforms.
@@ -387,7 +387,7 @@ local post_process_material = gfx.anonymous_material{
 }
 ]]
 
-classdef "BaseMaterial"
+classdef 'BaseMaterial'
 description[[
 The base class that materials created with define_material inherit from.
 ]]
@@ -397,7 +397,7 @@ description[[
 Clone this material instance to create a new instance with the same
 uniform values, state, and program but which is unlinked from its source.
 ]]
-returns{object["self.class"] 'cloned_self'}
+returns{clone}
 
 classfunc 'set_state'
 description[[
@@ -423,19 +423,19 @@ Bind this instance's uniform values and state for the next gfx submit.
 args{object['CompiledGlobals._value'] 'globals: can be nil'}
 returns{self}
 
-classdef "CompiledGlobals"
+classdef 'CompiledGlobals'
 description[[
 A set of global uniforms. Constructor takes no arguments because it can
 hold any uniform value that has been declared global in any material.
 ]]
 
-classfunc "update_globals_list"
+classfunc 'update_globals_list'
 description[[
 If materials have been defined after this instance was created, this
 function can be called to update the list of globals.
 ]]
 
-classdef "Drawcall"
+classdef 'Drawcall'
 description[[
 A compiled drawcall that accelerates submitting a drawing operation that
 combines a geometry (vertex + index buffers) and a material (uniforms, state,
@@ -479,19 +479,253 @@ args{int 'start_id: starting view id', int 'n_views: number of sequential views'
      object['Matrix4'] 'transform: model transform for drawcall'}
 
 
-funcdef{"solve_quadratic"}
-description[[Solve a quadratric equation]]
-args{
-  number'a: first coeff', 
-  number'b: second coeff', 
-  number'c: third coeff'
-}
-example[[
--- a multiline example
-local do_something = false
-local second_line = tostring(nil)
-for k,v in ipairs(whatever) do
-  print(k)
-end
+sourcefile 'formats.t'
+description[[
+Defines texture formats. The texture formats are available as
+`gfx.TEX_{format}` constants, e.g., `gfx.TEX_BGRA8`.
 ]]
-returns{number'first root or nil', number'second root or nil'}
+example[[
+truss.table_print(gfx.TEX_RGBA8)
+-------------
+{
+  name: 'BGRA8'
+  bgfx_enum: 49
+  channel_type: uint8
+  n_channels: 4
+  channel_size: 1
+  pixel_size: 4
+  has_color: true
+  has_depth: false
+  has_stencil: false  
+}
+]]
+
+fielddef{table 'all_formats'}
+description[[
+A table of every texture format.
+]]
+
+funcdef 'find_format_from_enum'
+args{int 'bgfx_enum_val: bgfx texture constant'}
+returns{table 'truss_format'}
+description[[
+Gives the truss texture info structure corresponding to a bgfx
+texture identifier (e.g., BGFX_TEXTURE_FORMAT_RGBA32F).
+]]
+
+sourcefile 'shaders.t'
+description[[
+Functions for loading shaders.
+]]
+
+funcdef 'get_shader_path'
+returns{string 'shader_path'}
+description[[
+Returns the file path to the directory containing the shaders
+compatible with the current backend.
+
+Requires gfx to have been initialized.
+]]
+
+funcdef 'load_shader'
+args{string 'shader_name'}
+returns{cdata['bgfx_shader_handle'] 'shader'}
+description[[
+Loads and caches a shader. Subsequent load calls for the same
+name will return the cached shader. The shader name does not
+need to include the directory path or file extension.
+]]
+example[[
+local vshader = gfx.load_shader("vs_basic")
+]]
+
+funcdef 'load_program'
+args{string 'vertex_shader', string 'fragment_shader'}
+returns{cdata['bgfx_program_handle'] 'program'}
+description[[
+Loads and caches a program (a combination of vertex and fragment shaders).
+The individual vertex and fragment shaders are cached as well.
+]]
+example[[
+local program = gfx.load_program("vs_solid", "fs_solid_hadcoded_red")
+]]
+
+funcdef 'error_program'
+returns{cdata['bgfx_program_handle'] 'program'}
+description[[
+Returns the 'error program', a zero-uniforms program meant to make it
+easy to visually identify geometry that is drawn with it (the default
+error program draws in a flat, unshaded bright magenta).
+]]
+
+sourcefile 'texture.t'
+description[[
+Textures.
+]]
+
+funcdef 'combine_tex_flags'
+table_args{
+  u = enum{'texture mode in U axis', 
+           options={'repeat', 'mirror', 'clamp'}, 
+           default='repeat'},
+  v = enum{'texture mode in V axis',
+           options={'repeat', 'mirror', 'clamp'}, 
+           default='repeat'},
+  w = enum{'texture mode in W axis',
+           options={'repeat', 'mirror', 'clamp'}, 
+           default='repeat'},
+  min = enum{'minification filter', 
+            options={'bilinear', 'point', 'anisotropic'},
+            default='bilinear'},
+  mag = enum{'magnification filter', 
+            options={'bilinear', 'point', 'anisotropic'},
+            default='bilinear'},
+  mip = enum{'mip-mapping filter', 
+            options={'bilinear', 'point', 'anisotropic'},
+            default='bilinear'},
+  msaa = bool 'msaa??',
+  render_target = bool 'allow rendering to this texture',
+  rt_write_only = bool 'this texture can be rendered to but not read',
+  compare = bool 'compare mode??',
+  compute_write = bool 'compute shaders can write to this texture',
+  srgb = bool 'this is an srgb (gamma) texture',
+  blit_dest = bool 'this texture can be blitted to',
+  read_back = bool 'can read back this texture into CPU memory'
+}
+returns{int 'state_flags', table 'expanded_options'}
+description[[
+Combines texture options into a single integer of bit flags as expected
+by bgfx.
+]]
+
+funcdef 'Texture'
+args{string 'filename', table 'flags'}
+returns{object['Texture'] 'texture'}
+description[[
+Create a texture from a file. If provided, flags should be a table
+of texture options as used by `combine_tex_flags`. Supported formats
+are .png, .jpg, .ktx, .dds, and .pvr. 
+
+Note that, although this is named like a class, it is actually a function
+that returns the appropriate subclass of Texture, i.e., loading a .png
+will return a Texture2d, while loading a .ktx containing a cubemap will
+return a TextureCube.
+
+The .png and .jpg loaders are provided as a development convenience, but
+only load RGBA8, and without mipmaps.
+Cubemaps, 3d textures, hdr textures, etc. should use the other texture formats.
+]]
+example[[
+local tex = gfx.Texture("textures/test_pattern.png")
+]]
+
+funcdef 'load_texture_data'
+args{string 'filename'}
+returns{table 'texture_data'}
+description[[
+Load a .png or .jpg file into memory as uncompressed RGBA8. The returned
+table has the fields .w, .h, .n (always 4), and .data, which is a cdata
+array of uint8.
+]]
+
+classdef 'Texture'
+description[[
+Base class for textures: not directly instantiatable, and not
+exported (the 'class' gfx.Texture is actually a function that instantiates
+the correct type of subclass for the requested file).
+]]
+
+classfunc 'commit'
+description[[
+Upload this texture to GPU, making it available for drawing operations.
+]]
+
+classfunc 'destroy'
+description[[
+Destroy this texture, releasing both CPU and GPU memory and
+destroying all handles.
+]]
+
+classfunc 'release'
+description[[
+Alias for :destroy.
+]]
+
+classfunc 'is_renderable'
+returns{bool 'can_render_to'}
+description[[
+Returns whether this texture can be used as a render target.
+]]
+
+classfunc 'is_blittable'
+returns{bool 'can_blit_to'}
+description[[
+Returns whether this texture can be used as a blit target.
+]]
+
+classdef 'Texture2d'
+description[[
+A regular 2d texture.
+]]
+
+classfunc 'init'
+table_args{
+  dynamic = bool 'allow updates after creation',
+  width = int 'width in pixels',
+  height = int 'height in pixels',
+  format = object['format_info'] 'a gfx.TEX_{...} texture format',
+  flags = table 'texture flags (see `combine_tex_flags`)',
+  commit = bool{'automatically commit texture to GPU', default=true}
+}
+description[[
+Create an empty 2d texture. If the texture isn't dynamic, renderable,
+or blittable, then there will be no way to actually get data into it.
+
+If the texture is created as dynamic, then the .cdata array is available
+to be manipulated (warning: this is a raw C array, and is thus 0-indexed and
+out of range access will result in horrible segfaults or worse).
+]]
+
+classfunc 'update'
+description[[
+Update this texture on GPU if it was created as dynamic.
+]]
+
+classdef 'Texture3d'
+description[[
+A 3d texture.
+]]
+
+classfunc 'init'
+table_args{
+  width = int 'width in voxels',
+  height = int 'height in voxels',
+  depth = int 'depth in voxels',
+  format = object['format_info'] 'a gfx.TEX_{...} texture format',
+  flags = table 'texture flags (see `combine_tex_flags`)',
+  commit = bool{'automatically commit texture to GPU', default=true}
+}
+description[[
+Create an empty 3d texture. 
+Dynamic 3d textures are not yet implemented.
+]]
+
+classdef 'TextureCube'
+description[[
+A cube-map texture, represented as six square cube faces.
+]]
+
+classfunc 'init'
+table_args{
+  size = int 'cube map face size, in pixels',
+  format = object['format_info'] 'a gfx.TEX_{...} texture format',
+  flags = table 'texture flags (see `combine_tex_flags`)',
+  commit = bool{'automatically commit texture to GPU', default=true}
+}
+description[[
+Create an empty cube map. Note that cube map faces are square, so
+`size` is used instead of `width` and `height`.
+
+Dynamic cubemap textures are not yet implemented (they can, however, be
+rendered and blitted to if the correct flags are provided).
+]]

@@ -13,6 +13,7 @@ local bitformats = {
 }
 
 local all_formats = {}
+m.texture_formats = all_formats
 
 local function export_tex_format(channels, n_channels, bitformat, has_color, has_depth, has_stencil)
   local bitinfo = bitformats[bitformat]
