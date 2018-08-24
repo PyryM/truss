@@ -729,3 +729,264 @@ Create an empty cube map. Note that cube map faces are square, so
 Dynamic cubemap textures are not yet implemented (they can, however, be
 rendered and blitted to if the correct flags are provided).
 ]]
+
+sourcefile 'rendertarget.t'
+description[[
+Render target (buffer) management.
+]]
+
+funcdef 'ColorDepthTarget'
+table_args {
+  color_format = object{'texture format', default = 'gfx.TEX_BGRA8'},
+  depth_format = object{'texture format', default = 'gfx.TEX_D24S8'},
+  color_flags = table{'texture flags', default = '{rt = true, u = "clamp", v = "clamp"}',
+  depth_flags = table{'texture flags', default = '{rt_write_only = true}'},
+  width = int 'pixel width',
+  height = int 'pixel height',
+  mips = bool 'automatically generate mipmaps (not working?)'
+}
+returns{object['RenderTarget'] 'target'}
+description[[
+Create a basic rendertarget with one color buffer and optionally a
+depth+stencil buffer. To create a target without a depth buffer,
+pass `depth_format = false`.
+]]
+example[[
+local target = gfx.ColorDepthTarget{width = 1280, height = 720,
+                                    color_format = gfx.RGBA32F,
+                                    depth_format = false}
+]]
+
+funcdef 'GBufferTarget'
+table_args {
+  color_formats = list 'texture formats',
+  depth_format = object 'texture format',
+  color_flags = table{'texture flags', default = '{rt = true, u = "clamp", v = "clamp"}',
+  depth_flags = table{'texture flags', default = '{rt_write_only = true}'},
+  width = int 'pixel width',
+  height = int 'pixel height',
+}
+returns{object['RenderTarget'] 'target'}
+description[[
+Create a 'gbuffer' with multiple color buffers of the same size and optionally
+a depth buffer. 
+]]
+example[[
+local target = gfx.GBufferTarget{
+  color_formats = {gfx.TEX_BGRA8, gfx.TEX_R32F},
+  depth_format = gfx.TEX_D24,
+  width = 1024, height = 1024 
+}
+]]
+
+funcdef 'BackbufferTarget'
+returns{object['RenderTarget'] 'backbuffer'}
+description[[
+Create a rendertarget representing the backbuffer. Note that
+`width` and `height` aren't specified because these are set by
+`gfx.init_gfx`. However, the fields `.width` and `.height` will
+correctly reflect the backbuffer size.
+]]
+example[[
+local backbuffer = gfx.BackbufferTarget()
+-- this is OK: the rendertarget knows the backbuffer dimensions
+local aspect = backbuffer.width / backbuffer.height
+]]
+
+funcdef 'TextureTarget'
+table_args{
+  tex = object['gfx.Texture'] 'texture to turn into a rendertarget',
+  mip = int 'mip level to render into',
+  layer = int 'layer to render into (cubemaps, arrays, 3d textures)',
+  depth_format = object 'texture format',
+  depth_flags = table 'texture flags'
+}
+returns{object['RenderTarget'] 'target'}
+description[[
+Create a rendertarget that renders into a given texture. The texture
+must have been created with the 'rt' flag. If the texture is a cubemap,
+3d texture, or texture array, then the `layer` option is used to select
+which face/depth/index is rendered into.
+]]
+usage_note[[
+This is intended mainly to render to cubemaps and 3d textures.
+Since you can use a RenderTarget for most purposes as a texture
+(e.g., a texture-typed uniform can be set from a RenderTarget),
+to render into a 2d texture it is preferrable to instead create
+a RenderTarget and use it as a texture.
+]]
+example[[
+local cubemap = gfx.TextureCube{
+  size = 2048,
+  flags = {render_target = true},
+  allocate = false -- no CPU memory needed
+}:commit()
+local positive_y_face = gfx.TextureTarget{
+  tex = cubemap,
+  layer = 2, -- 0-indexed, face order: +x, -x, +y, -y, +z, -z
+  depth_format = gfx.TEX_D24
+}
+]]
+
+classdef 'RenderTarget'
+description[[
+Represents a render target.
+]]
+fields{
+  width = int 'width in pixels',
+  height = int 'height in pixels',
+  has_color = bool 'whether this target has a color buffer',
+  has_depth = bool 'whether this target has a depth buffer',
+  is_backbuffer = bool 'whether this targets the backbuffer',
+  has_stencil = bool 'whether this target has a stencil buffer',
+  cloneable = bool 'whether this target can be cloned',
+  framebuffer = cdata['bgfx_frame_buffer_handle'] 'raw bgfx handle'
+}
+
+classfunc 'init'
+table_args {
+  width = int 'pixel width',
+  height = int 'pixel height',
+  layers = list 'buffers to create'
+}
+description[[
+Create a rendertarget from a list of layers. Typically you should
+not invoke this directly, instead use one of the factory methods
+`ColorDepthTarget`, `GBufferTarget`, or `TextureTarget`.
+]]
+
+classfunc 'clone'
+returns{clone}
+description[[
+Clone this rendertarget to create a new rendertaget with the same
+size and layer arrangement. 
+
+Note that the actual contents of the layers are NOT copied.
+]]
+
+classfunc 'get_attachment_handle'
+args{int 'idx: index of attachment to get (1-indexed)'}
+returns{cdata['bgfx_texture_handle'] 'texture_handle'}
+description[[
+Get the raw bgfx texture handle for a given layer of this
+rendertarget. E.g., in a ColorDepthTarget, index 1 is the 
+color buffer, and index 2 is the depth buffer.
+]]
+
+classfunc 'destroy'
+description[[
+Destroy this rendertarget, releasing all CPU and GPU resources.
+Attempting to destroy the backbuffer has no effect.
+]]
+
+sourcefile 'view.t'
+description[[
+View management.
+]]
+
+classdef 'View'
+description[[
+Represents a bgfx 'view'.
+]]
+
+classfunc 'init'
+table_args{
+  render_target = object['RenderTarget'] 'target to render into',
+  view_matrix = object['Matrix4'] 'view matrix',
+  proj_matrix = object['Matrix4'] 'projection matrix',
+  viewport = tuple 'viewport (see set_viewport)',
+  clear = table 'clear values (see set_clear)',
+  sequential = bool 'if true, view will draw in strict submission order',
+  name = string 'name of the view (for debugging)'
+}
+description[[
+Create a new View. Note that the view will need to be bound to a viewid
+with :bind. 
+]]
+
+classfunc 'set'
+args{table 'options: see constructor for options'}
+returns{self}
+description[[
+Change view settings; takes same options as constructor.
+]]
+
+classfunc 'set_matrices'
+args{object['Matrix4'] 'view_matrix', object['Matrix4'] 'proj_matrix'}
+description[[
+Set view and projection matrices. Passing nil indicates that the matrix
+should be left unchanged, if you only want to change one of the matrices.
+]]
+
+classfunc 'set_viewport'
+args{tuple 'viewport: {x, y, width, height}'}
+description[[
+Set the viewport. Pass in false to clear the viewport.
+Note that the viewport is defined in pixel coordinates.
+]]
+
+classfunc 'set_clear'
+table_args{
+  color = int 'color clear value as packed integer',
+  depth = number 'depth clear value',
+  stencil = int 'stencil clear value'
+}
+description[[
+Set how the rendertarget will be cleared before this view renders.
+A value can be set to false to not clear, or false can be passed in
+instead of a table to not clear at all.
+]]
+example[[
+-- typical clear values for color and depth
+local v = View{clear = {color = 0x000000ff, depth = 1.0}}
+v:set_clear{color = 0x000000ff, depth = false} -- clear only depth
+v:set_clear(false) -- don't clear at all
+]]
+
+classfunc 'set_render_target'
+args{object['RenderTarget'] 'target'}
+description[[
+Set the rendertarget that this view will render into. Note that
+multiple views can render into the same target (in which case their
+clear values are especially important).
+]]
+
+classfunc 'set_sequential'
+args{bool 'sequential'}
+description[[
+Set whether view is in sequential rendering mode. Normally
+(sequential = false) bgfx will sort submissions into a view
+based on its own internal logic of what order minimizes state
+changes. With sequential = true, the view will render submissions
+to it in the exact order that they are submitted.
+]]
+
+classfunc 'get_dimensions'
+returns{int 'width', int 'height'}
+description[[
+Get the dimensions of the target that this view renders into, without
+accounting for viewport.
+]]
+
+classfunc 'get_active_dimensions'
+returns{int 'width', int 'height'}
+description[[
+Get the dimensions of the target that this view renders into,
+cropped according to the viewport.
+]]
+
+classfunc 'bind'
+args{int 'viewid'}
+returns{self}
+description[[
+Bind this view to a viewid. Views are rendered in increasing
+order of their viewids.
+]]
+
+classfunc 'touch'
+returns{self}
+description[[
+A view will only clear if it actually has drawcalls submitted
+into it. Touching a view forces it to apply its clear even when nothing
+has been submitted into it.
+]]
