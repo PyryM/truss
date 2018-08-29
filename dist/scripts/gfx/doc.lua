@@ -675,15 +675,27 @@ table_args{
   height = int 'height in pixels',
   format = object['format_info'] 'a gfx.TEX_{...} texture format',
   flags = table 'texture flags (see `combine_tex_flags`)',
-  commit = bool{'automatically commit texture to GPU', default=true}
+  commit = bool{'automatically commit texture to GPU', default=true},
+  allocate = bool{'allocate a buffer to hold the texture data', default=false}
 }
 description[[
-Create an empty 2d texture. If the texture isn't dynamic, renderable,
-or blittable, then there will be no way to actually get data into it.
+Create an empty 2d texture.
 
-If the texture is created as dynamic, then the .cdata array is available
+If allocate=true, then the .cdata array is available
 to be manipulated (warning: this is a raw C array, and is thus 0-indexed and
 out of range access will result in horrible segfaults or worse).
+]]
+example[[
+-- create a gradient
+local tex = gfx.Texture2d{width = 32, height = 32, allocate = true}
+for row = 0, 31 do
+  for col = 0, 31 do
+    for channel = 0, 3 do 
+      tex.cdata[(row*32+col)*4 + channel] = col*8
+    end
+  end
+end
+tex:commit() -- updating cdata after this has no effect
 ]]
 
 classfunc 'update'
