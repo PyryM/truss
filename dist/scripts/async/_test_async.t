@@ -140,6 +140,20 @@ function m.test_async(t)
   end
   t.expect(f, 17, "async schedule waited correct number of frames")
 
+  -- test scheduling for a non-integer
+  async.clear()
+  local p = async.run(function()
+    async.await(async.schedule(16.5))
+    return "bar"
+  end)
+  local f = 0
+  for i = 1, 20 do
+    if p.value == "bar" then break end
+    f = f + 1
+    async.update()
+  end
+  t.expect(f, 17, "async rounded-up non-integer framecount")
+
   -- test immediate async
   async.clear()
   local p = async.run(function()
