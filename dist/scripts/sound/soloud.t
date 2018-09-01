@@ -101,6 +101,16 @@ function Wav:stop()
   end
 end
 
+function Wav:get_duration()
+  local rawsound = self:_get_wav()
+  if rawsound == nil then return 0.0 end
+  if self._stream then
+    return C.WavStream_getLength(rawsound)
+  else
+    return C.Wav_getLength(rawsound)
+  end
+end
+
 function Wav:set_looping(looping)
   local loopint = 0
   if looping then loopint = 1 end
@@ -110,6 +120,19 @@ function Wav:set_looping(looping)
     C.WavStream_setLooping(rawsound, loopint)
   else
     C.Wav_setLooping(rawsound, loopint)
+  end
+end
+
+function Wav:set_inaudible_behavior(must_tick, kill)
+  local rawsound = self:_get_wav()
+  if not rawsound then return end
+  must_tick = (must_tick and 1) or 0
+  kill = (kill and 1) or 0
+  print(must_tick, kill)
+  if self._stream then
+    C.WavStream_setInaudibleBehavior(rawsound, must_tick, kill)
+  else
+    C.Wav_setInaudibleBehavior(rawsound, must_tick, kill)
   end
 end
 
