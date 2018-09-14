@@ -1,6 +1,8 @@
 local app = require("app/app.t")
 local geometry = require("geometry")
 local pbr = require("material/pbr.t")
+local flat = require("material/flat.t")
+local gfx = require("gfx")
 local graphics = require("graphics")
 local orbitcam = require("gui/orbitcam.t")
 local grid = require("graphics/grid.t")
@@ -30,6 +32,15 @@ function init()
   mygrid.position:set(0.0, -1.0, 0.0)
   mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
   mygrid:update_matrix()
+
+  local tartex = gfx.Texture("textures/test_pattern.png")
+  local tarmat = flat.FlatMaterial{texture = tartex}
+  local targeo = geometry.plane_geo{width = 1, height = 1}
+
+  target = myapp.scene:create_child(graphics.Mesh, "calibtarget", targeo, tarmat)
+  target.position:set(-0.5, 0.0, 0.0)
+  target.quaternion:euler({x = 0.0, y = math.pi/2.0, z = 0.0})
+  target:update_matrix()
 end
 
 function update()

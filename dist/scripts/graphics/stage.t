@@ -9,8 +9,6 @@ local gfx = require("gfx")
 local Stage = class("Stage")
 m.Stage = Stage
 
--- initoptions should contain e.g. input render targets (for post-processing),
--- output render targets, uniform values.
 function Stage:init(options)
   options = options or {}
   self._num_views = 1
@@ -45,11 +43,7 @@ function Stage:num_views()
   return self._num_views
 end
 
-function Stage:bind()
-  self.view:bind()
-end
-
-function Stage:bind_view_ids(start_view_id, num_views)
+function Stage:bind(start_view_id, num_views)
   self._start_view_id = start_view_id
   self.view:bind(start_view_id)
 end
@@ -60,7 +54,7 @@ function Stage:add_render_op(op)
 end
 
 function Stage:pre_render()
-  if self._always_clear and self.view then
+  if self.enabled and self._always_clear and self.view then
     self.view:touch()
   end
   if self._user_update then self:_user_update() end

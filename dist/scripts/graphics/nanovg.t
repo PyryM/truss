@@ -33,8 +33,8 @@ function NanoVGStage:set_nanovg_functions(nvg_setup, nvg_render)
   self._need_setup = true
 end
 
-function NanoVGStage:bind_view_ids(view_ids)
-  NanoVGStage.super.bind_view_ids(self, view_ids)
+function NanoVGStage:bind(start_id, num_views)
+  NanoVGStage.super.bind(self, start_id, num_views)
   if self._ctx then -- reuse existing context for fonts etc.
     self._ctx:set_view(self.view)
   else

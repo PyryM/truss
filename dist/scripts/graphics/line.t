@@ -9,6 +9,7 @@ local Quaternion = math.Quaternion
 local Vector = math.Vector
 local gfx = require("gfx")
 local render = require("./renderer.t")
+local ecs = require("ecs")
 
 local m = {}
 
@@ -17,7 +18,6 @@ m.LineRenderComponent = LineRenderComponent
 
 function LineRenderComponent:init(options)
   local opts = options or {}
-  self._render_ops = {}
   self.mount_name = "line"
   self.maxpoints = opts.maxpoints
   if not self.maxpoints and opts.points then
@@ -172,9 +172,6 @@ function LineRenderComponent:set_points(lines)
   if self.dynamic then self.geo:update() else self.geo:commit() end
 end
 
-function m.Line(_ecs, name, options)
-  local ecs = require("ecs")
-  return ecs.Entity3d(_ecs, name, LineRenderComponent(options))
-end
+m.Line = ecs.promote("Line", LineRenderComponent)
 
 return m

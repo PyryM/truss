@@ -27,11 +27,11 @@ function MultiviewStage:init(options)
   self.view = nil -- so we'll throw errors if an op tries to use .view
 end
 
-function MultiviewStage:bind()
-  for _, view in ipairs(self.views) do view:bind() end
-end
+-- function MultiviewStage:bind()
+--   for _, view in ipairs(self.views) do view:bind() end
+-- end
 
-function MultiviewStage:bind_view_ids(start_id, num_views)
+function MultiviewStage:bind(start_id, num_views)
   if num_views ~= self._num_views then 
     truss.error("Wrong number of views!") 
   end

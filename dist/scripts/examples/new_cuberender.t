@@ -6,6 +6,7 @@ local graphics = require("graphics")
 local orbitcam = require("gui/orbitcam.t")
 local grid = require("graphics/grid.t")
 local gfx = require("gfx")
+local ecs = require("ecs")
 
 local CubeRenderApp = app.App:extend("CubeRenderApp")
 function CubeRenderApp:init_pipeline()
@@ -73,8 +74,10 @@ function init()
   myapp = CubeRenderApp{title = "basic example", width = 1280, height = 640,
                   msaa = true, stats = true, clear_color = 0x404080ff}
 
-  myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 1, max_rad = 4}))
-  cubecam = myapp.ECS.scene:create_child(graphics.CubeCamera, "CubeCam", {})
+  rotator = myapp.ECS.scene:create_child(ecs.Entity3d, "Rotator")
+  cubecam = rotator:create_child(graphics.CubeCamera, "CubeCam", {})
+  cubecam.position:set(2.5, 0.0, 0.0)
+  cubecam:update_matrix()
 
   local geo = geometry.axis_widget_geo{}
   local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
@@ -107,7 +110,9 @@ end
 local t = 0.0
 function update()
   t = t + 1.0 / 60.0
-  cubecam.position:set(math.cos(t), 0, math.sin(t))
-  cubecam:update_matrix()
+  rotator.quaternion:euler{x = 0.0, y = t, z = 0.0}
+  rotator:update_matrix()
+  --cubecam.position:set(math.cos(t), 0, math.sin(t))
+  --cubecam:update_matrix()
   myapp:update()
 end

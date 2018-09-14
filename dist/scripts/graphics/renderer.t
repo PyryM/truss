@@ -21,7 +21,7 @@ end
 
 function RenderSystem:set_pipeline(p)
   self.pipeline = p
-  self.pipeline:bind()
+  self.pipeline:bind(0, 255)
   return self
 end
 
