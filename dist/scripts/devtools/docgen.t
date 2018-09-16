@@ -122,7 +122,7 @@ end
 local type_functions = {}
 local basic_types = {
   "bool", "number", "enum", "string", "callable", "list", "table", "dict",
-  "int", "classproto"
+  "int", "classproto", "tuple"
 }
 for _, tname in ipairs(basic_types) do
   type_functions[tname] = make_type(tname)
@@ -159,6 +159,7 @@ keyword_functions.classdef = section_like("classdef")
 keyword_functions.func = section_like("func")
 keyword_functions.classfunc = section_like("classfunc", "classdef")
 keyword_functions.funcdef = keyword_functions.func
+keyword_functions.fields = property_like("fields")
 keyword_functions.description = property_like("description", unwrap_string)
 keyword_functions.extends = property_like("extends", unwrap_string)
 keyword_functions.returns = property_like("returns")

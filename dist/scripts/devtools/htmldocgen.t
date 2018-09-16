@@ -19,26 +19,6 @@ local function module_id(item)
   return "module-" .. item.info.name
 end
 
-function generators.module(item, parent)
-  local ret = html.section{html.h2{"◈ " .. item.info.name}}
-  if item.description then
-    ret:add(html.p{item.description})
-  end
-  ret:add(gen(item.items, item))
-  ret.attributes.id = module_id(item)
-  return ret
-end
-
-function generators.sourcefile(item, parent)
-  local ret = html.group{
-    html.h3{item.info.name}
-  }
-  item.parent = parent
-  if item.description then ret:add(html.p{item.description}) end
-  ret:add(gen(item.items, item))
-  return ret
-end
-
 local function format_value(v)
   if type(v) == "string" then
     return "'" .. v .. "'"
@@ -55,30 +35,74 @@ local function format_enum_options(options)
   return table.concat(t, ", ")
 end
 
-local function format_table_args(argtable)
-  local caption = html.caption{"Options"}
-  local head = html.thead{
-    html.tr{
-      html.th{"name"}, html.th{"type"}, 
-      html.th{"desc"}, html.th{"default"}
-    }
-  }
+local function field_row_gen(argname, arg)
+  return {argname, arg.kind, arg.name}
+end
+
+local function arg_row_gen(argname, arg)
+  local desc = arg.name
+  if arg.kind == "enum" and arg.options then
+    desc = desc .. ": " .. format_enum_options(arg.options)
+  end
+  return {argname, arg.kind, desc, format_value(arg.default) or "nil"}
+end
+
+local function format_type_table(argtable, caption, labels, rowgen)
+  local caption = html.caption{caption}
+  local header_row = html.tr{}
+  for _, s in ipairs(labels) do
+    header_row:add(html.th{s})
+  end
+  local head = html.thead{header_row}
   local body = html.tbody()
   for argname, arg in pairs(argtable) do
-    local desc = arg.name
-    if arg.kind == "enum" and arg.options then
-      desc = desc .. ": " .. format_enum_options(arg.options)
+    local row = html.tr{}
+    for _, part in ipairs(rowgen(argname, arg)) do
+      row:add(html.td{part})
     end
-    local row = html.tr{
-      html.td{argname}, html.td{arg.kind}, 
-      html.td{desc}, 
-      html.td{format_value(arg.default) or "nil"}
-    }
     body:add(row)
   end
-
-  return "options", html.table{caption, head, body}
+  return html.table{caption, head, body}
 end
+
+local function format_table_args(argtable)
+  local htable = format_type_table(argtable, "Options", 
+                                   {"name", "type", "desc", "default"},
+                                   arg_row_gen)
+  return "options", htable
+end
+
+local function format_fields(fieldtable, caption)
+  local htable = format_type_table(fieldtable, caption or "Fields", 
+                                   {"name", "type", "desc"},
+                                   field_row_gen)
+  return htable
+end
+
+-- local function format_table_args(argtable)
+--   local caption = html.caption{"Options"}
+--   local head = html.thead{
+--     html.tr{
+--       html.th{"name"}, html.th{"type"}, 
+--       html.th{"desc"}, html.th{"default"}
+--     }
+--   }
+--   local body = html.tbody()
+--   for argname, arg in pairs(argtable) do
+--     local desc = arg.name
+--     if arg.kind == "enum" and arg.options then
+--       desc = desc .. ": " .. format_enum_options(arg.options)
+--     end
+--     local row = html.tr{
+--       html.td{argname}, html.td{arg.kind}, 
+--       html.td{desc}, 
+--       html.td{format_value(arg.default) or "nil"}
+--     }
+--     body:add(row)
+--   end
+
+--   return "options", html.table{caption, head, body}
+-- end
 
 local function format_args(arglist)
   local frags = {}
@@ -108,6 +132,32 @@ local function format_args(arglist)
     descriptions = nil
   end
   return table.concat(frags, ", "), descriptions
+end
+
+function generators.module(item, parent)
+  local ret = html.section{html.h2{"◈ " .. item.info.name}}
+  if item.description then
+    ret:add(html.p{item.description})
+  end
+  if item.fields then
+    ret:add(format_fields(item.fields))
+  end
+  ret:add(gen(item.items, item))
+  ret.attributes.id = module_id(item)
+  return ret
+end
+
+function generators.sourcefile(item, parent)
+  local ret = html.group{
+    html.h3{item.info.name}
+  }
+  item.parent = parent
+  if item.description then ret:add(html.p{item.description}) end
+  if item.fields then
+    ret:add(format_fields(item.fields))
+  end
+  ret:add(gen(item.items, item))
+  return ret
 end
 
 function generators.func(item)
