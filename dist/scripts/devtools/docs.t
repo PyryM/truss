@@ -17,7 +17,7 @@ function init()
 
   local generated_html = htmlgen(
     parser:get_modules(), {
-      css = {"trussdocs.css", "prism.css"},
+      css = {"trussdoc.css", "prism.css"},
       scripts = {"prism.js"}
     }
   )
