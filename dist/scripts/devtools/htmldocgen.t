@@ -1,4 +1,5 @@
 local html = require("./htmlgen.t")
+local md = require("./minimarkdown.t")
 
 local generators = {}
 local function gen(items, parent)
@@ -47,6 +48,13 @@ local function arg_row_gen(argname, arg)
   return {argname, arg.kind, desc, format_value(arg.default) or "nil"}
 end
 
+local function sorted_keys(t)
+  local keys = {}
+  for k, _ in pairs(t) do table.insert(keys, k) end
+  table.sort(keys)
+  return keys
+end
+
 local function format_type_table(argtable, caption, labels, rowgen)
   local caption = html.caption{caption}
   local header_row = html.tr{}
@@ -55,7 +63,9 @@ local function format_type_table(argtable, caption, labels, rowgen)
   end
   local head = html.thead{header_row}
   local body = html.tbody()
-  for argname, arg in pairs(argtable) do
+  --for argname, arg in pairs(argtable) do
+  for _, argname in ipairs(sorted_keys(argtable)) do
+    local arg = argtable[argname]
     local row = html.tr{}
     for _, part in ipairs(rowgen(argname, arg)) do
       row:add(html.td{part})
@@ -137,7 +147,7 @@ end
 function generators.module(item, parent)
   local ret = html.section{html.h2{"◈ " .. item.info.name}}
   if item.description then
-    ret:add(html.p{item.description})
+    ret:add(md.generate(item.description))  --html.p{item.description})
   end
   if item.fields then
     ret:add(format_fields(item.fields))
@@ -152,7 +162,9 @@ function generators.sourcefile(item, parent)
     html.h3{item.info.name}
   }
   item.parent = parent
-  if item.description then ret:add(html.p{item.description}) end
+  if item.description then 
+    ret:add(md.generate(item.description))   --html.p{item.description}) 
+  end
   if item.fields then
     ret:add(format_fields(item.fields))
   end
@@ -176,10 +188,10 @@ function generators.func(item)
   end
   local ret = {html.h4{sig, class = 'function-signature'}, arg_descriptions}
   if item.description then
-    table.insert(ret, html.p(item.description))
+    table.insert(ret, md.generate(item.description)) --html.p(item.description))
   end
   if item.example then
-    table.insert(ret, html.code{item.example, class="language-lua"})
+    table.insert(ret, html.precode{item.example, class="language-lua"})
   end
   return ret
 end
@@ -189,7 +201,7 @@ function generators.classdef(item)
   local ret = html.group()
   ret:add(html.h3{"class " .. item.info.name, class = 'class-signature'})
   if item.description then
-    ret:add(html.p(item.description))
+    ret:add(md.generate(item.description))  --html.p(item.description))
   end
   local classname = item.info.name
   for _, subitem in ipairs(item.items) do

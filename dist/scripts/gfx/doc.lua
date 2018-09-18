@@ -500,10 +500,9 @@ truss.table_print(gfx.TEX_RGBA8)
 }
 ]]
 
-fielddef{table 'all_formats'}
-description[[
-A table of every texture format.
-]]
+fields{
+  all_formats = table 'A table of every texture format.'
+}
 
 funcdef 'find_format_from_enum'
 args{int 'bgfx_enum_val: bgfx texture constant'}
@@ -751,7 +750,7 @@ funcdef 'ColorDepthTarget'
 table_args {
   color_format = object{'texture format', default = 'gfx.TEX_BGRA8'},
   depth_format = object{'texture format', default = 'gfx.TEX_D24S8'},
-  color_flags = table{'texture flags', default = '{rt = true, u = "clamp", v = "clamp"}',
+  color_flags = table{'texture flags', default = '{rt = true, u = "clamp", v = "clamp"}'},
   depth_flags = table{'texture flags', default = '{rt_write_only = true}'},
   width = int 'pixel width',
   height = int 'pixel height',
@@ -773,7 +772,7 @@ funcdef 'GBufferTarget'
 table_args {
   color_formats = list 'texture formats',
   depth_format = object 'texture format',
-  color_flags = table{'texture flags', default = '{rt = true, u = "clamp", v = "clamp"}',
+  color_flags = table{'texture flags', default = '{rt = true, u = "clamp", v = "clamp"}'},
   depth_flags = table{'texture flags', default = '{rt_write_only = true}'},
   width = int 'pixel width',
   height = int 'pixel height',
@@ -816,11 +815,10 @@ table_args{
 returns{object['RenderTarget'] 'target'}
 description[[
 Create a rendertarget that renders into a given texture. The texture
-must have been created with the 'rt' flag. If the texture is a cubemap,
+must have been created with the `rt` flag. If the texture is a cubemap,
 3d texture, or texture array, then the `layer` option is used to select
 which face/depth/index is rendered into.
-]]
-usage_note[[
+
 This is intended mainly to render to cubemaps and 3d textures.
 Since you can use a RenderTarget for most purposes as a texture
 (e.g., a texture-typed uniform can be set from a RenderTarget),

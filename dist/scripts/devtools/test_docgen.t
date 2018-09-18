@@ -41,6 +41,23 @@ function init()
   description "Has complicated arguments"
   ]=]
 
+  -- local minimarkdown = require("devtools/minimarkdown.t")
+  -- local test_p = [[
+  -- asdfas adklfja dflja;dlsf jadfkj aldfk as `code goes here` asdkalsjdflaskdjf
+  -- {{link.png}}{{otherlink.png}} *emphasis*
+
+  -- this is paragraph *#2*: {{linkadoodle}}  
+  -- ]]
+
+  -- local resolver = function(t)
+  --   return t, t .. ".html"
+  -- end
+
+  -- local generated_html = minimarkdown.to_html(test_p, resolver)
+  -- print(tostring(generated_html))
+
+  -- if true then return end
+
   local docgen = require("devtools/docgen.t")
   local htmlgen = require("devtools/htmldocgen.t")
 

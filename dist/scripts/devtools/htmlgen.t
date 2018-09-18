@@ -37,12 +37,14 @@ end
 local elements = {
   td = {nonbreaking = true, indent = " ", format = default_format}, 
   span = {nonbreaking = true, indent = " ", format = default_format},
-  code = {
+  precode = {
     indent = "", 
     format = function(_, a)
       return string.format("<pre><code %s>", a), "</code></pre>"
     end
   },
+  code = {nonbreaking = true, indent = " ", format = default_format},
+  p = {nonbreaking = true, indent = " ", format = default_format},
   default = {indent = "  ", format = default_format},
   none = {indent = "", format = function() 
     return "", "" 
@@ -108,35 +110,10 @@ local function make_tag(tagname)
   end
 end
 
-
-function html.markdownish(text)
-  -- only want to deal with real \n newlines
-  text = (text or ""):gsub("\r", "")
-  text = text:gsub("<", "&lt")
-  text = text:gsub(">", "&gt") 
-
-  local ret = html.group()
-  local paragraph = html.p()
-
-  local cursor = 1
-  local line_was_empty = true
-  for i = 1, #text do
-    local char = text:sub(i, i)
-    if char == "\n" then
-      if line_was_empty then
-      else
-      end
-    end
-  end
-
-  if paragraph then ret:add(paragraph) end
-  return ret
-end
-
 local tagnames = {
   'body', 'p', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
   'section', 'table', 'tr', 'td', 'thead', 'tbody', 'tfoot', 'th', 'caption',
-  'code', 'pre', 'main', 'a', 'nav', 'script'
+  'code', 'pre', 'main', 'a', 'nav', 'script', 'emph', 'precode'
 }
 for _, tname in ipairs(tagnames) do html[tname] = make_tag(tname) end
 html.group = make_tag("none")

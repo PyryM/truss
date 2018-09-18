@@ -172,6 +172,8 @@ pre,code,xmp
 	font-size: 1rem;
 	line-height: 1.4;
 	white-space: pre-wrap;
+	color: #cccccd;
+	background-color: #313131;
 }
 
 figure
