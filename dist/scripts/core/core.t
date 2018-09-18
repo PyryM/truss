@@ -265,15 +265,19 @@ local function expand_name(name, path)
   end
 end
 
+local function create_module_require(path)
+  return function(_modname, force)
+    local expanded_name = expand_name(_modname, path)
+    return truss.require(expanded_name, force)
+  end
+end
+
 local function create_module_env(module_name, file_name)
   local modenv = extend_table({}, truss._module_env)
   modenv._module_name = module_name
   local path = find_path(file_name)
   modenv._path = path
-  modenv.require = function(_modname, force)
-    local expanded_name = expand_name(_modname, path)
-    return truss.require(expanded_name, force)
-  end
+  modenv.require = create_module_require(path)
   setmetatable(modenv, disallow_globals_mt)
   return modenv
 end
