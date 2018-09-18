@@ -61,22 +61,6 @@ function init()
   local docgen = require("devtools/docgen.t")
   local htmlgen = require("devtools/htmldocgen.t")
 
-  local html = require("devtools/htmlgen.t")
-  local doc = html.body{
-    html.section{
-      html.h1{"Hello there!"},
-      html.p{"This is some text inside of a paragraph."},
-      html.p{"This is also inside of a paragraph."},
-      html.ul{
-        html.li{"Item 1"},
-        html.li("Item 2"),
-        html.li{"Item 3", " continuation?"}
-      }
-    }
-  }
-
-  log.info(tostring(doc))
-
   local parser = docgen.DocParser()
   parser:parse_string(test_doc_string)
   parser:parse_file("scripts/gfx/doc.lua")

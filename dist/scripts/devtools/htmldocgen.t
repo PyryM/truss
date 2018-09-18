@@ -89,31 +89,6 @@ local function format_fields(fieldtable, caption)
   return htable
 end
 
--- local function format_table_args(argtable)
---   local caption = html.caption{"Options"}
---   local head = html.thead{
---     html.tr{
---       html.th{"name"}, html.th{"type"}, 
---       html.th{"desc"}, html.th{"default"}
---     }
---   }
---   local body = html.tbody()
---   for argname, arg in pairs(argtable) do
---     local desc = arg.name
---     if arg.kind == "enum" and arg.options then
---       desc = desc .. ": " .. format_enum_options(arg.options)
---     end
---     local row = html.tr{
---       html.td{argname}, html.td{arg.kind}, 
---       html.td{desc}, 
---       html.td{format_value(arg.default) or "nil"}
---     }
---     body:add(row)
---   end
-
---   return "options", html.table{caption, head, body}
--- end
-
 local function format_args(arglist)
   local frags = {}
   local descriptions = html.ul{}
@@ -214,14 +189,6 @@ function generators.classdef(item)
   ret:add(gen(item.items, item))
   return ret
 end
-
--- <nav class="menu">
---   <ul>
---     <li><a href="#">Home</a></li>
---     <li><a href="#">About</a></li>
---     <li><a href="#">Contact</a></li>
---   </ul>
--- </nav>
 
 local function nav_link(module)
   return html.a{module.info.name, href="#" .. module_id(module)}

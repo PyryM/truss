@@ -202,13 +202,4 @@ function DocParser:parse_file(fn)
   return self:parse_string(s)
 end
 
-function m.init()
-  -- Nothing special to do?
-end
-
-function m.update()
-  print("Doc generation complete.")
-  truss.quit()
-end
-
 return m

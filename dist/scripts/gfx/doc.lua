@@ -135,7 +135,11 @@ returns {object 'vertex_info'}
 
 funcdef{"invalid_handle"}
 args{ctype 'handle_t: bgfx handle type'}
-description "Creates an 'invalid' bgfx handle of the provided type."
+description[[
+Creates an 'invalid' bgfx handle of the provided type. Bgfx occasionally
+uses invalid handles as signals, e.g., an invalid `frame_buffer_handle_t`
+corresponds to the backbuffer.
+]]
 example[[
 local invalid = gfx.invalid_handle(bgfx.frame_buffer_handle_t)
 ]]
@@ -173,30 +177,31 @@ returns{clone}
 
 classfunc 'allocate'
 description[[
-Allocate space (in CPU ram) for indexed geometry.
+Allocate space in CPU memory for indexed geometry.
 
 After allocation, the fields `.verts` and `.indices` exist and can be modified.
 Note that these buffers are 0 indexed C arrays and out-of-bounds access will
-cause segfaults or worse rather than nice errors.
+cause segfaults or worse (see `:set_indices` and `:set_attribute` for safer
+ways to fill these buffers).
 ]]
 args{int 'n_verts', int 'n_indices', object 'vertex_definition'}
 returns{self}
 example[[
-  local vdef = gfx.create_basic_vertex_type{"position", "normal", "color0"}
-  local geo = gfx.StaticGeometry()
-  geo:allocate(12, 20*3, vdef) -- space for 12 vertices + 20 faces
+local vdef = gfx.create_basic_vertex_type{"position", "normal", "color0"}
+local geo = gfx.StaticGeometry()
+geo:allocate(12, 20*3, vdef) -- space for 12 vertices + 20 faces
 ]]
 
 classfunc 'deallocate'
 description[[
-Release the CPU-side memory of this geometry. If it was previously 
+Release the CPU memory of this geometry. If it was previously 
 committed, it can still be used for drawing operations.
 ]]
 returns{self}
 
 classfunc 'commit'
 description[[
-Commit the geometry to GPU memory, making it available for drawing operations.
+Commit the geometry to GPU, making it available for drawing operations.
 After being committed, changes to the .verts and .indices fields will have
 no effect on this geometry (although it can still be cloned, and the clone
 will have the changed values).
@@ -224,15 +229,16 @@ description[[
 Allocate and set this geometry from a table of vertex and index data.
 
 Data should contain the following fields:
-`.indices` should be a list-of-lists, with each list specifying three indices
-for a triangle. Indices should be zero-indexed.
 
-`.attributes` should contain fields for each vertex attribute present, and
+`indices` should be a list-of-lists, with each list specifying three indices
+for a triangle. Indices are zero-indexed into the vertex list.
+
+`attributes` should contain fields for each vertex attribute present, and
 each field should be a list of attribute values, either as lua lists, or
 as math.Vectors.
 
-If `vertex_def` is not specified, a vertex definition will be inferred using
-`gfx.guess_vertex_type`.
+`vertex_def` should be a vertex definition, or `nil` to automatically
+infer a vertex type with `gfx.guess_vertex_type`.
 
 By default, the geometry will be automatically committed to GPU, but the 
 `nocommit` option can be used to override this behavior.
@@ -243,10 +249,10 @@ example[[
 local data = {
   indices = {{0, 1, 2}, {2, 3, 0}},
   attributes = {
-    position = {
-      math.Vector(0, 0, 0), math.Vector(1, 0, 0),
-      math.Vector(0, 1, 0), math.Vector(1, 1, 0)
-    }
+    position = {math.Vector(0, 0, 0), math.Vector(1, 0, 0),
+                math.Vector(0, 1, 0), math.Vector(1, 1, 0)},
+    normal = {math.Vector(0, 0, 1), math.Vector(0, 0, 1),
+              math.Vector(0, 0, 1), math.Vector(0, 0, 1)}
   }
 }
 local quad = gfx.StaticGeometry("quad_patch"):from_data(data)
@@ -272,10 +278,10 @@ description[[
 Set one attribute (e.g., `position`, `color2`) from a list of values.
 ]]
 example[[
-  -- assume geo was allocated with space for four vertices
-  local positions = {math.Vector(0, 0, 0), math.Vector(1, 0, 0),
-                     math.Vector(0, 1, 0), math.Vector(1, 1, 0)}
-  geo:set_attribute("position", positions)
+-- assume geo was allocated with space for four vertices
+local positions = {math.Vector(0, 0, 0), math.Vector(1, 0, 0),
+                   math.Vector(0, 1, 0), math.Vector(1, 1, 0)}
+geo:set_attribute("position", positions)
 ]]
 
 classdef 'DynamicGeometry'
