@@ -61,15 +61,19 @@ function init()
   local docgen = require("devtools/docgen.t")
   local htmlgen = require("devtools/htmldocgen.t")
 
-  local parser = docgen.DocParser()
-  parser:parse_string(test_doc_string)
-  parser:parse_file("scripts/gfx/doc.lua")
+  local parser = docgen.LiterateParser()
+  --parser:parse_string(test_doc_string)
+  local sections = parser:parse_file("scripts/examples/new_basic.t")
 
   -- log.info(json:encode(parser:get_modules()))
-  log.info(htmlgen(parser:get_modules(), {
-    css = {"testo.css", "prism.css"},
+  local genhtml = parser:generate_html(sections, {
+    css = {"trusslit.css", "prism.css"},
     scripts = {"prism.js"}
-  }))
+  })
+
+  local dest = io.open("../docs/lit.html", "w")
+  dest:write(genhtml)
+  dest:close()
 end
 
 function update()

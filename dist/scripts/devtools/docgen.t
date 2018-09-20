@@ -224,10 +224,10 @@ function LiterateParser:_build_patterns()
   local block_comment = (open * lpeg.C((lpeg.P(1) - close)^0) * close) / namer("comment")
   self._section_pattern = lpeg.Ct((not_comment + block_comment)^0)
 
-  local ws = lpeg.S(" \t\n")
-  local trail_ws = ws^0 * -1
-  local strip = ws^0 * lpeg.C((1 - trail_ws)^0) --* trail_ws
-  self._whitespace_stripper = strip
+  local front_ws = lpeg.S(" \t")^0 * lpeg.S("\n")^1
+  local trail_ws = lpeg.S(" \t\n")^0 * -1
+  local strip = front_ws^0 * lpeg.C((1 - trail_ws)^0) --* trail_ws
+  self._code_stripper = strip
 end
 
 function LiterateParser:parse_string(s, link_resolver)
@@ -245,7 +245,8 @@ function LiterateParser:parse_string(s, link_resolver)
       if sections[#sections].code then
         truss.error("Somehow two code segments in a row?")
       end
-      local code = self._whitespace_stripper:match(sec.content)
+      local code = self._code_stripper:match(sec.content)
+      --local code = sec.content
       log.debug("Code: " .. tostring(code))
       if code and #code > 0 then
         sections[#sections].code = code
@@ -266,10 +267,13 @@ function LiterateParser:generate_html(sections, options)
   local main = html.main()
   for _, section in ipairs(sections) do
     local hsec = html.section{
-      html.div{md.generate(section.text, options.link_resolver), class="text"}
+      html.div{md.generate(section.text, options.link_resolver), class="comment"}
     }
     if section.code then
-      hsec:add(html.precode{section.code, class="language-lua"})
+      hsec:add(html.div{
+        html.precode{section.code, class="language-lua"},
+        class = "code"
+      })
     end
     main:add(hsec)
   end
@@ -291,5 +295,13 @@ function LiterateParser:generate_html(sections, options)
   .. "\n  " .. css .. "\n</head>\n"
   .. tostring(body) .. "</html>"
 end
+
+-- function LiterateParser:link(content)
+--   local parts = stringutils.split("|", content)
+--   local 
+-- end
+
+-- function LiterateParser:directive(content)
+-- end
 
 return m

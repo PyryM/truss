@@ -25,13 +25,16 @@ local function gen_patterns()
     end
   }
 
+  local function namer(tag)
+    return function(s)
+      return setmetatable({tag = tag, content = s}, tag_mt)
+    end
+  end
+
   local function make_special(tag, open_str, close_str)
     local open = lpeg.P(open_str)
     local close = lpeg.P(close_str)
-    local function namer(s)
-      return setmetatable({tag = tag, content = s}, tag_mt)
-    end
-    return (open * lpeg.C((lpeg.P(1) - close)^0) * close) / namer
+    return (open * lpeg.C((lpeg.P(1) - close)^0) * close) / namer(tag)
   end
 
   local emph = make_special("emph", "*", "*")
@@ -42,12 +45,12 @@ local function gen_patterns()
                   / function(pounds, content)
     return {tag = 'header', level = #pounds, content = content or ""}
   end
-  --local header = make_special("header", "##", "\n")
+  local directive = (lpeg.S(' \t\n')^0 * lpeg.P("!!") * lpeg.C(lpeg.P(1)^0)) 
+                  / namer("directive")
 
-  local specials = emph + code + link --+ header
-
+  local specials = emph + code + link
   local normal_text = lpeg.C((lpeg.P(1) - specials)^1)
-  local tagged = header + lpeg.Ct((normal_text + specials)^0)
+  local tagged = header + directive + lpeg.Ct((normal_text + specials)^0)
 
   return {paragraphs = paragraphs, tagged = tagged}
 end
@@ -63,12 +66,17 @@ function m.split_tags(s)
   return patterns.tagged:match(s)
 end
 
-function m.default_resolver(link_content)
-  return link_content, link_content
-end
+m.default_resolver = {
+  link = function(_, content)
+    return html.a{content, href = content}
+  end,
+  directive = function(_, content)
+    return html.emph{content}
+  end
+}
 
-function m.generate(s, link_resolver)
-  link_resolver = link_resolver or m.default_resolver
+function m.generate(s, resolver)
+  resolver = resolver or m.default_resolver
   local html = require("./htmlgen.t")
   local ret = html.group()
 
@@ -81,6 +89,8 @@ function m.generate(s, link_resolver)
     if tags.tag == "header" then
       local hlevel = "h" .. tags.level
       ret:add(html[hlevel]{tags.content})
+    elseif tags.tag == "directive" then
+      ret:add(resolver:directive(tags.content))
     else
       local p = html.p()
       for _, chunk in ipairs(tags) do
@@ -91,8 +101,7 @@ function m.generate(s, link_resolver)
         elseif chunk.tag == 'emph' then
           p:add(html.emph{chunk.content})
         elseif chunk.tag == 'link' then
-          local label, href = link_resolver(chunk.content)
-          p:add(html.a{label, href=href})
+          p:add(resolver:link(chunk.content))
         else
           truss.error("Unknown tag " .. tostring(chunk.tag))
         end
