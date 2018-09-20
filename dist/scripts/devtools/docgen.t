@@ -202,4 +202,94 @@ function DocParser:parse_file(fn)
   return self:parse_string(s)
 end
 
+local LiterateParser = class("LiterateParser")
+m.LiterateParser = LiterateParser
+
+function LiterateParser:init()
+  self:_build_patterns()
+end
+
+function LiterateParser:_build_patterns()
+  local lpeg = require("lib/lulpeg.lua")
+  local open = lpeg.P("--[[")
+  local close = lpeg.P("]]")
+
+  local function namer(tag)
+    return function(s)
+      return {tag = tag, content = s}
+    end
+  end
+
+  local not_comment = lpeg.C((lpeg.P(1) - open)^1) / namer("code")
+  local block_comment = (open * lpeg.C((lpeg.P(1) - close)^0) * close) / namer("comment")
+  self._section_pattern = lpeg.Ct((not_comment + block_comment)^0)
+
+  local ws = lpeg.S(" \t\n")
+  local trail_ws = ws^0 * -1
+  local strip = ws^0 * lpeg.C((1 - trail_ws)^0) --* trail_ws
+  self._whitespace_stripper = strip
+end
+
+function LiterateParser:parse_string(s, link_resolver)
+  s = (s or ""):gsub("\r", "") -- our grammar only handles \n
+
+  local raw_sections = self._section_pattern:match(s)
+  if #raw_sections == 0 or raw_sections[1].tag ~= "comment" then
+    truss.error("First section in a 'literate' file must be a block comment!")
+  end
+  local sections = {}
+  for _, sec in ipairs(raw_sections) do
+    if sec.tag == "comment" then
+      table.insert(sections, {text = sec.content})
+    else
+      if sections[#sections].code then
+        truss.error("Somehow two code segments in a row?")
+      end
+      local code = self._whitespace_stripper:match(sec.content)
+      log.debug("Code: " .. tostring(code))
+      if code and #code > 0 then
+        sections[#sections].code = code
+      end
+    end 
+  end
+  return sections
+end
+
+function LiterateParser:parse_file(fn)
+  local s = truss.load_string_from_file(fn)
+  return self:parse_string(s)
+end
+
+function LiterateParser:generate_html(sections, options)
+  local md = require("./minimarkdown.t")
+  local html = require("./htmlgen.t")
+  local main = html.main()
+  for _, section in ipairs(sections) do
+    local hsec = html.section{
+      html.div{md.generate(section.text, options.link_resolver), class="text"}
+    }
+    if section.code then
+      hsec:add(html.precode{section.code, class="language-lua"})
+    end
+    main:add(hsec)
+  end
+  local body = html.body{main}
+  for _, script in ipairs(options.scripts or {}) do
+    body:add(html.script{"", src = script})
+  end
+  local css = {}
+  for i, fn in ipairs(options.css or {}) do
+    css[i] = string.format('<link rel="stylesheet" href="%s">', fn)
+  end
+  css = table.concat(css, '\n  ')
+  return [[
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Truss Documentation</title>]]
+  .. "\n  " .. css .. "\n</head>\n"
+  .. tostring(body) .. "</html>"
+end
+
 return m

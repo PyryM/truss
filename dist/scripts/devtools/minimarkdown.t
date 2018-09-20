@@ -28,7 +28,7 @@ local function gen_patterns()
   local function make_special(tag, open_str, close_str)
     local open = lpeg.P(open_str)
     local close = lpeg.P(close_str)
-    local namer = function(s)
+    local function namer(s)
       return setmetatable({tag = tag, content = s}, tag_mt)
     end
     return (open * lpeg.C((lpeg.P(1) - close)^0) * close) / namer
@@ -37,10 +37,17 @@ local function gen_patterns()
   local emph = make_special("emph", "*", "*")
   local code = make_special("code", "`", "`")
   local link = make_special("link", "{{", "}}")
-  local specials = emph + code + link
+  local newline = lpeg.S("\n")
+  local header = (lpeg.S(' \t\n')^0 * lpeg.C(lpeg.S("#")^1) * lpeg.C(lpeg.P(1)^0)) 
+                  / function(pounds, content)
+    return {tag = 'header', level = #pounds, content = content or ""}
+  end
+  --local header = make_special("header", "##", "\n")
+
+  local specials = emph + code + link --+ header
 
   local normal_text = lpeg.C((lpeg.P(1) - specials)^1)
-  local tagged = lpeg.Ct((normal_text + specials)^0)
+  local tagged = header + lpeg.Ct((normal_text + specials)^0)
 
   return {paragraphs = paragraphs, tagged = tagged}
 end
@@ -70,20 +77,28 @@ function m.generate(s, link_resolver)
   s = s:gsub(">", "&gt") 
 
   for _, text in ipairs(m.split_paragraphs(s)) do
-    local p = html.p()
-    for _, chunk in ipairs(m.split_tags(text)) do
-      if type(chunk) == 'string' then
-        p:add(chunk)
-      elseif chunk.tag == 'code' then
-        p:add(html.code{chunk.content}) --, class="language-lua"})
-      elseif chunk.tag == 'emph' then
-        p:add(html.emph{chunk.content})
-      elseif chunk.tag == 'link' then
-        local label, href = link_resolver(chunk.content)
-        p:add(html.a{label, href=href})
+    local tags = m.split_tags(text)
+    if tags.tag == "header" then
+      local hlevel = "h" .. tags.level
+      ret:add(html[hlevel]{tags.content})
+    else
+      local p = html.p()
+      for _, chunk in ipairs(tags) do
+        if type(chunk) == 'string' then
+          p:add(chunk)
+        elseif chunk.tag == 'code' then
+          p:add(html.code{chunk.content}) --, class="language-lua"})
+        elseif chunk.tag == 'emph' then
+          p:add(html.emph{chunk.content})
+        elseif chunk.tag == 'link' then
+          local label, href = link_resolver(chunk.content)
+          p:add(html.a{label, href=href})
+        else
+          truss.error("Unknown tag " .. tostring(chunk.tag))
+        end
       end
+      ret:add(p)
     end
-    ret:add(p)
   end
   return ret
 end

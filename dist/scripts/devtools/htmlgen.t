@@ -38,7 +38,8 @@ local elements = {
   td = {nonbreaking = true, indent = " ", format = default_format}, 
   span = {nonbreaking = true, indent = " ", format = default_format},
   precode = {
-    indent = "", 
+    indent = "",
+    nonbreaking = true,
     format = function(_, a)
       return string.format("<pre><code %s>", a), "</code></pre>"
     end
@@ -46,18 +47,22 @@ local elements = {
   code = {nonbreaking = true, indent = " ", format = default_format},
   p = {nonbreaking = true, indent = " ", format = default_format},
   default = {indent = "  ", format = default_format},
-  none = {indent = "", format = function() 
+  none = {nonbreaking = true, indent = "", format = function() 
     return "", "" 
   end}
 }
 
 function node_proto:chunkify(fragments, indent)
   fragments = fragments or {}
-  indent = indent or ""
+  indent = "" --indent or ""
   local einfo = elements[self.kind] or elements.default
   local attribs = format_attributes(self.attributes)
   local opening, closing = einfo.format(self.kind, attribs)
-  opening = indent .. opening
+  --opening = indent .. opening
+  if not einfo.nonbreaking then
+    opening = opening .. "\n"
+    closing = "\n" .. closing .. "\n"
+  end
   table.insert(fragments, opening)
   local nextindent = indent .. einfo.indent
   local broke_line = false
@@ -69,19 +74,25 @@ function node_proto:chunkify(fragments, indent)
         child:chunkify(fragments, "")
       else
         broke_line = true
-        table.insert(fragments, "\n")
+        --table.insert(fragments, "\n")
         child:chunkify(fragments, nextindent)
       end
     end
   end
   if broke_line then 
-    table.insert(fragments, string.format("\n%s", indent)) 
+    --table.insert(fragments, string.format("\n%s", indent)) 
   end
   table.insert(fragments, closing)
   return fragments
 end
 
 function node_proto:__tostring()
+  -- local chunks = self:chunkify()
+  -- local ret = ""
+  -- for i, c in ipairs(chunks) do
+  --   ret = ret .. i .. ": " .. c .. "\n"
+  -- end
+  -- return ret
   return table.concat(self:chunkify(), "")
 end
 
@@ -111,7 +122,7 @@ local function make_tag(tagname)
 end
 
 local tagnames = {
-  'body', 'p', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'body', 'div', 'span', 'p', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
   'section', 'table', 'tr', 'td', 'thead', 'tbody', 'tfoot', 'th', 'caption',
   'code', 'pre', 'main', 'a', 'nav', 'script', 'emph', 'precode'
 }
