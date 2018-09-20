@@ -85,19 +85,41 @@ function NVGContext:load_font(filename, alias)
   return font_id
 end
 
-function NVGContext:load_image(filename)
+function NVGContext:swap_image(image, filename)
   self:assert_valid()
-  if not self._images[filename] then
-    local w = terralib.new(int32[2])
-    local h = terralib.new(int32[2])
-    local n = terralib.new(int32[2])
-    local msg = nvg_utils.truss_nanovg_load_image(nvg_utils_pointer, filename, w, h, n)
-    if msg == nil then truss.error("Texture load error: " .. filename) end
-    local handle = nvg_c_funcs.CreateImageRGBA(self._ctx, w[0], h[0], 0, msg.data)
-    truss.C.release_message(msg)
-    self._images[filename] = {handle = handle, w = w[0], h = h[0]}
+  if image.handle then
+    nvg_c_funcs.DeleteImage(self._ctx, image.handle)
+    image.handle = nil
   end
-  return self._images[filename]
+  local w = terralib.new(int32[2])
+  local h = terralib.new(int32[2])
+  local n = terralib.new(int32[2])
+  local msg = nvg_utils.truss_nanovg_load_image(nvg_utils_pointer, filename, w, h, n)
+  if msg == nil then truss.error("Texture load error: " .. filename) end
+  local handle = nvg_c_funcs.CreateImageRGBA(self._ctx, w[0], h[0], 0, msg.data)
+  truss.C.release_message(msg)
+  image.handle = handle
+  image.w, image.h = w[0], h[0]
+  image.source = filename
+  return image
+end
+
+function NVGContext:load_image(filename, alias)
+  self:assert_valid()
+  alias = alias or filename
+  if not self._images[alias] then
+    self._images[alias] = self:swap_image({name = alias}, filename)
+  end
+  return self._images[alias]
+end
+
+function NVGContext:delete_image(image)
+  self:assert_valid()
+  if type(image) == 'string' then image = self._images[image] end
+  if not image then truss.error("Tried to release nil image") end
+  if not image.handle then truss.error("Image has no handle?") end
+  self._images[image.name] = nil
+  nvg_c_funcs.DeleteImage(self._ctx, image.handle)
 end
 
 -- convenience function to draw an image
@@ -106,7 +128,9 @@ function NVGContext:Image(im, x, y, w, h, alpha)
     im = self:load_image(im)
   end
   self:BeginPath()
-  local patt = self:ImagePattern(x, y, w or im.w, h or im.h, 0.0,
+  w = w or im.w
+  h = h or im.h
+  local patt = self:ImagePattern(x, y, w, h, 0.0,
                                  im.handle, alpha or 1.0)
   self:FillPaint(patt)
   self:Rect(x, y, w, h)
