@@ -175,6 +175,9 @@ generators.classfunc = generators.func
 function generators.classdef(item)
   local ret = html.group()
   ret:add(html.h3{"class " .. item.info.name, class = 'class-signature'})
+  if item.fields then
+    ret:add(format_fields(item.fields))
+  end
   if item.description then
     ret:add(md.generate(item.description))  --html.p(item.description))
   end

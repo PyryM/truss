@@ -89,7 +89,8 @@ local function parse_type_arg(arg)
     end
     return ret
   else
-    truss.error("Type argument makes no sense: " .. tostring(arg))
+    local ret = {name = "?", description = "?"}
+    --truss.error("Type argument makes no sense: " .. tostring(arg))
   end
 end
 
@@ -122,14 +123,16 @@ end
 local type_functions = {}
 local basic_types = {
   "bool", "number", "enum", "string", "callable", "list", "table", "dict",
-  "int", "classproto", "tuple"
+  "int", "classproto", "tuple", "any", "iterator"
 }
 for _, tname in ipairs(basic_types) do
   type_functions[tname] = make_type(tname)
 end
+type_functions.varargs = make_type("...")
 type_functions.object = make_metatype("object", function(_, k) return k end)
 type_functions.ctype = make_metatype("ctype")
 type_functions.cdata = make_metatype("cdata")
+type_functions.class = make_metatype("class")
 type_functions.self = {kind = 'self'}
 type_functions.clone = {kind = 'clone'}
 
