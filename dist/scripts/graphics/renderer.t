@@ -13,10 +13,18 @@ function RenderSystem:init(options)
   self.auto_frame_advance = options.auto_frame_advance
   self.mount_name = "render" -- allow direct use of a RenderSystem as a system
   self._identity_mat = math.Matrix4():identity()
+  if not options.roots then 
+    log.warning("Render system created without any scene roots")
+  end
+  self._roots = options.roots or {}
 end
 
-function RenderSystem:match_component(component, ret)
-  return self._pipeline:match_render_ops(component, ret)
+function RenderSystem:set_scene_root(scene, root)
+  if not root then 
+    -- allow calling with root as single argument
+    root, scene = scene, "default"
+  end
+  self._roots[scene] = root
 end
 
 function RenderSystem:set_pipeline(p)
@@ -32,7 +40,7 @@ end
 function RenderSystem:_match(renderable)
   local ops = self._op_cache[renderable.tags.hash]
   if not ops then
-    ops = self.pipeline:match(renderable.tags)
+    ops = self._scene_stages:match(renderable.tags)
     self._op_cache[renderable.tags.hash] = ops
   end
   return ops
@@ -61,10 +69,17 @@ end
 function RenderSystem:update()
   if not self.pipeline then return end
   self.pipeline:pre_render()
-  --self.ecs.scene:recursive_update_world_mat(self._identity_mat)
   self.ecs:insert_timing_event("render_sg")
-  self:_clear_op_cache()
-  self:_tree_render(self.ecs.scene, self._identity_mat)
+  if not self._roots.default then
+    log.warning("Default scene had no root; setting to ecs.scene")
+    log.warning("(This behavior will change in the future, please provide a root)")
+    self._roots.default = self.ecs.scene
+  end
+  for scene_name, scene_root in pairs(self._roots) do
+    self:_clear_op_cache()
+    self._scene_stages = self.pipeline:match_scene(scene_name)
+    self:_tree_render(scene_root, self._identity_mat)
+  end
   self.ecs:insert_timing_event("render_traverse")
   self.pipeline:post_render()
   self.ecs:insert_timing_event("render_post")
