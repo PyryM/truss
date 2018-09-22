@@ -16,6 +16,7 @@ function CompositeStage:init(options)
   self._render_ops = {}
   self.composite_ops = {}
   self.options = options
+  self.scene = options.scene
   self.options.proj_matrix = math.Matrix4():orthographic_projection(0, 1, 0, 1, -1, 1)
   self.options.view_matrix = math.Matrix4():identity()
   self._identity_mat = math.Matrix4():identity()

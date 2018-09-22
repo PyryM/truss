@@ -25,6 +25,7 @@ function Stage:init(options)
   self._always_clear = options.always_clear
   self.view = self:_create_view(options.view, options)
   self._user_update = options.on_run
+  self.scene = options.scene
 end
 
 function Stage:_create_view(v, default)

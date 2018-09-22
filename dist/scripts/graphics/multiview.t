@@ -16,7 +16,6 @@ function MultiviewStage:init(options)
   self._num_views = #(options.views)
   self.stage_name = options.name or "MultiviewStage"
   self.options = options
-  self._always_clear = options.always_clear
   self.views = {}
   self.named_views = {}
   for idx, view in ipairs(options.views) do
