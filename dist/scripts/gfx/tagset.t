@@ -65,5 +65,6 @@ function m.tagset(tags)
   setmetatable(tset, mt)
   return tset
 end
+m.TagSet = m.tagset
 
 return m

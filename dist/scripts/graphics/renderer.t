@@ -10,7 +10,7 @@ m.RenderSystem = RenderSystem
 function RenderSystem:init(options)
   RenderSystem.super.init(self)
   options = options or {}
-  self.auto_frame_advance = options.auto_frame_advance
+  self.auto_frame_advance = (options.auto_frame_advance ~= false)
   self.mount_name = "render" -- allow direct use of a RenderSystem as a system
   self._identity_mat = math.Matrix4():identity()
   if not options.roots then 
@@ -84,7 +84,7 @@ function RenderSystem:update()
   self.pipeline:post_render()
   self.ecs:insert_timing_event("render_post")
 
-  if self.auto_frame_advance ~= false then
+  if self.auto_frame_advance then
     gfx.frame()
   end
 end

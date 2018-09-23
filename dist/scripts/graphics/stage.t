@@ -51,7 +51,7 @@ end
 
 function Stage:add_render_op(op)
   table.insert(self._render_ops, op)
-  op:bind_stage(self)
+  if op.bind_stage then op:bind_stage(self) end
 end
 
 function Stage:pre_render()
