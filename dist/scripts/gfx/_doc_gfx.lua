@@ -334,7 +334,7 @@ table_args{
   state = dict 'state dictionary passed to gfx.create_state',
   program = list '{vertex, fragment} list passed gfx.create_program'
 }
-returns{classproto 'MaterialClass'}
+returns{class 'MaterialClass'}
 example[[
 local SomeMaterial = gfx.define_base_material{
   name = "SomeMaterial",
@@ -372,7 +372,7 @@ table_args{
   state = dict 'state dictionary passed to gfx.create_state',
   program = list '{vertex, fragment} list passed to gfx.create_program'
 }
-returns{ object['AnonymousMaterial'] 'material instance' }
+returns{ class 'AnonymousMaterial' }
 example[[
 local post_process_material = gfx.anonymous_material{
   program = {"vs_raytrace_arealights", "fs_raytrace_arealights"},
