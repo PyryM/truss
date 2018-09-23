@@ -93,6 +93,7 @@ local function format_args(arglist)
   local frags = {}
   local descriptions = html.ul{}
   for _, arg in ipairs(arglist or {}) do
+    if type(arg) == 'function' then arg = arg("???") end
     local astr
     if arg.name then
       astr = string.format("%s: %s", arg.name, arg.kind)
