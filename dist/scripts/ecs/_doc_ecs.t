@@ -13,34 +13,34 @@ description[[
 Entities hold components and can be arranged into a tree.
 ]]
 
--- func 'promote'
--- args {string 'name', class 'component', class 'parent'}
--- returns {class 'promoted_component'}
--- description[[
--- Promote a component class into an Entity subclass.
--- ]]
--- example[[
--- local ColorComp = ecs.Component:extend("ColorComp")
--- function ColorComp:init(r, g, b)
---   self.mount_name = "color"
---   self:set_color(r, g, b)
--- end
--- function ColorComp:set_color(r, g, b)
---   self._internal_color = {r or 255, g or 255, b or 255}
--- end
--- local ColorEntity = ecs.promote("ColorEntity", ColorComp, ecs.Entity3d)
+func 'promote'
+args {string 'name', class 'component', class 'parent'}
+returns {class 'promoted_component'}
+description[[
+Promote a component class into an Entity subclass.
+]]
+example[[
+local ColorComp = ecs.Component:extend("ColorComp")
+function ColorComp:init(r, g, b)
+  self.mount_name = "color"
+  self:set_color(r, g, b)
+end
+function ColorComp:set_color(r, g, b)
+  self._internal_color = {r or 255, g or 255, b or 255}
+end
+local ColorEntity = ecs.promote("ColorEntity", ColorComp, ecs.Entity3d)
 
--- -- this is a bit inconvenient
--- local ent = some_ecs:create(ecs.Entity3d, "blargh", ColorComp(128,128,255))
--- ent.color:set_color(0, 0, 0)
+-- this is a bit inconvenient
+local ent = some_ecs:create(ecs.Entity3d, "blargh", ColorComp(128,128,255))
+ent.color:set_color(0, 0, 0)
 
--- -- slightly better
--- local ent = some_ecs:create(ColorEntity, "blargh", 128, 128, 255)
--- ent:set_color(0, 0, 0)
+-- slightly better
+local ent = some_ecs:create(ColorEntity, "blargh", 128, 128, 255)
+ent:set_color(0, 0, 0)
 
--- -- note that promote only redirects *functions*
--- print(tostring(ent._internal_color)) -- prints 'nil'
--- ]]
+-- note that promote only redirects *functions*
+print(tostring(ent._internal_color)) -- prints 'nil'
+]]
 
 classdef 'Entity'
 description[[

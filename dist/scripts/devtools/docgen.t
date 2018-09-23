@@ -42,22 +42,31 @@ function DocParser:cursor()
   return cursor
 end
 
-function DocParser:open(kind, parent)
-  if parent and (not self:_is_open(parent)) then
-    truss.error(kind .. " must be nested in " .. parent)
-  end
-  self:close(kind)
+function DocParser:open(kind, closes)
+  self:close(closes or kind)
   local cursor = self:cursor()
   if not cursor.items then cursor.items = {} end
   table.insert(cursor.items, {kind = kind})
   table.insert(self.open_stack, kind)
 end
 
-function DocParser:close(kind)
+local function to_bool_table(list)
+  local ret = {}
+  for _, item in ipairs(list) do
+    ret[item] = true
+  end
+  return ret
+end
+
+function DocParser:close(kinds)
+  if type(kinds) == 'string' then kinds = {kinds} end 
+  if #kinds > 0 then
+    kinds = to_bool_table(kinds)
+  end
   local found_kind = false
   local nlevels = #self.open_stack
   for i = 1, nlevels do
-    found_kind = found_kind or (self.open_stack[i] == kind)
+    found_kind = found_kind or kinds[self.open_stack[i]]
     if found_kind then
       self.open_stack[i] = nil
     end
@@ -123,7 +132,7 @@ end
 local type_functions = {}
 local basic_types = {
   "bool", "number", "enum", "string", "callable", "list", "table", "dict",
-  "int", "classproto", "tuple", "any", "iterator"
+  "int", "tuple", "any", "iterator"
 }
 for _, tname in ipairs(basic_types) do
   type_functions[tname] = make_type(tname)
@@ -136,9 +145,9 @@ type_functions.class = make_metatype("class")
 type_functions.self = {kind = 'self'}
 type_functions.clone = {kind = 'clone'}
 
-local function section_like(name, parent)
+local function section_like(name, closes)
   return function(parser, arg)
-    parser:open(name, parent)
+    parser:open(name, closes)
     parser:cursor().info = unwrap_name_table(arg)
   end
 end
@@ -157,10 +166,13 @@ end
 function keyword_functions.article(parser, article_name)
   parser:_module(article_name, "article")
 end
+
+local major_sections = {"classdef", "func"}
+
 keyword_functions.sourcefile = section_like("sourcefile")
-keyword_functions.classdef = section_like("classdef")
-keyword_functions.func = section_like("func")
-keyword_functions.classfunc = section_like("classfunc", "classdef")
+keyword_functions.classdef = section_like("classdef", major_sections)
+keyword_functions.func = section_like("func", major_sections)
+keyword_functions.classfunc = section_like("classfunc")
 keyword_functions.funcdef = keyword_functions.func
 keyword_functions.fields = property_like("fields")
 keyword_functions.description = property_like("description", unwrap_string)
