@@ -71,7 +71,7 @@ m.default_resolver = {
     return html.a{content, href = content}
   end,
   directive = function(_, content)
-    return html.emph{content}
+    return html.strong{content}
   end
 }
 
@@ -99,7 +99,7 @@ function m.generate(s, resolver)
         elseif chunk.tag == 'code' then
           p:add(html.code{chunk.content}) --, class="language-lua"})
         elseif chunk.tag == 'emph' then
-          p:add(html.emph{chunk.content})
+          p:add(html.em{chunk.content})
         elseif chunk.tag == 'link' then
           p:add(resolver:link(chunk.content))
         else
