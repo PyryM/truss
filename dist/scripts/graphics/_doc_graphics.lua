@@ -295,7 +295,7 @@ description[[
 Set the geometry of this mesh. Can cause a recompilation.
 ]]
 
-classdef 'set_material'
+classfunc 'set_material'
 args{object['gfx.BaseMaterial'] 'material'}
 description[[
 Set the material of this mesh. Can cause a recompilation.

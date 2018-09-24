@@ -89,6 +89,17 @@ local function format_fields(fieldtable, caption)
   return htable
 end
 
+local function list_zip(l, filler)
+  local ret = {}
+  for idx, item in ipairs(l) do
+    table.insert(ret, item)
+    if idx < #l then
+      table.insert(ret, filler)
+    end
+  end
+  return ret
+end
+
 local function format_args(arglist)
   local frags = {}
   local descriptions = html.ul{}
@@ -96,7 +107,8 @@ local function format_args(arglist)
     if type(arg) == 'function' then arg = arg("???") end
     local astr
     if arg.name then
-      astr = string.format("%s: %s", arg.name, arg.kind)
+      astr = {arg.name, html.span{": " .. arg.kind, class = "muted"}}
+      --string.format("%s: %s", arg.name, arg.kind)
     else
       astr = arg.kind
     end
@@ -117,13 +129,15 @@ local function format_args(arglist)
   if #(descriptions.children) == 0 then
     descriptions = nil
   end
-  return table.concat(frags, ", "), descriptions
+  return list_zip(frags, ", "), descriptions
+  --table.concat(frags, ", "), descriptions
 end
 
 function generators.module(item, parent)
   local ret = html.section{html.h2{"◈ " .. item.info.name}}
+  item.resolver = md.ModuleResolver(item.info.name)
   if item.description then
-    ret:add(md.generate(item.description))  --html.p{item.description})
+    ret:add(md.generate(item.description, item.resolver))
   end
   if item.fields then
     ret:add(format_fields(item.fields))
@@ -134,37 +148,41 @@ function generators.module(item, parent)
 end
 
 function generators.sourcefile(item, parent)
-  local ret = html.group{
-    html.h3{item.info.name}
-  }
-  item.parent = parent
-  if item.description then 
-    ret:add(md.generate(item.description))   --html.p{item.description}) 
+  local ret = html.group{}
+  --item.parent = parent
+  if false and item.description then
+    ret:add(html.h3{item.info.name})
+    ret:add(md.generate(item.description, parent.resolver))
   end
   if item.fields then
     ret:add(format_fields(item.fields))
   end
-  ret:add(gen(item.items, item))
+  ret:add(gen(item.items, parent))
   return ret
 end
 
-function generators.func(item)
+function generators.func(item, parent)
   local arg_list, arg_descriptions
   local sig
   if item.table_args then
     arg_list, arg_descriptions = format_table_args(item.table_args)
-    sig = string.format("%s { %s }", item.info.name, arg_list)
+    sig = {item.info.name, " { ",  arg_list, " } "}
   else
     arg_list, arg_descriptions = format_args(item.args)
-    sig = string.format("%s ( %s )", item.info.name, arg_list)
+    sig = {item.info.name, " ( ",  arg_list, " ) "}
   end
   local ret_list, ret_descriptions = format_args(item.returns)
   if item.returns then
-    sig = sig .. " → " .. ret_list
+    sig = {sig,  " → ", ret_list}
   end
-  local ret = {html.h4{sig, class = 'function-signature'}, arg_descriptions}
+  local refname = parent.info.name .. '-' .. (item.info.anchor_id or item.info.name)
+  refname = refname:gsub("%.", "-")
+  local ret = {
+    html.h4{sig, class = 'function-signature', id = refname}, 
+    arg_descriptions
+  }
   if item.description then
-    table.insert(ret, md.generate(item.description)) --html.p(item.description))
+    table.insert(ret, md.generate(item.description, parent.resolver))
   end
   if item.example then
     table.insert(ret, html.precode{item.example, class="language-lua"})
@@ -173,24 +191,28 @@ function generators.func(item)
 end
 generators.classfunc = generators.func
 
-function generators.classdef(item)
+function generators.classdef(item, parent)
   local ret = html.group()
-  ret:add(html.h3{"class " .. item.info.name, class = 'class-signature'})
+  local refname = parent.info.name .. '-' .. item.info.name
+  ret:add(html.h3{"class " .. item.info.name, class = 'class-signature', id = refname})
   if item.fields then
     ret:add(format_fields(item.fields))
   end
   if item.description then
-    ret:add(md.generate(item.description))  --html.p(item.description))
+    ret:add(md.generate(item.description, parent.resolver))
   end
   local classname = item.info.name
   for _, subitem in ipairs(item.items or {}) do
     if subitem.info.name == classname or subitem.info.name == "init" then
+      subitem.info.anchor_id = classname .. '-init'
       subitem.info.name = classname
     else
-      subitem.info.name = classname .. ":" .. subitem.info.name
+      subitem.info.anchor_id = classname .. '-' .. subitem.info.name
+      subitem.info.name = {classname, ":", subitem.info.name}
+      --{html.span{classname .. ":", class="muted"}, subitem.info.name}
     end
   end
-  ret:add(gen(item.items, item))
+  ret:add(gen(item.items, parent))
   return ret
 end
 
@@ -202,7 +224,9 @@ local function generate_html(modules, options)
   options = options or {}
   local nav_inner = html.group()
   local main = html.main()
-  for k, module in pairs(modules) do
+  --k, module
+  for _, modname in ipairs(sorted_keys(modules)) do
+    local module = modules[modname]
     nav_inner:add(nav_link(module))
     main:add(gen({module}))
   end

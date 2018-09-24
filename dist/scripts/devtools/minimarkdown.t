@@ -8,6 +8,7 @@
 
 local class = require("class")
 local lpeg = require("lib/lulpeg.lua")
+local sutils = require("utils/stringutils.t")
 local html = require("./htmlgen.t")
 local m = {}
 
@@ -69,12 +70,35 @@ end
 
 m.default_resolver = {
   link = function(_, content)
-    return html.a{content, href = content}
+    local href = '#' .. content:gsub("%.", "-"):gsub(":", "-")
+    print("Reolved link to: " .. href)
+    return html.a{content, href = href}
   end,
   directive = function(_, content)
     return html.strong{content}
   end
 }
+
+local ModuleResolver = class("ModuleResolver")
+m.ModuleResolver = ModuleResolver
+function ModuleResolver:init(module_name)
+  self.module_name = module_name
+end
+
+function ModuleResolver:link(content)
+  local parts = sutils.split("%.", content)
+  local href = content
+  if #parts < 2 then
+    href = self.module_name .. "." .. content
+  end
+  local href = '#' .. href:gsub("%.", "-"):gsub(":", "-")
+  print("Resolved ", content, " to: ", href)
+  return html.a{content, href = href}
+end
+
+function ModuleResolver:directive(content)
+  return html.strong{content}
+end
 
 function m.generate(s, resolver)
   resolver = resolver or m.default_resolver
