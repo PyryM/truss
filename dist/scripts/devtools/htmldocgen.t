@@ -183,7 +183,7 @@ function generators.classdef(item)
     ret:add(md.generate(item.description))  --html.p(item.description))
   end
   local classname = item.info.name
-  for _, subitem in ipairs(item.items) do
+  for _, subitem in ipairs(item.items or {}) do
     if subitem.info.name == classname or subitem.info.name == "init" then
       subitem.info.name = classname
     else

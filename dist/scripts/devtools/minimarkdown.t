@@ -8,6 +8,7 @@
 
 local class = require("class")
 local lpeg = require("lib/lulpeg.lua")
+local html = require("./htmlgen.t")
 local m = {}
 
 local function gen_patterns()
@@ -77,7 +78,6 @@ m.default_resolver = {
 
 function m.generate(s, resolver)
   resolver = resolver or m.default_resolver
-  local html = require("./htmlgen.t")
   local ret = html.group()
 
   s = (s or ""):gsub("\r", "") -- our grammar only handles \n

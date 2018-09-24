@@ -327,3 +327,174 @@ classdef 'DummyMesh'
 description[[
 The {{ecs.promote}}'ed version of `DummyMeshComponent`.
 ]]
+
+sourcefile 'camera.t'
+
+classdef 'CameraComponent'
+description[[
+A {{RenderComponent}} which represents a camera, to be used in 
+conjunction with {{CameraControlOp}} or {{MultiCameraOp}}. 
+Mounts onto an entity as `.camera`.
+]]
+
+classfunc 'init'
+table_args {
+  tag = string{'identifying tag', default = 'primary'},
+  orthographic = bool{'whether this is an orthographic camera', default = false},
+  left = number{'left bound (orthographic)', default = -1.0},
+  right = number{'right bound (orthographic)', default = 1.0},
+  top = number{'top bound (orthographic)', default = 1.0},
+  bottom = number{'bottom bound (orthographic)', default = -1.0},
+  near = number{'near clip plane distance', default = 0.01},
+  far = number{'far clip plane distance', default = 30.0},
+  fov = number{'vertical field of view in degrees (perspective)', default = 70.0},
+  aspect = number{'aspect ratio w/h (perspective)', default = 1.0}
+}
+description[[
+Create a camera component as either a perspective (default) or orthographic
+camera. The camera will be matched to {{CameraControlOp}}s by the 
+specified `tag`.
+]]
+example[[
+pipeline:add_stage(graphics.Stage{
+  render_ops = {graphics.DrawOp(), graphics.CameraControlOp()}
+})
+pipeline:add_stage(graphics.Stage{
+  render_target = some_secondary_render_target,
+  render_ops = {graphics.DrawOp(), graphics.CameraControlOp("secondary")}
+})
+some_entity:add_component(graphics.CameraComponent{})
+some_entity:add_component(graphics.CameraComponent{tag = 'secondary'})
+]]
+
+classfunc 'make_projection'
+args{number 'fov: vertical fov in degrees', number 'aspect: w/h', number 'near', number 'far'}
+returns{self}
+description[[
+Change this camera into a perspective projection.
+]]
+
+classfunc 'make_orthographic'
+args{number 'left', number 'right', number 'bottom', number 'top', number 'near', number 'far'}
+returns{self}
+description[[
+Change this camera into an orthographic projection.
+]]
+
+classfunc 'set_projection'
+args{object['math.Matrix4'] 'projection_matrix'}
+returns{self}
+description[[
+Directly set the projection matrix. The provided argument is copied.
+]]
+
+classfunc 'get_matrices'
+returns{object['math.Matrix4'] 'view_matrix', object['math.Matrix4'] 'projection_matrix'}
+description[[
+Get the view and projection matrices for this camera. The returned matrices
+are the internal matrices directly and shouldn't be modified.
+]]
+
+classfunc 'get_view_proj_mat'
+args{object['math.Matrix4'] 'target: optional target to copy the result into'}
+returns{object['math.Matrix4'] 'view_proj_matrix'}
+description[[
+Return the combined 'view-projection matrix', i.e., proj*view. If `target`
+is provided, the result will be directly computed into `target`, otherwise
+an internal matrix will be returned.
+]]
+
+classfunc 'unproject'
+args{number 'ndc_x', number 'ndc_y', bool 'local_frame', object['math.Vector'] 'origin', object['math.Vector'] 'direction'}
+returns{object['math.Vector'] 'origin', object['math.Vector'] 'direction'}
+description[[
+"Unproject" an image coordinate (in normalized device coordinates, i.e., in range -1 to 1)
+to a ray, in either local or world coordinates depending on `local_frame`.
+If `origin` and `direction` are provided, they will be modified to hold the
+result, otherwise new vectors will be returned.
+]]
+
+classdef 'CameraControlOp'
+description[[
+A {{RenderOperation}} that updates a Stage's view and projection matrices
+according to a {{CameraComponent}}.
+]]
+
+classfunc 'init'
+args{string 'tag'}
+description[[
+Create a CameraControlOp. The sole argument is the camera 'tag' which is
+used to identify which {{CameraComponent}} will be tracked. If no tag
+is given, it will default to "primary".
+]]
+
+classdef 'MultiCameraOp'
+description[[
+A {{RenderOperation}} that updates view and projection matrices for
+multiple views within a MultiviewStage. Cameras are matched to views
+according to their camera tags and the view names.
+]]
+
+classfunc 'init'
+description[[
+Create a MultiCameraOp. Takes no arguments because cameras are matched
+to views by their names.
+]]
+example[[
+pipeline:add_stage(graphics.MultiviewStage{
+  render_ops = {graphics.MultiDrawOp(), graphics.MultiCameraOp()},
+  views = {
+    {name = "left_bob", viewport = left_viewport}, 
+    {name = "right_alice", viewport = right_viewport}
+  }
+})
+-- note how the view names "left_bob" and "right_alice" above 
+-- correspond to the camera tags below
+local left_camera = scene:create_child(graphics.Camera, "blargh",
+                                      {tag = "left_bob"})
+local right_camera = scene:create_child(graphics.Camera, "foo",
+                                        {tag = "right_alice"})
+]]
+
+classdef 'Camera'
+description[[
+This is a {{ecs.promote}}'d version of CameraComponent.
+]]
+example[[
+local camera = scene:create_child(graphics.Camera, "primary_camera", {
+  fov = 85.0,
+  aspect = gfx.backbuffer_width / gfx.backbuffer_height
+})
+]]
+
+func 'CubeCamera'
+table_args {
+  near = number 'near clip plane',
+  far = number 'far clip plane',
+  name = string{'prefix for camera names', default = 'face'},
+  tag = string{'prefix for camera tags', default = 'cube'}
+}
+description[[
+A constructor function that is used to create six cameras, each viewing
+one 90 degree cube face. The cameras will have tags like "cube_nx" for
+each of the six face ids "nx", "px", "ny", "py", "nz", "pz". The face/camera
+"nx" is oriented to look in the negative x direction, for example.
+
+For a complete example, see {{file:scripts/examples/cuberender.t}}.
+]]
+example[[
+pipeline:add_stage(graphics.MultiviewStage{
+  render_ops = {graphics.MultiDrawOp(), graphics.MultiCameraOp()},
+  views = {
+    {name = "cube_px", render_target = face_targets.px}, 
+    {name = "cube_nx", render_target = face_targets.nx},
+    {name = "cube_py", render_target = face_targets.py},
+    {name = "cube_ny", render_target = face_targets.ny},
+    {name = "cube_pz", render_target = face_targets.pz},
+    {name = "cube_nz", render_target = face_targets.nz}
+  }
+})
+local cubecam = scene:create_child(graphics.CubeCamera, "cube_cam", {
+  near = 0.01, far = 30.0
+})
+]]
