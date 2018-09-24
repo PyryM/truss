@@ -22,7 +22,6 @@ function CameraComponent:init(options)
   self.proj_mat = math.Matrix4():identity()
   self.inv_proj_mat = math.Matrix4():identity()
   self.view_proj_mat = math.Matrix4():identity()
-  self._render_ops = {}
   if options.orthographic then
     self:make_orthographic(options.left or -1.0,
                            options.right or 1.0,
@@ -55,6 +54,7 @@ end
 function CameraComponent:set_projection(proj_mat)
   self.proj_mat:copy(proj_mat)
   self.inv_proj_mat:invert(self.proj_mat)
+  return self
 end
 
 function CameraComponent:update_matrices()
@@ -73,17 +73,22 @@ end
 -- returns origin, direction (as new Vectors if none are provided; otherwise,
 -- modifies the provided vectors in-place)
 local tempVec = math.Vector()
-function CameraComponent:unproject(ndcX, ndcY, origin, direction)
+function CameraComponent:unproject(ndcX, ndcY, local_frame, origin, direction)
   local p = origin or math.Vector()
   local d = direction or math.Vector()
 
-  local worldPose = self.ent.matrix_world or self.ent.matrix
-  worldPose:get_column(4, p)
+  local world_pose
+  if local_frame then 
+    world_pose = self.ent.matrix
+  else
+    world_pose = self.ent.matrix_world or self.ent.matrix
+  end
+  world_pose:get_column(4, p)
   d:set(ndcX, ndcY, 0.0, 1.0)
   self.inv_proj_mat:multiply(d)
   d:divide_perspective():normalize3d()
-  d.elem.w = 0.0        -- only apply the rotation component of the
-  worldPose:multiply(d) -- world pose
+  d.elem.w = 0.0         -- only apply the rotation component of the
+  world_pose:multiply(d) -- world pose
 
   return p, d
 end

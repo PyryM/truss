@@ -498,3 +498,132 @@ local cubecam = scene:create_child(graphics.CubeCamera, "cube_cam", {
   near = 0.01, far = 30.0
 })
 ]]
+
+sourcefile 'multiview.t'
+
+classdef 'MultiviewStage'
+description[[
+A stage that (semi-efficiently) renders to multiple views when used
+in conjunction with {{MultiDrawOp}}. Each {{gfx.View}} can have its
+own View settings, however all views must share the same global uniforms.
+]]
+
+classfunc 'init'
+table_args {
+  views = list 'either gfx.Views or their construction options'
+}
+description[[
+Create a MultiviewStage. Takes the same options as {{Stage}} and
+in addition a `views` argument, which should be a list of either
+actual {{gfx.View}} or of their construction arguments. In addition,
+each view in the list can have a `name` parameter which is used to
+identify the view for the purpose of {{MultiCameraOp}}.
+]]
+example[[
+local half_width = gfx.backbuffer_width / 2
+local left_viewport  = {         0, 0, half_width, gfx.backbuffer_height}
+local right_viewport = {half_width, 0, half_width, gfx.backbuffer_height}
+
+pipeline:add_stage(graphics.MultiviewStage{
+  name = "forward",
+  render_ops = {
+    graphics.MultiDrawOp(), 
+    graphics.MultiCameraOp()
+  },
+  views = {
+    {name = "left", viewport = left_viewport}, 
+    {name = "right", viewport = right_viewport}
+  }
+})
+]]
+
+sourcefile 'composite.t'
+
+classdef 'CompositeStage'
+description[[
+A stage which composites render targets / textures into a destination,
+optionally with custom materials / shaders, for example, for split screen
+rendering and post-processing effects (also see {{FullscreenStage}}).
+]]
+
+classfunc 'init'
+table_args {
+  scene = string 'scene this stage is associated with',
+  material = object['gfx.BaseMaterial'] 'material to use when compositing',
+  shader = string 'fragment shader name, if no .material is given',
+  view = any 'a gfx.View or table of view options',
+  ops = table 'composite operations'
+}
+description[[
+Create a new CompositeStage. If `material` is specified, then that material
+will be used for compositing operations. Otherwise, if `shader` is specified
+then a material will be created using that fragment shader with a single
+texture uniform 's_srcTex' bound to sampler 0. Otherwise, a simple copy
+shader will be used ("fs_fullscreen_copy").
+
+The `ops` option can be either a list of ops (see example) or a dictionary
+of named ops.
+]]
+example[[
+-- composite op options
+local all_op_options = {
+  x0 = 0, y0 = 0, -- corner of where composite will begin
+  x1 = 1, y1 = 1, -- other corner
+  w = 1, h = 1,   -- another way
+  mode = "normalized", -- can be 'pixel' to use pixel coordinates
+  depth = 0.0, -- determines layering for overlapping composites
+  source = something, -- a Texture that's bound to "s_srcTex"
+  material = something, -- Material specific to this op
+  visible = true, -- whether to draw this op
+}
+-- Either w/h or x1/y1 can be specified: if both are unspecified,
+-- then it will try to infer dimensions from the source
+
+-- If mode is specified as 'pixel' then coordinates will be interpreted
+-- as pixels, otherwise they'll be considered normalized coordinates in 0-1
+]]
+
+classfunc 'set_op_visibility'
+args{string 'name', bool 'visible'}
+description[[
+Set whether a composite operation is visible or not. Note that if the
+composite operations were provided as a list, then `name` should be the
+numerical index.
+]]
+
+classfunc 'set_op'
+args{string 'name', table 'op'}
+description[[
+Add/replace/remove a composite operation. Note that `name` can be
+a numerical index instead of a string. An op can be deleted by setting
+it to `nil`.
+]]
+
+func 'FullscreenStage'
+table_args {
+  input = any 'a Texture or Rendertarget'
+}
+description[[
+Create a CompositeStage that represents a fullscreen operation
+(i.e., a copy or post-processing effect). Takes all the same 
+arguments as {{CompositeStage}} except automatically creates
+a single render op.
+]]
+example[[
+local combine_material = gfx.anonymous_material{
+  program = {"vs_light_combine", "fs_light_combine"},
+  uniforms = {
+    s_srcTex = {0, indirect_light_target},
+    s_lightMap = {1, light_target},
+    u_extraParams = math.Vector(1.0, 1.0, 0.0, 0.0)
+  },
+  state = {}
+}
+
+local final_pass = pipeline:add_stage(graphics.FullscreenStage{
+  name = "light_combine",
+  clear = {color = 0x000000ff, depth = 1.0},
+  render_target = gfx.BACKBUFFER,
+  material = combine_material
+})
+]]
