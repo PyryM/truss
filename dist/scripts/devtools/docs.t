@@ -15,9 +15,11 @@ function init()
     parser:parse_file(table.concat(path, "/"))
   end
 
+  --<link href="https://fonts.googleapis.com/css?family=Fira+Mono" rel="stylesheet"> 
+
   local generated_html = htmlgen(
     parser:get_modules(), {
-      css = {"trussdoc.css", "prism.css"},
+      css = {"trussdoc.css", "prism.css", "https://fonts.googleapis.com/css?family=Fira+Mono"},
       scripts = {"prism.js"}
     }
   )

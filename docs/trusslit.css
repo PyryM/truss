@@ -11,12 +11,9 @@ body
 	font-size: 1rem;
 	line-height: 1.4;
 	margin: 2rem auto;
-	max-width: 60em;
+	max-width: 100em;
 	padding: 0 2em;
 	width: auto;
-  display: grid;
-	grid-template-columns: 1fr 3fr;
-	column-gap: 1em;
 }
 
 nav a {
@@ -92,8 +89,7 @@ h3
 h4
 {
 	border-bottom: solid 0.1rem #ffd700;
-	font-size: 1.0em;
-	font-weight: normal;
+	font-size: 1.1em;
 	padding-bottom: 0.1rem;
 }
 
@@ -112,12 +108,6 @@ h6
 .function-signature {
 	margin-top: 3em;
 	font-family: "SF Mono", "Monaco", "Inconsolata", "Hack", "Fira Mono", "Droid Sans Mono", "Source Code Pro", monospace;
-	color: #999999;
-}
-
-strong {
-	color: #ffd700;
-	font-weight: normal;
 }
 
 blockquote
@@ -173,10 +163,18 @@ th, td {
 	text-align: left;
 }
 
+section
+{
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  grid-auto-flow: column;
+	column-gap: 1em;
+}
+
 pre,code,xmp
 {
 	font-family: "SF Mono", "Monaco", "Inconsolata", "Hack", "Fira Mono", "Droid Sans Mono", "Source Code Pro", monospace;
-	font-size: 0.9rem;
+	font-size: 1rem;
 	line-height: 1.4;
 	white-space: pre-wrap;
 	color: #cccccd;
@@ -195,14 +193,13 @@ figure img
 	border: solid 0.05rem #2274a5;
 }
 
-main {
-	grid-column: 2;
+.comment {
+  grid-column: 2;
 }
 
-nav {
-	grid-column: 1;
-  font-weight: bold;
-	margin-top: 3em;
+.code {
+  grid-column: 1;
+  background-color: #2d2d2d;
 }
 
 .page_footer

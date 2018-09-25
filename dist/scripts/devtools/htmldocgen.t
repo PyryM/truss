@@ -107,8 +107,7 @@ local function format_args(arglist)
     if type(arg) == 'function' then arg = arg("???") end
     local astr
     if arg.name then
-      astr = {arg.name, html.span{": " .. arg.kind, class = "muted"}}
-      --string.format("%s: %s", arg.name, arg.kind)
+      astr = {html.strong{arg.name}, ": ", arg.kind}
     else
       astr = arg.kind
     end
@@ -166,14 +165,14 @@ function generators.func(item, parent)
   local sig
   if item.table_args then
     arg_list, arg_descriptions = format_table_args(item.table_args)
-    sig = {item.info.name, " { ",  arg_list, " } "}
+    sig = html.strong{item.info.name, " { ",  arg_list, " } "}
   else
     arg_list, arg_descriptions = format_args(item.args)
-    sig = {item.info.name, " ( ",  arg_list, " ) "}
+    sig = {html.strong{item.info.name, " ( "},  arg_list, html.strong{" ) "}}
   end
   local ret_list, ret_descriptions = format_args(item.returns)
   if item.returns then
-    sig = {sig,  " → ", ret_list}
+    sig = {sig, html.strong{" → "}, ret_list}
   end
   local refname = parent.info.name .. '-' .. (item.info.anchor_id or item.info.name)
   refname = refname:gsub("%.", "-")
@@ -209,7 +208,6 @@ function generators.classdef(item, parent)
     else
       subitem.info.anchor_id = classname .. '-' .. subitem.info.name
       subitem.info.name = {classname, ":", subitem.info.name}
-      --{html.span{classname .. ":", class="muted"}, subitem.info.name}
     end
   end
   ret:add(gen(item.items, parent))
