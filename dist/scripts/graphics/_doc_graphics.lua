@@ -627,3 +627,75 @@ local final_pass = pipeline:add_stage(graphics.FullscreenStage{
   material = combine_material
 })
 ]]
+
+sourcefile 'nanovg.t'
+
+classdef 'NanoVGStage'
+description[[
+A pipeline stage for doing 2d drawing with NanoVG.
+]]
+
+classfunc 'init'
+table_args {
+  draw = callable{'drawing function f(stage, ctx)', optional=true},
+  setup = callable{'setup function f(stage, ctx)', optional=true}
+}
+description[[
+Create a NanoVG stage. Shares most of the normal {{Stage}} options.
+
+If `draw` and `setup` are provided, then these functions will be
+directly called by the stage, however the recommended approach
+is to use {{NanoVGComponent}}.
+]]
+
+classdef 'NanoVGComponent'
+description[[
+A drawable component that will render in conjunction with a {{NanoVGStage}}.
+]]
+
+classfunc 'init'
+table_args {
+  setup = callable 'setup function f(ctx)',
+  draw = callable 'draw function f(ctx)',
+  z_order = number{'ordering value', default = 0.0}
+}
+description[[
+Create a NanoVGComponent. If `setup` and `draw` are provided, they will be
+called with a nanovg context, setup when the context changes, and draw each
+frame. This requires that a {{NanoVGStage}} is present in the pipeline.
+
+Instead of providing setup and draw functions, it is also possible to simply
+subclass this component and override `:nvg_setup` and `:nvg_draw`.
+]]
+example[[
+local NVGThing = graphics.NanoVGComponent:extend("NVGThing")
+function NVGThing:nvg_setup(ctx)
+  ctx.font_color = ctx:RGBf(1.0, 1.0, 1.0)
+  ctx:load_font("font/VeraMono.ttf", "sans")
+end
+
+function NVGThing:nvg_draw(ctx)
+  ctx:FontFace("sans")
+  ctx:FontSize(12)
+  ctx:FillColor(ctx.font_color)
+  ctx:TextAlign(ctx.ALIGN_MIDDLE)
+  ctx:Text(10, 10, "hello world", nil)
+end
+
+local draw_thing = scene:create_child(ecs.Entity3d, "thing", NVGThing())
+]]
+
+classdef 'NanoVGEntity'
+description[[
+An {{ecs.promote}}d version of {{NanoVGComponent}}.
+]]
+example[[
+local draw_thing = scene:create_child(graphics.NanoVGEntity, "thing", {
+  setup = function(ctx)
+    -- load fonts, etc.
+  end,
+  draw = function(ctx)
+    -- do drawing
+  end
+})
+]]

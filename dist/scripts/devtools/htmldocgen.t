@@ -200,6 +200,9 @@ function generators.classdef(item, parent)
   if item.description then
     ret:add(md.generate(item.description, parent.resolver))
   end
+  if item.example then
+    ret:add(html.precode{item.example, class="language-lua"})
+  end
   local classname = item.info.name
   for _, subitem in ipairs(item.items or {}) do
     if subitem.info.name == classname or subitem.info.name == "init" then
