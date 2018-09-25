@@ -126,6 +126,7 @@ function Task:init(options)
   end
   self.func = options.func
   self.tex = options.tex
+  self.render_target = options.render_target
   self.completed = false
 end
 

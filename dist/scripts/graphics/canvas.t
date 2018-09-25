@@ -61,9 +61,10 @@ function CanvasComponent:submit_draw(drawfunc)
     self._task.tex = self._tex
     self._task.func = rfunc
   else
-    self._task = tasks.Task{func = rfunc, tex = self._tex}
+    self._task = tasks.AsyncTask{func = rfunc, tex = self._tex}
     self.ent.ecs.systems.render:queue_task(self._task)
   end
+  return self._task
 end
 
 return m

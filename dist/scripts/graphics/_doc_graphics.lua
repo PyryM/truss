@@ -268,6 +268,12 @@ description[[
 Set the pipeline used by the renderer.
 ]]
 
+classfunc 'queue_task'
+args{object['graphics.Task'] 'task'}
+description[[
+Queue a {{Task}} to be run by a {{TaskRunnerStage}}.
+]]
+
 classdef 'RenderComponent'
 description[[
 Base class for components that should interact with the render system.
@@ -326,6 +332,93 @@ local mesh = scene_root:create_child(graphics.Mesh, "bla", geo, mat)
 classdef 'DummyMesh'
 description[[
 The {{ecs.promote}}'ed version of `DummyMeshComponent`.
+]]
+
+sourcefile 'taskstage.t'
+
+classdef 'TaskRunnerStage'
+description[[
+A stage which runs {{Task}}s.
+]]
+
+classfunc 'init'
+table_args {
+  num_workers = int{'number of tasks that can be executed each frame', default = 1},
+  scratch = object['gfx.RenderTarget']{'scratch rendering buffer'},
+  scratch_width = int{'pixel width of scratch buffer', default = 1024},
+  scratch_height = int{'pixel height of scratch buffer', default = 1024}
+}
+description[[
+Create a TaskRunnerStage. Each frame it can execute up to `num_workers` tasks.
+Tasks that are submitted with a `tex` argument are executed by first rendering to
+a scratch buffer and then blitting to the task's texture. Attempting to execute a task
+whose texture is larger in either dimension than the scratch buffer will result in 
+an error.
+]]
+
+classdef 'Task'
+description[[
+A rendering task that only needs to be executed once.
+]]
+
+classfunc 'init'
+table_args {
+  tex = object['gfx.Texture'] 'blittable texture for rendering',
+  func = callable 'function to be executed as task; called as f(context)'
+}
+description[[
+Create a task. Note that the texture needs to be *blittable* (created with the
+`blit_dest` flag) and not *renderable*.
+]]
+
+classdef 'AsyncTask'
+description[[
+Identical to {{Task}} except that it acts like a promise and can be {{async.await}}ed.
+The raw promise is exposed as `.promise`.
+]]
+
+sourcefile 'canvas.t'
+
+classdef 'CanvasComponent'
+description[[
+A component which simplifies 2d rendering into textures with NanoVG and Tasks.
+]]
+
+classfunc 'init'
+table_args {
+  clear = table{'view clear options', default = '{color = 0x000000ff, depth = 1.0}'},
+  target = object['gfx.Texture'] 'blittable texture',
+  width = int 'canvas pixel width',
+  height = int 'canvas pixel height',
+  format = any{'a gfx texture format', default = 'gfx.TEX_BGRA8'},
+  flags = table{'gfx texture flags (needs at least blit_dest)', default = '{blit_dest = true}'}
+}
+description[[
+Create a CanvasComponent. If `target` isn't provided, then a texture will be created from the
+other options (width and height at a minimum).
+]]
+
+classfunc 'get_tex'
+returns{object['gfx.Texture'] 'texture'}
+description[[
+Get the texture this canvas renders to.
+]]
+
+classfunc 'submit_draw'
+args{callable 'draw_func: will be called as f(component, nvg_context)'}
+returns{object['graphics.AsyncTask'] 'task'}
+description[[
+Submit a drawing task that will render into the canvas' texture.
+]]
+example[[
+local function draw_circle(canvas, ctx)
+  ctx:BeginPath()
+  ctx:Circle(ctx.width / 2, ctx.height / 2, canvas.user_data.rad)
+  ctx:FillColor(ctx:RGBf(1.0, 0.0, 0.0))
+  ctx:Fill()
+end
+my_canvas.user_data = {rad = 20}
+my_canvas:submit_draw(draw_circle)
 ]]
 
 sourcefile 'camera.t'
