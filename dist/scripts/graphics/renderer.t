@@ -17,6 +17,7 @@ function RenderSystem:init(options)
     log.warning("Render system created without any scene roots")
   end
   self._roots = options.roots or {}
+  self._tasks = options.tasks or require("utils/queue.t").Queue()
 end
 
 function RenderSystem:set_scene_root(scene, root)
@@ -27,9 +28,24 @@ function RenderSystem:set_scene_root(scene, root)
   self._roots[scene] = root
 end
 
+function RenderSystem:_find_task_stages()
+  local ret = {}
+  for _, stage in ipairs(self.pipeline._ordered_stages) do
+    if stage.dispatch_task then
+      table.insert(ret, stage)
+    end
+  end
+  return ret
+end
+
+function RenderSystem:queue_task(task)
+  self._tasks:push(task)
+end
+
 function RenderSystem:set_pipeline(p)
   self.pipeline = p
   self.pipeline:bind(0, 255)
+  self._task_stages = self:_find_task_stages()
   return self
 end
 
@@ -81,6 +97,15 @@ function RenderSystem:update()
     self:_tree_render(scene_root, self._identity_mat)
   end
   self.ecs:insert_timing_event("render_traverse")
+
+  -- handle tasks
+  --for _, task_stage in ipairs(self:_task_stages or {}) do
+  for _, task_stage in ipairs(self:_find_task_stages()) do
+    while self._tasks:size() > 0 and task_stage:capacity() > 0 do
+      task_stage:dispatch_task(self._tasks:pop())
+    end
+  end
+
   self.pipeline:post_render()
   self.ecs:insert_timing_event("render_post")
 

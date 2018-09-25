@@ -33,6 +33,11 @@ function m.FlatMaterial(options)
       vs_name, fs_name = "vs_flatcubemap", "fs_flatcubemap"
     end
     mat:set_program{vs_name, fs_name}
+  else
+    mat = FlatMaterial()
+  end
+  if options.state then
+    mat:set_state(options.state)
   end
   mat.uniforms.u_baseColor:set(options.color or {1.0,1.0,1.0,1.0})
   return mat

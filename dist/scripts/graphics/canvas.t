@@ -4,14 +4,14 @@
 
 local class = require("class")
 local ecs = require("ecs")
-local tasks = require("graphics/taskstage.t")
+local tasks = require("./taskstage.t")
 local m = {}
 
-local CanvasComponent = tasks.TaskSubmitter:extend("CanvasComponent")
+local CanvasComponent = class("CanvasComponent")
 m.CanvasComponent = CanvasComponent
+
 function CanvasComponent:init(options)
   options = options or {}
-  CanvasComponent.super.init(self, options)
   self.mount_name = "canvas"
   self._tex = options.target or self:_create_tex(options)
   self._clear = options.clear
@@ -46,7 +46,7 @@ function CanvasComponent:submit_draw(drawfunc)
     truss.error("CanvasComponent has texture.")
   end
   drawfunc = drawfunc or self.nvg_draw
-  local rfunc = function(task, stage, context)
+  local rfunc = function(context)
     context.view:set{
       clear = self._clear or {color = 0x000000ff, depth = 1.0}
     }
@@ -61,7 +61,8 @@ function CanvasComponent:submit_draw(drawfunc)
     self._task.tex = self._tex
     self._task.func = rfunc
   else
-    self._task = self:submit{func = rfunc, tex = self._tex}
+    self._task = tasks.Task{func = rfunc, tex = self._tex}
+    self.ent.ecs.systems.render:queue_task(self._task)
   end
 end
 

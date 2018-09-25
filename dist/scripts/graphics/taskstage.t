@@ -3,9 +3,7 @@
 -- a stage to execute one-time/infrequent rendering tasks
 
 local class = require("class")
-local Queue = require("utils/queue.t").Queue
-local functable = require("utils/functable.t")
-local renderer = require("graphics/renderer.t")
+local renderer = require("./renderer.t")
 local gfx = require("gfx")
 local bgfx = require("gfx/bgfx.t")
 local ring = require("utils/ring.t")
@@ -17,16 +15,10 @@ function TaskRunnerStage:init(options)
   options = options or {}
   self._num_workers = options.num_views or options.num_workers or 1
   self._num_views = self._num_workers + 1 -- reserve one view for blit
-  self._queue = Queue()
   self._contexts = {}
   self._extra_blit_view = gfx.View{clear = false}
   self._blits = nil
   self._scratch_buffer = self:_create_scratch(options)
-
-  local function dont_run_this()
-    truss.error("The TaskRunnerStage renderop should never actually be called!")
-  end
-  self._dummy_op = functable(dont_run_this, {task_runner = self})
 end
 
 function TaskRunnerStage:num_views()
@@ -44,7 +36,7 @@ function TaskRunnerStage:_create_scratch(options)
   end
 end
 
-function TaskRunnerStage:bind_view_ids(start_id, num_views)
+function TaskRunnerStage:bind(start_id, num_views)
   if num_views < 2 then truss.error("Not enough views: got " .. num_views) end
   self._contexts = {}
   for idx = 0, (num_views - 2) do
@@ -57,31 +49,35 @@ function TaskRunnerStage:bind_view_ids(start_id, num_views)
   self._extra_blit_view:bind(start_id + num_views - 1) 
 end
 
-function TaskRunnerStage:bind()
-  -- clear out render ops to avoid potential double-execution when
-  -- switching pipelines
-  self._queue = Queue()
-  for _, ctx in ipairs(self._contexts) do ctx.view:bind() end
-  self._extra_blit_view:bind()
+function TaskRunnerStage:pre_render()
+  self._used_contexts = 0
+  self._scratch_buffer:reset()
 end
 
-function TaskRunnerStage:update_begin()
-  -- hmmm
+function TaskRunnerStage:capacity()
+  return #self._contexts - self._used_contexts
 end
 
-function TaskRunnerStage:update_end()
-  self:render()
+function TaskRunnerStage:dispatch_task(task)
+  self._used_contexts = self._used_contexts + 1
+  local context = self._contexts[self._used_contexts]
+  if task.tex then -- task needs to render to scratch
+    self:_scratch_render(context, task)
+  else             -- task will manage its own render target
+    task:execute(self, context)
+  end
+end
+
+function TaskRunnerStage:post_render()
+  if self._blits then
+    self:_dispatch_blits(self._extra_blit_view)
+    self._extra_blit_view:touch()
+  end
 end
 
 function TaskRunnerStage:match(tags, oplist)
-  if not tags.is_task_submitter then return oplist end
-  -- abuse the render op system a bit
-  table.insert(oplist, self._dummy_op)
+  -- doesn't match anything
   return oplist
-end
-
-function TaskRunnerStage:add_task(task)
-  self._queue:push(task)
 end
 
 function TaskRunnerStage:_dispatch_blits(view)
@@ -116,79 +112,44 @@ function TaskRunnerStage:_scratch_render(context, task)
   context.view:set_render_target(scratch)
   -- set a viewport to the exact size of the target texture
   context.view:set_viewport({0, 0, tw, th})
-  task:execute(self, context)
+  task:execute(context)
   if not self._blits then self._blits = {} end
   table.insert(self._blits, {src = scratch, dest = tex, size = {tw, th}})
 end
 
-function TaskRunnerStage:render()
-  self._scratch_buffer:reset()
-  for _, context in ipairs(self._contexts) do
-    if self._queue:length() <= 0 then break end
-    local task = self._queue:pop()
-    if task.tex then -- task needs to render to scratch
-      self:_scratch_render(context, task)
-    else             -- task will manage its own render target
-      task:execute(self, context)
-    end
-  end
-  if self._blits then
-    self:_dispatch_blits(self._extra_blit_view)
-    self._extra_blit_view:touch()
-  end
-end
-
 local Task = class("Task")
-function Task:init(submitter, options)
+m.Task = Task
+
+function Task:init(options)
   if not (options.tex or options.render_target) then
     truss.error("Task options must have either a .tex or .render_target")
   end
-  self.submitter = submitter
   self.func = options.func
   self.tex = options.tex
   self.completed = false
 end
 
-function Task:execute(stage, context)
-  self.func(self, stage, context)
-  self.submitter:finish_task(self)
+function Task:execute(context)
+  self.func(context)
   self.completed = true
 end
 
-local TaskSubmitter = renderer.RenderComponent:extend("TaskSubmitter")
-m.TaskSubmitter = TaskSubmitter
+local AsyncTask = Task:extend("AsyncTask")
+m.AsyncTask = AsyncTask
 
-function TaskSubmitter:init(options)
-  self._render_ops = {}
-  self.is_task_submitter = true
-  self.mount_name = "tasks"
+function AsyncTask:init(options)
+  AsyncTask.super.init(self, options)
+  self.promise = require("async").Promise()
 end
 
-function TaskSubmitter:submit(options)
-  local nops = #(self._render_ops)
-  local task_runner = nil
-  if nops == 0 then
-    truss.error("Cannot submit task: no task runner in pipeline")
-    return
-  elseif nops == 1 then
-    task_runner = self._render_ops[1].task_runner
-  else -- randomly choose one for now
-    task_runner = self._render_ops[math.random(nops)].task_runner
-  end
-  local task = Task(self, options)
-  task_runner:add_task(task)
-  return task
+function AsyncTask:execute(context)
+  AsyncTask.super.execute(self, context)
+  self.promise:resolve()
 end
 
-function TaskSubmitter:finish_task(task)
-  -- TODO: probably should be some bookkeeping here
-  -- local common = require("gfx/common.t")
-  -- log.debug("Finished task " .. tostring(task) .. " on frame " .. common.frame_index)
-end
-
-function TaskSubmitter:render()
-  -- override RenderComponent:render to avoid it actually calling
-  -- our render ops (which are just placeholders)
+-- allows directly async.await'ing on the task
+function AsyncTask:next(...)
+  self.promise:next(...)
 end
 
 return m
