@@ -102,12 +102,12 @@ function App:init_pipeline(options)
       Vector(1.0, 1.0, 1.0),
       Vector(0.1, 0.1, 0.1),
       Vector(0.1, 0.1, 0.1)})
-  if options.nvg_render or options.use_nvg then
+  if options.nvg_draw or (options.use_nvg ~= false) then
     self.nvg_stage = p:add_stage(graphics.NanoVGStage{
       name = "nanovg",
       clear = false,
       setup = options.nvg_setup,
-      render = options.nvg_render
+      draw = options.nvg_draw
     })
   end
 

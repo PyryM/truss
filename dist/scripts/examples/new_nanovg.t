@@ -4,15 +4,7 @@ local pbr = require("material/pbr.t")
 local graphics = require("graphics")
 local orbitcam = require("gui/orbitcam.t")
 local grid = require("graphics/grid.t")
-
-function nanovg_setup(stage, ctx)
-  ctx.bg_color = ctx:RGBAf(0.0, 0.0, 0.0, 0.5) -- semi-transparent black
-  ctx.font_color = ctx:RGBf(1.0, 1.0, 1.0)     -- white
-  ctx:load_font("font/VeraMono.ttf", "sans")
-
-  ctx.test_image = ctx:load_image("textures/bad_green_cursor.png")
-  print("Test image size: ", ctx.test_image.w, ctx.test_image.h)
-end
+local ecs = require("ecs")
 
 local FONT_SIZE = 20
 local FONT_X_MARGIN = 5
@@ -40,7 +32,17 @@ function on_mouse(mstate, evtname, evt)
   mstate.x, mstate.y = evt.x, evt.y
 end
 
-function nanovg_render(stage, ctx)
+local NVGThing = graphics.NanoVGComponent:extend("NVGThing")
+function NVGThing:nvg_setup(ctx)
+  ctx.bg_color = ctx:RGBAf(0.0, 0.0, 0.0, 0.5) -- semi-transparent black
+  ctx.font_color = ctx:RGBf(1.0, 1.0, 1.0)     -- white
+  ctx:load_font("font/VeraMono.ttf", "sans")
+
+  ctx.test_image = ctx:load_image("textures/bad_green_cursor.png")
+  print("Test image size: ", ctx.test_image.w, ctx.test_image.h)
+end
+
+function NVGThing:nvg_draw(ctx)
   local t = "SDL + vsync"
   if lowlatency then
     t = t .. " + BGFX Single-Threaded"
@@ -70,7 +72,6 @@ end
 function init()
   myapp = app.App{title = "nanovg example", width = 640, height = 480,
                   msaa = true, stats = false, clear_color = 0x404080ff,
-                  nvg_setup = nanovg_setup, nvg_render = nanovg_render,
                   lowlatency = lowlatency}
 
   myapp.ECS.systems.input:on("mousemove", mouse_state, on_mouse)
@@ -81,11 +82,13 @@ function init()
                                      tint = {0.001, 0.001, 0.001}, 
                                      roughness = 0.7}
   mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
-  mygrid = myapp.scene:create_child(grid.Grid, {thickness = 0.02, 
+  mygrid = myapp.scene:create_child(grid.Grid, "grid", {thickness = 0.02, 
                                                 color = {0.5, 0.5, 0.5}})
   mygrid.position:set(0.0, -1.0, 0.0)
   mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
   mygrid:update_matrix()
+
+  myapp.scene:create_child(ecs.Entity3d, "nvg_draw_thing", NVGThing())
 end
 
 function update()
