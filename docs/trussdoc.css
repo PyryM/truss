@@ -19,10 +19,6 @@ body
 	column-gap: 1em;
 }
 
-nav a {
-	display: block;
-}
-
 a
 {
 	color: #ffd700;
@@ -87,7 +83,7 @@ h2
 h3
 {
 	border-bottom: solid 0.2rem #ffd700;
-	font-size: 1.5em;
+	font-size: 1.3em;
 	padding-bottom: 0.2rem;
 	margin-top: 3rem;
 }
@@ -207,7 +203,16 @@ main {
 nav {
 	grid-column: 1;
   font-weight: bold;
-	margin-top: 3em;
+	margin-top: 1em;
+}
+
+nav a {
+	display: block;
+}
+
+nav .subitem {
+	font-weight: normal;
+	padding-left: 1em;
 }
 
 .page_footer

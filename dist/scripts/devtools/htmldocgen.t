@@ -1,6 +1,14 @@
 local html = require("./htmlgen.t")
 local md = require("./minimarkdown.t")
 
+local function map(list, f)
+  local ret = {}
+  for idx, item in ipairs(list) do
+    ret[idx] = f(item)
+  end
+  return ret
+end
+
 local generators = {}
 local function gen(items, parent)
   if not items then return "" end
@@ -142,7 +150,23 @@ function generators.module(item, parent)
   if item.fields then
     ret:add(format_fields(item.fields))
   end
-  ret:add(gen(item.items, item))
+
+  -- separate out classdefs from everything else
+  local classdefs = {}
+  local statics = {}
+  local function sort_item(item)
+    if item.kind == 'sourcefile' then
+      map(item.items, sort_item)
+    elseif item.kind == 'classdef' then
+      table.insert(classdefs, item)
+    else
+      table.insert(statics, item)
+    end
+  end
+  map(item.items, sort_item)
+  ret:add(html.h3{'module functions'})
+  ret:add(gen(statics, item))
+  ret:add(gen(classdefs, item))
   ret.attributes.id = module_id(item)
   return ret
 end
@@ -218,24 +242,50 @@ function generators.classdef(item, parent)
   return ret
 end
 
-local function nav_link(module)
-  return html.a{module.info.name, href="#" .. module_id(module)}
+local current_module = ""
+local function gen_module_nav(item)
+  if #item > 0 then
+    return map(item, gen_module_nav)
+  elseif item.kind == 'sourcefile' then
+    return gen_module_nav(item.items)
+  elseif item.kind == 'classdef' then
+    return html.a{
+      item.info.name,
+      href = "#" .. current_module .. "-" .. item.info.name,
+      class = 'subitem'
+    }
+  else
+    return ""
+  end
+end
+
+local function generate_nav(modules)
+  local nav_inner = html.group()
+  for _, modname in ipairs(sorted_keys(modules)) do
+    local module = modules[modname]
+    nav_inner:add(html.a{module.info.name, href="#" .. module_id(module)})
+    current_module = module.info.name
+    nav_inner:add(gen_module_nav(module.items))
+  end
+  return nav_inner
 end
 
 local function generate_html(modules, options)
   options = options or {}
+  local main = html.main{html.h2{"truss documentation"}}
   local nav_inner = html.group()
-  local main = html.main()
   --k, module
   for _, modname in ipairs(sorted_keys(modules)) do
     local module = modules[modname]
-    nav_inner:add(nav_link(module))
     main:add(gen({module}))
   end
-  local body = html.body{html.nav{
-    html.h3{"Modules"},
-    nav_inner}, 
-  main}
+  local body = html.body{
+    html.nav{
+      html.h3{"Modules"},
+      generate_nav(modules)
+    },
+    main
+  }
   for _, script in ipairs(options.scripts or {}) do
     body:add(html.script{"", src = script})
   end
