@@ -72,7 +72,8 @@ local function format_type_table(argtable, caption, labels, rowgen)
     end
     body:add(row)
   end
-  return html.table{caption, head, body}
+  --return html.table{caption, head, body}
+  return html.table{head, body}
 end
 
 local function format_table_args(argtable)

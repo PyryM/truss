@@ -53,6 +53,7 @@ a:active
 p
 {
 	hyphens: auto;
+	margin-top: 0.3rem;
 }
 
 h1,h2,h3,h4,h5,h6
@@ -68,6 +69,7 @@ h1,h2,h3,h4,h5,h6
 ul
 {
 	line-height: 1.4;
+	margin-top: 0.3rem;
 }
 
 h1
@@ -87,6 +89,7 @@ h3
 	border-bottom: solid 0.2rem #ffd700;
 	font-size: 1.5em;
 	padding-bottom: 0.2rem;
+	margin-top: 3rem;
 }
 
 h4
@@ -94,6 +97,7 @@ h4
 	font-size: 1.0em;
 	font-weight: normal;
 	padding-bottom: 0.1rem;
+	margin-bottom: 0.3rem;
 }
 
 h5
@@ -139,6 +143,8 @@ table {
 	table-layout: fixed;
 	width: 100%;
 	border-collapse: collapse;
+	margin-top: 0.3rem;
+	margin-bottom: 1rem;
 }
 
 caption {
