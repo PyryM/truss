@@ -119,7 +119,7 @@ function ControllerComponent:create_mesh_parts(default_geo, default_mat)
   local part_entities = self:create_parts()
   for pname, pent in pairs(part_entities) do
     if self._trackable.parts[pname].model_name then --not all parts have models
-      pent:add_component(graphics.MeshRenderComponent(default_geo, default_mat))
+      pent:add_component(graphics.MeshComponent(default_geo, default_mat))
       self:load_part_geo_to_component(pname, "mesh")
     end
   end
@@ -131,7 +131,7 @@ function ControllerComponent:_update_parts()
     if p_src then
       part_entity.matrix:copy(p_src.pose)
       if part_entity.mesh then 
-        part_entity.mesh.visible = p_src.visible 
+        part_entity.visible = p_src.visible 
       end
       if p_src.static then
         self._dynamic_parts[partname] = nil
