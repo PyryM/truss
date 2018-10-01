@@ -65,8 +65,6 @@ function App:init_ecs()
   local ECS = ecs.ECS()
   self.ECS = ECS
   ECS:add_system(sdl_input.SDLInputSystem())
-  --ECS:add_system(ecs.System("preupdate", "preupdate"))
-  --ECS:add_system(ecs.ScenegraphSystem())
   ECS:add_system(ecs.System("update", "update"))
   ECS:add_system(graphics.RenderSystem())
   if self.stats then ECS:add_system(graphics.DebugTextStats()) end
