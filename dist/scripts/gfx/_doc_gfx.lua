@@ -723,8 +723,12 @@ table_args{
   commit = bool{'automatically commit texture to GPU', default=true}
 }
 description[[
-Create an empty 3d texture. 
-Dynamic 3d textures are not yet implemented.
+Create an empty 3d texture.
+
+With `allocate=true` you can procedurally create a 3d texture by filling
+`.cdata` and then calling `:commit()`, however
+the `dynamic` flag is not supported, so 3d textures cannot be updated
+once committed.
 ]]
 
 classdef 'TextureCube'

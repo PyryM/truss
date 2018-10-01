@@ -196,6 +196,20 @@ end
 function RenderTarget:get_attachment_handle(idx)
   return self.attachments[idx].handle
 end
+RenderTarget.get_layer_handle = RenderTarget.get_attachment_handle
+
+function RenderTarget:get_layer_info(idx)
+  local layer = self._layers[idx]
+  if not layer then 
+    truss.error("RenderTarget does not have layer idx " .. idx)
+  end
+  local w, h = self.width, self.height
+  local fmt = layer.format
+  local pixelsize = fmt.pixel_size
+  local datasize = w*h*(pixelsize or 0)
+  return {width = w, height = h, depth = 1, 
+          format = fmt, pixel_size = pixel_size, data_size = data_size}
+end
 
 -- create a texture that can be blitted into and a buffer to hold the data
 function RenderTarget:_create_read_back_buffer(idx)
