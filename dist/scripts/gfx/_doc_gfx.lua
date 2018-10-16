@@ -216,6 +216,15 @@ classfunc 'destroy'
 description 'Delete both GPU and CPU memory for this geometry.'
 returns{self}
 
+classfunc 'set_slice'
+args{
+  int 'vtx_start: 0 indexed start vertex', int 'vtx_count: vertex count',
+  int 'idx_start: 0 indexed start index', int 'idx_count: index count'
+}
+description[[
+Indicate that only a subset of this geometry should be bound.
+]]
+
 classfunc 'bind'
 description[[
 Bind this geometry (index and vertex buffers) for the next submission. The 

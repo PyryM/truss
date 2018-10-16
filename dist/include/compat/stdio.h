@@ -13,6 +13,7 @@
 
 /* We only use sprintf and sscanf out of stdio */
 
+int printf (const char *, ... );
 int sprintf(char *, const char *, ...);
 int sscanf(const char *, const char *, ...);
 

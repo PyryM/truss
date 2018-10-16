@@ -66,6 +66,9 @@ function App:init_ecs()
   self.ECS = ECS
   ECS:add_system(sdl_input.SDLInputSystem())
   ECS:add_system(ecs.System("update", "update"))
+  if self.async ~= false then
+    ECS:add_system(require("async").AsyncSystem())
+  end
   ECS:add_system(graphics.RenderSystem())
   if self.stats then ECS:add_system(graphics.DebugTextStats()) end
   ECS.systems.input:on("keydown", self, self.keydown)

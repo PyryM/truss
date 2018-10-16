@@ -17,23 +17,28 @@ end
 --
 -- sets face indices, checking whether the input is a list of lists
 -- or a flat list
-function m.set_indices(geo, indexdata)
+function m.set_indices(geo, indexdata, strict)
   if #indexdata == 0 then return end
   if type(indexdata[1]) == "table" then
-    m.set_indices_list_of_lists(geo, indexdata)
+    m.set_indices_list_of_lists(geo, indexdata, strict)
   else
-    m.set_indices_flat_list(geo, indexdata)
+    m.set_indices_flat_list(geo, indexdata, strict)
   end
+end
+
+function m.set_indices_strict(geo, indexdata)
+  return m.set_indices(geo, indexdata, true)
 end
 
 -- set_indices_list_of_lists
 --
 -- sets face indices from a list of lists
 -- e.g. {{0,1,2}, {1,2,3}, {3,4,5}, {5,2,1}}
-function m.set_indices_list_of_lists(geo, facelist)
+function m.set_indices_list_of_lists(geo, facelist, strict)
   local nfaces = #facelist
   local nindices = nfaces * 3 -- assume triangles
-  assert_index_size(geo, nindices)
+  if strict then assert_index_size(geo, nindices) end
+  nfaces = math.floor(math.min(nfaces, geo.n_indices / 3))
 
   local dest = geo.indices
   local dest_idx = 0
@@ -49,9 +54,10 @@ end
 --
 -- set face indices from a flat list (spacing to indicate triangles)
 -- e.g., {0,1,2,  1,2,3,  3,4,5,  5,2,1}
-function m.set_indices_flat_list(geo, indexlist)
+function m.set_indices_flat_list(geo, indexlist, strict)
   local nindices = #indexlist
-  assert_index_size(geo, nindices)
+  if strict then assert_index_size(geo, nindices) end
+  nindices = math.min(nindices, geo.n_indices)
 
   local dest = geo.indices
   for idx = 1, nindices do
@@ -131,16 +137,7 @@ function m.get_setter(target, attrib_name, attrib_list)
 end
 
 function m.set_attribute(target, attrib_name, attrib_list, setter)
-  local list_size = #attrib_list
-  if list_size == 0 then
-    log.warn("set_attribute with #attrib_list == 0 does nothing")
-    return
-  elseif list_size ~= target.n_verts then
-    truss.error("set_attribute: wrong number of vertices, expected "
-        .. (target.n_verts or "nil?")
-        .. " got " .. (list_size or "nil"))
-    return
-  end
+  local list_size = math.min(#attrib_list, target.n_verts)
 
   setter = setter or m.get_setter(target, attrib_name, attrib_list)
   if not setter then truss.error("No setter for attribute " .. attrib_name) end
@@ -152,6 +149,20 @@ function m.set_attribute(target, attrib_name, attrib_list, setter)
     -- dest (data.verts) is a C-style array so zero indexed
     setter(dest[v-1], attrib_list[v])
   end
+end
+
+function m.set_attribute_strict(target, attrib_name, attrib_list, setter)
+  local list_size = #attrib_list
+  if list_size == 0 then
+    log.warn("set_attribute with #attrib_list == 0 does nothing")
+    return
+  elseif list_size ~= target.n_verts then
+    truss.error("set_attribute: wrong number of vertices, expected "
+        .. (target.n_verts or "nil?")
+        .. " got " .. (list_size or "nil"))
+    return
+  end
+  return m.set_attribute(target, attrib_name, attrib_list, setter)
 end
 
 return m

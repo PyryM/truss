@@ -556,20 +556,28 @@ end
 local function stage_geo(geo, target)
   target.vbh = geo._vbh
   target.ibh = geo._ibh
-  target.vtx_start = 0
-  target.vtx_count = bgfx.UINT32_MAX
-  target.idx_start = 0
-  target.idx_count = bgfx.UINT32_MAX
+  target.vtx_start = geo._vtx_start or 0
+  target.vtx_count = geo._vtx_count or bgfx.UINT32_MAX
+  target.idx_start = geo._idx_start or 0
+  target.idx_count = geo._idx_count or bgfx.UINT32_MAX
 end
 
 function Drawcall:_recompile()
   local geo_type = "static"
-  if self.geo.is_dynamic then geo_type = "dynamic" end
+  if self.geo.is_dynamic then 
+    geo_type = "dynamic" 
+    self.submit, self.multi_submit = self.dynamic_submit, self.dynamic_multi_submit
+  else
+    self.submit, self.multi_submit = self.static_submit, self.static_multi_submit
+  end
   local geo_t, draw, multi_draw = compile_draw_call{
     geo_type = geo_type,
     material = self.mat
   }
-  self._cgeo = terralib.new(geo_t)
+  if self._geo_t ~= geo_t then
+    self._geo_t = geo_t
+    self._cgeo = terralib.new(geo_t)
+  end
   if not (self.geo._vbh and self.geo._ibh) then
     truss.error("Geometry has no buffers!")
   end
@@ -593,12 +601,25 @@ function Drawcall:clone()
   return Drawcall(self.geo, self.mat)
 end
 
-function Drawcall:submit(viewid, view_globals, tf)
+function Drawcall:dynamic_submit(viewid, view_globals, tf)
+  stage_geo(self.geo, self._cgeo)
   self._cgeo.tf = tf.data
   self._draw(viewid, self._cgeo, self._cmat, view_globals._value)
 end
 
-function Drawcall:multi_submit(start_viewid, n_views, view_globals, tf)
+function Drawcall:static_submit(viewid, view_globals, tf)
+  self._cgeo.tf = tf.data
+  self._draw(viewid, self._cgeo, self._cmat, view_globals._value)
+end
+
+function Drawcall:dynamic_multi_submit(start_viewid, n_views, view_globals, tf)
+  stage_geo(self.geo, self._cgeo)
+  self._cgeo.tf = tf.data
+  self._multi_draw(start_viewid, n_views, 
+                   self._cgeo, self._cmat, view_globals._value)
+end
+
+function Drawcall:static_multi_submit(start_viewid, n_views, view_globals, tf)
   self._cgeo.tf = tf.data
   self._multi_draw(start_viewid, n_views, 
                    self._cgeo, self._cmat, view_globals._value)
@@ -624,9 +645,8 @@ end
 function PartialDrawcall:submit(geo, viewid, globals, tf)
   local geo_type = (geo.is_dynamic and "dynamic") or "static"
   local cgeo, draw = unpack(self._calls[geo_type])
+  stage_geo(geo, cgeo)
   cgeo.tf = tf.data
-  cgeo.vbh = geo._vbh
-  cgeo.ibh = geo._ibh
   draw(viewid, cgeo, self._cmat, globals)
 end
 
