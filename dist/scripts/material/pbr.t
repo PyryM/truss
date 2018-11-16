@@ -41,7 +41,7 @@ local TexPbrMaterial = gfx.define_base_material{
   uniforms = {
     u_baseColor = 'vec',
     u_pbrParams = 'vec',
-    u_texAlbedo = {kind = 'tex', sampler = 0},
+    s_texAlbedo = {kind = 'tex', sampler = 0},
     u_lightDir = {kind = 'vec', count = 4, global = true},
     u_lightRgb = {kind = 'vec', count = 4, global = true},
   },
@@ -53,7 +53,7 @@ TexPbrMaterial.tint = PbrMaterial.tint
 TexPbrMaterial.diffuse = PbrMaterial.diffuse
 
 function TexPbrMaterial:texture(tex)
-  self.uniforms.u_texAlbedo:set(tex)
+  self.uniforms.s_texAlbedo:set(tex)
   return self
 end
 

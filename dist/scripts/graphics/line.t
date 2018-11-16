@@ -36,7 +36,7 @@ function LineRenderComponent:init(options)
   self.mat = self:_create_material(opts)
   self.tags = gfx.tagset{compiled = true}
   self.tags:extend(options.tags or {})
-  if opts.points then self:set_points(opts.points) end
+  self:set_points(opts.points or {{}})
   -- Need to create drawcall last so that buffers have been created
   self.drawcall = gfx.Drawcall(self.geo, self.mat)
 end
@@ -144,6 +144,12 @@ function LineRenderComponent:_create_material(options)
   return mat
 end
 
+function LineRenderComponent:destroy()
+  if self.geo then self.geo:destroy() end
+  self.geo = nil
+  self.drawcall = nil
+end
+
 -- Update the line buffers: for a static line (dynamic == false)
 -- this will only work once
 function LineRenderComponent:set_points(lines)
@@ -169,6 +175,7 @@ function LineRenderComponent:set_points(lines)
     vertidx, idxidx = self:_append_segment(lines[i], vertidx, idxidx)
   end
 
+  self.geo:set_slice(0, vertidx, 0, idxidx)
   if self.dynamic then self.geo:update() else self.geo:commit() end
 end
 

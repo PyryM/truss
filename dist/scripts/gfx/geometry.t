@@ -468,7 +468,7 @@ function DynamicGeometry:uncommit()
 end
 
 function StaticGeometry:destroy()
-  self:release_backing()
+  self:deallocate()
   self:uncommit()
 end
 DynamicGeometry.destroy = StaticGeometry.destroy
