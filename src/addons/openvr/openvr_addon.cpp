@@ -26,6 +26,7 @@ OpenVRAddon::OpenVRAddon() {
             void* truss_openvr_get_extendeddisplay(Addon* addon);
             void* truss_openvr_get_settings(Addon* addon);
             void* truss_openvr_get_applications(Addon* addon);
+			void* truss_openvr_get_camera(Addon* addon);
     )";
     ivrsystem_ = NULL;
 }
@@ -168,4 +169,13 @@ void* truss_openvr_get_applications(OpenVRAddon* addon) {
     } else {
         return NULL;
     }
+}
+
+void* truss_openvr_get_camera(OpenVRAddon* addon) {
+	if (NULL != addon->ivrsystem_) {
+		return vr::VRTrackedCamera();
+	}
+	else {
+		return NULL;
+	}
 }
