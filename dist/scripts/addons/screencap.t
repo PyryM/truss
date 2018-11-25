@@ -1,4 +1,5 @@
 local m = {}
+local bgfx = require("gfx/bgfx.t")
 
 if not truss.addons.screencap then
   truss.error("Screencap addon not present.")
