@@ -101,6 +101,14 @@ function ConsoleTools:info(val, maxrecurse)
   end
 end
 
+function ConsoleTools:gfx_features()
+  local caps = require("gfx").get_caps()
+  for capname, supported in pairs(caps.features) do
+    local color = (supported and 10) or 3
+    self.print(capname .. ": " .. tostring(supported), color, 8)
+  end
+end
+
 function ConsoleTools:prepare_environment(env)
   -- todo
 end
