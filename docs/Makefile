@@ -1,20 +1,28 @@
-# Minimal makefile for Sphinx documentation
+# Docker-ized Jekyll build
 #
+# Based on:
+# https://kristofclaes.github.io/2016/06/19/running-jekyll-locally-with-docker/
 
-# You can set these variables from the command line.
-SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = truss
-SOURCEDIR     = .
-BUILDDIR      = _build
+CWD := $(shell pwd)
+DOCKER_IMAGE := jekyll/jekyll:pages
 
-# Put it first so that "make" without argument is like "make help".
-help:
-	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+.PHONY: image serve
 
-.PHONY: help Makefile
+all: serve
 
-# Catch-all target: route all unknown targets to Sphinx using the new
-# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+image:
+	docker pull $(DOCKER_IMAGE)
+
+serve:
+	docker run --rm -it \
+		--mount type=bind,src=$(CWD),dst=/srv/jekyll \
+		-p 4000:4000 \
+		$(DOCKER_IMAGE) \
+		jekyll serve --destination /tmp/site
+
+shell:
+	docker run --rm -it \
+		--mount type=bind,src=$(CWD),dst=/srv/jekyll \
+		-p 4000:4000 \
+		$(DOCKER_IMAGE) \
+		/bin/bash
