@@ -15,8 +15,10 @@ function init()
   myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 2, max_rad = 5}))
 
   -- scene setup
-  local mygrid = myapp.scene:create_child(grid.Grid, {thickness = 0.01, 
-                                                     color = {0.5, 0.2, 0.2, 1.0}})
+  local mygrid = myapp.scene:create_child(grid.Grid, 'grid', {
+    thickness = 0.01, 
+    color = {0.5, 0.2, 0.2, 1.0}
+  })
   mygrid.position:set(0.0, -1.0, 0.0)
   mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
   mygrid:update_matrix()
