@@ -27,6 +27,7 @@ local function rounded_text(ctx, x, y, text)
 end
 
 local lowlatency = true
+local single_threaded = false
 local mouse_state = {x = 0, y = 0}
 function on_mouse(mstate, evtname, evt)
   mstate.x, mstate.y = evt.x, evt.y
@@ -44,10 +45,13 @@ end
 
 function NVGThing:nvg_draw(ctx)
   local t = "SDL + vsync"
-  if lowlatency then
+  if single_threaded then
     t = t .. " + BGFX Single-Threaded"
   else
     t = t .. " + BGFX Multi-Threaded"
+  end
+  if lowlatency then
+    t = t .. " + flip+flush after render"
   end
   rounded_text(ctx, 10, 10, t)
   local ocam = myapp.camera.orbit_control
@@ -71,8 +75,8 @@ end
 
 function init()
   myapp = app.App{title = "nanovg example", width = 640, height = 480,
-                  msaa = true, stats = false, clear_color = 0x404080ff,
-                  lowlatency = lowlatency}
+                  msaa = true, stats = true, clear_color = 0x404080ff,
+                  lowlatency = lowlatency, single_threaded = single_threaded}
 
   myapp.ECS.systems.input:on("mousemove", mouse_state, on_mouse)
   myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 1, max_rad = 4}))
@@ -93,4 +97,5 @@ end
 
 function update()
   myapp:update()
+  --truss.sleep(14)
 end

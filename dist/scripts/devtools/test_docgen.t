@@ -63,7 +63,7 @@ function init()
 
   local parser = docgen.LiterateParser()
   --parser:parse_string(test_doc_string)
-  local sections = parser:parse_file("scripts/examples/new_basic.t")
+  local sections = parser:parse_file("scripts/examples/new_minimal.t")
 
   -- log.info(json:encode(parser:get_modules()))
   local genhtml = parser:generate_html(sections, {

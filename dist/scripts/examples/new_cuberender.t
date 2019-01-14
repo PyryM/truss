@@ -25,8 +25,8 @@ function CubeRenderApp:init_pipeline()
     }
   end
 
-  local colors = {0xaa0000ff, 0x00aa00ff, 0x0000aaff, 0xaaaa00ff, 0x00aaaaff, 0xaa00aaff}
-  --local colors = {0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff}
+  --local colors = {0xaa0000ff, 0x00aa00ff, 0x0000aaff, 0xaaaa00ff, 0x00aaaaff, 0xaa00aaff}
+  local colors = {0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff}
 
   local p = graphics.Pipeline({verbose = true})
   p:add_stage(graphics.MultiviewStage{
@@ -72,45 +72,63 @@ end
 
 function init()
   myapp = CubeRenderApp{title = "basic example", width = 1280, height = 640,
-                  msaa = true, stats = true, clear_color = 0x404080ff}
+                  msaa = true, stats = false, clear_color = 0x404080ff}
 
   rotator = myapp.ECS.scene:create_child(ecs.Entity3d, "Rotator")
   cubecam = rotator:create_child(graphics.CubeCamera, "CubeCam", {})
   cubecam.position:set(2.5, 0.0, 0.0)
   cubecam:update_matrix()
 
-  local geo = geometry.axis_widget_geo{}
-  local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
-  mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
-  mygrid = myapp.scene:create_child(grid.Grid, "mygrid", {thickness = 0.01, 
-                                                color = {0.5, 0.2, 0.2}})
-  mygrid.position:set(0.0, -1.0, 0.0)
-  mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
-  mygrid:update_matrix()
+  -- local geo = geometry.axis_widget_geo{}
+  -- local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
+  -- --mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
+  -- mygrid = myapp.scene:create_child(grid.Grid, "mygrid", {thickness = 0.02, 
+  --                                               color = {0.5, 0.2, 0.2}})
+  -- mygrid.scale:set(3, 3, 3)
+  -- mygrid.position:set(0.0, -1.0, 0.0)
+  -- mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
+  -- mygrid:update_matrix()
 
-  local tartex = gfx.Texture("textures/test_pattern.png")
-  local tarmat = flat.FlatMaterial{texture = tartex}
-  local targeo = geometry.plane_geo{width = 1, height = 1}
+  -- grid2 = myapp.scene:create_child(grid.Grid, "grid2", {thickness = 0.02, 
+  --                                               color = {0.5, 0.2, 0.2}})
+  -- grid2.scale:set(3, 3, 3)
+  -- grid2.position:set(0.0, 1.0, 0.0)
+  -- grid2.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
+  -- grid2:update_matrix()
 
-  local target = myapp.scene:create_child(graphics.Mesh, "calibtarget", targeo, tarmat)
-  target.position:set(0.5, 0.5, 0.5)
-  target.quaternion:euler({x = 0.0, y = math.pi, z = 0.0})
-  target:update_matrix()
+  -- local tartex = gfx.Texture("textures/test_pattern.png")
+  -- local tarmat = flat.FlatMaterial{texture = tartex}
+  -- local targeo = geometry.plane_geo{width = 1, height = 1}
+
+  -- local target = myapp.scene:create_child(graphics.Mesh, "calibtarget", targeo, tarmat)
+  -- target.position:set(0.5, 0.5, 0.5)
+  -- target.quaternion:euler({x = 0.0, y = math.pi, z = 0.0})
+  -- target:update_matrix()
 
   -- skybox
-  -- local skygeo = geometry.uvsphere_geo{lat_divs = 30, lon_divs = 30}
-  -- local skymat = flat.FlatMaterial{skybox = true, cubemap = true,
-  --                   texture = myapp.cubemap,
-  --                   tags = {cube = true}}
-  -- skybox = myapp.scene:create_child(graphics.Mesh, "sky", skygeo, skymat)
-  -- skybox.scale:set(-15, -15, -15)
-  -- skybox:update_matrix()
+  local skygeo = geometry.uvsphere_geo{lat_divs = 30, lon_divs = 30}
+  local skymat = flat.FlatMaterial{
+    skybox = true, 
+    texture = gfx.Texture("textures/earth_er.jpg"),
+    state = {cull = false}
+  }
+  skybox = myapp.scene:create_child(graphics.Mesh, "sky", skygeo, skymat)
+  skybox.scale:set(-15, 15, 15)
+  skybox:update_matrix()
 end
 
 local t = 0.0
 function update()
-  t = t + 1.0 / 60.0
-  rotator.quaternion:euler{x = 0.0, y = t, z = 0.0}
+  t = t + 1.0 / 120.0
+  if t < math.pi * 2.0 then
+    rotator.quaternion:euler{x = 0.0, y = t, z = 0.0}
+  else
+    rotator.quaternion:euler{x = t, y = t * 3, z = t * 2}
+  end
+  if t > math.pi * 4.0 then
+    t = t - math.pi * 4.0
+  end
+
   rotator:update_matrix()
   --cubecam.position:set(math.cos(t), 0, math.sin(t))
   --cubecam:update_matrix()

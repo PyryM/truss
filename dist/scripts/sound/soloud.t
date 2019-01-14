@@ -2,6 +2,8 @@
 --
 -- bindings for the soloud sound library
 
+print('aaaaaaaaaaaaaaaaaaaaaaaa')
+
 local m = {}
 local class = require("class")
 
@@ -63,6 +65,44 @@ function m._destroy_wav(filename)
   m._loaded_wavs[filename] = nil
 end
 
+local Bus = class("Bus")
+m.Bus = Bus
+
+function Bus:init()
+  self._bus = C.Bus_create()
+end
+
+function Bus:start(volume, pan)
+  local source = terralib.cast(&C.AudioSource, self._bus)
+  self._handle = C.Soloud_playEx(m._instance, 
+                                 source,
+                                 volume or -1.0,
+                                 pan or 0.0,
+                                 0, 0)
+  return self
+end
+
+function Bus:stop()
+  if self._handle then
+    C.Soloud_stop(m._instance, self._handle)
+    self._handle = nil
+  end
+end
+
+function Bus:play(sound, volume, pan)
+  local source = sound:get_audio_source()
+  sound._handle = C.Bus_playEx(self._bus, source, volume or 1.0, pan or 0.0, 0)
+end
+
+function Bus:enable_vis(enabled)
+  enabled = (enabled and 1) or 0
+  C.Bus_setVisualizationEnable(self._bus, enabled)
+end
+
+function Bus:get_fft()
+  return C.Bus_calcFFT(self._bus)
+end
+
 local Wav = class("Wav")
 m.Wav = Wav
 
@@ -82,10 +122,15 @@ function Wav:_get_wav()
   if w then return w[1] else return nil end
 end
 
-function Wav:play(volume, pan)
+function Wav:get_audio_source()
   local rawsound = self:_get_wav()
-  if rawsound == nil then return end
-  local source = terralib.cast(&C.AudioSource, rawsound)
+  if not rawsound then return end
+  return terralib.cast(&C.AudioSource, rawsound)
+end
+
+function Wav:play(volume, pan)
+  local source = self:get_audio_source()
+  if not source then return end
   --wav_to_sound_source(rawsound)
   self._handle = C.Soloud_playEx(m._instance, 
                   source,
@@ -99,6 +144,11 @@ function Wav:stop()
     C.Soloud_stop(m._instance, self._handle)
     self._handle = nil
   end
+end
+
+function Wav:stop_all()
+  local source = self:get_audio_source()
+  C.Soloud_stopAudioSource(m._instance, source)
 end
 
 function Wav:get_duration()
