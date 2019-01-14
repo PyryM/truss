@@ -44,6 +44,7 @@ TRUSS_C_API void* truss_openvr_get_rendermodels(OpenVRAddon* addon);
 TRUSS_C_API void* truss_openvr_get_extendeddisplay(OpenVRAddon* addon);
 TRUSS_C_API void* truss_openvr_get_settings(OpenVRAddon* addon);
 TRUSS_C_API void* truss_openvr_get_applications(OpenVRAddon* addon);
+TRUSS_C_API void* truss_openvr_get_camera(OpenVRAddon* addon);
 
 
 // Direct C-api to openvr:

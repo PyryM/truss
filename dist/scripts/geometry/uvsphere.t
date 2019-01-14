@@ -24,7 +24,7 @@ end
 function m.uvsphere_data(options)
   options = options or {}
   local projfunc = options.projfunc or m.plate_carree
-  local rad = options.rad or 1.0
+  local rad = options.rad or options.radius or 1.0
   local lat_divs = (options.lat_divs or 10) + 1
   local lon_divs = (options.lon_divs or 10) + 1
   local cap_size = options.cap_size or (5.0 * math.pi/180.0)

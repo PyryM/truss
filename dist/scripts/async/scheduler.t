@@ -16,7 +16,7 @@ function FrameScheduler:init()
 end
 
 function FrameScheduler:schedule(n, f)
-  n = n or 1
+  n = math.ceil(n or 1)
   if n <= 0 then truss.error("Cannot schedule for <= 0 frames.") end
   local tar_f = self._frame + n
   if not self._tasks[tar_f] then self._tasks[tar_f] = {} end

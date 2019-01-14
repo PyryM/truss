@@ -162,7 +162,7 @@ end
 function m.merge_tree(options)
   local mergelist = {}
   local filter = options.filter or function(ent)
-    return ent.visible_world and (ent.mesh or {}).geo
+    return ent.visible and (ent.mesh or {}).geo
   end
   for entity in options.root:iter_tree() do
     local geo = filter(entity)

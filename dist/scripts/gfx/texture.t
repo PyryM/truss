@@ -4,7 +4,8 @@
 
 local class = require("class")
 local math = require("math")
-local fmt = require("gfx/formats.t")
+local fmt = require("./formats.t")
+local bgfx = require("./bgfx.t")
 
 local m = {}
 
@@ -60,6 +61,56 @@ end
 
 function Texture:is_blittable()
   return self.flags.blit_dest
+end
+
+function Texture:is_readable()
+  return self.flags.read_back
+end
+
+function Texture:raw_blit_copy(src_handle, view)
+  if not self._handle then
+    truss.error("No texture handle!")
+  end
+  if not self.is_blittable() then
+    truss.error("Texture not a blit_dest!")
+  end
+  local viewid = (view and view._viewid) or view or 0
+  bgfx.blit(viewid,
+        self._handle, 0, 0, 0, 0,
+        src_handle, 0, 0, 0, 0,
+        self.width, self.height, 0)
+end
+
+function Texture:read_back(mip, callback)
+  if not self._handle then
+    truss.error("No texture handle!")
+  end
+  if not self.is_readable() then 
+    truss.error("Texture does not have read_back flag.")
+  end
+  if not self.cdata then
+    truss.error("Texture does not have buffer to read back into!")
+  end
+  bgfx.read_texture(self._handle, self.cdata, mip or 0)
+  if callback then
+    require("gfx").schedule(callback)
+  end
+end
+
+function Texture:async_read_back(mip)
+  local async = require("async")
+  local p = async.Promise()
+  self:read_back(mip, function()
+    p:resolve(self)
+  end)
+  return p
+end
+
+function Texture:async_read_rt(view, mip)
+  local rt = self.read_source.rt
+  local layer = self.read_source.layer
+  self:raw_blit_copy(rt:get_layer_handle(layer), view or 0)
+  return self:async_read_back(mip or 0)
 end
 
 function Texture:_raw_set_handle(handle, info)
@@ -273,6 +324,23 @@ function m.Texture(filename, flags)
   local loader = texture_loaders[extension]
   if not loader then truss.error("No texture loader for " .. extension) end
   return loader(filename, flags)
+end
+
+function m.RTReadbackTexture(src, layer)
+  layer = layer or 0 
+  local info = src:get_layer_info(layer)
+  local flags = {
+    blit_dest = true, read_back = true,
+    min = 'point', mag = 'point', mip = 'point',
+    u = 'clamp', v = 'clamp'
+  }
+  local tex = m.Texture2d{
+    allocate = true, flags = flags,
+    width = info.width, height = info.height,
+    format = info.format
+  }
+  tex.read_source = {rt = src, layer = layer}
+  return tex
 end
 
 -- load just the raw pixel data of a texture

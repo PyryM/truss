@@ -6,6 +6,7 @@ local m = {}
 local class = require("class")
 local math = require("math")
 local openvr_c = nil
+local bgfx = require("gfx/bgfx.t")
 local const = require("vr/constants.t")
 local trackables = require("vr/trackables.t")
 local modelloader = require("vr/modelloader.t")
@@ -266,10 +267,6 @@ function m.mat_to_openvr_mat34(mat, target)
   d[2][0], d[2][1], d[2][2], d[2][3] = s[2], s[6], s[10], s[14]
 end
 
--- local terra derefInt(x: &uint32) : uint32
---   return @x
--- end
-
 function m._update_projections()
   local near = m.nearClip or 0.05
   local far = m.farClip or 100.0
@@ -283,11 +280,6 @@ function m._update_eye_poses()
   for i, eyeID in ipairs(m.eye_ids) do
     local m34 = openvr_c.tr_ovw_GetEyeToHeadTransform(m.sysptr, eyeID)
     m.openvr_mat34_to_mat(m34, m.eye_offsets[i])
-  end
-
-  for i = 1,2 do
-    m.eye_poses[i]:identity()
-    m.eye_poses[i]:multiply(m.hmd.pose, m.eye_offsets[i])
   end
 end
 

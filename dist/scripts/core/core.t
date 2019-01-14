@@ -169,6 +169,18 @@ local function extend_table(dest, addition)
 end
 truss.extend_table = extend_table
 
+local function slice_table(src, start_idx, stop_idx)
+  local dest = {}
+  if stop_idx < 0 then
+    stop_idx = #src + 1 + stop_idx
+  end
+  for i = start_idx, stop_idx do
+    dest[i - start_idx + 1] = src[i]
+  end
+  return dest
+end
+truss.slice_table = slice_table
+
 truss._module_env = extend_table({}, _G)
 local disallow_globals_mt = {
   __newindex = function (t,k,v)
@@ -191,6 +203,9 @@ function truss.set_app_directories(orgname, appname)
 end
 
 function truss.list_directory(path)
+  if type(path) == 'table' then
+    path = table.concat(path, '/')
+  end
   local nresults = truss.C.list_directory(TRUSS_ID, path)
   if nresults < 0 then return nil end
   local ret = {}
@@ -203,10 +218,16 @@ function truss.list_directory(path)
 end
 
 function truss.is_file(path)
+  if type(path) == 'table' then
+    path = table.concat(path, '/')
+  end
   return truss.C.check_file(path) == 1
 end
 
 function truss.is_directory(path)
+  if type(path) == 'table' then
+    path = table.concat(path, '/')
+  end
   return truss.C.check_file(path) == 2
 end
 
@@ -244,15 +265,19 @@ local function expand_name(name, path)
   end
 end
 
+local function create_module_require(path)
+  return function(_modname, force)
+    local expanded_name = expand_name(_modname, path)
+    return truss.require(expanded_name, force)
+  end
+end
+
 local function create_module_env(module_name, file_name)
   local modenv = extend_table({}, truss._module_env)
   modenv._module_name = module_name
   local path = find_path(file_name)
   modenv._path = path
-  modenv.require = function(_modname, force)
-    local expanded_name = expand_name(_modname, path)
-    return truss.require(expanded_name, force)
-  end
+  modenv.require = create_module_require(path)
   setmetatable(modenv, disallow_globals_mt)
   return modenv
 end
@@ -385,20 +410,7 @@ truss.addons = addons
 local vstr = ffi.string(truss.C.get_version())
 truss.VERSION = vstr
 
--- do some name mangling on bgfx to avoid awkward constructs like
--- bgfx.bgfx_do_something(bgfx.BGFX_SOME_CONSTANT)
-local bgfx_c = terralib.includec("bgfx_truss.c99.h")
-local bgfx_const = truss.require("core/bgfx_constants.t")
-
-bgfx = {}
 local modutils = truss.require("core/module.t")
-modutils.reexport_without_prefix(bgfx_c, "bgfx_", bgfx)
-modutils.reexport_without_prefix(bgfx_c, "BGFX_", bgfx)
-modutils.reexport_without_prefix(bgfx_const, "BGFX_", bgfx)
-bgfx.raw_functions = bgfx_c
-bgfx.raw_constants = bgfx_const
-function bgfx.check_handle(h) return h.idx ~= bgfx.INVALID_HANDLE end
-
 modutils.reexport(truss.require("core/memory.t"), truss)
 
 -- replace lua require with truss require

@@ -68,7 +68,7 @@ end
 
 function EventEmitter:remove(evtname, receiver)
   if not self._listeners[evtname] then return end
-  self._listeners[evtname] = nil
+  self._listeners[evtname][receiver] = nil
 end
 
 function EventEmitter:remove_all(receiver)

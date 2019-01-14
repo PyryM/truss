@@ -57,6 +57,7 @@ end
 function Queue:length()
   return self.last - self.first + 1
 end
+Queue.size = Queue.length
 
 -- 1-indexed idx to be consistent with rest of lua
 function Queue:get(idx)

@@ -65,9 +65,10 @@ function App:init_ecs()
   local ECS = ecs.ECS()
   self.ECS = ECS
   ECS:add_system(sdl_input.SDLInputSystem())
-  ECS:add_system(ecs.System("preupdate", "preupdate"))
-  ECS:add_system(ecs.ScenegraphSystem())
   ECS:add_system(ecs.System("update", "update"))
+  if self.async ~= false then
+    ECS:add_system(require("async").AsyncSystem())
+  end
   ECS:add_system(graphics.RenderSystem())
   if self.stats then ECS:add_system(graphics.DebugTextStats()) end
   ECS.systems.input:on("keydown", self, self.keydown)
@@ -77,7 +78,9 @@ end
 -- feel free to override this
 function App:init_pipeline(options)
   local Vector = math.Vector
-  local pbr = require("shaders/pbr.t")
+  -- just requiring this should cause appropriate global uniforms
+  -- to be registered
+  local pbr = require("material/pbr.t")
   local p = graphics.Pipeline({verbose = true})
   if options.use_tasks ~= false then
     p:add_stage(graphics.TaskRunnerStage{
@@ -88,9 +91,8 @@ function App:init_pipeline(options)
     always_clear = true,
     clear = {color = self.clear_color or 0x000000ff, depth = 1.0},
     globals = p.globals,
-    render_ops = {graphics.GenericRenderOp(), graphics.CameraControlOp()}
+    render_ops = {graphics.DrawOp(), graphics.CameraControlOp()}
   })
-  p.globals:merge(pbr.create_pbr_globals())
   p.globals.u_lightDir:set_multiple({
       Vector( 1.0,  1.0,  0.0),
       Vector(-1.0,  1.0,  0.0),
@@ -101,12 +103,12 @@ function App:init_pipeline(options)
       Vector(1.0, 1.0, 1.0),
       Vector(0.1, 0.1, 0.1),
       Vector(0.1, 0.1, 0.1)})
-  if options.nvg_render or options.use_nvg then
+  if options.nvg_draw or (options.use_nvg ~= false) then
     self.nvg_stage = p:add_stage(graphics.NanoVGStage{
       name = "nanovg",
       clear = false,
       setup = options.nvg_setup,
-      render = options.nvg_render
+      draw = options.nvg_draw
     })
   end
 

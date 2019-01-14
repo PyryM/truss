@@ -1,7 +1,7 @@
 local app = require("app/app.t")
 local geometry = require("geometry")
-local pbr = require("shaders/pbr.t")
-local flat = require("shaders/flat.t")
+local pbr = require("material/pbr.t")
+local flat = require("material/flat.t")
 local graphics = require("graphics")
 local orbitcam = require("gui/orbitcam.t")
 local grid = require("graphics/grid.t")
@@ -35,18 +35,21 @@ local function draw_rounded_label(component, ctx)
 end
 
 local label_geo = nil
-local function Label(ecs, name, options)
+local function Label(_ecs, name, options)
   options = options or {}
   if not label_geo then
     label_geo = geometry.plane_geo{width = 1.0, height = 0.25}
   end
   local canvas = graphics.CanvasComponent{width = options.width or 256, 
                                           height = options.height or 64}
-  local mat = flat.FlatMaterial{texture = canvas:get_tex(),
-                                state = gfx.State{cull = false}}
-  local ret = graphics.Mesh(ecs, name, label_geo, mat)
+  local mat = flat.FlatMaterial{
+    texture = canvas:get_tex(), 
+    color = {0.5, 0.2, 0.2, 1.0},
+    state = gfx.State{blend = 'add', cull = false}
+  }
+  local ret = graphics.Mesh(_ecs, name, label_geo, mat)
   ret:add_component(canvas)
-  canvas.text = options.text or name or "Hello World"
+  canvas.text = options.text or name or "Hello World??"
   canvas:submit_draw(draw_rounded_label)
   return ret
 end
@@ -64,7 +67,7 @@ function init()
     label:update_matrix()
   end
   
-  mygrid = myapp.scene:create_child(grid.Grid, {thickness = 0.02, 
+  mygrid = myapp.scene:create_child(grid.Grid, "grid", {thickness = 0.02, 
                                                 color = {0.5, 0.5, 0.5}})
   mygrid.position:set(0.0, -1.0, 0.0)
   mygrid.quaternion:euler{x = math.pi / 2.0, y = 0.0, z = 0.0}

@@ -2,7 +2,7 @@
 --
 -- creates a basic grid
 
-local line = require("graphics/line.t")
+local line = require("./line.t")
 local m = {}
 
 local function add_line_circle(dest, rad)
@@ -77,7 +77,7 @@ function m.grid_segments(options)
   return lines, npts
 end
 
-function m.Grid(_ecs, options)
+function m.Grid(_ecs, name, options)
   local pts, npts = m.grid_segments(options)
   local entity = require("ecs/entity.t")
   local line_comp = line.LineRenderComponent{
@@ -86,7 +86,7 @@ function m.Grid(_ecs, options)
     thickness = options.thickness,
     points = pts
   }
-  return entity.Entity3d(_ecs, options.name or "grid", line_comp)
+  return entity.Entity3d(_ecs, name, line_comp)
 end
 
 return m

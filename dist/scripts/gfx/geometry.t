@@ -4,7 +4,8 @@
 
 local class = require("class")
 local math = require("math")
-local bufferutils = require("gfx/bufferutils.t")
+local bufferutils = require("./bufferutils.t")
+local bgfx = require("./bgfx.t")
 local gfx = nil -- need to delay load
 
 local Quaternion = math.Quaternion
@@ -32,6 +33,7 @@ function DynamicGeometry:init(name)
   last_geo_idx = last_geo_idx + 1
   self.allocated = false
   self.committed = false
+  self.is_dynamic = true
 end
 
 local TransientGeometry = class("TransientGeometry")
@@ -332,15 +334,23 @@ function StaticGeometry:compute_bounds()
 end
 DynamicGeometry.compute_bounds = StaticGeometry.compute_bounds
 
-function StaticGeometry:set_indices(indices)
-  bufferutils.set_indices(self, indices)
+function StaticGeometry:set_indices(indices, strict)
+  if strict ~= false then
+    bufferutils.set_indices_strict(self, indices)
+  else
+    bufferutils.set_indices(self, indices)
+  end
   return self
 end
 DynamicGeometry.set_indices = StaticGeometry.set_indices
 TransientGeometry.set_indices = StaticGeometry.set_indices
 
-function StaticGeometry:set_attribute(attrib_name, attrib_list)
-  bufferutils.set_attribute(self, attrib_name, attrib_list)
+function StaticGeometry:set_attribute(attrib_name, attrib_list, strict)
+  if strict ~= false then
+    bufferutils.set_attribute_strict(self, attrib_name, attrib_list)
+  else
+    bufferutils.set_attribute(self, attrib_name, attrib_list)
+  end
   return self
 end
 DynamicGeometry.set_attribute = StaticGeometry.set_attribute
@@ -360,16 +370,20 @@ function StaticGeometry:from_data(modeldata, vertinfo, no_commit)
     vertinfo = gfx.guess_vertex_type(modeldata)
   end
   self:allocate(#(modeldata.attributes.position), nindices, vertinfo)
-
-  for a_name, a_data in pairs(modeldata.attributes) do
-    self:set_attribute(a_name, a_data)
-  end
-  self:set_indices(modeldata.indices)
+  self:set_from_data(modeldata, true)
 
   if no_commit then return self else return self:commit() end
 end
 DynamicGeometry.from_data = StaticGeometry.from_data
 TransientGeometry.from_data = StaticGeometry.from_data
+
+function StaticGeometry:set_from_data(modeldata, strict)
+  for a_name, a_data in pairs(modeldata.attributes) do
+    self:set_attribute(a_name, a_data, strict)
+  end
+  self:set_indices(modeldata.indices, strict)
+end
+DynamicGeometry.set_from_data = StaticGeometry.set_from_data
 
 function StaticGeometry:_create_bgfx_buffers(flags)
   self._vbh = bgfx.create_vertex_buffer(
@@ -454,7 +468,7 @@ function DynamicGeometry:uncommit()
 end
 
 function StaticGeometry:destroy()
-  self:release_backing()
+  self:deallocate()
   self:uncommit()
 end
 DynamicGeometry.destroy = StaticGeometry.destroy
@@ -469,32 +483,31 @@ local function check_committed(geo)
   return false
 end
 
+function StaticGeometry:set_slice(vtx_start, vtx_count, idx_start, idx_count)
+  self._vtx_start = vtx_start
+  self._idx_start = idx_start
+  self._vtx_count = vtx_count
+  self._idx_count = idx_count
+  return self
+end
+DynamicGeometry.set_slice = StaticGeometry.set_slice
+
 function StaticGeometry:bind()
   if not check_committed(self) then return end
 
-  bgfx.set_vertex_buffer(0, self._vbh, 0, bgfx.UINT32_MAX)
-  bgfx.set_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
-end
-
-function StaticGeometry:bind_partial(start_v, n_v, start_i, n_i)
-  if not check_committed(self) then return end
-
-  bgfx.set_vertex_buffer(0, self._vbh, start_v, n_v)
-  bgfx.set_index_buffer(self._ibh, start_i, n_i)
+  bgfx.set_vertex_buffer(0, self._vbh, 
+    self._vtx_start or 0, self._vtx_count or bgfx.UINT32_MAX)
+  bgfx.set_index_buffer(self._ibh, 
+    self._idx_start or 0, self._idx_count or bgfx.UINT32_MAX)
 end
 
 function DynamicGeometry:bind()
   if not check_committed(self) then return end
 
-  bgfx.set_dynamic_vertex_buffer(0, self._vbh, 0, bgfx.UINT32_MAX)
-  bgfx.set_dynamic_index_buffer(self._ibh, 0, bgfx.UINT32_MAX)
-end
-
-function DynamicGeometry:bind_partial(start_v, n_v, start_i, n_i)
-  if not check_committed(self) then return end
-
-  bgfx.set_dynamic_vertex_buffer(0, self._vbh, start_v, n_v)
-  bgfx.set_dynamic_index_buffer(self._ibh, start_i, n_i)
+  bgfx.set_dynamic_vertex_buffer(0, self._vbh,
+    self._vtx_start or 0, self._vtx_count or bgfx.UINT32_MAX)
+  bgfx.set_dynamic_index_buffer(self._ibh, 
+    self._idx_start or 0, self._idx_count or bgfx.UINT32_MAX)
 end
 
 function DynamicGeometry:update()

@@ -3,23 +3,33 @@
 -- class for conveniently setting up uniforms
 
 local class = require("class")
+local bgfx = require("./bgfx.t")
 local vec4_ = require("math/types.t").vec4_
 
 local m = {}
 
 local UNI_VEC = {
+  kind       = "vec",
   bgfx_type  = bgfx.UNIFORM_TYPE_VEC4,
   terra_type = vec4_
 }
 
 local UNI_MAT4 = {
+  kind       = "mat4",
   bgfx_type  = bgfx.UNIFORM_TYPE_MAT4,
   terra_type = float[16]
 }
 
 local UNI_TEX = {
-  bgfx_type = bgfx.UNIFORM_TYPE_INT1,
-  terra_type = nil -- no terra type!
+  kind       = "tex",
+  bgfx_type  = bgfx.UNIFORM_TYPE_INT1,
+  terra_type = bgfx.texture_handle_t
+}
+
+m.uniform_types = {
+  mat4 = UNI_MAT4,
+  vec  = UNI_VEC,
+  tex  = UNI_TEX 
 }
 
 -- base class, not intended to be used directly
@@ -137,6 +147,7 @@ function TexUniform:init(uni_name, sampler_idx, value)
   self._handle = m._create_uniform(uni_name, UNI_TEX, 1)
   self._sampler_idx = sampler_idx
   self._uni_name = uni_name
+  self._uni_type = UNI_TEX
   self:set(value)
 end
 
@@ -146,6 +157,7 @@ function TexUniform:clone()
   ret._sampler_idx = self._sampler_idx
   ret._tex = self._tex
   ret._uni_name = self._uni_name
+  ret._uni_type = self._uni_type
   return ret
 end
 

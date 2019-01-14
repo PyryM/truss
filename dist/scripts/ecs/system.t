@@ -61,17 +61,4 @@ function System:update()
   if self.funcname then self:call_on_components(self.funcname) end
 end
 
-local ScenegraphSystem = class("ScenegraphSystem")
-m.ScenegraphSystem = ScenegraphSystem
-
-function ScenegraphSystem:init()
-  self._identity_mat = require("math").Matrix4():identity()
-  self.mount_name = "scenegraph"
-end
-
-function ScenegraphSystem:update(ecs)
-  if not ecs.scene then return end
-  ecs.scene:recursive_update_world_mat(self._identity_mat, true)
-end
-
 return m

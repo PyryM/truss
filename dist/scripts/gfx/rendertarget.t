@@ -4,7 +4,9 @@
 
 local math = require("math")
 local class = require("class")
-local fmt = require("gfx/formats.t")
+local fmt = require("./formats.t")
+local bgfx = require("./bgfx.t")
+local texture = require("./texture.t")
 
 local m = {}
 local RenderTarget = class("RenderTarget")
@@ -12,6 +14,9 @@ m.RenderTarget = RenderTarget
 
 local function depth_stencil_layer(format, flags, shadow)
   log.debug("adding depth/stencil layer " .. format.name)
+  if type(flags) == 'table' then
+    flags = texture.combine_tex_flags(flags)
+  end
   flags = flags or bgfx.TEXTURE_RT_WRITE_ONLY
   if shadow then
     flags = math.combine_flags(flags, bgfx.TEXTURE_COMPARE_LEQUAL)
@@ -27,9 +32,12 @@ end
 
 local function color_layer(format, flags, has_mips)
   log.debug("adding color layer " .. format.name)
-  local flags = flags or math.combine_flags(bgfx.TEXTURE_RT,
-                                            bgfx.TEXTURE_U_CLAMP,
-                                            bgfx.TEXTURE_V_CLAMP)
+  if type(flags) == 'table' then
+    flags = texture.combine_tex_flags(flags)
+  end
+  flags = flags or math.combine_flags(bgfx.TEXTURE_RT,
+                                      bgfx.TEXTURE_U_CLAMP,
+                                      bgfx.TEXTURE_V_CLAMP)
   return {
     has_mips = has_mips, 
     flags = flags,
@@ -187,6 +195,20 @@ end
 
 function RenderTarget:get_attachment_handle(idx)
   return self.attachments[idx].handle
+end
+RenderTarget.get_layer_handle = RenderTarget.get_attachment_handle
+
+function RenderTarget:get_layer_info(idx)
+  local layer = self._layers[idx]
+  if not layer then 
+    truss.error("RenderTarget does not have layer idx " .. idx)
+  end
+  local w, h = self.width, self.height
+  local fmt = layer.format
+  local pixelsize = fmt.pixel_size
+  local datasize = w*h*(pixelsize or 0)
+  return {width = w, height = h, depth = 1, 
+          format = fmt, pixel_size = pixel_size, data_size = data_size}
 end
 
 -- create a texture that can be blitted into and a buffer to hold the data

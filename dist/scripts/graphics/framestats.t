@@ -3,6 +3,7 @@
 -- frame timer stuff
 
 local class = require("class")
+local bgfx = require("gfx/bgfx.t")
 local m = {}
 
 local DebugTextStats = class("DebugTextStats")
@@ -34,17 +35,17 @@ end
 
 function DebugTextStats:update()
   -- Use debug font to print timing information
-  local scripttime = self:time_between("frame_start", "render_submit")
+  local scripttime = self:time_between("frame_start", "render_post")
   local frametime = self:find_evt("frame_end").cdt * 1000.0
 
-  local putime = self:time_between("frame_start", "preupdate")
-  local sgtime = self:time_between("preupdate", "scenegraph")
-  local uptime = self:time_between("scenegraph", "render_submit")
+  local utime = self:time_between("frame_start", "update")
+  local sgtime = self:time_between("update", "render_sg")
+  local rtime = self:time_between("render_sg", "render_post")
 
   local ft = string.format("frame: %5.2f ms, ecs: %5.2f ms",
                             frametime, scripttime)
-  local sg = string.format("   pu: %5.2f ms,  sg: %5.2f ms, up: %5.2f ms",
-                            putime, sgtime, uptime)
+  local sg = string.format("   u: %5.2f ms,  sg: %5.2f ms, render: %5.2f ms",
+                            utime, sgtime, rtime)
 
   bgfx.dbg_text_clear(0, false)
   bgfx.dbg_text_printf(0, 2, 0x6f, ft)

@@ -13,8 +13,8 @@ local VRApp = require("vr/vrapp.t").VRApp
 local openvr = require("vr/openvr.t")
 local vrcomps = require("vr/components.t")
 
-local pbr = require("shaders/pbr.t")
-local flat = require("shaders/flat.t")
+local pbr = require("material/pbr.t")
+local flat = require("material/flat.t")
 
 
 function init()
@@ -43,9 +43,10 @@ function create_scene(root)
                                     tint = {0.001, 0.001, 0.001}, 
                                     roughness = 0.7}
 
-  local thegrid = root:create_child(grid.Grid, {spacing = 0.5, numlines = 8,
-                                                color = {0.8, 0.8, 0.8}, 
-                                                thickness = 0.003})
+  local thegrid = root:create_child(grid.Grid, "grid", 
+                                    {spacing = 0.5, numlines = 8,
+                                     color = {0.8, 0.8, 0.8}, 
+                                     thickness = 0.003})
   thegrid.quaternion:euler({x = -math.pi / 2.0, y = 0, z = 0}, 'ZYX')
   thegrid:update_matrix()
 
@@ -54,7 +55,7 @@ function create_scene(root)
   m2.position:set(0.0, 1.0, -1.0)
   m2:update_matrix()
 
-  local tex = gfx.load_texture("textures/test_pattern.png")
+  local tex = gfx.Texture("textures/test_pattern.png")
   local mat = flat.FlatMaterial{texture = tex}
   local geo = geometry.plane_geo{}
 

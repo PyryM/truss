@@ -131,6 +131,8 @@ function Trackable:init(device_idx, device_class)
   self.device_idx = device_idx
   self.device_class = device_class
   self.device_class_name = m.trackable_types[device_class].name
+  self.debug_name = self.device_idx .. "_" .. (self.device_class_name or "unknown")
+  log.info("Trackable found: " .. self.debug_name)
 end
 
 function Trackable:get_prop(propname)
@@ -153,7 +155,7 @@ function Trackable:on_lost_pose()
 end
 
 function Trackable:on_disconnect()
-  log.info("Trackable "  .. self.device_class_name .. "disconnected.")
+  log.info("Trackable "  .. self.debug_name .. "disconnected.")
   self.connected = false
 end
 
@@ -174,7 +176,6 @@ local HMD = Trackable:extend("HMD")
 m.HMD = HMD
 function HMD:init(device_idx, device_class)
   HMD.super.init(self, device_idx, device_class)
-  log.info("Creating HMD class thing")
 end
 
 function HMD:update(src)
@@ -186,7 +187,6 @@ local Controller = Trackable:extend("Controller")
 m.Controller = Controller
 function Controller:init(device_idx, device_class)
   Controller.super.init(self, device_idx, device_class)
-  log.info("Creating new controller")
   self._has_vibrated = false
   self:_parse_axes_and_buttons()
 end
@@ -225,7 +225,11 @@ function Controller:_parse_axes_and_buttons()
 
   self.buttons = {}
   self._buttons = {}
-  local supported_buttons = self:get_prop("SupportedButtons")
+  local supported_buttons, properr = self:get_prop("SupportedButtons")
+  if not supported_buttons then
+    log.error(self.debug_name .. " does not have SupportedButtons")
+    supported_buttons = 0
+  end
   for bname, bmask in pairs(m.button_masks) do
     if math.ulland(supported_buttons, bmask) > 0 then
       self.buttons[bname] = 0

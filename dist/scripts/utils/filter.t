@@ -4,6 +4,8 @@
 
 local m = {}
 
+truss.error("Filter is deprecated?")
+
 local function subkey(keylist, t)
   for _, k in ipairs(keylist) do
     t = t[k]
@@ -25,20 +27,6 @@ function m.not_tagged(k1, k2)
   return function(t)
     local v = subkey({k1, "tags", k2}, t)
     return not v
-  end
-end
-
-function m.material_tagged(k)
-  return function(t)
-    if not t.mat then return true end
-    return t.mat.tags and t.mat.tags[k]
-  end
-end
-
-function m.material_not_tagged(k)
-  return function(t)
-    if not t.mat then return true end
-    return not (t.mat.tags and t.mat.tags[k])
   end
 end
 

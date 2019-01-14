@@ -2,6 +2,8 @@
 --
 -- basic gfx stuff
 
+local bgfx = require("./bgfx.t")
+
 local m = {}
 m.frame_index = 0
 m.bgfx_frame_index = 0
@@ -258,6 +260,10 @@ function m.invalid_handle(ttype)
   local ret = terralib.new(ttype)
   ret.idx = bgfx.INVALID_HANDLE
   return ret
+end
+
+function m.invalidate_handle(v)
+  v.idx = bgfx.INVALID_HANDLE
 end
 
 function m.set_state(state)

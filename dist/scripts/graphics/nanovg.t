@@ -1,6 +1,6 @@
 -- graphics/nanovg.t
 --
--- ecs nanovg adapters
+-- ecs/graphics nanovg adapters
 
 local gfx = require("gfx")
 local math = require("math")
@@ -15,86 +15,93 @@ m.NanoVGStage = NanoVGStage
 
 function NanoVGStage:init(options)
   options = options or {}
-  self.options = options
-  self._num_views = 1
-  self._render_ops = {} 
+  NanoVGStage.super.init(self, options)
   self.stage_name = options.name or options.stage_name or "nanovg"
-  -- self._render_ops = {self} -- the stage itself acts as a renderop
-
-  if options.render then self.nvg_render = options.render end
+  self._opfunc = function(component, tf)
+    self:_add_draw_item(component)
+  end
+  if options.draw then self.nvg_draw = options.draw end
   if options.setup then self.nvg_setup = options.setup end
-
-  self.view = self:_create_view(options.view, options)
+  if options.render then truss.error("render was renamed to draw") end
 end
 
-function NanoVGStage:set_nanovg_functions(nvg_setup, nvg_render)
+function NanoVGStage:set_nanovg_functions(nvg_setup, nvg_draw)
   self.nvg_setup = nvg_setup
-  self.nvg_render = nvg_render
-  self._need_setup = true
+  self.nvg_draw = nvg_draw
+  self._context_changed = true
 end
 
-function NanoVGStage:bind_view_ids(view_ids)
-  NanoVGStage.super.bind_view_ids(self, view_ids)
+function NanoVGStage:bind(start_id, num_views)
+  NanoVGStage.super.bind(self, start_id, num_views)
   if self._ctx then -- reuse existing context for fonts etc.
     self._ctx:set_view(self.view)
   else
     self._ctx = nanovg.NVGContext(self.view, self.options.edge_aa)
-    self._need_setup = true
+    self._context_changed = true
   end
 end
 
-function NanoVGStage:update_begin()
+function NanoVGStage:pre_render()
+  self._items = {}
   if not self._ctx then return end
-  if self._need_setup and self.nvg_setup then 
-    self:nvg_setup(self._ctx)
-    self._need_setup = false
-  end
   self._ctx:begin_frame(self.view)
-  if self.nvg_render then self:nvg_render(self._ctx) end
 end
 
-function NanoVGStage:update_end()
+function NanoVGStage:_add_draw_item(item)
+  table.insert(self._items, {item.z_order or 0.0, item})
+end
+
+function NanoVGStage:post_render()
   if not self._ctx then return end
-  self._ctx:end_frame()
-end
-
--- Let's ignore this for the moment until I rethink how ecs entities should
--- interact with nanovg rendering.
---
--- Right now the problem with this approach is that you get no control over
--- what order the entities are drawn in, which is important in nanovg since
--- there's no z buffering.
---[[
------------------------------------------------
---- NanoVGStage acting as a RenderOperation ---
-function NanoVGStage:matches(component)
-  return component.nvg_render ~= nil
-end
-
-function NanoVGStage:render(component)
-  component:nvg_render(self, self._ctx)
-end
-
-function NanoVGStage:to_function(context)
-  return function(component)
-    self:render(component)
+  table.sort(self._items, function(item1, item2)
+    -- sort in decreasing order of depth, so that smaller depth items
+    -- are drawn later (on top)
+    return item1[1] > item2[1]
+  end)
+  local ctx = self._ctx
+  if self._context_changed then
+    for _, item in ipairs(self._items) do
+      if item[2].nvg_setup then item[2]:nvg_setup(ctx) end
+    end
+    if self.nvg_setup then self:nvg_setup(ctx) end
+    self._context_changed = false
   end
-end
------------------------------------------------
-
-local NVGRenderComponent = renderer.RenderComponent:extend("NVGRenderComponent")
-m.NVGRenderComponent = NVGRenderComponent
-
-function NVGRenderComponent:init(draw_func)
-  if draw_func then self.nvg_render = draw_func end
-  self._render_ops = {}
+  for _, item in ipairs(self._items) do
+    item[2]:nvg_draw(ctx)
+  end
+  if self.nvg_draw then self:nvg_draw(ctx) end
+  ctx:end_frame()
 end
 
-function m.NanoVGEntity(_ecs, name, draw_func)
-  local ret = entity.Entity3d(_ecs, name)
-  ret:add_component(NVGRenderComponent(draw_func))
-  return ret
+function NanoVGStage:match(tags, target)
+  target = target or {}
+  if not self.enabled then return target end
+  if self.filter and not (self.filter(tags)) then return target end
+  if tags.nanovg_drawable then
+    table.insert(target, self._opfunc)
+  end
+  return target
 end
---]]
+
+local NanoVGComponent = renderer.RenderComponent:extend("NanoVGComponent")
+m.NanoVGComponent = NanoVGComponent
+
+function NanoVGComponent:init(options)
+  options = options or {}
+  self._setup = options.setup
+  self._draw = options.draw
+  self.z_order = options.z_order or 0.0
+  self.tags = gfx.tagset{nanovg_drawable = true}
+end
+
+function NanoVGComponent:nvg_setup(ctx)
+  if self._setup then self._setup(ctx) end
+end
+
+function NanoVGComponent:nvg_draw(ctx)
+  if self._draw then self._draw(ctx) end
+end
+
+m.NanoVGEntity = ecs.promote("NanoVGEntity", NanoVGComponent)
 
 return m

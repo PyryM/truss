@@ -1,0 +1,281 @@
+html
+{
+	font-size: medium;
+}
+
+body
+{
+	background-color: #414141;
+	color: #fffacd;
+	font-family: "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "Fira Sans", Roboto, Oxygen, Oxygen-Sans, Ubuntu, Cantarell, "Droid Sans", "Helvetica Neue", "Source Sans Pro", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+	font-size: 1rem;
+	line-height: 1.4;
+	margin: 2rem auto;
+	max-width: 60em;
+	padding: 0 2em;
+	width: auto;
+  display: grid;
+	grid-template-columns: 1fr 3fr;
+	column-gap: 1em;
+}
+
+a
+{
+	color: #ffd700;
+	font-size: 1em;
+	text-decoration: none;
+}
+
+a:visited
+{
+	color: #ffd700;
+	font-size: 1em;
+}
+
+a:hover
+{
+	background: #ffd700;
+	color: #414141;
+	font-size: 1em;
+	text-decoration: underline;
+}
+
+a:active
+{
+	color: #fafdf6;
+	font-size: 1em;
+}
+
+p
+{
+	hyphens: auto;
+	margin-top: 0.3rem;
+}
+
+h1,h2,h3,h4,h5,h6
+{
+	color: #ffd700;
+	font-weight: bold;
+	hyphens: auto;
+	line-height: 1.2;
+	margin-bottom: 0.5em;
+	margin-top: 1em;
+}
+
+ul
+{
+	line-height: 1.4;
+	margin-top: 0.3rem;
+}
+
+h1
+{
+	font-size: 2.2em;
+}
+
+h2
+{
+	border-bottom: solid 0.3rem #ffd700;
+	font-size: 1.8em;
+	padding-bottom: 0.4rem;
+}
+
+h3
+{
+	border-bottom: solid 0.2rem #ffd700;
+	font-size: 1.3em;
+	padding-bottom: 0.2rem;
+	margin-top: 3rem;
+}
+
+h4
+{
+	font-size: 1.0em;
+	font-weight: normal;
+	padding-bottom: 0.1rem;
+	margin-bottom: 0.3rem;
+}
+
+h5
+{
+	font-size: 1.2em;
+	font-style: italic;
+}
+
+h6
+{
+	font-size: 1.1em;
+	margin-bottom: 0.75rem;
+}
+
+.function-signature {
+	margin-top: 3em;
+	font-family: "SF Mono", "Monaco", "Inconsolata", "Hack", "Fira Mono", "Droid Sans Mono", "Source Code Pro", monospace;
+	color: #999999;
+}
+
+strong {
+	color: #ffd700;
+	font-weight: normal;
+}
+
+blockquote
+{
+	border-left: solid 0.2rem #2274a5;
+	color: #2274a5;
+	font-family: "Noto Serif", "Apple Garamond", "Baskerville", "Georgia", "Times New Roman", "Roboto Slab", "Droid Serif", "Times", "Source Serif Pro", serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+	margin: 2em 0;
+	padding-left: 0.5rem;
+}
+
+cite
+{
+	font-weight: bold;
+}
+
+/* spacing */
+
+table {
+	table-layout: fixed;
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 0.3rem;
+	margin-bottom: 1rem;
+}
+
+caption {
+	caption-side: top;
+	text-align: left;
+	visibility: hidden;
+}
+  
+thead th:nth-child(1) {
+	width: 20%;
+}
+
+thead th:nth-child(2) {
+	width: 15%;
+}
+
+thead th:nth-child(3) {
+	width: 50%;
+}
+
+thead th:nth-child(4) {
+	width: 15%;
+}
+
+tr {
+	border-bottom: 1px solid #ccc;
+}
+
+th, td {
+	padding: 0em 1em 0em 1em;
+	text-align: left;
+}
+
+pre,code,xmp
+{
+	font-family: "SF Mono", "Monaco", "Inconsolata", "Hack", "Fira Mono", "Droid Sans Mono", "Source Code Pro", monospace;
+	font-size: 0.9rem;
+	line-height: 1.4;
+	white-space: pre-wrap;
+	color: #cccccd;
+	background-color: #313131;
+}
+
+figure
+{
+	font-family: "Apple Garamond", "Baskerville", "Georgia", "Times New Roman", "Roboto Slab", "Droid Serif", "Times", "Source Serif Pro", serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+	font-weight: bold;
+	margin: 2em 0;
+}
+
+figure img
+{
+	border: solid 0.05rem #2274a5;
+}
+
+main {
+	grid-column: 2;
+}
+
+nav {
+	grid-column: 1;
+  font-weight: bold;
+	margin-top: 1em;
+}
+
+nav a {
+	display: block;
+}
+
+nav .subitem {
+	font-weight: normal;
+	padding-left: 1em;
+}
+
+.page_footer
+{
+	border-top: solid .1rem #a5243d;
+	margin-top: 2rem;
+	padding-top: 1rem;
+}
+
+.red
+{
+	color: #a5243d;
+	font-size: 1.25rem;
+}
+
+@media (min-width: 512px)
+{
+	html
+	{
+		font-size: medium;
+	}
+
+  blockquote, figure
+	{
+		margin: 2em 3em;
+	}
+	
+  figure
+	{
+		text-align: center;
+	}
+	
+  .page_header, .page_footer
+	{
+		text-align: center;
+	}
+}
+
+@media (min-width: 1280px)
+{
+  html
+	{
+		font-size: medium;
+	}
+
+  blockquote, figure
+	{
+		margin: 2em 6em;
+	}
+}
+
+time
+{
+	font-style: italic;
+}
+
+.page-footer, .article-footer
+{
+	border-top: 1px solid #444;
+	margin-top: 1rem;
+}
+
+dt
+{
+	margin-top: 1rem;
+}

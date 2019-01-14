@@ -201,6 +201,7 @@ m.AsyncSystem = AsyncSystem
 
 function AsyncSystem:init(maxtime)
   self.maxtime = maxtime
+  self.mount_name = "async"
 end
 
 function AsyncSystem:update(ecs)

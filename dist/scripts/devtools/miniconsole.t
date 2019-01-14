@@ -5,6 +5,7 @@
 local m = {}
 local stringutils = require("utils/stringutils.t")
 local class = require("class")
+local bgfx = require("gfx/bgfx.t")
 
 m.colors = {
   default = 0x8f,
@@ -145,7 +146,7 @@ end
 
 function m.print_colors()
   for i = 0,15 do
-    m.print(tostring(i), i*16)
+    m.print(tostring(i), nil, i)
   end
 end
 
@@ -237,18 +238,32 @@ function m.set_header(line)
   m.height = m.totalHeight - 2 - #(m._headerlines)
 end
 
-function m.print(line, color)
+function m.print(line, fg, bg)
+  local color = fg or m.colors.default
+  if bg then
+    color = (fg or 0) + 16*(bg or 8)
+  end
   local splitlines = m._wrap_lines(tostring(line))
   for _, line in ipairs(splitlines) do
-    table.insert(m._linebuffer, {line, color or m.colors.default})
+    table.insert(m._linebuffer, {line, color})
   end
   if #m._linebuffer >= m.height-1 then
     m._buffer_pos = m._buffer_pos + #(splitlines)
   end
 end
 
+function m.repl_load(code)
+  local print_wrapped_code = "print('=> ' .. tostring((" .. code .. ") or nil))"
+  local codefunc, loaderror = terralib.loadstring(print_wrapped_code)
+  if codefunc then 
+    return codefunc 
+  else -- can't do 'codefunc or loadstring' because multiple return values
+    return terralib.loadstring(code)
+  end
+end
+
 function m.eval(code)
-  local codefunc, loaderror = terralib.loadstring(code)
+  local codefunc, loaderror = m.repl_load(code) --terralib.loadstring(code)
   if codefunc then
     setfenv(codefunc, m.env)
     local succeeded, ret = pcall(codefunc)
@@ -271,7 +286,8 @@ function m.print_mini_help()
   m.divider()
   m.print("help() for help [this message]")
   m.print("info(thing) to pretty-print info")
-  m.print("print(str, color) to print to this console")
+  m.print("print(str, fg_color, bg_color) to print to this console")
+  m.print("gfx_features() to list supported bgfx caps on this device")
   m.print("colors() for pretty colors")
   m.print("truss.quit() or quit() to quit [or just close the window]")
   m.print("remote() or rc() to connect to remote console")
@@ -308,6 +324,7 @@ function m.create_env()
   m.env.raw_print = print
   m.env.print = m.print
   m.env.info = m.ct:wrap("info")
+  m.env.gfx_features = m.ct:wrap("gfx_features")
   m.env.colors = m.print_colors
   m.env.chars = m.print_chars
   m.env.help = m.print_mini_help
@@ -369,7 +386,7 @@ function m.save_console_buffer(filename)
 end
 
 function m._execute()
-  m.print("=>" .. m._editline, m.colors.command)
+  m.print(">>" .. m._editline, m.colors.command)
   m._buffer_pos = math.max(0, #m._linebuffer - m.height + 1)
   if m.exec_callback then
     m.exec_callback(m._editline)

@@ -53,12 +53,6 @@ function VRApp:init(options)
   self:ecs_init()
   log.info("up to ecs init: " .. tostring(truss.toc(t0) * 1000.0))
 
-  if options.separate_root == false then
-    self.vr_root = self.scene
-  else
-    self.vr_root = self.scene:create_child(ecs.Entity3d, "vr_root")
-  end
-
   self:init_scene()
 
   if options.create_controllers then
@@ -86,16 +80,10 @@ function VRApp:ecs_init()
   local ECS = ecs.ECS()
   self.ECS = ECS
   self.scene = ECS.scene
-  --ECS:add_system(vrcomps.VRBeginFrameSystem())
   ECS:add_system(sdl_input.SDLInputSystem())
-  ECS:add_system(ecs.System("preupdate", "preupdate"))
-  ECS:add_system(ecs.ScenegraphSystem())
   ECS:add_system(ecs.System("update", "update"))
   ECS:add_system(graphics.RenderSystem())
   if self.stats then ECS:add_system(graphics.DebugTextStats()) end
-  --ECS:add_system(vrcomps.VRSubmitSystem())
-  --ECS.systems.input:on("keydown", self, self.keydown)
-
   self:init_pipeline()
 end
 
@@ -130,11 +118,11 @@ function VRApp:init_pipeline()
   end
 
   local clear = {color = self.options.clear_color or 0x303050ff, depth = 1.0}
-  local p = graphics.Pipeline({verbose = true})
+  local p = graphics.Pipeline{verbose = true}
   p:add_stage(graphics.MultiviewStage{
     name = "stereo_forward",
     globals = p.globals,
-    render_ops = {graphics.GenericRenderOp(), vrcomps.VRCameraControlOp()},
+    render_ops = {graphics.MultiDrawOp(), graphics.MultiCameraOp()},
     views = {
       {name = "left",  clear = clear, render_target = self.targets[1]},
       {name = "right", clear = clear, render_target = self.targets[2]}
@@ -147,13 +135,26 @@ function VRApp:init_pipeline()
     composite_ops = composite_ops
   })
 
+  local Vector = math.Vector
+  p.globals.u_lightDir:set_multiple({
+      Vector( 1.0,  1.0,  0.0),
+      Vector(-1.0,  1.0,  0.0),
+      Vector( 0.0, -1.0,  1.0),
+      Vector( 0.0, -1.0, -1.0)})
+  p.globals.u_lightRgb:set_multiple({
+      Vector(0.8, 0.8, 0.8),
+      Vector(1.0, 1.0, 1.0),
+      Vector(0.1, 0.1, 0.1),
+      Vector(0.1, 0.1, 0.1)})
+
   -- set pipeline
   self.pipeline = p
   self.ECS.systems.render:set_pipeline(p)
 end
 
 function VRApp:init_scene()
-  self.hmd_cam = self.vr_root:create_child(vrcomps.VRCamera, "hmd_camera")
+  self.vr_root = self.scene:create_child(vrcomps.RoomRoot, "vr_root")
+  self.hmd = self.vr_root:find("hmd")
 end
 
 function VRApp:create_default_controllers()
@@ -168,7 +169,7 @@ function VRApp:add_controller_model(trackable)
   end
 
   local geometry = require("geometry")
-  local pbr = require("shaders/pbr.t")
+  local pbr = require("material/pbr.t")
   local geo = geometry.icosphere_geo{radius = 0.1, detail = 3}
   local mat = pbr.FacetedPBRMaterial{
     diffuse = {0.03,0.03,0.03,1.0},
@@ -178,8 +179,8 @@ function VRApp:add_controller_model(trackable)
   
   local controller = self.vr_root:create_child(ecs.Entity3d, 
                                                "controller")
-  controller:add_component(vrcomps.VRControllerComponent(trackable))
-  controller.vr_controller:create_mesh_parts(geo, mat)
+  controller:add_component(vrcomps.ControllerComponent(trackable))
+  controller.controller:create_mesh_parts(geo, mat)
   table.insert(self.controllers, controller)
 end
 

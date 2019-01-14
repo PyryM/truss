@@ -7,6 +7,7 @@ local m = {}
 local openvr = nil
 local openvr_c = nil
 local class = require("class")
+local bgfx = require("gfx/bgfx.t")
 local create_overlay_terra = nil
 local OverlayInfo = nil
 
