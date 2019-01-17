@@ -1,6 +1,7 @@
 local app = require("app/app.t")
 local geometry = require("geometry")
-local pbr = require("shaders/pbr.t")
+local pbr = require("material/pbr.t")
+local flat = require("material/flat.t")
 local graphics = require("graphics")
 local orbitcam = require("gui/orbitcam.t")
 local grid = require("graphics/grid.t")
@@ -42,8 +43,8 @@ function init()
   local geo = geometry.cube_geo{sx = 0.5, sy = 0.5, sz = 0.5}
   
   -- texture from file
-  local mat = pbr.FacetedTexPBRMaterial{
-    diffuse = {1.0, 1.0, 1.0, 1.0}, 
+  local mat = flat.FlatMaterial{
+    diffuse = {1.0, 0.0, 1.0, 1.0}, 
     tint = {0.001, 0.001, 0.001},
     roughness = 0.7,
     texture = gfx.Texture("textures/test_pattern.png")
@@ -69,7 +70,7 @@ function init()
     end
   end
   noisetex:commit()
-  local mat2 = pbr.FacetedTexPBRMaterial{
+  local mat2 = flat.FlatMaterial{
     diffuse = {1.0, 1.0, 1.0, 1.0}, 
     tint = {0.001, 0.001, 0.001},
     roughness = 0.7,
@@ -105,15 +106,17 @@ function init()
     end
   end
   noise3d:commit()
-  local mat3 = require("shaders/flat.t").Flat3dTextured{
+  local mat3 = flat.FlatMaterial{
     texture = noise3d,
     origin = math.Vector(-0.5, -0.5, -0.5), scale = 10.1
   }
   local cube3 = myapp.scene:create_child(graphics.Mesh, "cube3", geo, mat3)
   cube3:add_component(Rotator(1.0 / 60.0))
 
-  local gridlines = myapp.scene:create_child(grid.Grid, {thickness = 0.01, 
-                                             color = {0.5, 0.2, 0.2}})
+  local gridlines = myapp.scene:create_child(grid.Grid, 'grid', {
+    thickness = 0.01, 
+    color = {0.5, 0.2, 0.2}
+  })
   gridlines.position:set(0.0, -1.0, 0.0)
   gridlines.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
   gridlines:update_matrix()
