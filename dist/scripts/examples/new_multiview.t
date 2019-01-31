@@ -2,7 +2,7 @@ local app = require("app/app.t")
 local geometry = require("geometry")
 local pbr = require("material/pbr.t")
 local graphics = require("graphics")
-local orbitcam = require("gui/orbitcam.t")
+local orbitcam = require("graphics/orbitcam.t")
 local math = require("math")
 
 local MultiviewApp = app.App:extend("MultiviewApp")

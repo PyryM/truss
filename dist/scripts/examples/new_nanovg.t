@@ -2,7 +2,7 @@ local app = require("app/app.t")
 local geometry = require("geometry")
 local pbr = require("material/pbr.t")
 local graphics = require("graphics")
-local orbitcam = require("gui/orbitcam.t")
+local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
 local ecs = require("ecs")
 
@@ -75,7 +75,7 @@ end
 
 function init()
   myapp = app.App{title = "nanovg example", width = 640, height = 480,
-                  msaa = true, stats = true, clear_color = 0x404080ff,
+                  msaa = true, stats = false, clear_color = 0x404080ff,
                   lowlatency = lowlatency, single_threaded = single_threaded}
 
   myapp.ECS.systems.input:on("mousemove", mouse_state, on_mouse)

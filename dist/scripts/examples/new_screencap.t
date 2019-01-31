@@ -13,19 +13,10 @@ local flat = require("material/flat.t")
 
 local app = require("app/app.t")
 local screencap = require("addons/screencap.t")
-local orbitcam = require("gui/orbitcam.t")
+local orbitcam = require("graphics/orbitcam.t")
 
 local captex = nil
 local live_mat = nil
-
-function take_snapshot()
-  if not captex then return end
-  if not snaptex then
-    snaptex = gfx.Texture()
-  end
-  snaptex:copy(captex)
-  snapshot_mat.uniforms.s_texAlbedo:set(snaptex)
-end
 
 function init()
   local width, height = 640, 480
@@ -33,7 +24,7 @@ function init()
                   msaa = true, stats = true, clear_color = 0xff00ffff,
                   lowlatency = true, single_threaded = true}
   myapp.camera:add_component(orbitcam.OrbitControl{
-    min_rad = 1, max_rad = 4
+    min_rad = 8, max_rad = 16
   })
 
   local geo = geometry.cube_geo{
@@ -42,10 +33,7 @@ function init()
   live_mat = flat.FlatMaterial{
     texture = gfx.Texture("textures/test_pattern.png")
   }
-
   local thecube = myapp.scene:create_child(graphics.Mesh, "cube", geo, live_mat)
-  thecube.position:set(-6, 0, 0)
-  thecube:update_matrix()
 
   screencap.start_capture()
 end
@@ -57,5 +45,4 @@ function update()
     live_mat.uniforms.s_texAlbedo:set(newcaptex)
   end
   myapp:update()
-  --truss.sleep(14)
 end
