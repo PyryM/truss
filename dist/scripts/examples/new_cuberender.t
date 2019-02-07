@@ -3,7 +3,7 @@ local geometry = require("geometry")
 local pbr = require("material/pbr.t")
 local flat = require("material/flat.t")
 local graphics = require("graphics")
-local orbitcam = require("gui/orbitcam.t")
+local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
 local gfx = require("gfx")
 local ecs = require("ecs")
@@ -79,22 +79,26 @@ function init()
   cubecam.position:set(2.5, 0.0, 0.0)
   cubecam:update_matrix()
 
-  -- local geo = geometry.axis_widget_geo{}
-  -- local mat = pbr.FacetedPBRMaterial({0.2, 0.03, 0.01, 1.0}, {0.001, 0.001, 0.001}, 0.7)
-  -- --mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
-  -- mygrid = myapp.scene:create_child(grid.Grid, "mygrid", {thickness = 0.02, 
-  --                                               color = {0.5, 0.2, 0.2}})
-  -- mygrid.scale:set(3, 3, 3)
-  -- mygrid.position:set(0.0, -1.0, 0.0)
-  -- mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
-  -- mygrid:update_matrix()
+  local geo = geometry.axis_widget_geo{}
+  local mat = pbr.FacetedPBRMaterial{
+    diffuse = {0.2, 0.03, 0.01, 1.0}, 
+    tint = {0.001, 0.001, 0.001}, 
+    roughness = 0.7
+  }
+  mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
+  mygrid = myapp.scene:create_child(grid.Grid, "mygrid", {thickness = 0.02, 
+                                                color = {0.5, 0.2, 0.2}})
+  mygrid.scale:set(3, 3, 3)
+  mygrid.position:set(0.0, -1.0, 0.0)
+  mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
+  mygrid:update_matrix()
 
-  -- grid2 = myapp.scene:create_child(grid.Grid, "grid2", {thickness = 0.02, 
-  --                                               color = {0.5, 0.2, 0.2}})
-  -- grid2.scale:set(3, 3, 3)
-  -- grid2.position:set(0.0, 1.0, 0.0)
-  -- grid2.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
-  -- grid2:update_matrix()
+  grid2 = myapp.scene:create_child(grid.Grid, "grid2", {thickness = 0.02, 
+                                                color = {0.5, 0.2, 0.2}})
+  grid2.scale:set(3, 3, 3)
+  grid2.position:set(0.0, 1.0, 0.0)
+  grid2.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
+  grid2:update_matrix()
 
   -- local tartex = gfx.Texture("textures/test_pattern.png")
   -- local tarmat = flat.FlatMaterial{texture = tartex}
@@ -106,15 +110,15 @@ function init()
   -- target:update_matrix()
 
   -- skybox
-  local skygeo = geometry.uvsphere_geo{lat_divs = 30, lon_divs = 30}
-  local skymat = flat.FlatMaterial{
-    skybox = true, 
-    texture = gfx.Texture("textures/earth_er.jpg"),
-    state = {cull = false}
-  }
-  skybox = myapp.scene:create_child(graphics.Mesh, "sky", skygeo, skymat)
-  skybox.scale:set(-15, 15, 15)
-  skybox:update_matrix()
+  -- local skygeo = geometry.uvsphere_geo{lat_divs = 30, lon_divs = 30}
+  -- local skymat = flat.FlatMaterial{
+  --   skybox = true, 
+  --   texture = gfx.Texture("textures/earth_er.jpg"),
+  --   state = {cull = false}
+  -- }
+  -- skybox = myapp.scene:create_child(graphics.Mesh, "sky", skygeo, skymat)
+  -- skybox.scale:set(-15, 15, 15)
+  -- skybox:update_matrix()
 end
 
 local t = 0.0

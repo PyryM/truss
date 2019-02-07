@@ -5,16 +5,14 @@ local math = require("math")
 local graphics = require("graphics")
 
 local grid = require("graphics/grid.t")
-local orbitcam = require("gui/orbitcam.t")
+local orbitcam = require("graphics/orbitcam.t")
 
 function init()
   -- app/ecs setup
   myapp = app.App{title = "line example", width = 1280, height = 720,
-                  msaa = true, stats = true, clear_color = 0x404080ff,
-                  lowlatency = true}
+                  msaa = true, stats = true, clear_color = 0x404080ff}
   myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 2, max_rad = 5}))
 
-  -- scene setup
   local mygrid = myapp.scene:create_child(grid.Grid, 'grid', {
     thickness = 0.01, 
     color = {0.5, 0.2, 0.2, 1.0}
@@ -23,7 +21,7 @@ function init()
   mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
   mygrid:update_matrix()
 
-  local linething = create_line(myapp.scene)
+  local linething = myapp.scene:create_child(LineBlobThing, "lineblob")
   linething.scale:set(0.2, 0.2, 0.2)
   linething:update_matrix()
 end
@@ -44,8 +42,6 @@ function Twiddler:mount()
 end
 
 local function hfield(htime, x, y, z)
-  --local mult = 1.0 + math.tanh((math.tan(x + y * 3.0 + time)*0.5)*0.1)
-  --mult = math.max(-5.0, math.min(5.0, mult))
   local mult = math.sin(y*1.1 + htime)*0.1*math.cos(x + htime) + math.cos(z + htime)*0.1
   mult = 1.0 + (mult * mult)*10
   return x*mult, y*mult, z*mult
@@ -63,8 +59,9 @@ function Twiddler:update()
   self.ent.line:set_points({self.ldata})
 end
 
--- actually creates the line structure
-function create_line(parent)
+-- 'constructors' can actually be regular functions, in which case the
+-- ecs to which they are to be added is the first argument
+function LineBlobThing(_ecs, name)
   local npoints = 5000
   local f = 50 * math.pi * 2.0
 
@@ -83,13 +80,10 @@ function create_line(parent)
     initial_data[i] = {x,z,y}
   end
 
-  local linetex = gfx.Texture("textures/terrible_dashed_line.png")
-  local ret = parent:create_child(graphics.Line, "line", {
+  local ret = graphics.Line(_ecs, name, {
     maxpoints = npoints, dynamic = true, points = {linedata},
-    color = {0.8,0.8,0.8,0.75}, thickness = 0.05, 
-    texture = linetex, alpha_test = true, u_mult = 360.0
+    color = {0.8,0.8,0.8,0.75}, thickness = 0.02
   })
   ret:add_component(Twiddler(initial_data, linedata))
-
   return ret
 end

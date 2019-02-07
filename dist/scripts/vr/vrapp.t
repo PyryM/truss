@@ -119,6 +119,11 @@ function VRApp:init_pipeline()
 
   local clear = {color = self.options.clear_color or 0x303050ff, depth = 1.0}
   local p = graphics.Pipeline{verbose = true}
+  if self.options.use_tasks ~= false then
+    p:add_stage(graphics.TaskRunnerStage{
+      num_workers = self.options.num_workers or 1
+    })
+  end
   p:add_stage(graphics.MultiviewStage{
     name = "stereo_forward",
     globals = p.globals,

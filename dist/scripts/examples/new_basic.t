@@ -15,7 +15,7 @@ local graphics = require("graphics")
 local Grid = require("graphics/grid.t").Grid
 local pbr = require("material/pbr.t")
 local flat = require("material/flat.t")
-local orbitcam = require("gui/orbitcam.t")
+local orbitcam = require("graphics/orbitcam.t")
 local Config = require("utils/config.t").Config
 
 --[[ 

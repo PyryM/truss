@@ -132,4 +132,14 @@ function m.events()
   return event_iterator, {idx=0, n=n}
 end
 
+-- convenience function to just handle closing the window
+function m.handle_minimal_events()
+  for evt in m.events() do
+    if evt.event_type == m.EVENT_WINDOW and evt.flags == 14 then
+      log.info("Received window close, quitting")
+      truss.quit()
+    end
+  end
+end
+
 return m

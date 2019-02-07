@@ -3,7 +3,7 @@ local geometry = require("geometry")
 local pbr = require("material/pbr.t")
 local flat = require("material/flat.t")
 local graphics = require("graphics")
-local orbitcam = require("gui/orbitcam.t")
+local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
 local gfx = require("gfx")
 
@@ -45,7 +45,7 @@ local function Label(_ecs, name, options)
   local mat = flat.FlatMaterial{
     texture = canvas:get_tex(), 
     color = {0.5, 0.2, 0.2, 1.0},
-    state = gfx.State{blend = 'add', cull = false}
+    state = gfx.State{cull = false}
   }
   local ret = graphics.Mesh(_ecs, name, label_geo, mat)
   ret:add_component(canvas)

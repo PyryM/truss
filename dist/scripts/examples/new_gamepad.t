@@ -40,7 +40,7 @@ function init()
                                         roughness = 0.7,
                                         texture = tex}
   mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
-  mygrid = myapp.scene:create_child(grid.Grid, {thickness = 0.01, 
+  mygrid = myapp.scene:create_child(grid.Grid, "grid", {thickness = 0.01, 
                                                 color = {0.5, 0.2, 0.2}})
   mygrid.position:set(0.0, -1.0, 0.0)
   mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
