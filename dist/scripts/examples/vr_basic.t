@@ -41,9 +41,11 @@ function create_geometry()
 end
 
 function init()
-  app = VRApp({title = "vr_01_vr", stats = true,
-                      width = 1280,
-                      height = 720})
+  app = VRApp{
+    title = "vr_01_vr", stats = true,
+    width = 1280, height = 720,
+    create_controllers = true
+  }
   local grid = app.scene:create_child(Grid, "grid", {
     thickness = 0.01, color = {0.6, 0.6, 0.6, 1}
   })
