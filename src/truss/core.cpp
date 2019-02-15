@@ -194,21 +194,9 @@ Interpreter* Core::getInterpreter(int idx) {
     return interpreters_[idx];
 }
 
-Interpreter* Core::getNamedInterpreter(const char* name) {
+Interpreter* Core::spawnInterpreter() {
     std::lock_guard<std::mutex> Lock(coreLock_);
-
-    std::string sname(name);
-    for(size_t i = 0; i < interpreters_.size(); ++i) {
-        if(interpreters_[i]->getName() == sname) {
-            return interpreters_[i];
-        }
-    }
-    return NULL;
-}
-
-Interpreter* Core::spawnInterpreter(const char* name) {
-    std::lock_guard<std::mutex> Lock(coreLock_);
-    Interpreter* interpreter = new Interpreter((int)(interpreters_.size()), name);
+    Interpreter* interpreter = new Interpreter((int)(interpreters_.size()));
     interpreters_.push_back(interpreter);
     return interpreter;
 }

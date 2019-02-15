@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
 
 	truss::core().setWriteDir("");              	// write into basedir/
 
-	truss::Interpreter* interpreter = truss::core().spawnInterpreter("interpreter_0");
+	truss::Interpreter* interpreter = truss::core().spawnInterpreter();
 	interpreter->setDebug(0); // want most verbose debugging output
 	interpreter->attachAddon(new SDLAddon);
 	interpreter->attachAddon(new NanoVGAddon);
@@ -73,9 +73,11 @@ int main(int argc, char** argv) {
 	interpreter->attachAddon(new ScreencapAddon);
 #endif
 	truss_log(0, "Starting interpreter!");
-	// startUnthreaded starts the interpreter in the current thread,
-	// which means the call will block until the interpreter is stopped
-	interpreter->startUnthreaded("scripts/main.t");
+	// start this interpreter without threading so we can manually call it in a loop
+	interpreter->start("scripts/main.t", false);
+	while (interpreter->getState() == THREAD_IDLE) {
+		interpreter->step();
+	}
 
 	int retval = truss::core().getError();
 	if (retval != 0) {

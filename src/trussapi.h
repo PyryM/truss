@@ -39,6 +39,15 @@ typedef struct Addon Addon;
 #define TRUSS_LOG_INFO     3
 #define TRUSS_LOG_DEBUG    4
 
+typedef enum { 
+	THREAD_NONE,
+	THREAD_NOT_STARTED,
+	THREAD_IDLE,
+	THREAD_RUNNING,
+	THREAD_TERMINATED,
+	THREAD_ERROR
+} truss_interpreter_state;
+
 /* Message struct */
 typedef struct {
 	unsigned int message_type;
@@ -85,12 +94,10 @@ TRUSS_C_API int truss_set_store_value(const char* key, truss_message* val);
 TRUSS_C_API int truss_set_store_value_str(const char* key, const char* msg);
 
 /* Interpreter management functions */
-TRUSS_C_API int truss_spawn_interpreter(const char* name);
-TRUSS_C_API void truss_set_interpreter_debug(truss_interpreter_id target_id, int debug_level);
-TRUSS_C_API void truss_start_interpreter(truss_interpreter_id target_id, const char* msgstr);
+TRUSS_C_API int truss_spawn_interpreter(int debug_level, const char* init_script_name);
 TRUSS_C_API void truss_stop_interpreter(truss_interpreter_id target_id);
-TRUSS_C_API void truss_execute_interpreter(truss_interpreter_id target_id);
-TRUSS_C_API int truss_find_interpreter(const char* name);
+TRUSS_C_API truss_interpreter_state truss_step_interpreter(truss_interpreter_id target_id);
+TRUSS_C_API truss_interpreter_state truss_get_interpreter_state(truss_interpreter_id target_id);
 
 /* Addon management */
 TRUSS_C_API int truss_get_addon_count(truss_interpreter_id target_id);

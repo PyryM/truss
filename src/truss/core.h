@@ -32,8 +32,7 @@ public:
     int getError();
 
     Interpreter* getInterpreter(int idx);
-    Interpreter* getNamedInterpreter(const char* name);
-    Interpreter* spawnInterpreter(const char* name);
+    Interpreter* spawnInterpreter();
 
     // block until all interpreters have finished
     void waitForInterpreters();
