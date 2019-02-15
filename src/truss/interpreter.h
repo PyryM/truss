@@ -3,7 +3,8 @@
 
 #include "addon.h"
 
-#include <external/tinythread.h>
+#include <thread>
+#include <mutex>
 #include <string>
 #include <vector>
 #include <map>
@@ -71,10 +72,10 @@ private:
     std::vector<Addon*> addons_;
 
     // Actual thread
-    tthread::thread* thread_;
+    std::thread* thread_;
 
     // Lock for messaging
-    tthread::mutex messageLock_;
+    std::mutex messageLock_;
 
     // Messages
     std::vector<truss_message*>* curMessages_;

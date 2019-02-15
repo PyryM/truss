@@ -3,11 +3,11 @@
 
 #include "interpreter.h"
 
-#include <external/tinythread.h>
 #include <string>
 #include <vector>
 #include <map>
 #include <fstream>
+#include <thread>
 #include <terra/terra.h>
 #include <trussapi.h>
 
@@ -73,7 +73,7 @@ private:
     Core(const Core&) = delete;
     Core& operator=(const Core&) = delete;
 
-    tthread::mutex coreLock_;
+    std::mutex coreLock_;
     bool physFSInitted_;
     std::vector<Interpreter*> interpreters_;
     std::vector<std::vector<std::string>> stringResults_;

@@ -8,6 +8,7 @@
 #include <sstream>
 #include <cstring>
 #include "external/bx_utils.h" // has to be included early or else luaconfig.h will clobber winver
+
 #include "trussapi.h"
 #include <physfs.h>
 
@@ -160,7 +161,7 @@ std::ostream& Core::logStream(int log_level) {
 }
 
 void Core::logMessage(int log_level, const char* msg) {
-    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    std::lock_guard<std::mutex> Lock(coreLock_);
     // dump to logfile
     logfile_ << "[" << log_level << "] " << msg << std::endl;
 }
@@ -184,7 +185,7 @@ int Core::getError() {
 }
 
 Interpreter* Core::getInterpreter(int idx) {
-    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    std::lock_guard<std::mutex> Lock(coreLock_);
 
     if(idx < 0)
         return NULL;
@@ -194,7 +195,7 @@ Interpreter* Core::getInterpreter(int idx) {
 }
 
 Interpreter* Core::getNamedInterpreter(const char* name) {
-    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    std::lock_guard<std::mutex> Lock(coreLock_);
 
     std::string sname(name);
     for(size_t i = 0; i < interpreters_.size(); ++i) {
@@ -206,21 +207,21 @@ Interpreter* Core::getNamedInterpreter(const char* name) {
 }
 
 Interpreter* Core::spawnInterpreter(const char* name) {
-    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    std::lock_guard<std::mutex> Lock(coreLock_);
     Interpreter* interpreter = new Interpreter((int)(interpreters_.size()), name);
     interpreters_.push_back(interpreter);
     return interpreter;
 }
 
 void Core::stopAllInterpreters() {
-    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    std::lock_guard<std::mutex> Lock(coreLock_);
     for (unsigned int i = 0; i < interpreters_.size(); ++i) {
         interpreters_[i]->stop();
     }
 }
 
 int Core::numInterpreters() {
-    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    std::lock_guard<std::mutex> Lock(coreLock_);
     return static_cast<int>(interpreters_.size());
 }
 
@@ -232,12 +233,12 @@ void Core::dispatchMessage(int targetIdx, truss_message* msg) {
 }
 
 void Core::acquireMessage(truss_message* msg) {
-    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    std::lock_guard<std::mutex> Lock(coreLock_);
     ++(msg->refcount);
 }
 
 void Core::releaseMessage(truss_message* msg) {
-    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    std::lock_guard<std::mutex> Lock(coreLock_);
     --(msg->refcount);
     if(msg->refcount <= 0) {
         deallocateMessage(msg);
@@ -245,7 +246,7 @@ void Core::releaseMessage(truss_message* msg) {
 }
 
 truss_message* Core::copyMessage(truss_message* src) {
-    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    std::lock_guard<std::mutex> Lock(coreLock_);
     truss_message* newmsg = allocateMessage(src->data_length);
     newmsg->message_type = src->message_type;
     std::memcpy(newmsg->data, src->data, newmsg->data_length);
@@ -360,7 +361,7 @@ void Core::saveFileRaw(const char* filename, truss_message* data) {
 }
 
 int Core::listDirectory(int interpreter, const char* dirpath) {
-    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    std::lock_guard<std::mutex> Lock(coreLock_);
 
     if (!physFSInitted_) {
         logPrint(TRUSS_LOG_ERROR,
@@ -386,7 +387,7 @@ int Core::listDirectory(int interpreter, const char* dirpath) {
 }
 
 const char* Core::getStringResult(int interpreter, int idx) {
-    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    std::lock_guard<std::mutex> Lock(coreLock_);
     if(interpreter < 0 || interpreter >= stringResults_.size()) {
         logPrint(TRUSS_LOG_ERROR,
                  "Interpreter idx '%d' out of range.", interpreter);
@@ -402,7 +403,7 @@ const char* Core::getStringResult(int interpreter, int idx) {
 }
 
 void Core::clearStringResults(int interpreter) {
-    tthread::lock_guard<tthread::mutex> Lock(coreLock_);
+    std::lock_guard<std::mutex> Lock(coreLock_);
     if(interpreter < 0 || interpreter >= stringResults_.size()) {
         return;
     }

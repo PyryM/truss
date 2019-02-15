@@ -86,7 +86,7 @@ void Interpreter::start(const char* arg) {
     // TODO: should this be locked?
     arg_ = arg;
     running_ = true;
-    thread_ = new tthread::thread(run_interpreter_thread, this);
+    thread_ = new std::thread(run_interpreter_thread, this);
 }
 
 void Interpreter::startUnthreaded(const char* arg) {
@@ -198,13 +198,13 @@ void Interpreter::threadEntry() {
 }
 
 void Interpreter::sendMessage(truss_message* message) {
-    tthread::lock_guard<tthread::mutex> Lock(messageLock_);
+    std::lock_guard<std::mutex> Lock(messageLock_);
     truss_acquire_message(message);
     curMessages_->push_back(message);
 }
 
 int Interpreter::fetchMessages() {
-    tthread::lock_guard<tthread::mutex> Lock(messageLock_);
+    std::lock_guard<std::mutex> Lock(messageLock_);
 
     // swap messages
     std::vector<truss_message*>* temp = curMessages_;
