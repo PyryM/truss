@@ -129,7 +129,7 @@ void truss_stop_interpreter(truss_interpreter_id target_id) {
 	Core::instance().getInterpreter(target_id)->stop();
 }
 
-truss_interpreter_state truss_step_interpreter(truss_interpreter_id target_id) {
+int truss_step_interpreter(truss_interpreter_id target_id) {
 	return Core::instance().getInterpreter(target_id)->step();
 }
 

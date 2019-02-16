@@ -45,7 +45,8 @@ typedef enum {
 	THREAD_IDLE,
 	THREAD_RUNNING,
 	THREAD_TERMINATED,
-	THREAD_ERROR
+	THREAD_SCRIPT_ERROR,
+	THREAD_FATAL_ERROR
 } truss_interpreter_state;
 
 /* Message struct */
@@ -96,7 +97,7 @@ TRUSS_C_API int truss_set_store_value_str(const char* key, const char* msg);
 /* Interpreter management functions */
 TRUSS_C_API int truss_spawn_interpreter(int debug_level, const char* init_script_name);
 TRUSS_C_API void truss_stop_interpreter(truss_interpreter_id target_id);
-TRUSS_C_API truss_interpreter_state truss_step_interpreter(truss_interpreter_id target_id);
+TRUSS_C_API int truss_step_interpreter(truss_interpreter_id target_id);
 TRUSS_C_API truss_interpreter_state truss_get_interpreter_state(truss_interpreter_id target_id);
 
 /* Addon management */

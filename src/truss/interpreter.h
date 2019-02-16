@@ -37,8 +37,8 @@ public:
     // Starting and stopping
     void start(const char* arg, bool multithreaded);
     void stop();
-	truss_interpreter_state step();
-	truss_interpreter_state step_();
+	bool step();
+	void step_();
 	truss_interpreter_state getState();
 
     // Send a message
@@ -53,6 +53,8 @@ private:
 
 	// Current state
 	truss_interpreter_state state_;
+	std::mutex stateLock_;
+	bool setState_(truss_interpreter_state newState);
 
     // Debug settings (ints because that's what terra wants)
     int verboseLevel_;
@@ -68,7 +70,6 @@ private:
     std::thread* thread_;
 
 	// Lock for thread signaling
-	std::mutex stateLock_;
 	std::mutex stepLock_;
 	bool stepRequested_;
 	std::condition_variable stepCV_;

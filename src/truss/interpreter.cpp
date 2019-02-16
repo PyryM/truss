@@ -30,7 +30,15 @@ Interpreter::Interpreter(int id)
 }
 
 Interpreter::~Interpreter() {
-    // TODO: delete message queues here
+	stop();
+	for (auto msg : *curMessages_) {
+		core().releaseMessage(msg);
+	}
+	for (auto msg : *fetchedMessages_) {
+		core().releaseMessage(msg);
+	}
+	delete curMessages_;
+	delete fetchedMessages_;
 }
 
 int Interpreter::getID() const {
@@ -72,7 +80,7 @@ void Interpreter::start(const char* arg, bool multithreaded) {
     terraState_ = luaL_newstate();
     if (!terraState_) {
         core().logMessage(TRUSS_LOG_ERROR, "Error creating a new Lua state.");
-        state_ = THREAD_ERROR;
+        state_ = THREAD_FATAL_ERROR;
         return;
     }
 
@@ -92,7 +100,7 @@ void Interpreter::start(const char* arg, bool multithreaded) {
     if (!bootstrap) {
         core().logMessage(TRUSS_LOG_ERROR, "Error loading core script.");
         core().setError(1000);
-        state_ = THREAD_ERROR;
+        state_ = THREAD_FATAL_ERROR;
         return;
     }
     int res = terra_loadbuffer(terraState_,
@@ -104,7 +112,7 @@ void Interpreter::start(const char* arg, bool multithreaded) {
         core().logPrint(TRUSS_LOG_ERROR, "Error parsing core.t: %s",
                         lua_tostring(terraState_, -1));
         core().setError(1001);
-        state_ = THREAD_ERROR;
+        state_ = THREAD_FATAL_ERROR;
         return;        
     }
 
@@ -113,7 +121,7 @@ void Interpreter::start(const char* arg, bool multithreaded) {
         core().logPrint(TRUSS_LOG_ERROR, "Error in core.t: %s",
                         lua_tostring(terraState_, -1));
         core().setError(1001);
-        state_ = THREAD_ERROR;
+        state_ = THREAD_FATAL_ERROR;
         return;
     }
 
@@ -126,7 +134,7 @@ void Interpreter::start(const char* arg, bool multithreaded) {
     if (!call("_core_init", arg)) {
         core().logPrint(TRUSS_LOG_ERROR, "Error in core_init, stopping interpreter [%d].", id_);
         core().setError(1002);
-        state_ = THREAD_ERROR;
+        state_ = THREAD_FATAL_ERROR;
     }
 
 	state_ = THREAD_IDLE;
@@ -136,8 +144,8 @@ void Interpreter::start(const char* arg, bool multithreaded) {
 }
 
 void Interpreter::stop() {
-	std::lock_guard<std::mutex> statelock(stateLock_);
-	state_ = THREAD_TERMINATED;
+	core().logPrint(TRUSS_LOG_INFO, "Stopping [%d]", id_);
+	setState_(THREAD_TERMINATED);
 	if (thread_ != NULL && thread_->joinable()) {
 		thread_->join();
 		delete thread_;
@@ -145,37 +153,28 @@ void Interpreter::stop() {
 	}
 }
 
-truss_interpreter_state Interpreter::step() {
+bool Interpreter::step() {
 	if (thread_ == NULL) {
-		return step_();
+		step_();
+		return true;
 	}
 	if (getState() != THREAD_IDLE) {
-		return state_;
+		return false;
 	}
 	{
 		std::lock_guard<std::mutex> lock(stepLock_);
-		std::lock_guard<std::mutex> statelock(stateLock_);
-		state_ = THREAD_RUNNING;
+		setState_(THREAD_RUNNING);
 		stepRequested_ = true;
 	}
 	stepCV_.notify_one();
-	return state_;
+	return true;
 }
 
-truss_interpreter_state Interpreter::step_() {
-	// update addons
+void Interpreter::step_() {
 	for (unsigned int i = 0; i < addons_.size(); ++i) {
 		addons_[i]->update(1.0 / 60.0);
 	}
-
-	// update lua
-	if (!call("_core_update")) {
-		core().logPrint(TRUSS_LOG_ERROR, "Uncaught error reached C++, quitting.");
-		core().setError(2000);
-		state_ = THREAD_ERROR;
-	}
-
-	return state_;
+	call("_core_update");
 }
 
 truss_interpreter_state Interpreter::getState() {
@@ -183,15 +182,21 @@ truss_interpreter_state Interpreter::getState() {
 	return state_;
 }
 
+bool Interpreter::setState_(truss_interpreter_state newState) {
+	std::lock_guard<std::mutex> lock(stateLock_);
+	if (state_ == THREAD_TERMINATED || state_ == THREAD_FATAL_ERROR) {
+		core().logPrint(TRUSS_LOG_WARNING, "[%d] tried to set state after irrecoverable condition.", id_);
+		return false;
+	}
+	state_ = newState;
+	return true;
+}
+
 void Interpreter::threadLoop_() {
 	while (true) {
 		std::unique_lock<std::mutex> lock(stepLock_);
-		{
-			std::lock_guard<std::mutex> statelock(stateLock_);
-			if (state_ == THREAD_TERMINATED || state_ == THREAD_ERROR) {
-				break;
-			}
-			state_ = THREAD_IDLE;
+		if (!setState_(THREAD_IDLE)) {
+			break;
 		}
 		stepCV_.wait(lock);
 		if (!stepRequested_) {
@@ -217,8 +222,8 @@ int Interpreter::fetchMessages() {
     fetchedMessages_ = temp;
 
     // clear the 'current' messages (i.e., the old fetched messages)
-    for(unsigned int i = 0; i < curMessages_->size(); ++i) {
-        truss_release_message((*curMessages_)[i]);
+    for(auto msg : *curMessages_) {
+        truss_release_message(msg);
     }
     curMessages_->clear();
     return fetchedMessages_->size();
@@ -240,7 +245,8 @@ bool Interpreter::call(const char* funcname, const char* argstr) {
     }
     int res = lua_pcall(terraState_, nargs, 0, 0);
     if(res != 0) {
-        core().logMessage(TRUSS_LOG_ERROR, lua_tostring(terraState_, -1));
+		core().logPrint(TRUSS_LOG_ERROR, "[%d] call error: %s", id_, lua_tostring(terraState_, -1));
+		setState_(THREAD_SCRIPT_ERROR);
     }
     lua_settop(terraState_, 0); // clear stack to avoid overflows
     return res == 0; // return true is no errors
