@@ -25,7 +25,7 @@ m.uniform_types = {
   },
   tex  = {
     kind       = "tex",
-    bgfx_type  = bgfx.UNIFORM_TYPE_INT1,
+    bgfx_type  = bgfx.UNIFORM_TYPE_SAMPLER,
     terra_type = bgfx.texture_handle_t
   } 
 }

@@ -39,7 +39,7 @@ function m.reset_gfx(options)
     w, h = options.window.get_window_size()
   end
 
-  bgfx.reset(w, h, reset)
+  bgfx.reset(w, h, reset, m._init_struct.resolution.format)
   bgfx.set_debug(debug)
   gfx.backbuffer_width, gfx.backbuffer_height = w, h
 end
@@ -149,8 +149,19 @@ function m.init_gfx(options)
     return false
   end
 
-  bgfx.init(renderer_type, 0, 0, cb_ptr, nil)
-  bgfx.reset(w, h, reset)
+  log.debug("bgfx init ctor")
+  m._init_struct = terralib.new(bgfx.init_t)
+  bgfx.init_ctor(m._init_struct)
+  m._init_struct['type']  = renderer_type
+  m._init_struct.callback = cb_ptr
+  m._init_struct.debug    = false -- TODO/FEATURE: allow these to be set?
+  m._init_struct.profile  = false 
+
+  log.debug("bgfx init")
+  bgfx.init(m._init_struct)
+  log.debug("bgfx reset")
+  bgfx.reset(w, h, reset, m._init_struct.resolution.format)
+
   gfx.backbuffer_width, gfx.backbuffer_height = w, h
   m._bgfx_initted = true
 
@@ -216,9 +227,15 @@ function m.frame()
   return m.frame_index
 end
 
-local state_aliases = {primitive = "pt"}
+local state_aliases = {
+  primitive = "pt", 
+  rgb_write = "write_rgb",
+  alpha_write = "write_a",
+  depth_write = "write_z"
+}
+
 m.DefaultStateOptions = {
-  rgb_write = true, depth_write = true, alpha_write = true,
+  write_rgb = true, write_a = true, write_z = true,
   conservative_raster = false, msaa = true,
   depth_test = "less", cull = "cw", blend = false, pt = false
 }
