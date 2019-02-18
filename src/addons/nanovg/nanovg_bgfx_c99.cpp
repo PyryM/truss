@@ -47,17 +47,6 @@
 
 namespace bx
 {
-	void xchg(void* _a, void* _b, size_t _numBytes)
-	{
-		uint8_t* lhs = (uint8_t*)_a;
-		uint8_t* rhs = (uint8_t*)_b;
-		const uint8_t* end = rhs + _numBytes;
-		while (rhs != end)
-		{
-			xchg(*lhs++, *rhs++);
-		}
-	}
-
 	void memCopyRef(void* _dst, const void* _src, size_t _numBytes)
 	{
 		uint8_t* dst = (uint8_t*)_dst;
@@ -473,7 +462,7 @@ namespace
 		gl->u_scissorExtScale = bgfx_create_uniform("u_scissorExtScale", BGFX_UNIFORM_TYPE_VEC4, 1);
 		gl->u_extentRadius = bgfx_create_uniform("u_extentRadius", BGFX_UNIFORM_TYPE_VEC4, 1);
 		gl->u_params = bgfx_create_uniform("u_params", BGFX_UNIFORM_TYPE_VEC4, 1);
-		gl->s_tex = bgfx_create_uniform("s_tex", BGFX_UNIFORM_TYPE_INT1, 1);
+		gl->s_tex = bgfx_create_uniform("s_tex", BGFX_UNIFORM_TYPE_SAMPLER, 1);
 
 		if (bgfx_get_renderer_type() == BGFX_RENDERER_TYPE_DIRECT3D9)
 		{
@@ -992,8 +981,8 @@ namespace
 				struct GLNVGcall* call = &gl->calls[ii];
 				const GLNVGblend* blend = &call->blendFunc;
 				gl->state = BGFX_STATE_BLEND_FUNC_SEPARATE(blend->srcRGB, blend->dstRGB, blend->srcAlpha, blend->dstAlpha)
-					| BGFX_STATE_RGB_WRITE
-					| BGFX_STATE_ALPHA_WRITE
+					| BGFX_STATE_WRITE_RGB
+					| BGFX_STATE_WRITE_A
 					;
 				switch (call->type)
 				{

@@ -20,7 +20,7 @@ bool sdlSetWindow(SDL_Window* window_)
 		return false;
 	}
 
-	bgfx_platform_data pd;
+	bgfx_platform_data_t pd;
 #	if BX_PLATFORM_LINUX || BX_PLATFORM_FREEBSD
 	pd.ndt          = wmi.info.x11.display;
 	pd.nwh          = (void*)(uintptr_t)wmi.info.x11.window;
@@ -421,15 +421,27 @@ const char* truss_sdl_get_controller_name(SDLAddon* addon, int controllerIdx) {
 	return addon->getControllerName(controllerIdx);
 }
 
-void bgfx_cb_fatal(bgfx_callback_interface_t* _this, bgfx_fatal_t _code, const char* _str) {
+void bgfx_cb_fatal(bgfx_callback_interface_t* _this, const char* _filePath, uint16_t _line, bgfx_fatal_t _code, const char* _str) {
 	std::stringstream ss;
-	ss << "Fatal BGFX Error, code [" << _code << "]: " << _str;
+	ss << "Fatal BGFX Error, code [" << _code << "] @" << _filePath << ":" << _line << ": " << _str;
 	truss_log(TRUSS_LOG_CRITICAL, ss.str().c_str());
 }
 
 void bgfx_cb_trace_vargs(bgfx_callback_interface_t* _this, const char* _filePath, uint16_t _line, const char* _format, va_list _argList) {
 	// oh boy what is this supposed to do?
 	truss_log(TRUSS_LOG_CRITICAL, "I have no clue what the trace_vargs callback is supposed to do??");
+}
+
+void bgfx_cb_profiler_begin(bgfx_callback_interface_t* _this, const char* _name, uint32_t _abgr, const char* _filePath, uint16_t _line) {
+	truss_log(TRUSS_LOG_DEBUG, "Profiler begin");
+}
+
+void bgfx_cb_profiler_begin_literal(bgfx_callback_interface_t* _this, const char* _name, uint32_t _abgr, const char* _filePath, uint16_t _line) {
+	truss_log(TRUSS_LOG_DEBUG, "Profiler begin literal");
+}
+
+void bgfx_cb_profiler_end(bgfx_callback_interface_t* _this) {
+	truss_log(TRUSS_LOG_DEBUG, "Profiler end");
 }
 
 uint32_t bgfx_cb_cache_read_size(bgfx_callback_interface_t* _this, uint64_t _id) {
@@ -484,9 +496,12 @@ void bgfx_cb_capture_frame(bgfx_callback_interface_t* _this, const void* _data, 
 	// todo
 }
 
-static const bgfx_callback_vtbl sdl_vtbl = {
+static const bgfx_callback_vtbl_t sdl_vtbl = {
 	bgfx_cb_fatal,
 	bgfx_cb_trace_vargs,
+	bgfx_cb_profiler_begin,
+	bgfx_cb_profiler_begin_literal,
+	bgfx_cb_profiler_end,
 	bgfx_cb_cache_read_size,
 	bgfx_cb_cache_read,
 	bgfx_cb_cache_write,
