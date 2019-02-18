@@ -39,6 +39,7 @@ truss.C.test()
 truss.C.log(truss.C.LOG_INFO, "Bootstrapping [" .. TRUSS_INTERPRETER_ID .. "]")
 local TRUSS_ID = TRUSS_INTERPRETER_ID
 truss.TRUSS_ID = TRUSS_ID
+truss.interpreter_id = TRUSS_ID
 
 -- let log be a global because it's inconvenient to have to do truss.log
 log = {}
