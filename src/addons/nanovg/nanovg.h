@@ -161,7 +161,7 @@ enum NVGimageFlags {
 // For example, GLFW returns two dimension for an opened window: window size and
 // frame buffer size. In that case you would set windowWidth/Height to the window size
 // devicePixelRatio to: frameBufferWidth / windowWidth.
-NVG_EXPORT void nvgBeginFrame(NVGcontext* ctx, int windowWidth, int windowHeight, float devicePixelRatio);
+NVG_EXPORT void nvgBeginFrame(NVGcontext* ctx, float windowWidth, float windowHeight, float devicePixelRatio);
 
 // Cancels drawing the current frame.
 NVG_EXPORT void nvgCancelFrame(NVGcontext* ctx);
@@ -246,6 +246,9 @@ NVG_EXPORT void nvgReset(NVGcontext* ctx);
 // using nvgLinearGradient(), nvgBoxGradient(), nvgRadialGradient() and nvgImagePattern().
 //
 // Current render style can be saved and restored using nvgSave() and nvgRestore().
+
+// Sets whether to draw antialias for nvgStroke() and nvgFill(). It's enabled by default.
+NVG_EXPORT void nvgShapeAntiAlias(NVGcontext* ctx, int enabled);
 
 // Sets current stroke style to a solid color.
 NVG_EXPORT void nvgStrokeColor(NVGcontext* ctx, NVGcolor color);
@@ -651,7 +654,7 @@ struct NVGparams {
 	int (*renderDeleteTexture)(void* uptr, int image);
 	int (*renderUpdateTexture)(void* uptr, int image, int x, int y, int w, int h, const unsigned char* data);
 	int (*renderGetTextureSize)(void* uptr, int image, int* w, int* h);
-	void (*renderViewport)(void* uptr, int width, int height, float devicePixelRatio);
+	void (*renderViewport)(void* uptr, float width, float height, float devicePixelRatio);
 	void (*renderCancel)(void* uptr);
 	void (*renderFlush)(void* uptr);
 	void (*renderFill)(void* uptr, NVGpaint* paint, NVGcompositeOperationState compositeOperation, NVGscissor* scissor, float fringe, const float* bounds, const NVGpath* paths, int npaths);
@@ -661,7 +664,7 @@ struct NVGparams {
 };
 typedef struct NVGparams NVGparams;
 
-NVG_EXPORT NVGcontext* nvgCreate(int edgeaa, unsigned char viewid);
+NVG_EXPORT NVGcontext* nvgCreate(unsigned int edgeaa, unsigned char viewid);
 NVG_EXPORT void nvgViewId(struct NVGcontext* ctx, unsigned char viewid);
 NVG_EXPORT void nvgDelete(struct NVGcontext* ctx);
 
