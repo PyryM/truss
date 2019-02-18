@@ -10,6 +10,19 @@
 #ifndef BX_UTILS_HEADER_GUARD
 #define BX_UTILS_HEADER_GUARD
 
+// BX will need windows to be included for reasons
+#if defined(_WIN32) || defined(__WIN32__) || defined(__WINDOWS__)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#define __UNDEF_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#ifdef __UNDEF_LEAN_AND_MEAN
+#undef WIN32_LEAN_AND_MEAN
+#undef __UNDEF_LEAN_AND_MEAN
+#endif
+#endif
+
 #define BX_COMPILER_CLANG           0
 #define BX_COMPILER_CLANG_ANALYZER  0
 #define BX_COMPILER_GCC             0

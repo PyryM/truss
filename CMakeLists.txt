@@ -25,7 +25,6 @@ set(truss_SOURCES
     src/truss/core.cpp
     src/truss/interpreter.cpp
     src/truss/trussapi.cpp
-    src/external/tinythread.cpp
     src/addons/sdl/sdl_addon.cpp
     src/addons/wsclient/easywsclient.cpp
     src/addons/wsclient/wsclient_addon.cpp

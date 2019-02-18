@@ -3,7 +3,9 @@
 
 #include "addon.h"
 
-#include <external/tinythread.h>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 #include <string>
 #include <vector>
 #include <map>
@@ -15,14 +17,11 @@ namespace truss {
 
 class Interpreter {
 public:
-    Interpreter(int id, const char* name);
+    Interpreter(int id);
     ~Interpreter();
 
     // Get the interpreter's ID
     int getID() const;
-
-    // Get the interpreter's name
-    const std::string& getName() const;
 
     // the attached addon is considered to be owned by
     // the interpreter and will be deleted by it when the
@@ -36,29 +35,26 @@ public:
     void setDebug(int debugLevel);
 
     // Starting and stopping
-    void start(const char* arg);
-    void startUnthreaded(const char* arg);
+    void start(const char* arg, bool multithreaded);
     void stop();
-
-    // Request an execution
-    void execute();
+	bool step();
+	void step_();
+	truss_interpreter_state getState();
 
     // Send a message
     void sendMessage(truss_message* message);
     int fetchMessages();
     truss_message* getMessage(int index);
 
-    // Inner thread
-    void threadEntry();
+	void threadLoop_();
 private:
     // ID
     int id_;
 
-    // Name
-    std::string name_;
-
-    // Argument when starting
-    std::string arg_;
+	// Current state
+	truss_interpreter_state state_;
+	std::mutex stateLock_;
+	bool setState_(truss_interpreter_state newState);
 
     // Debug settings (ints because that's what terra wants)
     int verboseLevel_;
@@ -71,10 +67,15 @@ private:
     std::vector<Addon*> addons_;
 
     // Actual thread
-    tthread::thread* thread_;
+    std::thread* thread_;
+
+	// Lock for thread signaling
+	std::mutex stepLock_;
+	bool stepRequested_;
+	std::condition_variable stepCV_;
 
     // Lock for messaging
-    tthread::mutex messageLock_;
+    std::mutex messageLock_;
 
     // Messages
     std::vector<truss_message*>* curMessages_;
@@ -82,9 +83,6 @@ private:
 
     // Terra state
     lua_State* terraState_;
-
-    // Whether to continue running
-    bool running_;
 };
 
 } // namespace truss

@@ -118,29 +118,23 @@ int truss_set_store_value_str(const char* key, const char* msg) {
 }
 
 /* Interpreter management functions */
-int truss_spawn_interpreter(const char* name) {
-    Interpreter* spawned = Core::instance().spawnInterpreter(name);
-    return spawned->getID();
-}
-
-void truss_set_interpreter_debug(truss_interpreter_id target_id, int debug_level) {
-    Core::instance().getInterpreter(target_id)->setDebug(debug_level);
-}
-
-void truss_start_interpreter(truss_interpreter_id target_id, const char* msgstr) {
-    Core::instance().getInterpreter(target_id)->start(msgstr);
+int truss_spawn_interpreter(int debug_level, const char* init_script_name) {
+	Interpreter* spawned = Core::instance().spawnInterpreter();
+	spawned->setDebug(debug_level);
+	spawned->start(init_script_name, true);
+	return spawned->getID();
 }
 
 void truss_stop_interpreter(truss_interpreter_id target_id) {
-    Core::instance().getInterpreter(target_id)->stop();
+	Core::instance().getInterpreter(target_id)->stop();
 }
 
-void truss_execute_interpreter(truss_interpreter_id target_id) {
-    return Core::instance().getInterpreter(target_id)->execute();
+int truss_step_interpreter(truss_interpreter_id target_id) {
+	return Core::instance().getInterpreter(target_id)->step();
 }
 
-int truss_find_interpreter(const char* name) {
-    return Core::instance().getNamedInterpreter(name)->getID();
+truss_interpreter_state truss_get_interpreter_state(truss_interpreter_id target_id) {
+	return Core::instance().getInterpreter(target_id)->getState();
 }
 
 void truss_send_message(truss_interpreter_id dest, truss_message* message) {
