@@ -157,9 +157,9 @@ function m.init_gfx(options)
   m._init_struct.debug    = false -- TODO/FEATURE: allow these to be set?
   m._init_struct.profile  = false 
 
-  log.debug("bgfx init")
   bgfx.init(m._init_struct)
-  log.debug("bgfx reset")
+  local bb_format = require("./formats.t").find_format_from_enum(m._init_struct.resolution.format)
+  log.info("Backbuffer format: " .. bb_format.name)
   bgfx.reset(w, h, reset, m._init_struct.resolution.format)
 
   gfx.backbuffer_width, gfx.backbuffer_height = w, h

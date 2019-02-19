@@ -232,7 +232,7 @@ local default_tex_flags = {
   },
   TEXTURE_ = {
     msaa = false, rt = false, render_target = false,
-    rt_msaa = false, rt_write_only = false,
+    rt_msaa = false, rt_write_only = false, srgb = false, msaa_sample = false,
     compute_write = false, rgb = false, blit_dest = false, read_back = false
   }
 }
@@ -274,12 +274,6 @@ function m.combine_tex_flags(_options, prefix)
   end
 
   return state, options
-end
-
-function m.combine_tex_sampler_flags(_options, tex_flags, sampler_flags)
-  local flagval_1 = m.combine_tex_flags(tex_flags or {}, "TEXTURE_")
-  local flagval_2 = m.combine_tex_flags(sampler_flags or {}, "SAMPLER_")
-  return math.ullor(flagval_1, flagval_2)
 end
 
 local nvg_utils = truss.addons.nanovg.functions
