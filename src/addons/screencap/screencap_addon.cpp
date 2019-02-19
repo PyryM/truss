@@ -51,11 +51,15 @@ ScreencapAddon::ScreencapAddon() {
         unsigned int width;
         unsigned int height;
     } truss_scap_frameinfo;
+	#define SCREENCAP_NO_UPDATE 0
+	#define SCREENCAP_MOUSE_UPDATE 1
+	#define SCREENCAP_IMAGE_UPDATE 2
+	#define SCREENCAP_ERROR 3
+	#define SCREENCAP_RESET 4
 
     bool truss_scap_init(Addon* addon);
     void truss_scap_shutdown(Addon* addon);
-    bool truss_scap_acquire_frame(Addon* addon);
-    bool truss_scap_release_frame(Addon* addon);
+    int truss_scap_acquire_frame(Addon* addon, int timeout);
     truss_scap_frameinfo truss_scap_get_frame_info(Addon* addon);
     bool truss_scap_copy_frame_tex_d3d11(Addon* addon, void* desttex_d3d11);
     )";
@@ -222,34 +226,47 @@ ScreencapAddon::~ScreencapAddon() {
 //
 // Get next frame and write it into Data
 //
-bool ScreencapAddon::acquireFrame() {
+int ScreencapAddon::acquireFrame(int timeout) {
     if(_internals == NULL || !(_internals->initted)) {
         truss_log(TRUSS_LOG_ERROR, "ScreencapAddon::acquireFrame : not initialized!");
-        return false;
+        return SCREENCAP_ERROR;
     }
 
 	if (_internals->deskDupl == NULL) {
 		if (!acquireDeskDupl()) {
 			printError("ScreencapAddon::acquireFrame : failed to reacquire capture.");
-			return false;
+			return SCREENCAP_ERROR;
 		}
 	}
+
+	releaseFrame();
 
     IDXGIResource* DesktopResource = NULL;
 
     //Get new frame
     HRESULT hr = S_OK;
-    hr = _internals->deskDupl->AcquireNextFrame(0, &(_internals->frameInfo), &DesktopResource);
+    hr = _internals->deskDupl->AcquireNextFrame(timeout, &(_internals->frameInfo), &DesktopResource);
     if (FAILED(hr)) {
         if ((hr != DXGI_ERROR_ACCESS_LOST) && (hr != DXGI_ERROR_WAIT_TIMEOUT)) {
             truss_log(TRUSS_LOG_ERROR, "ScreencapAddon: failed to acquire frame.");
+			printf("%x\n", hr);
+			return SCREENCAP_ERROR;
         }
 		if (hr == DXGI_ERROR_ACCESS_LOST) {
 			truss_log(TRUSS_LOG_INFO, "ScreencapAddon: duplication lost (probably due to mode switch).");
 			releaseDeskDupl();
+			return SCREENCAP_RESET;
 		}
-        return false;
+        return SCREENCAP_NO_UPDATE; // just a plain timeout
     }
+
+
+	// Frames can be both image and/or mouse updates: we don't care about 1000hz mouse updates
+	// Docs on LastPresentTime: "A zero value indicates that the desktop image was not updated"
+	bool isScreenUpdate = true;
+	if (_internals->frameInfo.LastPresentTime.QuadPart == 0ULL) {
+		isScreenUpdate = false;
+	}
 
     // If still holding old frame, destroy it
     if (_internals->frame != NULL) {
@@ -258,19 +275,24 @@ bool ScreencapAddon::acquireFrame() {
     }
 
     // QI for IDXGIResource
-    hr = DesktopResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&(_internals->frame)));
-    DesktopResource->Release();
-    DesktopResource = NULL;
-    if (FAILED(hr)) {
-        truss_log(TRUSS_LOG_ERROR, "ScreencapAddon: Failed to QI for ID3D11Texture2D from acquired IDXGIResource");
-		_internals->deskDupl->ReleaseFrame();
-		_internals->frame = NULL;
-        return false;
-    }
-    _internals->frame->GetDesc(&(_internals->frameDesc));
+	if(isScreenUpdate) {
+		hr = DesktopResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&(_internals->frame)));
+		DesktopResource->Release();
+		DesktopResource = NULL;
+		if (FAILED(hr)) {
+			truss_log(TRUSS_LOG_ERROR, "ScreencapAddon: Failed to QI for ID3D11Texture2D from acquired IDXGIResource");
+			_internals->deskDupl->ReleaseFrame();
+			_internals->frame = NULL;
+			return SCREENCAP_ERROR;
+		}
+		_internals->frame->GetDesc(&(_internals->frameDesc));
+	} else {
+		DesktopResource->Release();
+		DesktopResource = NULL;
+	}
 
 	clearError();
-    return true;
+    return isScreenUpdate ? SCREENCAP_IMAGE_UPDATE : SCREENCAP_MOUSE_UPDATE;
 }
 
 bool ScreencapAddon::copyFrameTexD3D11(void* rawdest) {
@@ -325,9 +347,10 @@ truss_scap_frameinfo ScreencapAddon::getFrameInfo() {
 // Release frame
 //
 bool ScreencapAddon::releaseFrame() {
+	/*
 	if (_internals->frame == NULL) {
 		return true; // no frame to release, so success?
-	}
+	}*/
 
     if(_internals == NULL || !(_internals->initted)) {
         truss_log(TRUSS_LOG_ERROR, "ScreencapAddon::releaseFrame : not initialized!");
@@ -365,15 +388,16 @@ void truss_scap_shutdown(ScreencapAddon* addon) {
     // anything to do here?
 }
 
-bool truss_scap_acquire_frame(ScreencapAddon* addon) {
+int truss_scap_acquire_frame(ScreencapAddon* addon, int timeout) {
     if(addon == NULL) return false;
-    return addon->acquireFrame();
+    return addon->acquireFrame(timeout);
 }
 
+/*
 bool truss_scap_release_frame(ScreencapAddon* addon) {
     if(addon == NULL) return false;
     return addon->releaseFrame();
-}
+}*/
 
 truss_scap_frameinfo truss_scap_get_frame_info(ScreencapAddon* addon) {
     if(addon == NULL) {
