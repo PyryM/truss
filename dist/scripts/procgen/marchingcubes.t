@@ -593,7 +593,7 @@ function m.cubify(data, max_tris, limits)
   cd.z_end = math.min(cd.z_end, cd.d)
 
   m._cubify(m._tables, data.cubedata, tris.triangles)
-  print("Generated " .. tris.triangles.index .. " vertices.")
+  --print("Generated " .. tris.triangles.index .. " vertices.")
 
   return tris
 end
@@ -622,7 +622,7 @@ end
 function m.cubify_to_geo(data, max_tris, scale, limits, target)
   local tris = m.cubify(data, max_tris, limits)
   local triangles = tris.triangles
-  scale = scale or (1.0 / data.dsize)
+  scale = scale or (1.0 / (data.dsize - 1))
 
   local nverts = math.min(math.min(target.n_verts, target.n_indices), triangles.index)
   local v_target, i_target = target.verts, target.indices
