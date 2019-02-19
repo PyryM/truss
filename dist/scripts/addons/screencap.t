@@ -36,11 +36,11 @@ function m._update_backing_tex()
     --bgfx.TEXTURE_RT,
     bgfx.TEXTURE_BLIT_DST,
     --bgfx.TEXTURE_READ_BACK,
-    bgfx.TEXTURE_MIN_POINT,
-    bgfx.TEXTURE_MAG_POINT,
-    bgfx.TEXTURE_MIP_POINT,
-    bgfx.TEXTURE_U_CLAMP,
-    bgfx.TEXTURE_V_CLAMP )
+    bgfx.SAMPLER_MIN_POINT,
+    bgfx.SAMPLER_MAG_POINT,
+    bgfx.SAMPLER_MIP_POINT,
+    bgfx.SAMPLER_U_CLAMP,
+    bgfx.SAMPLER_V_CLAMP )
   m.tex = bgfx.create_texture_2d(tw, th, false, 1, fmt, flags, nil)
   m.texw = m.rawinfo.width
   m.texh = m.rawinfo.height
