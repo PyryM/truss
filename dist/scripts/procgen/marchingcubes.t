@@ -606,9 +606,17 @@ function m.cubify_to_data(data, max_tris, scale, limits)
   local indices = {}
   local triangles = tris.triangles
   local ntris = triangles.index / 3
-  for i = 0, triangles.index - 1 do
-    verts[i+1] = math.Vector():from_dict(triangles.vertices[i]):multiply(scale)
-    indices[i+1] = i
+  local srcindex = 0
+  for f = 1, ntris do
+    local face = {}
+    for k = 1, 3 do
+      table.insert(verts, 
+        math.Vector():from_dict(triangles.vertices[srcindex]):multiply(scale)
+      )
+      face[k] = srcindex
+      srcindex = srcindex + 1
+    end 
+    table.insert(indices, face)
   end
 
   return {
@@ -623,6 +631,14 @@ function m.cubify_to_geo(data, max_tris, scale, limits, target)
   local tris = m.cubify(data, max_tris, limits)
   local triangles = tris.triangles
   scale = scale or (1.0 / (data.dsize - 1))
+  local created_target = (not target)
+  if created_target then
+    local gfx = require("gfx")
+    local vtype = gfx.create_basic_vertex_type{"position"}
+    target = gfx.StaticGeometry("mc"):allocate(
+      triangles.index, triangles.index, vtype
+    )
+  end
 
   local nverts = math.min(math.min(target.n_verts, target.n_indices), triangles.index)
   local v_target, i_target = target.verts, target.indices
@@ -634,7 +650,61 @@ function m.cubify_to_geo(data, max_tris, scale, limits, target)
     v[2] = s.z * scale
     i_target[i] = i
   end
-  target:set_slice(0, nverts, 0, nverts)
+  if created_target then
+    target:commit()
+  else
+    target:set_slice(0, nverts, 0, nverts)
+  end
+  return target
+end
+
+function m.mc_data_add(target, other)
+  if target.dsize ~= other.dsize then
+    truss.error("MC Data Size mismatch: " .. tostring(target.dsize) .. " vs " .. tostring(other.dsize))
+  end
+  local nv = target.dsize^3
+  local td, sd = target.data, other.data
+  for p = 0, nv-1 do
+    td[p] = td[p] + sd[p]
+  end
+end
+
+function m.mc_data_map(target, f)
+  local nv = target.dsize^3
+  local td = target.data
+  for p = 0, nv-1 do
+    td[p] = f(td[p])
+  end
+end
+
+function m.mc_data_from_function(f, target_or_size)
+  local dsize, data, cd, ret
+  if target_or_size == nil or type(target_or_size) == 'number' then
+    dsize = target_or_size or 32
+    data = terralib.new(float[dsize * dsize * dsize])
+    cd = terralib.new(m.cube_data)
+    cd.vals = data
+    cd.w, cd.h, cd.d = dsize, dsize, dsize
+    cd.x_start, cd.y_start, cd.z_start = 0, 0, 0
+    cd.x_end, cd.y_end, cd.z_end = dsize-1, dsize-1, dsize-1
+    ret = {cubedata = cd, data = data, dsize = dsize}
+  else
+    dsize = target_or_size.dsize
+    data = target_or_size.data
+    ret = target_or_size
+  end
+  print(dsize, data)
+  local dpos = 0
+  local dd = dsize - 1
+  for z = 0, dsize-1 do
+    for y = 0, dsize-1 do
+      for x = 0, dsize-1 do
+        data[dpos] = f(x / dd, y / dd, z / dd)
+        dpos = dpos + 1
+      end
+    end
+  end
+  return ret
 end
 
 return m
