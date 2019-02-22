@@ -15,35 +15,71 @@ local tmath = require("math/tmath.t")
 local cmath = require("math/cmath.t")
 local ecs = require("ecs")
 local async = require("async")
+local class = require("class")
 
-function edge_dist_func(p0, p1)
-  local x0, y0, z0 = p0:components()
-  local x1, y1, z1 = p1:components()
-  local d = p1 - p0
-  local tardist = d:length3()
-  local nx, ny, nz = d:normalize3():components()
-  local THRESH = 0.05 * tardist
-  return function(x, y, z)
-    dx, dy, dz = x - x0, y - y0, z - z0
-    parallel_dist = dx*nx + dy*ny + dz*nz
-    -- if parallel_dist > tardist then
-    --   dx, dy, dz = x - x1, y - y1, z - z1
-    --elseif parallel_dist > 0 then
-    dx = dx - nx*parallel_dist
-    dy = dy - ny*parallel_dist
-    dz = dz - nz*parallel_dist
-    --end
-    if parallel_dist < THRESH then
-      parallel_dist = THRESH - parallel_dist
-    elseif parallel_dist > tardist - THRESH then
-      parallel_dist = parallel_dist - (tardist - THRESH)
+local drawables = {}
+local next_drawable = 1
+local function draw_2d_drawables(ctx)
+  for idx, draw in pairs(drawables) do
+    if draw.dead then
+      drawables[idx] = nil
     else
-      parallel_dist = 0
+      draw:draw(ctx)
     end
-    local v = (dx*dx + dy*dy + dz*dz)
-    v = math.exp(-1000*v) * math.exp(-parallel_dist*80)
-    return v
   end
+end
+local function add_2d_drawable(f, state)
+  local d = state or {}
+  drawables[next_drawable] = d
+  next_drawable = next_drawable + 1
+  async.run(f, d):next(print, print)
+  return d
+end
+
+local function _drawbox(state, ctx)
+  ctx:BeginPath()
+  ctx:Rect(state.x, state.y, state.w, state.h)
+  ctx:FillColor(ctx:RGBA(unpack(state.color)))
+  ctx:Fill()
+end
+local function _drawtext(state, ctx)
+  ctx:FontFace(state.font or "sans")
+  ctx:FontSize(state.font_size)
+  ctx:FillColor(ctx:RGBA(unpack(state.color)))
+  ctx:TextAlign(ctx.ALIGN_LEFT + ctx.ALIGN_TOP)
+  if state.clip_w then
+    ctx:Scissor(state.x, state.y, state.clip_w, state.h)
+  end
+  ctx:Text(state.x, state.y, state.text, nil)
+  if state.clip_w then
+    ctx:ResetScissor()
+    ctx:BeginPath()
+    ctx:Rect(state.x + state.clip_w, state.y, state.w - state.clip_w, state.h)
+    ctx:Fill()
+  end
+end
+
+local function out_expo(t)
+  if t == 1 then
+    return 1
+  else
+    return 1.001 * (-(2^(-10 * t)) + 1)
+  end
+end
+local function textbox(state)
+  state.color = state.color or {0xFF, 0x1D, 0x76, 200}
+  state.draw = _drawbox
+  local final_w = state.w
+  for f = 1, 20 do
+    state.w = final_w * out_expo(f/20)
+    async.await_frames(1)
+  end
+  state.draw = _drawtext
+  for f = 1, 30 do
+    state.clip_w = final_w * out_expo(f/30)
+    async.await_frames(1)
+  end
+  state.clip_w = nil
 end
 
 function ter_edge_dist_func(p0, p1)
@@ -85,9 +121,7 @@ function make_column_edges()
     local pts = {}
     for idx = 0, 2 do
       local theta = math.random()*0.1 + (idx + tier/2) * math.pi * 2 / 3
-      pts[idx] = math.Vector(math.cos(theta)*0.15+0.5, 
-                             tier/5, 
-                             math.sin(theta)*0.15+0.5)
+      pts[idx] = math.Vector(math.cos(theta)*0.15+0.5, tier/5, math.sin(theta)*0.15+0.5)
     end
     for idx = 0, 2 do
       table.insert(edges, {pts[idx], pts[(idx+1)%3]})
@@ -138,7 +172,12 @@ function generate_logo_mesh(parent, material, resolution)
   local data = mc.mc_data_from_function(
     function() return 0.0 end, 
     resolution+1 -- need 1 voxel padding for reasons
-  ) 
+  )
+  local progress = add_2d_drawable(textbox, {
+    x = 1280/2 - 400/2, y = 300, w = 400, h = 30, font_size = 30,
+    color = {255,255,255,255},
+    text = "Generating mesh", font = 'mono'
+  })
   local partidx = 0
   for iz = 0, ndivs-1 do
     for iy = 0, ndivs-1 do
@@ -148,10 +187,12 @@ function generate_logo_mesh(parent, material, resolution)
                                          geo, material)
         mesh.position:set(-0.5, -0.5, -0.5)
         mesh:update_matrix()
+        progress.text = ("Generating mesh [%03d / %03d]"):format(partidx, ndivs^3)
         partidx = partidx + 1
       end
     end
   end
+  progress.dead = true
 end
 
 function Logo(_ecs, name, options)
@@ -173,11 +214,9 @@ function Logo(_ecs, name, options)
   return ret
 end
 
-function Skybox(_ecs, name, texname)
+function Skybox(_ecs, name, fn)
   local sky_sphere = geometry.uvsphere_geo{lat_divs = 30, lon_divs = 30}
-  local skymat = flat.FlatMaterial{
-    skybox = true, texture = gfx.Texture(texname)
-  }
+  local skymat = flat.FlatMaterial{skybox = true, texture = gfx.Texture(fn)}
   local skybox = graphics.Mesh(_ecs, name, sky_sphere, skymat)
   skybox.scale:set(-10, -10, -10)
   skybox:update_matrix()
@@ -187,13 +226,8 @@ end
 local NVGThing = graphics.NanoVGComponent:extend("NVGThing")
 function NVGThing:nvg_draw(ctx)
   ctx:load_font("font/FiraSans-Regular.ttf", "sans")
-  ctx:FontFace("sans")
-  ctx:FontSize(200)
-  ctx:FillColor(ctx:RGBA(0xFF, 0x1D, 0x76, 200))
-  ctx:TextAlign(ctx.ALIGN_LEFT + ctx.ALIGN_TOP)
-  local dx = ctx:Text(30, 0, "truss", nil)
-  ctx:FontSize(80)
-  ctx:Text(dx + 10, 15, "0.1.0", nil)
+  ctx:load_font("font/FiraMono-Regular.ttf", "mono")
+  draw_2d_drawables(ctx)
 end
 
 function init()
@@ -209,6 +243,30 @@ function init()
 
   myapp.scene:create_child(Skybox, 'sky', 'textures/starmap.ktx')
   myapp.scene:create_child(ecs.Entity3d, "logotext", NVGThing())
+
+  async.run(function()
+    add_2d_drawable(textbox, {
+      x = 10, y = 10, w = 400, h = 200,
+      font_size = 200, text = 'truss'
+    })
+    async.await_frames(5)
+    add_2d_drawable(textbox, {
+      x = 390, y = 10, w = 220, h = 120,
+      font_size = 100, text = '0.1.0'
+    })
+    -- spawn caps
+    local ypos = 5
+    for capname, supported in pairs(gfx.get_caps().features) do
+      local color = (supported and {200,255,200,255}) or {100,100,100,255}
+      add_2d_drawable(textbox, {
+        x = 1000, y = ypos, w = 250, h = 23, 
+        font_size = 22, text = capname, color = color, font = 'mono'
+      })
+      ypos = ypos + 24
+      async.await_frames(5)
+      --self.print(capname .. ": " .. tostring(supported), color, 8)
+    end
+  end)
 end
 
 function update()
