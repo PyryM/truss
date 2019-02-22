@@ -11,7 +11,10 @@ local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
 local mc = require("procgen/marchingcubes.t")
 local math = require("math")
+local tmath = require("math/tmath.t")
+local cmath = require("math/cmath.t")
 local ecs = require("ecs")
+local async = require("async")
 
 function edge_dist_func(p0, p1)
   local x0, y0, z0 = p0:components()
@@ -43,20 +46,36 @@ function edge_dist_func(p0, p1)
   end
 end
 
-function edge_sum_dists(edgelist, res)
-  local function zero(x, y, z) return 0.0 end
-  res = res or 128
-  local data = mc.mc_data_from_function(zero, res)
-  local scratch = mc.mc_data_from_function(zero, res)
-  for _, e in ipairs(edgelist) do
-    local efunc = edge_dist_func(unpack(e))
-    mc.mc_data_from_function(efunc, scratch)
-    mc.mc_data_add(data, scratch)
+function ter_edge_dist_func(p0, p1)
+  local x0, y0, z0 = p0:components()
+  local x1, y1, z1 = p1:components()
+  local d = p1 - p0
+  local tardist = d:length3()
+  local nx, ny, nz = d:normalize3():components()
+  local THRESH = 0.05 * tardist
+  return terra(oldval: float, x: float, y: float, z: float): float
+    var p0: tmath.Vec3f
+    var p1: tmath.Vec3f
+    var n: tmath.Vec3f
+    var p: tmath.Vec3f
+    n:set(nx, ny, nz)
+    p0:set(x0, y0, z0)
+    p1:set(x1, y1, z1)
+    p:set(x, y, z)
+    var dp: tmath.Vec3f = p - p0
+    var parallel_dist = dp:dot(&n)
+    dp = dp - (n * parallel_dist)
+    if parallel_dist < THRESH then
+      parallel_dist = THRESH - parallel_dist
+    elseif parallel_dist > tardist - THRESH then
+      parallel_dist = parallel_dist - (tardist - THRESH)
+    else
+      parallel_dist = 0.0
+    end
+    var v = dp:length_squared()
+    v = cmath.expf(-1000.0*v) * cmath.expf(-parallel_dist*80.0)
+    return oldval + v
   end
-  mc.mc_data_map(data, function(v)
-    return v - 0.8
-  end)
-  return data
 end
 
 function make_column_edges()
@@ -82,13 +101,57 @@ function make_column_edges()
   return edges
 end
 
-function generate_logo_mesh(resolution)
-  local data = edge_sum_dists(make_column_edges(), resolution)
-  -- geo_data = mc.cubify_to_data(data, 1000000)
-  -- geo_data = geometry.util.combine_duplicate_vertices(geo_data, 1000)
-  -- geo_data = geometry.util.compute_normals(geo_data)
-  -- return gfx.StaticGeometry("truss"):from_data(geo_data)
-  return mc.cubify_to_geo(data, 1000000)
+terra zero(oldval: float, x: float, y: float, z: float): float
+  return 0.0
+end
+
+terra recenter(oldval: float, x: float, y: float, z: float): float
+  return oldval - 0.8
+end
+
+function gen_cell(data, x, y, z, dg, funclist)
+  local limits = {
+    x_start = x*dg, x_end = (x+1)*dg + 1,
+    y_start = y*dg, y_end = (y+1)*dg + 1,
+    z_start = z*dg, z_end = (z+1)*dg + 1
+  }
+  mc.mc_data_from_terra(data, zero, limits)
+  local t0 = truss.tic()
+  for _, f in ipairs(funclist) do
+    mc.mc_data_from_terra(data, f, limits)
+    if truss.toc(t0)*1000.0 > 25.0 then
+      async.await_frames(1)
+      t0 = truss.tic()
+    end
+  end
+  mc.mc_data_from_terra(data, recenter, limits)
+  return mc.cubify_to_geo(data, 64000, nil, limits)
+end
+
+function generate_logo_mesh(parent, material, resolution)
+  local edge_funcs = {}
+  for idx, edge in ipairs(make_column_edges()) do
+    edge_funcs[idx] = ter_edge_dist_func(unpack(edge))
+  end
+  local ndivs = 8
+  local dg = resolution / ndivs -- just assume no remainder
+  local data = mc.mc_data_from_function(
+    function() return 0.0 end, 
+    resolution+1 -- need 1 voxel padding for reasons
+  ) 
+  local partidx = 0
+  for iz = 0, ndivs-1 do
+    for iy = 0, ndivs-1 do
+      for ix = 0, ndivs-1 do
+        local geo = gen_cell(data, ix, iy, iz, dg, edge_funcs)
+        local mesh = parent:create_child(graphics.Mesh, "_logo_" .. partidx,
+                                         geo, material)
+        mesh.position:set(-0.5, -0.5, -0.5)
+        mesh:update_matrix()
+        partidx = partidx + 1
+      end
+    end
+  end
 end
 
 function Logo(_ecs, name, options)
@@ -99,15 +162,14 @@ function Logo(_ecs, name, options)
     self.ent.quaternion:euler{x = 0, y = self.f*0.01, z = 0}
     self.ent:update_matrix()
   end))
-  local geo = generate_logo_mesh(2^(options.detail))
+
   local mat = pbr.FacetedPBRMaterial{
     diffuse = {0.001,0.001,0.001,1.0},
     tint = {1.0, 0.02, 0.2}, 
     roughness = 0.3
   }
-  local t = rotator:create_child(graphics.Mesh, "_logo", geo, mat)
-  t.position:set(-0.5, -0.5, -0.5)
-  t:update_matrix()
+  async.run(generate_logo_mesh, rotator, mat, 2^(options.detail)):next(print, print)
+
   return ret
 end
 
@@ -141,7 +203,7 @@ function init()
     title = "truss | logo.t", clear_color = 0x000000ff
   }
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
-  local logo = myapp.scene:create_child(Logo, "logo", {detail = 7})
+  local logo = myapp.scene:create_child(Logo, "logo", {detail = 8})
   logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
   logo:update_matrix()
 

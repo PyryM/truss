@@ -566,6 +566,20 @@ function m.add_data(target, addition, x, y, z, mult)
   m._add_data(target.cubedata, addition.cubedata, x, y, z, mult)
 end
 
+local function set_limits(cd, limits)
+  if limits then
+    cd.x_start = limits.x_start or 0
+    cd.y_start = limits.y_start or 0
+    cd.z_start = limits.z_start or 0
+    cd.x_end = limits.x_end or 100000
+    cd.y_end = limits.y_end or 100000
+    cd.z_end = limits.z_end or 100000
+  end
+  cd.x_end = math.min(cd.x_end, cd.w)
+  cd.y_end = math.min(cd.y_end, cd.h)
+  cd.z_end = math.min(cd.z_end, cd.d)
+end
+
 function m.cubify(data, max_tris, limits)
   if not m._tables then
     m._tables = create_tables()
@@ -580,17 +594,7 @@ function m.cubify(data, max_tris, limits)
   end
 
   local cd = data.cubedata
-  if limits then
-    cd.x_start = limits.x_start or 0
-    cd.y_start = limits.y_start or 0
-    cd.z_start = limits.z_start or 0
-    cd.x_end = limits.x_end or 100000
-    cd.y_end = limits.y_end or 100000
-    cd.z_end = limits.z_end or 100000
-  end
-  cd.x_end = math.min(cd.x_end, cd.w)
-  cd.y_end = math.min(cd.y_end, cd.h)
-  cd.z_end = math.min(cd.z_end, cd.d)
+  set_limits(cd, limits)
 
   m._cubify(m._tables, data.cubedata, tris.triangles)
   --print("Generated " .. tris.triangles.index .. " vertices.")
@@ -669,7 +673,7 @@ function m.mc_data_add(target, other)
   end
 end
 
-function m.mc_data_map(target, f)
+function m.mc_data_map(target, f, limits)
   local nv = target.dsize^3
   local td = target.data
   for p = 0, nv-1 do
@@ -693,7 +697,6 @@ function m.mc_data_from_function(f, target_or_size)
     data = target_or_size.data
     ret = target_or_size
   end
-  print(dsize, data)
   local dpos = 0
   local dd = dsize - 1
   for z = 0, dsize-1 do
@@ -705,6 +708,26 @@ function m.mc_data_from_function(f, target_or_size)
     end
   end
   return ret
+end
+
+local terra map_terra_func(dsize: int32, data: &cube_data, f: {float,float,float,float} -> float)
+  var dd: float = dsize - 1.0
+  var buff: &float = data.vals
+  var z_stride = data.w * data.d
+  var y_stride = data.w
+  for z = data.z_start, data.z_end do
+    for y = data.y_start, data.y_end do
+      for x = data.x_start, data.x_end do
+        var dpos: int32 = z*z_stride + y*y_stride + x
+        buff[dpos] = f(buff[dpos], [float](x) / dd, [float](y) / dd, [float](z) / dd)
+      end
+    end
+  end
+end
+
+function m.mc_data_from_terra(target, f, limits)
+  set_limits(target.cubedata, limits)
+  map_terra_func(target.dsize, target.cubedata, f:getpointer())
 end
 
 return m
