@@ -237,6 +237,7 @@ function init()
     title = "truss | logo.t", clear_color = 0x000000ff
   }
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
+  myapp.camera.orbit_control:set(0, 0, 0.7)
   local logo = myapp.scene:create_child(Logo, "logo", {detail = 8})
   logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
   logo:update_matrix()
