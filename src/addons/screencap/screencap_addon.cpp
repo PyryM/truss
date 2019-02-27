@@ -9,7 +9,6 @@
 #define BGFX_SHARED_LIB_USE 1
 
 #include <bgfx/c99/bgfx.h>
-#include <bgfx/c99/platform.h>
 
 class ScreencapAddonInternals {
 public:
