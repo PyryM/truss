@@ -24,23 +24,23 @@ class SDLAddon;
 typedef struct SDLAddon SDLAddon;
 #endif
 
-#define TRUSS_SDL_EVENT_OUTOFBOUNDS  0
-#define TRUSS_SDL_EVENT_KEYDOWN 		1
-#define TRUSS_SDL_EVENT_KEYUP		2
-#define TRUSS_SDL_EVENT_MOUSEDOWN 	3
-#define TRUSS_SDL_EVENT_MOUSEUP	 	4
-#define TRUSS_SDL_EVENT_MOUSEMOVE 	5
-#define TRUSS_SDL_EVENT_MOUSEWHEEL   6
-#define TRUSS_SDL_EVENT_WINDOW       7
-#define TRUSS_SDL_EVENT_TEXTINPUT    8
-#define TRUSS_SDL_EVENT_GP_ADDED     9
-#define TRUSS_SDL_EVENT_GP_REMOVED   10
-#define TRUSS_SDL_EVENT_GP_AXIS      11
+#define TRUSS_SDL_EVENT_OUTOFBOUNDS   0
+#define TRUSS_SDL_EVENT_KEYDOWN       1
+#define TRUSS_SDL_EVENT_KEYUP         2
+#define TRUSS_SDL_EVENT_MOUSEDOWN     3
+#define TRUSS_SDL_EVENT_MOUSEUP       4
+#define TRUSS_SDL_EVENT_MOUSEMOVE     5
+#define TRUSS_SDL_EVENT_MOUSEWHEEL    6
+#define TRUSS_SDL_EVENT_WINDOW        7
+#define TRUSS_SDL_EVENT_TEXTINPUT     8
+#define TRUSS_SDL_EVENT_GP_ADDED      9
+#define TRUSS_SDL_EVENT_GP_REMOVED    10
+#define TRUSS_SDL_EVENT_GP_AXIS       11
 #define TRUSS_SDL_EVENT_GP_BUTTONDOWN 12
-#define TRUSS_SDL_EVENT_GP_BUTTONUP 13
+#define TRUSS_SDL_EVENT_GP_BUTTONUP   13
 
-#define TRUSS_SDL_MAX_KEYCODE_LENGTH 15 /* should be enough for anybody */
-#define TRUSS_SDL_KEYCODE_BUFF_SIZE  16 /* extra byte for null terminator */
+#define TRUSS_SDL_MAX_KEYCODE_LENGTH  15 /* should be enough for anybody */
+#define TRUSS_SDL_KEYCODE_BUFF_SIZE   16 /* extra byte for null terminator */
 
 /* Simplified SDL Event */
 typedef struct {
