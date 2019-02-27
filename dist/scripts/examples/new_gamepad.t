@@ -1,8 +1,8 @@
 local app = require("app/app.t")
 local geometry = require("geometry")
-local pbr = require("shaders/pbr.t")
+local pbr = require("material/pbr.t")
 local graphics = require("graphics")
-local orbitcam = require("gui/orbitcam.t")
+local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
 local gfx = require("gfx")
 local sdl = require("addons/sdl.t")
@@ -35,7 +35,7 @@ function init()
 
   local tex = gfx.Texture("textures/cone.png")
   local geo = geometry.uvsphere_geo()
-  local mat = pbr.FacetedTexPBRMaterial{diffuse = {1.0, 1.0, 1.0, 1.0}, 
+  local mat = pbr.FacetedPBRMaterial{diffuse = {1.0, 1.0, 1.0, 1.0}, 
                                         tint = {0.001, 0.001, 0.001}, 
                                         roughness = 0.7,
                                         texture = tex}
@@ -50,7 +50,7 @@ function init()
   input:on("gamepad_added", myapp, gamepad_added)
   input:on("gamepad_buttondown", myapp, gamepad_button)
   input:on("gamepad_buttonup", myapp, gamepad_button)
-  input:on("gamepad_axis", myapp, gamepad_axis)
+  --input:on("gamepad_axis", myapp, gamepad_axis)
 end
 
 function update()
