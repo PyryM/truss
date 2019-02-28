@@ -33,13 +33,15 @@ function init()
     appname = "basic_example", 
     use_global_save_dir = false,
     defaults = {
-      width = 1280, height = 720, msaa = true, stats = true
+      width = 1280, height = 1024, msaa = true, stats = true
     }
   }:load()
   -- because these settings don't have defaults, they won't be
   -- saved or loaded from the .json
   cfg.title = "basic_example"  
   cfg.clear_color = 0x404080ff 
+  cfg.srgb = false
+  cfg.width, cfg.height = 1280, 1024
   cfg:save()
 
   --[[

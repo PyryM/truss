@@ -200,7 +200,7 @@ function Logo(_ecs, name, options)
   local rotator = ret:create_child(ecs.Entity3d, "_rotator")
   rotator:add_component(ecs.UpdateComponent(function(self)
     self.f = (self.f or 0) + 1
-    self.ent.quaternion:euler{x = 0, y = self.f*0.01, z = 0}
+    self.ent.quaternion:euler{x = 0, y = self.f/120, z = 0}
     self.ent:update_matrix()
   end))
 
@@ -230,9 +230,11 @@ function NVGThing:nvg_draw(ctx)
   draw_2d_drawables(ctx)
 end
 
+local gif_mode = false
+
 function init()
   myapp = app.App{
-    width = 1280, height = 720, 
+    width = (gif_mode and 720) or 1280, height = 720, 
     msaa = true, stats = false,
     title = "truss | logo.t", clear_color = 0x000000ff
   }
@@ -255,6 +257,7 @@ function init()
       x = 390, y = 10, w = 220, h = 120,
       font_size = 100, text = '0.1.0'
     })
+    if gif_mode then return end
     -- spawn caps
     local ypos = 5
     for capname, supported in pairs(gfx.get_caps().features) do
@@ -271,6 +274,8 @@ function init()
 end
 
 function update()
-  myapp.camera.orbit_control:move_theta(math.pi * 2.0 / 120.0)
+  if not gif_mode then
+    myapp.camera.orbit_control:move_theta(math.pi * 2.0 / 120.0)
+  end
   myapp:update()
 end
