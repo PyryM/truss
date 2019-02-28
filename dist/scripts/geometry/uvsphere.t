@@ -29,11 +29,11 @@ function m.uvsphere_data(options)
   local lon_divs = (options.lon_divs or 10) + 1
   local cap_size = options.cap_size or (5.0 * math.pi/180.0)
 
-  local lon_start = 0.0
-  local lon_end   = math.pi * 2.0
+  local lon_start = options.lon_start or 0.0
+  local lon_end   = options.lon_end   or math.pi * 2.0
 
-  local lat_start = -((math.pi / 2.0) - cap_size)
-  local lat_end   =   (math.pi / 2.0) - cap_size
+  local lat_start = options.lat_start or -((math.pi / 2.0) - cap_size)
+  local lat_end   = options.lat_end   or   (math.pi / 2.0) - cap_size
 
   local d_lon = (lon_end - lon_start) / (lon_divs-1)
   local d_lat = (lat_end - lat_start) / (lat_divs-1)

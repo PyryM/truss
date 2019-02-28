@@ -35,6 +35,7 @@ function create_fov_sphere_geo()
   local sphere_to_cartesian = require("geometry/uvsphere.t").sphere_to_cartesian
   return geometry.uvsphere_geo{
     lat_divs = 60, lon_divs = 60, cap_size = 0.001,
+    lon_end = math.pi, -- only create hemisphere
     projfunc = function(lat, lon)
       local x, y, _ = sphere_to_cartesian(lat, lon, 0.5001)
       return 0.5-x, 0.5-y
@@ -74,13 +75,11 @@ local function draw_fov_rings(component, ctx)
 
       local x, y = cx+rad, cy
       local text = tostring(theta_degrees)
-      ctx:FontBlur(6.0)
       ctx:FillColor(ctx:RGB(0, 0, 0))
-      ctx:Text(x, y, text, nil)
-      ctx:Text(x, y, text, nil)
-      ctx:Text(x, y, text, nil)
-      ctx:Text(x, y, text, nil)
-      ctx:Text(x, y, text, nil)
+      ctx:FontBlur(6.0)
+      for _ = 1, 5 do -- get a stronger shadow by overlaying multiple copies
+        ctx:Text(x, y, text, nil)
+      end
       ctx:FontBlur(0.0)
       ctx:FillColor(ctx:RGB(255, 255, 255))
       ctx:Text(x, y, text, nil)
