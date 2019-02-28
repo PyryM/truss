@@ -1,15 +1,15 @@
 include(ExternalProject)
 
 # Use this version of terra.
-set(terra_RELEASE_DATE "2016-03-25")
-set(terra_RELEASE_HASH "332a506")
+set(terra_RELEASE_DATE "1.0.0-beta1")
+set(terra_RELEASE_HASH "2e2032e")
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
     set(terra_SYSTEM_NAME "Windows")
     set(terra_SHARED_LIBS_DIR "bin")
     set(terra_LIBRARY_NAME "terra.dll")
     set(terra_IMPLIB_NAME "terra.lib")
-    set(terra_MD5 "d4358ccd3a3dcb312a407026e39cd1e5")
+    set(terra_MD5 "d4875c96521f89d8d45e1f3a083f60a4")
 elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
     set(terra_SYSTEM_NAME "OSX")
     set(terra_SHARED_LIBS_DIR "lib")
