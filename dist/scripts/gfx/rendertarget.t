@@ -36,8 +36,8 @@ local function color_layer(format, flags, has_mips)
     flags = texture.combine_tex_flags(flags)
   end
   flags = flags or math.combine_flags(bgfx.TEXTURE_RT,
-                                      bgfx.TEXTURE_U_CLAMP,
-                                      bgfx.TEXTURE_V_CLAMP)
+                                      bgfx.SAMPLER_U_CLAMP,
+                                      bgfx.SAMPLER_V_CLAMP)
   return {
     has_mips = has_mips, 
     flags = flags,
@@ -166,9 +166,12 @@ function RenderTarget:_construct(layers)
     end
     table.insert(self.attachments, {handle = handle})
     table.insert(self._layers, layer)
+    cattachments[i-1].access = (layer.random_access and bgfx.ACCESS_READWRITE)
+                                                     or bgfx.ACCESS_WRITE
     cattachments[i-1].handle = handle
     cattachments[i-1].mip = layer.mip or 0
     cattachments[i-1].layer = layer.layer or 0
+    cattachments[i-1].resolve = (layer.has_mips and bgfx.RESOLVE_AUTO_GEN_MIPS) or 0
     self.has_color = self.has_color or layer.has_color
     self.has_depth = self.has_depth or layer.has_depth
     self.has_stencil = self.has_stencil or layer.has_stencil
@@ -232,11 +235,11 @@ function RenderTarget:_create_read_back_buffer(idx)
     --bgfx.TEXTURE_RT,
     bgfx.TEXTURE_BLIT_DST,
     bgfx.TEXTURE_READ_BACK,
-    bgfx.TEXTURE_MIN_POINT,
-    bgfx.TEXTURE_MAG_POINT,
-    bgfx.TEXTURE_MIP_POINT,
-    bgfx.TEXTURE_U_CLAMP,
-    bgfx.TEXTURE_V_CLAMP )
+    bgfx.SAMPLER_MIN_POINT,
+    bgfx.SAMPLER_MAG_POINT,
+    bgfx.SAMPLER_MIP_POINT,
+    bgfx.SAMPLER_U_CLAMP,
+    bgfx.SAMPLER_V_CLAMP )
   log.info("Flags: " .. tostring(flags))
 
   local dest = bgfx.create_texture_2d(w, h, false, 1, fmt, flags, nil)

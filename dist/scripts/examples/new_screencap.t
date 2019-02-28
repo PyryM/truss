@@ -22,7 +22,7 @@ function init()
   local width, height = 640, 480
   myapp = app.App{title = "screencap example", width = width, height = height,
                   msaa = true, stats = true, clear_color = 0xff00ffff,
-                  lowlatency = true, single_threaded = true}
+                  lowlatency = true, vsync = true}
   myapp.camera:add_component(orbitcam.OrbitControl{
     min_rad = 8, max_rad = 16
   })
@@ -38,9 +38,12 @@ function init()
   screencap.start_capture()
 end
 
+local t0 = truss.tic()
 function update()
   local newcaptex = screencap.capture_screen()
   if newcaptex then
+    print("Frame delta: " .. truss.toc(t0) * 1000.0)
+    t0 = truss.tic()
     captex = newcaptex
     live_mat.uniforms.s_texAlbedo:set(newcaptex)
   end

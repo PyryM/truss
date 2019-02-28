@@ -94,9 +94,9 @@ end
 
 function LineRenderComponent:_create_buffers()
   local vinfo = gfx.create_vertex_type{
-      position = {ctype = float, count = 3},
-      normal   = {ctype = float, count = 3},
-      color0   = {ctype = float, count = 4}
+    position = {ctype = float, count = 3},
+    normal   = {ctype = float, count = 3},
+    color0   = {ctype = float, count = 4}
   }
   local geo
   if self.dynamic then

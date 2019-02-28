@@ -39,7 +39,7 @@ function m.reset_gfx(options)
     w, h = options.window.get_window_size()
   end
 
-  bgfx.reset(w, h, reset)
+  bgfx.reset(w, h, reset, m._init_struct.resolution.format)
   bgfx.set_debug(debug)
   gfx.backbuffer_width, gfx.backbuffer_height = w, h
 end
@@ -53,8 +53,17 @@ function m._make_reset_flags(options)
   if options.vsync ~= false then
     reset = reset + bgfx.RESET_VSYNC
   end
-  if options.msaa then
-    reset = reset + bgfx.RESET_MSAA_X8
+  local msaa = options.msaa
+  if msaa then
+    if msaa == true then msaa = 8 end
+    if type(msaa) ~= 'number' then
+      truss.error("'msaa' init option must be a boolean or a number! " 
+                  .. "(passed in " .. tostring(msaa) .. ")")
+    end
+    reset = reset + bgfx['RESET_MSAA_X' .. msaa]
+  end
+  if options.srgb then
+    reset = reset + bgfx.RESET_SRGB_BACKBUFFER
   end
   if options.lowlatency then
     -- extra flags that may help with latency
@@ -149,8 +158,24 @@ function m.init_gfx(options)
     return false
   end
 
-  bgfx.init(renderer_type, 0, 0, cb_ptr, nil)
-  bgfx.reset(w, h, reset)
+  log.debug("bgfx init ctor")
+  m._init_struct = terralib.new(bgfx.init_t)
+  bgfx.init_ctor(m._init_struct)
+  m._init_struct['type']  = renderer_type
+  m._init_struct.callback = cb_ptr
+  m._init_struct.debug    = false -- TODO/FEATURE: allow these to be set?
+  m._init_struct.profile  = false 
+  --m._init_struct.resolution.format = require("./formats.t").TEX_RGBA8.bgfx_enum
+
+  m._init_struct.resolution.width = w
+  m._init_struct.resolution.height = h
+  m._init_struct.resolution.reset = reset
+  bgfx.init(m._init_struct)
+  local bb_format = require("./formats.t").find_format_from_enum(m._init_struct.resolution.format)
+  log.info("Backbuffer format: " .. bb_format.name)
+  
+  --bgfx.reset(w, h, reset, m._init_struct.resolution.format)
+
   gfx.backbuffer_width, gfx.backbuffer_height = w, h
   m._bgfx_initted = true
 
@@ -216,9 +241,15 @@ function m.frame()
   return m.frame_index
 end
 
-local state_aliases = {primitive = "pt"}
+local state_aliases = {
+  primitive = "pt", 
+  rgb_write = "write_rgb",
+  alpha_write = "write_a",
+  depth_write = "write_z"
+}
+
 m.DefaultStateOptions = {
-  rgb_write = true, depth_write = true, alpha_write = true,
+  write_rgb = true, write_a = true, write_z = true,
   conservative_raster = false, msaa = true,
   depth_test = "less", cull = "cw", blend = false, pt = false
 }

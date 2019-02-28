@@ -49,13 +49,17 @@ end
 
 local UpdateComponent = Component:extend("UpdateComponent")
 m.UpdateComponent = UpdateComponent
+function UpdateComponent:init(f)
+  self.update = f
+end
+
 function UpdateComponent:mount()
   self:add_to_systems({"update"})
   self:wake()
 end
 
 function UpdateComponent:update()
-  -- you should override this
+  -- either override this, or pass in f
 end
 
 return m

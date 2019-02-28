@@ -688,7 +688,8 @@ table_args{
   width = int 'width in pixels',
   height = int 'height in pixels',
   format = object['format_info'] 'a gfx.TEX_{...} texture format',
-  flags = table 'texture flags (see `combine_tex_flags`)',
+  flags = table 'texture creation flags (see `combine_tex_flags`)',
+  sampler_flags = table 'default sampler flags (see `combine_tex_flags`)',
   commit = bool{'automatically commit texture to GPU', default=true},
   allocate = bool{'allocate a buffer to hold the texture data', default=false}
 }
@@ -728,7 +729,8 @@ table_args{
   height = int 'height in voxels',
   depth = int 'depth in voxels',
   format = object['format_info'] 'a gfx.TEX_{...} texture format',
-  flags = table 'texture flags (see `combine_tex_flags`)',
+  flags = table 'texture creation flags (see `combine_tex_flags`)',
+  sampler_flags = table 'default sampler flags (see `combine_tex_flags`)',
   commit = bool{'automatically commit texture to GPU', default=true}
 }
 description[[
@@ -749,7 +751,8 @@ classfunc 'init'
 table_args{
   size = int 'cube map face size, in pixels',
   format = object['format_info'] 'a gfx.TEX_{...} texture format',
-  flags = table 'texture flags (see `combine_tex_flags`)',
+  flags = table 'texture creation flags (see `combine_tex_flags`)',
+  sampler_flags = table 'default sampler flags (see `combine_tex_flags`)',
   commit = bool{'automatically commit texture to GPU', default=true}
 }
 description[[

@@ -51,7 +51,7 @@ function CanvasComponent:submit_draw(drawfunc)
       clear = self._clear or {color = 0x000000ff, depth = 1.0}
     }
     if not context.nvg then 
-      context.nvg = require("addons/nanovg.t").NVGContext(context.view) 
+      context.nvg = require("addons/nanovg.t").NVGContext(context.view, true) 
     end
     context.nvg:begin_frame(context.view)
     drawfunc(self, context.nvg)

@@ -36,11 +36,11 @@ function m._update_backing_tex()
     --bgfx.TEXTURE_RT,
     bgfx.TEXTURE_BLIT_DST,
     --bgfx.TEXTURE_READ_BACK,
-    bgfx.TEXTURE_MIN_POINT,
-    bgfx.TEXTURE_MAG_POINT,
-    bgfx.TEXTURE_MIP_POINT,
-    bgfx.TEXTURE_U_CLAMP,
-    bgfx.TEXTURE_V_CLAMP )
+    bgfx.SAMPLER_MIN_POINT,
+    bgfx.SAMPLER_MAG_POINT,
+    bgfx.SAMPLER_MIP_POINT,
+    bgfx.SAMPLER_U_CLAMP,
+    bgfx.SAMPLER_V_CLAMP )
   m.tex = bgfx.create_texture_2d(tw, th, false, 1, fmt, flags, nil)
   m.texw = m.rawinfo.width
   m.texh = m.rawinfo.height
@@ -57,14 +57,15 @@ function m._update_tex()
   return success
 end
 
-function m.capture_screen()
-  if m.has_frame then
-    m.rawfunctions.truss_scap_release_frame(m.rawpointer)
+function m.capture_screen(timeout)
+  timeout = timeout or 100
+  local status = m.rawfunctions.SCREENCAP_MOUSE_UPDATE
+  while status == m.rawfunctions.SCREENCAP_MOUSE_UPDATE do
+    status = m.rawfunctions.truss_scap_acquire_frame(m.rawpointer, timeout)
   end
-
-  local has_frame = m.rawfunctions.truss_scap_acquire_frame(m.rawpointer)
-  if not has_frame then return false end
-  m.has_frame = has_frame
+  if status ~= m.rawfunctions.SCREENCAP_IMAGE_UPDATE then
+    return nil
+  end
 
   if m.tex then
     if m._update_tex() then

@@ -566,6 +566,20 @@ function m.add_data(target, addition, x, y, z, mult)
   m._add_data(target.cubedata, addition.cubedata, x, y, z, mult)
 end
 
+local function set_limits(cd, limits)
+  if limits then
+    cd.x_start = limits.x_start or 0
+    cd.y_start = limits.y_start or 0
+    cd.z_start = limits.z_start or 0
+    cd.x_end = limits.x_end or 100000
+    cd.y_end = limits.y_end or 100000
+    cd.z_end = limits.z_end or 100000
+  end
+  cd.x_end = math.min(cd.x_end, cd.w)
+  cd.y_end = math.min(cd.y_end, cd.h)
+  cd.z_end = math.min(cd.z_end, cd.d)
+end
+
 function m.cubify(data, max_tris, limits)
   if not m._tables then
     m._tables = create_tables()
@@ -580,20 +594,10 @@ function m.cubify(data, max_tris, limits)
   end
 
   local cd = data.cubedata
-  if limits then
-    cd.x_start = limits.x_start or 0
-    cd.y_start = limits.y_start or 0
-    cd.z_start = limits.z_start or 0
-    cd.x_end = limits.x_end or 100000
-    cd.y_end = limits.y_end or 100000
-    cd.z_end = limits.z_end or 100000
-  end
-  cd.x_end = math.min(cd.x_end, cd.w)
-  cd.y_end = math.min(cd.y_end, cd.h)
-  cd.z_end = math.min(cd.z_end, cd.d)
+  set_limits(cd, limits)
 
   m._cubify(m._tables, data.cubedata, tris.triangles)
-  print("Generated " .. tris.triangles.index .. " vertices.")
+  --print("Generated " .. tris.triangles.index .. " vertices.")
 
   return tris
 end
@@ -606,9 +610,17 @@ function m.cubify_to_data(data, max_tris, scale, limits)
   local indices = {}
   local triangles = tris.triangles
   local ntris = triangles.index / 3
-  for i = 0, triangles.index - 1 do
-    verts[i+1] = math.Vector():from_dict(triangles.vertices[i]):multiply(scale)
-    indices[i+1] = i
+  local srcindex = 0
+  for f = 1, ntris do
+    local face = {}
+    for k = 1, 3 do
+      table.insert(verts, 
+        math.Vector():from_dict(triangles.vertices[srcindex]):multiply(scale)
+      )
+      face[k] = srcindex
+      srcindex = srcindex + 1
+    end 
+    table.insert(indices, face)
   end
 
   return {
@@ -622,7 +634,15 @@ end
 function m.cubify_to_geo(data, max_tris, scale, limits, target)
   local tris = m.cubify(data, max_tris, limits)
   local triangles = tris.triangles
-  scale = scale or (1.0 / data.dsize)
+  scale = scale or (1.0 / (data.dsize - 1))
+  local created_target = (not target)
+  if created_target then
+    local gfx = require("gfx")
+    local vtype = gfx.create_basic_vertex_type{"position"}
+    target = gfx.StaticGeometry("mc"):allocate(
+      triangles.index, triangles.index, vtype
+    )
+  end
 
   local nverts = math.min(math.min(target.n_verts, target.n_indices), triangles.index)
   local v_target, i_target = target.verts, target.indices
@@ -634,7 +654,80 @@ function m.cubify_to_geo(data, max_tris, scale, limits, target)
     v[2] = s.z * scale
     i_target[i] = i
   end
-  target:set_slice(0, nverts, 0, nverts)
+  if created_target then
+    target:commit()
+  else
+    target:set_slice(0, nverts, 0, nverts)
+  end
+  return target
+end
+
+function m.mc_data_add(target, other)
+  if target.dsize ~= other.dsize then
+    truss.error("MC Data Size mismatch: " .. tostring(target.dsize) .. " vs " .. tostring(other.dsize))
+  end
+  local nv = target.dsize^3
+  local td, sd = target.data, other.data
+  for p = 0, nv-1 do
+    td[p] = td[p] + sd[p]
+  end
+end
+
+function m.mc_data_map(target, f, limits)
+  local nv = target.dsize^3
+  local td = target.data
+  for p = 0, nv-1 do
+    td[p] = f(td[p])
+  end
+end
+
+function m.mc_data_from_function(f, target_or_size)
+  local dsize, data, cd, ret
+  if target_or_size == nil or type(target_or_size) == 'number' then
+    dsize = target_or_size or 32
+    data = terralib.new(float[dsize * dsize * dsize])
+    cd = terralib.new(m.cube_data)
+    cd.vals = data
+    cd.w, cd.h, cd.d = dsize, dsize, dsize
+    cd.x_start, cd.y_start, cd.z_start = 0, 0, 0
+    cd.x_end, cd.y_end, cd.z_end = dsize-1, dsize-1, dsize-1
+    ret = {cubedata = cd, data = data, dsize = dsize}
+  else
+    dsize = target_or_size.dsize
+    data = target_or_size.data
+    ret = target_or_size
+  end
+  local dpos = 0
+  local dd = dsize - 1
+  for z = 0, dsize-1 do
+    for y = 0, dsize-1 do
+      for x = 0, dsize-1 do
+        data[dpos] = f(x / dd, y / dd, z / dd)
+        dpos = dpos + 1
+      end
+    end
+  end
+  return ret
+end
+
+local terra map_terra_func(dsize: int32, data: &cube_data, f: {float,float,float,float} -> float)
+  var dd: float = dsize - 1.0
+  var buff: &float = data.vals
+  var z_stride = data.w * data.d
+  var y_stride = data.w
+  for z = data.z_start, data.z_end do
+    for y = data.y_start, data.y_end do
+      for x = data.x_start, data.x_end do
+        var dpos: int32 = z*z_stride + y*y_stride + x
+        buff[dpos] = f(buff[dpos], [float](x) / dd, [float](y) / dd, [float](z) / dd)
+      end
+    end
+  end
+end
+
+function m.mc_data_from_terra(target, f, limits)
+  set_limits(target.cubedata, limits)
+  map_terra_func(target.dsize, target.cubedata, f:getpointer())
 end
 
 return m

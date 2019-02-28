@@ -27,10 +27,11 @@ end
 local function parse_limits(limits)
   local ret = {}
   local limit_names = {
-    "DrawCalls","Blits","TextureSize","Views","FrameBuffers","FBAttachments",
-    "Programs","Shaders","Textures","TextureSamplers","VertexDecls",
-    "VertexStreams","IndexBuffers","VertexBuffers","DynamicIndexBuffers",
-    "DynamicVertexBuffers","Uniforms","OcclusionQueries"
+    "DrawCalls","Blits","TextureSize","TextureLayers","Views","FrameBuffers",
+    "FBAttachments","Programs","Shaders","Textures","TextureSamplers",
+    "ComputeBindings","VertexDecls","VertexStreams","IndexBuffers",
+    "VertexBuffers","DynamicIndexBuffers","DynamicVertexBuffers","Uniforms",
+    "OcclusionQueries","Encoders"
   }
   for _, limit_name in ipairs(limit_names) do
     ret[limit_name] = limits["max" .. limit_name]

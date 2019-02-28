@@ -19,7 +19,7 @@ m.TextureCube = TextureCube
 m.Texture3d = Texture3d
 
 function Texture:init(options)
-  self:_raw_set_flags(options.flags)
+  self:_raw_set_flags(options.flags, options.sampler_flags)
   self.dynamic = options.dynamic or false
   self.has_mips = false
   self.width = options.width
@@ -50,8 +50,11 @@ function Texture:_set_or_create_data(options)
   end
 end
 
-function Texture:_raw_set_flags(flags)
-  self._cflags, self.flags = m.combine_tex_flags(flags or {})
+function Texture:_raw_set_flags(flags, sampler_flags)
+  self._cflags, self.flags = m.combine_tex_flags(flags or {}, "TEXTURE_")
+  self._cflags = math.ullor(
+    self._cflags, (m.combine_tex_flags(sampler_flags or {}, "SAMPLER_"))
+  )
 end
 
 function Texture:is_renderable()
@@ -222,39 +225,44 @@ function Texture3d:_create_handle()
 end
 
 local default_tex_flags = {
-  u = "repeat", v = "repeat", w = "repeat",
-  min = "bilinear", mag = "bilinear",
-  mip = false, msaa = false, rt = false, render_target = false,
-  rt_msaa = false, rt_write_only = false,
-  compare = false, compute_write = false,
-  srgb = false, blit_dest = false, read_back = false
+  SAMPLER_ = {
+    u = "repeat", v = "repeat", w = "repeat",
+    min = "bilinear", mag = "bilinear", mip = false,
+    compare = false
+  },
+  TEXTURE_ = {
+    msaa = false, rt = false, render_target = false,
+    rt_msaa = false, rt_write_only = false, srgb = false, msaa_sample = false,
+    compute_write = false, rgb = false, blit_dest = false, read_back = false
+  }
 }
 
 -- bgfx doesn't actually define constants for default texture
 -- states, e.g., repeat and bilinear filtering
 -- also define some aliases
 local bgfx_tex_overrides = {
-  TEXTURE_U_REPEAT = 0,
-  TEXTURE_V_REPEAT = 0,
-  TEXTURE_W_REPEAT = 0,
-  TEXTURE_MIN_BILINEAR = 0,
-  TEXTURE_MAG_BILINEAR = 0,
+  SAMPLER_U_REPEAT = 0,
+  SAMPLER_V_REPEAT = 0,
+  SAMPLER_W_REPEAT = 0,
+  SAMPLER_MIN_BILINEAR = 0,
+  SAMPLER_MAG_BILINEAR = 0,
   TEXTURE_BLIT_DEST = bgfx.TEXTURE_BLIT_DST,
   TEXTURE_RENDER_TARGET = bgfx.TEXTURE_RT
 }
 
-function m.combine_tex_flags(_options)
-  local state = bgfx.TEXTURE_NONE
+function m.combine_tex_flags(_options, prefix)
+  prefix = prefix or "TEXTURE_"
+  local state = bgfx[prefix .. "NONE"] -- e.g. TEXTURE_NONE
   local options = {}
-  truss.extend_table(options, default_tex_flags)
+  truss.extend_table(options, default_tex_flags[prefix])
   truss.extend_table(options, _options or {})
 
   for k, v in pairs(options) do
-    if default_tex_flags[k] == nil then
-      truss.error("Unknown texture flag " .. k)
+    local const_name = prefix .. string.upper(k)
+    if default_tex_flags[prefix][k] == nil then
+      truss.error("Invalid texture flag '" .. k .. "' -> " .. const_name)
     end
 
-    local const_name = "TEXTURE_" .. string.upper(k)
     if v then
       if v ~= true then
         const_name = const_name .. "_" .. string.upper(v)
@@ -271,7 +279,7 @@ end
 local nvg_utils = truss.addons.nanovg.functions
 local nvg_pointer = truss.addons.nanovg.pointer
 
-local function texture_from_handle(handle, info, flags)
+local function texture_from_handle(handle, info, flags, sampler_flags)
   local ret = nil
   if info.cubeMap then
     ret = TextureCube()
@@ -281,11 +289,11 @@ local function texture_from_handle(handle, info, flags)
     ret = Texture2d()
   end
   ret:_raw_set_handle(handle, info)
-  ret:_raw_set_flags(flags)
+  ret:_raw_set_flags(flags, sampler_flags)
   return ret
 end
 
-local function load_texture_image(filename, flags)
+local function load_texture_image(filename, flags, sampler_flags)
   local w = terralib.new(int32[2])
   local h = terralib.new(int32[2])
   local n = terralib.new(int32[2])
@@ -294,21 +302,24 @@ local function load_texture_image(filename, flags)
   local bmem = bgfx.copy(msg.data, msg.data_length)
   truss.C.release_message(msg)
   local ret = Texture2d{width = w[0], height = h[0], format = fmt.TEX_RGBA8,
-                        flags = flags, allocate = false, commit = false}
+                        flags = flags, sampler_flags = sampler_flags,
+                        allocate = false, commit = false}
   ret._bmem = bmem
   ret:commit()
   return ret
 end
 
-local function load_texture_bgfx(filename, flags)
+local function load_texture_bgfx(filename, flags, sampler_flags)
   local msg = truss.C.load_file(filename)
   if msg == nil then truss.error("Texture load error: " .. filename) end
   local bmem = bgfx.copy(msg.data, msg.data_length)
   truss.C.release_message(msg)
   local info = terralib.new(bgfx.texture_info_t)
-  local cflags, flags = m.combine_tex_flags(flags or {})
+  local cflags, flags = m.combine_tex_flags(flags or {}, "TEXTURE_")
+  local scflags, sflags = m.combine_tex_flags(sampler_flags or {}, "SAMPLER_")
+  cflags = math.ullor(cflags, scflags)
   local handle = bgfx.create_texture(bmem, cflags, 0, info)
-  return texture_from_handle(handle, info, flags)
+  return texture_from_handle(handle, info, flags, sampler_flags)
 end
 
 local texture_loaders = {
@@ -319,23 +330,25 @@ local texture_loaders = {
   [".pvr"] = load_texture_bgfx
 }
 
-function m.Texture(filename, flags)
+function m.Texture(filename, flags, sampler_flags)
   local extension = string.lower(string.sub(filename, -4, -1))
   local loader = texture_loaders[extension]
   if not loader then truss.error("No texture loader for " .. extension) end
-  return loader(filename, flags)
+  return loader(filename, flags, sampler_flags)
 end
 
 function m.RTReadbackTexture(src, layer)
   layer = layer or 0 
   local info = src:get_layer_info(layer)
   local flags = {
-    blit_dest = true, read_back = true,
+    blit_dest = true, read_back = true
+  }
+  local sampler_flags = {
     min = 'point', mag = 'point', mip = 'point',
     u = 'clamp', v = 'clamp'
   }
   local tex = m.Texture2d{
-    allocate = true, flags = flags,
+    allocate = true, flags = flags, sampler_flags = sampler_flags,
     width = info.width, height = info.height,
     format = info.format
   }

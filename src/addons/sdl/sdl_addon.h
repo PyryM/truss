@@ -17,7 +17,6 @@
 #define BGFX_SHARED_LIB_USE 1
 
 #include <bgfx/c99/bgfx.h>
-#include <bgfx/c99/platform.h>
 
 #ifdef __cplusplus
 class SDLAddon;
@@ -25,23 +24,23 @@ class SDLAddon;
 typedef struct SDLAddon SDLAddon;
 #endif
 
-#define TRUSS_SDL_EVENT_OUTOFBOUNDS  0
-#define TRUSS_SDL_EVENT_KEYDOWN 		1
-#define TRUSS_SDL_EVENT_KEYUP		2
-#define TRUSS_SDL_EVENT_MOUSEDOWN 	3
-#define TRUSS_SDL_EVENT_MOUSEUP	 	4
-#define TRUSS_SDL_EVENT_MOUSEMOVE 	5
-#define TRUSS_SDL_EVENT_MOUSEWHEEL   6
-#define TRUSS_SDL_EVENT_WINDOW       7
-#define TRUSS_SDL_EVENT_TEXTINPUT    8
-#define TRUSS_SDL_EVENT_GP_ADDED     9
-#define TRUSS_SDL_EVENT_GP_REMOVED   10
-#define TRUSS_SDL_EVENT_GP_AXIS      11
+#define TRUSS_SDL_EVENT_OUTOFBOUNDS   0
+#define TRUSS_SDL_EVENT_KEYDOWN       1
+#define TRUSS_SDL_EVENT_KEYUP         2
+#define TRUSS_SDL_EVENT_MOUSEDOWN     3
+#define TRUSS_SDL_EVENT_MOUSEUP       4
+#define TRUSS_SDL_EVENT_MOUSEMOVE     5
+#define TRUSS_SDL_EVENT_MOUSEWHEEL    6
+#define TRUSS_SDL_EVENT_WINDOW        7
+#define TRUSS_SDL_EVENT_TEXTINPUT     8
+#define TRUSS_SDL_EVENT_GP_ADDED      9
+#define TRUSS_SDL_EVENT_GP_REMOVED    10
+#define TRUSS_SDL_EVENT_GP_AXIS       11
 #define TRUSS_SDL_EVENT_GP_BUTTONDOWN 12
-#define TRUSS_SDL_EVENT_GP_BUTTONUP 13
+#define TRUSS_SDL_EVENT_GP_BUTTONUP   13
 
-#define TRUSS_SDL_MAX_KEYCODE_LENGTH 15 /* should be enough for anybody */
-#define TRUSS_SDL_KEYCODE_BUFF_SIZE  16 /* extra byte for null terminator */
+#define TRUSS_SDL_MAX_KEYCODE_LENGTH  15 /* should be enough for anybody */
+#define TRUSS_SDL_KEYCODE_BUFF_SIZE   16 /* extra byte for null terminator */
 
 /* Simplified SDL Event */
 typedef struct {
@@ -119,7 +118,11 @@ private:
 };
 
 extern "C" {
-	void bgfx_cb_fatal(bgfx_callback_interface_t* _this, bgfx_fatal_t _code, const char* _str);
+	void bgfx_cb_fatal(bgfx_callback_interface_t* _this, const char* _filePath, uint16_t _line, bgfx_fatal_t _code, const char* _str);
+	void bgfx_cb_trace_vargs(bgfx_callback_interface_t* _this, const char* _filePath, uint16_t _line, const char* _format, va_list _argList);
+	void bgfx_cb_profiler_begin(bgfx_callback_interface_t* _this, const char* _name, uint32_t _abgr, const char* _filePath, uint16_t _line);
+	void bgfx_cb_profiler_begin_literal(bgfx_callback_interface_t* _this, const char* _name, uint32_t _abgr, const char* _filePath, uint16_t _line);
+	void bgfx_cb_profiler_end(bgfx_callback_interface_t* _this);
 	uint32_t bgfx_cb_cache_read_size(bgfx_callback_interface_t* _this, uint64_t _id);
 	bool bgfx_cb_cache_read(bgfx_callback_interface_t* _this, uint64_t _id, void* _data, uint32_t _size);
 	void bgfx_cb_cache_write(bgfx_callback_interface_t* _this, uint64_t _id, const void* _data, uint32_t _size);

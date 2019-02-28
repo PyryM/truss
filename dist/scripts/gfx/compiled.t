@@ -6,6 +6,7 @@ local class = require("class")
 local _uniforms = require("./uniforms.t")
 local _shaders = require("./shaders.t")
 local _common = require("./common.t")
+local _texture = require("./texture.t")
 local mathtypes = require("math/types.t")
 local bgfx = require("./bgfx.t")
 local m = {}
@@ -25,7 +26,7 @@ m.uniform_types = {
   },
   tex  = {
     kind       = "tex",
-    bgfx_type  = bgfx.UNIFORM_TYPE_INT1,
+    bgfx_type  = bgfx.UNIFORM_TYPE_SAMPLER,
     terra_type = bgfx.texture_handle_t
   } 
 }
@@ -164,8 +165,13 @@ local function _resolve_uniform(uname, u)
   if not uprime.typeinfo then
     truss.error("Unknown uniform kind: " .. uprime.kind)
   end
-  if uprime.kind == "tex" and (not uprime.sampler) then
-    truss.error("Tex uniform " .. uname .. " does not specify a sampler.")
+  if uprime.kind == "tex" then
+    if not uprime.sampler then
+      truss.error("Tex uniform " .. uname .. " does not specify a sampler.")
+    end
+    if uprime.flags and type(uprime.flags) == 'table' then
+      uprime.flags = _texture.combine_tex_flags(uprime.flags, "SAMPLER_")
+    end
   end
   return uprime
 end
@@ -282,7 +288,7 @@ local function compile_uniforms(material_name, uniforms)
           bgfx.set_texture( [uniform.sampler],
                             src.[uniform.handle_name],
                             src.[uniform.value_name][0],
-                            [uniform.texture_flags or bgfx.UINT32_MAX] )
+                            [uniform.flags or bgfx.UINT32_MAX] )
         end)
       else
         truss.error("Unknown uniform kind " .. uniform.kind)
@@ -318,7 +324,7 @@ local function compile_uniforms(material_name, uniforms)
           bgfx.set_texture( [uniform.sampler],
                             src.[uniform.handle_name],
                             globals.tex[ [uindex] ],
-                            [uniform.texture_flags or bgfx.UINT32_MAX] )
+                            [uniform.flags or bgfx.UINT32_MAX] )
         end)
       else
         truss.error("Unknown uniform kind " .. uniform.kind)
