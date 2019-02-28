@@ -11,6 +11,7 @@ def get_substituted_type(subtable, rawtype):
     else:
         return rawtype.strip().replace("vr::", "").replace("const","").replace("struct","").strip()
         #return rawtype.strip().replace("const","").replace("struct","").strip()
+        #return rawtype.strip().replace("struct","").strip()
 
 def get_substituted_self(subtable, selftype):
     return get_substituted_type(subtable, selftype) + "*"
@@ -37,7 +38,7 @@ def emit_declarations(methods, type_sub_table):
 def emit_definitions(methods, type_sub_table):
     ret = []
     for method in methods:
-        ret.append(create_declaration(method, type_sub_table) + "{")
+        ret.append(create_declaration(method, type_sub_table) + " {")
         if "params" in method:
             params = [p["paramname"] for p in method["params"]]
         else:
@@ -47,14 +48,14 @@ def emit_definitions(methods, type_sub_table):
         outtype = get_substituted_type(type_sub_table, method["returntype"])
         if outtype != "void":
             scall = "return " + scall
-        ret.append("    " + scall)
+        ret.append("\t" + scall)
         ret.append("}")
         ret.append("")
     return ret
 
 
 if __name__ == '__main__':
-    subtable = {} #{"vr::IVRSystem": "IVRSystem"}
+    subtable = {"const char *": "const char *"} #{"vr::IVRSystem": "IVRSystem"}
 
     with open(sys.argv[1], "rt") as src:
         data = json.load(src)

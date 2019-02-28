@@ -32,6 +32,10 @@ void tr_ovw_GetDXGIOutputInfo(vr::IVRSystem* self, int32_t * pnAdapterIndex) {
 	self->GetDXGIOutputInfo(pnAdapterIndex);
 }
 
+void tr_ovw_GetOutputDevice(vr::IVRSystem* self, uint64_t * pnDevice, vr::ETextureType textureType, VkInstance_T * pInstance) {
+	self->GetOutputDevice(pnDevice, textureType, pInstance);
+}
+
 bool tr_ovw_IsDisplayOnDesktop(vr::IVRSystem* self) {
 	return self->IsDisplayOnDesktop();
 }
@@ -104,6 +108,10 @@ vr::HmdMatrix34_t tr_ovw_GetMatrix34TrackedDeviceProperty(vr::IVRSystem* self, v
 	return self->GetMatrix34TrackedDeviceProperty(unDeviceIndex, prop, pError);
 }
 
+uint32_t tr_ovw_GetArrayTrackedDeviceProperty(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unDeviceIndex, vr::ETrackedDeviceProperty prop, vr::PropertyTypeTag_t propType, void * pBuffer, uint32_t unBufferSize, vr::ETrackedPropertyError * pError) {
+	return self->GetArrayTrackedDeviceProperty(unDeviceIndex, prop, propType, pBuffer, unBufferSize, pError);
+}
+
 uint32_t tr_ovw_GetStringTrackedDeviceProperty(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unDeviceIndex, vr::ETrackedDeviceProperty prop, char * pchValue, uint32_t unBufferSize, vr::ETrackedPropertyError * pError) {
 	return self->GetStringTrackedDeviceProperty(unDeviceIndex, prop, pchValue, unBufferSize, pError);
 }
@@ -148,19 +156,23 @@ const char * tr_ovw_GetControllerAxisTypeNameFromEnum(vr::IVRSystem* self, vr::E
 	return self->GetControllerAxisTypeNameFromEnum(eAxisType);
 }
 
-bool tr_ovw_CaptureInputFocus(vr::IVRSystem* self) {
-	return self->CaptureInputFocus();
+bool tr_ovw_IsInputAvailable(vr::IVRSystem* self) {
+	return self->IsInputAvailable();
 }
 
-void tr_ovw_ReleaseInputFocus(vr::IVRSystem* self) {
-	self->ReleaseInputFocus();
+bool tr_ovw_IsSteamVRDrawingControllers(vr::IVRSystem* self) {
+	return self->IsSteamVRDrawingControllers();
 }
 
-bool tr_ovw_IsInputFocusCapturedByAnotherProcess(vr::IVRSystem* self) {
-	return self->IsInputFocusCapturedByAnotherProcess();
+bool tr_ovw_ShouldApplicationPause(vr::IVRSystem* self) {
+	return self->ShouldApplicationPause();
 }
 
-uint32_t tr_ovw_DriverDebugRequest(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unDeviceIndex, char * pchRequest, char * pchResponseBuffer, uint32_t unResponseBufferSize) {
+bool tr_ovw_ShouldApplicationReduceRenderingWork(vr::IVRSystem* self) {
+	return self->ShouldApplicationReduceRenderingWork();
+}
+
+uint32_t tr_ovw_DriverDebugRequest(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unDeviceIndex, const char * pchRequest, char * pchResponseBuffer, uint32_t unResponseBufferSize) {
 	return self->DriverDebugRequest(unDeviceIndex, pchRequest, pchResponseBuffer, unResponseBufferSize);
 }
 
@@ -184,9 +196,9 @@ void tr_ovw_GetEyeOutputViewport(vr::IVRExtendedDisplay* self, vr::EVREye eEye, 
 	self->GetEyeOutputViewport(eEye, pnX, pnY, pnWidth, pnHeight);
 }
 
-/*void tr_ovw_GetDXGIOutputInfo(vr::IVRExtendedDisplay* self, int32_t * pnAdapterIndex, int32_t * pnAdapterOutputIndex) {
+void tr_ovw_GetDXGIOutputInfo(vr::IVRExtendedDisplay* self, int32_t * pnAdapterIndex, int32_t * pnAdapterOutputIndex) {
 	self->GetDXGIOutputInfo(pnAdapterIndex, pnAdapterOutputIndex);
-}*/
+}
 
 const char * tr_ovw_GetCameraErrorNameFromEnum(vr::IVRTrackedCamera* self, vr::EVRTrackedCameraError eCameraError) {
 	return self->GetCameraErrorNameFromEnum(eCameraError);
@@ -200,12 +212,12 @@ vr::EVRTrackedCameraError tr_ovw_GetCameraFrameSize(vr::IVRTrackedCamera* self, 
 	return self->GetCameraFrameSize(nDeviceIndex, eFrameType, pnWidth, pnHeight, pnFrameBufferSize);
 }
 
-vr::EVRTrackedCameraError tr_ovw_GetCameraIntrinsics(vr::IVRTrackedCamera* self, vr::TrackedDeviceIndex_t nDeviceIndex, vr::EVRTrackedCameraFrameType eFrameType, vr::HmdVector2_t * pFocalLength, vr::HmdVector2_t * pCenter) {
-	return self->GetCameraIntrinsics(nDeviceIndex, eFrameType, pFocalLength, pCenter);
+vr::EVRTrackedCameraError tr_ovw_GetCameraIntrinsics(vr::IVRTrackedCamera* self, vr::TrackedDeviceIndex_t nDeviceIndex, uint32_t nCameraIndex, vr::EVRTrackedCameraFrameType eFrameType, vr::HmdVector2_t * pFocalLength, vr::HmdVector2_t * pCenter) {
+	return self->GetCameraIntrinsics(nDeviceIndex, nCameraIndex, eFrameType, pFocalLength, pCenter);
 }
 
-vr::EVRTrackedCameraError tr_ovw_GetCameraProjection(vr::IVRTrackedCamera* self, vr::TrackedDeviceIndex_t nDeviceIndex, vr::EVRTrackedCameraFrameType eFrameType, float flZNear, float flZFar, vr::HmdMatrix44_t * pProjection) {
-	return self->GetCameraProjection(nDeviceIndex, eFrameType, flZNear, flZFar, pProjection);
+vr::EVRTrackedCameraError tr_ovw_GetCameraProjection(vr::IVRTrackedCamera* self, vr::TrackedDeviceIndex_t nDeviceIndex, uint32_t nCameraIndex, vr::EVRTrackedCameraFrameType eFrameType, float flZNear, float flZFar, vr::HmdMatrix44_t * pProjection) {
+	return self->GetCameraProjection(nDeviceIndex, nCameraIndex, eFrameType, flZNear, flZFar, pProjection);
 }
 
 vr::EVRTrackedCameraError tr_ovw_AcquireVideoStreamingService(vr::IVRTrackedCamera* self, vr::TrackedDeviceIndex_t nDeviceIndex, vr::TrackedCameraHandle_t * pHandle) {
@@ -236,15 +248,15 @@ vr::EVRTrackedCameraError tr_ovw_ReleaseVideoStreamTextureGL(vr::IVRTrackedCamer
 	return self->ReleaseVideoStreamTextureGL(hTrackedCamera, glTextureId);
 }
 
-vr::EVRApplicationError tr_ovw_AddApplicationManifest(vr::IVRApplications* self, char * pchApplicationManifestFullPath, bool bTemporary) {
+vr::EVRApplicationError tr_ovw_AddApplicationManifest(vr::IVRApplications* self, const char * pchApplicationManifestFullPath, bool bTemporary) {
 	return self->AddApplicationManifest(pchApplicationManifestFullPath, bTemporary);
 }
 
-vr::EVRApplicationError tr_ovw_RemoveApplicationManifest(vr::IVRApplications* self, char * pchApplicationManifestFullPath) {
+vr::EVRApplicationError tr_ovw_RemoveApplicationManifest(vr::IVRApplications* self, const char * pchApplicationManifestFullPath) {
 	return self->RemoveApplicationManifest(pchApplicationManifestFullPath);
 }
 
-bool tr_ovw_IsApplicationInstalled(vr::IVRApplications* self, char * pchAppKey) {
+bool tr_ovw_IsApplicationInstalled(vr::IVRApplications* self, const char * pchAppKey) {
 	return self->IsApplicationInstalled(pchAppKey);
 }
 
@@ -260,31 +272,31 @@ vr::EVRApplicationError tr_ovw_GetApplicationKeyByProcessId(vr::IVRApplications*
 	return self->GetApplicationKeyByProcessId(unProcessId, pchAppKeyBuffer, unAppKeyBufferLen);
 }
 
-vr::EVRApplicationError tr_ovw_LaunchApplication(vr::IVRApplications* self, char * pchAppKey) {
+vr::EVRApplicationError tr_ovw_LaunchApplication(vr::IVRApplications* self, const char * pchAppKey) {
 	return self->LaunchApplication(pchAppKey);
 }
 
-vr::EVRApplicationError tr_ovw_LaunchTemplateApplication(vr::IVRApplications* self, char * pchTemplateAppKey, char * pchNewAppKey, vr::AppOverrideKeys_t * pKeys, uint32_t unKeys) {
+vr::EVRApplicationError tr_ovw_LaunchTemplateApplication(vr::IVRApplications* self, const char * pchTemplateAppKey, const char * pchNewAppKey, vr::AppOverrideKeys_t * pKeys, uint32_t unKeys) {
 	return self->LaunchTemplateApplication(pchTemplateAppKey, pchNewAppKey, pKeys, unKeys);
 }
 
-vr::EVRApplicationError tr_ovw_LaunchApplicationFromMimeType(vr::IVRApplications* self, char * pchMimeType, char * pchArgs) {
+vr::EVRApplicationError tr_ovw_LaunchApplicationFromMimeType(vr::IVRApplications* self, const char * pchMimeType, const char * pchArgs) {
 	return self->LaunchApplicationFromMimeType(pchMimeType, pchArgs);
 }
 
-vr::EVRApplicationError tr_ovw_LaunchDashboardOverlay(vr::IVRApplications* self, char * pchAppKey) {
+vr::EVRApplicationError tr_ovw_LaunchDashboardOverlay(vr::IVRApplications* self, const char * pchAppKey) {
 	return self->LaunchDashboardOverlay(pchAppKey);
 }
 
-bool tr_ovw_CancelApplicationLaunch(vr::IVRApplications* self, char * pchAppKey) {
+bool tr_ovw_CancelApplicationLaunch(vr::IVRApplications* self, const char * pchAppKey) {
 	return self->CancelApplicationLaunch(pchAppKey);
 }
 
-vr::EVRApplicationError tr_ovw_IdentifyApplication(vr::IVRApplications* self, uint32_t unProcessId, char * pchAppKey) {
+vr::EVRApplicationError tr_ovw_IdentifyApplication(vr::IVRApplications* self, uint32_t unProcessId, const char * pchAppKey) {
 	return self->IdentifyApplication(unProcessId, pchAppKey);
 }
 
-uint32_t tr_ovw_GetApplicationProcessId(vr::IVRApplications* self, char * pchAppKey) {
+uint32_t tr_ovw_GetApplicationProcessId(vr::IVRApplications* self, const char * pchAppKey) {
 	return self->GetApplicationProcessId(pchAppKey);
 }
 
@@ -292,39 +304,39 @@ const char * tr_ovw_GetApplicationsErrorNameFromEnum(vr::IVRApplications* self, 
 	return self->GetApplicationsErrorNameFromEnum(error);
 }
 
-uint32_t tr_ovw_GetApplicationPropertyString(vr::IVRApplications* self, char * pchAppKey, vr::EVRApplicationProperty eProperty, char * pchPropertyValueBuffer, uint32_t unPropertyValueBufferLen, vr::EVRApplicationError * peError) {
+uint32_t tr_ovw_GetApplicationPropertyString(vr::IVRApplications* self, const char * pchAppKey, vr::EVRApplicationProperty eProperty, char * pchPropertyValueBuffer, uint32_t unPropertyValueBufferLen, vr::EVRApplicationError * peError) {
 	return self->GetApplicationPropertyString(pchAppKey, eProperty, pchPropertyValueBuffer, unPropertyValueBufferLen, peError);
 }
 
-bool tr_ovw_GetApplicationPropertyBool(vr::IVRApplications* self, char * pchAppKey, vr::EVRApplicationProperty eProperty, vr::EVRApplicationError * peError) {
+bool tr_ovw_GetApplicationPropertyBool(vr::IVRApplications* self, const char * pchAppKey, vr::EVRApplicationProperty eProperty, vr::EVRApplicationError * peError) {
 	return self->GetApplicationPropertyBool(pchAppKey, eProperty, peError);
 }
 
-uint64_t tr_ovw_GetApplicationPropertyUint64(vr::IVRApplications* self, char * pchAppKey, vr::EVRApplicationProperty eProperty, vr::EVRApplicationError * peError) {
+uint64_t tr_ovw_GetApplicationPropertyUint64(vr::IVRApplications* self, const char * pchAppKey, vr::EVRApplicationProperty eProperty, vr::EVRApplicationError * peError) {
 	return self->GetApplicationPropertyUint64(pchAppKey, eProperty, peError);
 }
 
-vr::EVRApplicationError tr_ovw_SetApplicationAutoLaunch(vr::IVRApplications* self, char * pchAppKey, bool bAutoLaunch) {
+vr::EVRApplicationError tr_ovw_SetApplicationAutoLaunch(vr::IVRApplications* self, const char * pchAppKey, bool bAutoLaunch) {
 	return self->SetApplicationAutoLaunch(pchAppKey, bAutoLaunch);
 }
 
-bool tr_ovw_GetApplicationAutoLaunch(vr::IVRApplications* self, char * pchAppKey) {
+bool tr_ovw_GetApplicationAutoLaunch(vr::IVRApplications* self, const char * pchAppKey) {
 	return self->GetApplicationAutoLaunch(pchAppKey);
 }
 
-vr::EVRApplicationError tr_ovw_SetDefaultApplicationForMimeType(vr::IVRApplications* self, char * pchAppKey, char * pchMimeType) {
+vr::EVRApplicationError tr_ovw_SetDefaultApplicationForMimeType(vr::IVRApplications* self, const char * pchAppKey, const char * pchMimeType) {
 	return self->SetDefaultApplicationForMimeType(pchAppKey, pchMimeType);
 }
 
-bool tr_ovw_GetDefaultApplicationForMimeType(vr::IVRApplications* self, char * pchMimeType, char * pchAppKeyBuffer, uint32_t unAppKeyBufferLen) {
+bool tr_ovw_GetDefaultApplicationForMimeType(vr::IVRApplications* self, const char * pchMimeType, char * pchAppKeyBuffer, uint32_t unAppKeyBufferLen) {
 	return self->GetDefaultApplicationForMimeType(pchMimeType, pchAppKeyBuffer, unAppKeyBufferLen);
 }
 
-bool tr_ovw_GetApplicationSupportedMimeTypes(vr::IVRApplications* self, char * pchAppKey, char * pchMimeTypesBuffer, uint32_t unMimeTypesBuffer) {
+bool tr_ovw_GetApplicationSupportedMimeTypes(vr::IVRApplications* self, const char * pchAppKey, char * pchMimeTypesBuffer, uint32_t unMimeTypesBuffer) {
 	return self->GetApplicationSupportedMimeTypes(pchAppKey, pchMimeTypesBuffer, unMimeTypesBuffer);
 }
 
-uint32_t tr_ovw_GetApplicationsThatSupportMimeType(vr::IVRApplications* self, char * pchMimeType, char * pchAppKeysThatSupportBuffer, uint32_t unAppKeysThatSupportBuffer) {
+uint32_t tr_ovw_GetApplicationsThatSupportMimeType(vr::IVRApplications* self, const char * pchMimeType, char * pchAppKeysThatSupportBuffer, uint32_t unAppKeysThatSupportBuffer) {
 	return self->GetApplicationsThatSupportMimeType(pchMimeType, pchAppKeysThatSupportBuffer, unAppKeysThatSupportBuffer);
 }
 
@@ -340,7 +352,7 @@ vr::EVRApplicationTransitionState tr_ovw_GetTransitionState(vr::IVRApplications*
 	return self->GetTransitionState();
 }
 
-vr::EVRApplicationError tr_ovw_PerformApplicationPrelaunchCheck(vr::IVRApplications* self, char * pchAppKey) {
+vr::EVRApplicationError tr_ovw_PerformApplicationPrelaunchCheck(vr::IVRApplications* self, const char * pchAppKey) {
 	return self->PerformApplicationPrelaunchCheck(pchAppKey);
 }
 
@@ -352,7 +364,7 @@ bool tr_ovw_IsQuitUserPromptRequested(vr::IVRApplications* self) {
 	return self->IsQuitUserPromptRequested();
 }
 
-vr::EVRApplicationError tr_ovw_LaunchInternalProcess(vr::IVRApplications* self, char * pchBinaryPath, char * pchArguments, char * pchWorkingDirectory) {
+vr::EVRApplicationError tr_ovw_LaunchInternalProcess(vr::IVRApplications* self, const char * pchBinaryPath, const char * pchArguments, const char * pchWorkingDirectory) {
 	return self->LaunchInternalProcess(pchBinaryPath, pchArguments, pchWorkingDirectory);
 }
 
@@ -432,6 +444,10 @@ void tr_ovw_SetWorkingCollisionBoundsInfo(vr::IVRChaperoneSetup* self, vr::HmdQu
 	self->SetWorkingCollisionBoundsInfo(pQuadsBuffer, unQuadsCount);
 }
 
+void tr_ovw_SetWorkingPerimeter(vr::IVRChaperoneSetup* self, vr::HmdVector2_t * pPointBuffer, uint32_t unPointCount) {
+	self->SetWorkingPerimeter(pPointBuffer, unPointCount);
+}
+
 void tr_ovw_SetWorkingSeatedZeroPoseToRawTrackingPose(vr::IVRChaperoneSetup* self, vr::HmdMatrix34_t * pMatSeatedZeroPoseToRawTrackingPose) {
 	self->SetWorkingSeatedZeroPoseToRawTrackingPose(pMatSeatedZeroPoseToRawTrackingPose);
 }
@@ -448,28 +464,20 @@ bool tr_ovw_GetLiveSeatedZeroPoseToRawTrackingPose(vr::IVRChaperoneSetup* self, 
 	return self->GetLiveSeatedZeroPoseToRawTrackingPose(pmatSeatedZeroPoseToRawTrackingPose);
 }
 
-void tr_ovw_SetWorkingCollisionBoundsTagsInfo(vr::IVRChaperoneSetup* self, uint8_t * pTagsBuffer, uint32_t unTagCount) {
-	self->SetWorkingCollisionBoundsTagsInfo(pTagsBuffer, unTagCount);
-}
-
-bool tr_ovw_GetLiveCollisionBoundsTagsInfo(vr::IVRChaperoneSetup* self, uint8_t * pTagsBuffer, uint32_t * punTagCount) {
-	return self->GetLiveCollisionBoundsTagsInfo(pTagsBuffer, punTagCount);
-}
-
-bool tr_ovw_SetWorkingPhysicalBoundsInfo(vr::IVRChaperoneSetup* self, vr::HmdQuad_t * pQuadsBuffer, uint32_t unQuadsCount) {
-	return self->SetWorkingPhysicalBoundsInfo(pQuadsBuffer, unQuadsCount);
-}
-
-bool tr_ovw_GetLivePhysicalBoundsInfo(vr::IVRChaperoneSetup* self, vr::HmdQuad_t * pQuadsBuffer, uint32_t * punQuadsCount) {
-	return self->GetLivePhysicalBoundsInfo(pQuadsBuffer, punQuadsCount);
-}
-
 bool tr_ovw_ExportLiveToBuffer(vr::IVRChaperoneSetup* self, char * pBuffer, uint32_t * pnBufferLength) {
 	return self->ExportLiveToBuffer(pBuffer, pnBufferLength);
 }
 
-bool tr_ovw_ImportFromBufferToWorking(vr::IVRChaperoneSetup* self, char * pBuffer, uint32_t nImportFlags) {
+bool tr_ovw_ImportFromBufferToWorking(vr::IVRChaperoneSetup* self, const char * pBuffer, uint32_t nImportFlags) {
 	return self->ImportFromBufferToWorking(pBuffer, nImportFlags);
+}
+
+void tr_ovw_ShowWorkingSetPreview(vr::IVRChaperoneSetup* self) {
+	self->ShowWorkingSetPreview();
+}
+
+void tr_ovw_HideWorkingSetPreview(vr::IVRChaperoneSetup* self) {
+	self->HideWorkingSetPreview();
 }
 
 void tr_ovw_SetTrackingSpace(vr::IVRCompositor* self, vr::ETrackingUniverseOrigin eOrigin) {
@@ -636,12 +644,24 @@ uint32_t tr_ovw_GetVulkanDeviceExtensionsRequired(vr::IVRCompositor* self, VkPhy
 	return self->GetVulkanDeviceExtensionsRequired(pPhysicalDevice, pchValue, unBufferSize);
 }
 
-vr::EVROverlayError tr_ovw_FindOverlay(vr::IVROverlay* self, char * pchOverlayKey, vr::VROverlayHandle_t * pOverlayHandle) {
+void tr_ovw_SetExplicitTimingMode(vr::IVRCompositor* self, vr::EVRCompositorTimingMode eTimingMode) {
+	self->SetExplicitTimingMode(eTimingMode);
+}
+
+vr::EVRCompositorError tr_ovw_SubmitExplicitTimingData(vr::IVRCompositor* self) {
+	return self->SubmitExplicitTimingData();
+}
+
+bool tr_ovw_IsMotionSmoothingEnabled(vr::IVRCompositor* self) {
+	return self->IsMotionSmoothingEnabled();
+}
+
+vr::EVROverlayError tr_ovw_FindOverlay(vr::IVROverlay* self, const char * pchOverlayKey, vr::VROverlayHandle_t * pOverlayHandle) {
 	return self->FindOverlay(pchOverlayKey, pOverlayHandle);
 }
 
-vr::EVROverlayError tr_ovw_CreateOverlay(vr::IVROverlay* self, char * pchOverlayKey, char * pchOverlayFriendlyName, vr::VROverlayHandle_t * pOverlayHandle) {
-	return self->CreateOverlay(pchOverlayKey, pchOverlayFriendlyName, pOverlayHandle);
+vr::EVROverlayError tr_ovw_CreateOverlay(vr::IVROverlay* self, const char * pchOverlayKey, const char * pchOverlayName, vr::VROverlayHandle_t * pOverlayHandle) {
+	return self->CreateOverlay(pchOverlayKey, pchOverlayName, pOverlayHandle);
 }
 
 vr::EVROverlayError tr_ovw_DestroyOverlay(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle) {
@@ -662,6 +682,10 @@ uint32_t tr_ovw_GetOverlayKey(vr::IVROverlay* self, vr::VROverlayHandle_t ulOver
 
 uint32_t tr_ovw_GetOverlayName(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, char * pchValue, uint32_t unBufferSize, vr::EVROverlayError * pError) {
 	return self->GetOverlayName(ulOverlayHandle, pchValue, unBufferSize, pError);
+}
+
+vr::EVROverlayError tr_ovw_SetOverlayName(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, const char * pchName) {
+	return self->SetOverlayName(ulOverlayHandle, pchName);
 }
 
 vr::EVROverlayError tr_ovw_GetOverlayImageData(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, void * pvBuffer, uint32_t unBufferSize, uint32_t * punWidth, uint32_t * punHeight) {
@@ -752,6 +776,14 @@ vr::EVROverlayError tr_ovw_GetOverlayTextureBounds(vr::IVROverlay* self, vr::VRO
 	return self->GetOverlayTextureBounds(ulOverlayHandle, pOverlayTextureBounds);
 }
 
+uint32_t tr_ovw_GetOverlayRenderModel(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, char * pchValue, uint32_t unBufferSize, vr::HmdColor_t * pColor, vr::EVROverlayError * pError) {
+	return self->GetOverlayRenderModel(ulOverlayHandle, pchValue, unBufferSize, pColor, pError);
+}
+
+vr::EVROverlayError tr_ovw_SetOverlayRenderModel(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, const char * pchRenderModel, vr::HmdColor_t * pColor) {
+	return self->SetOverlayRenderModel(ulOverlayHandle, pchRenderModel, pColor);
+}
+
 vr::EVROverlayError tr_ovw_GetOverlayTransformType(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, vr::VROverlayTransformType * peTransformType) {
 	return self->GetOverlayTransformType(ulOverlayHandle, peTransformType);
 }
@@ -772,12 +804,20 @@ vr::EVROverlayError tr_ovw_GetOverlayTransformTrackedDeviceRelative(vr::IVROverl
 	return self->GetOverlayTransformTrackedDeviceRelative(ulOverlayHandle, punTrackedDevice, pmatTrackedDeviceToOverlayTransform);
 }
 
-vr::EVROverlayError tr_ovw_SetOverlayTransformTrackedDeviceComponent(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, vr::TrackedDeviceIndex_t unDeviceIndex, char * pchComponentName) {
+vr::EVROverlayError tr_ovw_SetOverlayTransformTrackedDeviceComponent(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, vr::TrackedDeviceIndex_t unDeviceIndex, const char * pchComponentName) {
 	return self->SetOverlayTransformTrackedDeviceComponent(ulOverlayHandle, unDeviceIndex, pchComponentName);
 }
 
 vr::EVROverlayError tr_ovw_GetOverlayTransformTrackedDeviceComponent(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, vr::TrackedDeviceIndex_t * punDeviceIndex, char * pchComponentName, uint32_t unComponentNameSize) {
 	return self->GetOverlayTransformTrackedDeviceComponent(ulOverlayHandle, punDeviceIndex, pchComponentName, unComponentNameSize);
+}
+
+vr::EVROverlayError tr_ovw_GetOverlayTransformOverlayRelative(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, vr::VROverlayHandle_t * ulOverlayHandleParent, vr::HmdMatrix34_t * pmatParentOverlayToOverlayTransform) {
+	return self->GetOverlayTransformOverlayRelative(ulOverlayHandle, ulOverlayHandleParent, pmatParentOverlayToOverlayTransform);
+}
+
+vr::EVROverlayError tr_ovw_SetOverlayTransformOverlayRelative(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, vr::VROverlayHandle_t ulOverlayHandleParent, vr::HmdMatrix34_t * pmatParentOverlayToOverlayTransform) {
+	return self->SetOverlayTransformOverlayRelative(ulOverlayHandle, ulOverlayHandleParent, pmatParentOverlayToOverlayTransform);
 }
 
 vr::EVROverlayError tr_ovw_ShowOverlay(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle) {
@@ -820,10 +860,6 @@ bool tr_ovw_ComputeOverlayIntersection(vr::IVROverlay* self, vr::VROverlayHandle
 	return self->ComputeOverlayIntersection(ulOverlayHandle, pParams, pResults);
 }
 
-bool tr_ovw_HandleControllerOverlayInteractionAsMouse(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, vr::TrackedDeviceIndex_t unControllerDeviceIndex) {
-	return self->HandleControllerOverlayInteractionAsMouse(ulOverlayHandle, unControllerDeviceIndex);
-}
-
 bool tr_ovw_IsHoverTargetOverlay(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle) {
 	return self->IsHoverTargetOverlay(ulOverlayHandle);
 }
@@ -844,6 +880,14 @@ vr::EVROverlayError tr_ovw_MoveGamepadFocusToNeighbor(vr::IVROverlay* self, vr::
 	return self->MoveGamepadFocusToNeighbor(eDirection, ulFrom);
 }
 
+vr::EVROverlayError tr_ovw_SetOverlayDualAnalogTransform(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlay, vr::EDualAnalogWhich eWhich, vr::HmdVector2_t * pvCenter, float fRadius) {
+	return self->SetOverlayDualAnalogTransform(ulOverlay, eWhich, pvCenter, fRadius);
+}
+
+vr::EVROverlayError tr_ovw_GetOverlayDualAnalogTransform(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlay, vr::EDualAnalogWhich eWhich, vr::HmdVector2_t * pvCenter, float * pfRadius) {
+	return self->GetOverlayDualAnalogTransform(ulOverlay, eWhich, pvCenter, pfRadius);
+}
+
 vr::EVROverlayError tr_ovw_SetOverlayTexture(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, vr::Texture_t * pTexture) {
 	return self->SetOverlayTexture(ulOverlayHandle, pTexture);
 }
@@ -856,7 +900,7 @@ vr::EVROverlayError tr_ovw_SetOverlayRaw(vr::IVROverlay* self, vr::VROverlayHand
 	return self->SetOverlayRaw(ulOverlayHandle, pvBuffer, unWidth, unHeight, unDepth);
 }
 
-vr::EVROverlayError tr_ovw_SetOverlayFromFile(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, char * pchFilePath) {
+vr::EVROverlayError tr_ovw_SetOverlayFromFile(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, const char * pchFilePath) {
 	return self->SetOverlayFromFile(ulOverlayHandle, pchFilePath);
 }
 
@@ -872,7 +916,7 @@ vr::EVROverlayError tr_ovw_GetOverlayTextureSize(vr::IVROverlay* self, vr::VROve
 	return self->GetOverlayTextureSize(ulOverlayHandle, pWidth, pHeight);
 }
 
-vr::EVROverlayError tr_ovw_CreateDashboardOverlay(vr::IVROverlay* self, char * pchOverlayKey, char * pchOverlayFriendlyName, vr::VROverlayHandle_t * pMainHandle, vr::VROverlayHandle_t * pThumbnailHandle) {
+vr::EVROverlayError tr_ovw_CreateDashboardOverlay(vr::IVROverlay* self, const char * pchOverlayKey, const char * pchOverlayFriendlyName, vr::VROverlayHandle_t * pMainHandle, vr::VROverlayHandle_t * pThumbnailHandle) {
 	return self->CreateDashboardOverlay(pchOverlayKey, pchOverlayFriendlyName, pMainHandle, pThumbnailHandle);
 }
 
@@ -892,7 +936,7 @@ vr::EVROverlayError tr_ovw_GetDashboardOverlaySceneProcess(vr::IVROverlay* self,
 	return self->GetDashboardOverlaySceneProcess(ulOverlayHandle, punProcessId);
 }
 
-void tr_ovw_ShowDashboard(vr::IVROverlay* self, char * pchOverlayToShow) {
+void tr_ovw_ShowDashboard(vr::IVROverlay* self, const char * pchOverlayToShow) {
 	self->ShowDashboard(pchOverlayToShow);
 }
 
@@ -900,11 +944,11 @@ vr::TrackedDeviceIndex_t tr_ovw_GetPrimaryDashboardDevice(vr::IVROverlay* self) 
 	return self->GetPrimaryDashboardDevice();
 }
 
-vr::EVROverlayError tr_ovw_ShowKeyboard(vr::IVROverlay* self, vr::EGamepadTextInputMode eInputMode, vr::EGamepadTextInputLineMode eLineInputMode, char * pchDescription, uint32_t unCharMax, char * pchExistingText, bool bUseMinimalMode, uint64_t uUserValue) {
+vr::EVROverlayError tr_ovw_ShowKeyboard(vr::IVROverlay* self, vr::EGamepadTextInputMode eInputMode, vr::EGamepadTextInputLineMode eLineInputMode, const char * pchDescription, uint32_t unCharMax, const char * pchExistingText, bool bUseMinimalMode, uint64_t uUserValue) {
 	return self->ShowKeyboard(eInputMode, eLineInputMode, pchDescription, unCharMax, pchExistingText, bUseMinimalMode, uUserValue);
 }
 
-vr::EVROverlayError tr_ovw_ShowKeyboardForOverlay(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, vr::EGamepadTextInputMode eInputMode, vr::EGamepadTextInputLineMode eLineInputMode, char * pchDescription, uint32_t unCharMax, char * pchExistingText, bool bUseMinimalMode, uint64_t uUserValue) {
+vr::EVROverlayError tr_ovw_ShowKeyboardForOverlay(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle, vr::EGamepadTextInputMode eInputMode, vr::EGamepadTextInputLineMode eLineInputMode, const char * pchDescription, uint32_t unCharMax, const char * pchExistingText, bool bUseMinimalMode, uint64_t uUserValue) {
 	return self->ShowKeyboardForOverlay(ulOverlayHandle, eInputMode, eLineInputMode, pchDescription, unCharMax, pchExistingText, bUseMinimalMode, uUserValue);
 }
 
@@ -932,11 +976,15 @@ vr::EVROverlayError tr_ovw_GetOverlayFlags(vr::IVROverlay* self, vr::VROverlayHa
 	return self->GetOverlayFlags(ulOverlayHandle, pFlags);
 }
 
-vr::VRMessageOverlayResponse tr_ovw_ShowMessageOverlay(vr::IVROverlay* self, char * pchText, char * pchCaption, char * pchButton0Text, char * pchButton1Text, char * pchButton2Text, char * pchButton3Text) {
+vr::VRMessageOverlayResponse tr_ovw_ShowMessageOverlay(vr::IVROverlay* self, const char * pchText, const char * pchCaption, const char * pchButton0Text, const char * pchButton1Text, const char * pchButton2Text, const char * pchButton3Text) {
 	return self->ShowMessageOverlay(pchText, pchCaption, pchButton0Text, pchButton1Text, pchButton2Text, pchButton3Text);
 }
 
-vr::EVRRenderModelError tr_ovw_LoadRenderModel_Async(vr::IVRRenderModels* self, char * pchRenderModelName, vr::RenderModel_t ** ppRenderModel) {
+void tr_ovw_CloseMessageOverlay(vr::IVROverlay* self) {
+	self->CloseMessageOverlay();
+}
+
+vr::EVRRenderModelError tr_ovw_LoadRenderModel_Async(vr::IVRRenderModels* self, const char * pchRenderModelName, vr::RenderModel_t ** ppRenderModel) {
 	return self->LoadRenderModel_Async(pchRenderModelName, ppRenderModel);
 }
 
@@ -972,35 +1020,39 @@ uint32_t tr_ovw_GetRenderModelCount(vr::IVRRenderModels* self) {
 	return self->GetRenderModelCount();
 }
 
-uint32_t tr_ovw_GetComponentCount(vr::IVRRenderModels* self, char * pchRenderModelName) {
+uint32_t tr_ovw_GetComponentCount(vr::IVRRenderModels* self, const char * pchRenderModelName) {
 	return self->GetComponentCount(pchRenderModelName);
 }
 
-uint32_t tr_ovw_GetComponentName(vr::IVRRenderModels* self, char * pchRenderModelName, uint32_t unComponentIndex, char * pchComponentName, uint32_t unComponentNameLen) {
+uint32_t tr_ovw_GetComponentName(vr::IVRRenderModels* self, const char * pchRenderModelName, uint32_t unComponentIndex, char * pchComponentName, uint32_t unComponentNameLen) {
 	return self->GetComponentName(pchRenderModelName, unComponentIndex, pchComponentName, unComponentNameLen);
 }
 
-uint64_t tr_ovw_GetComponentButtonMask(vr::IVRRenderModels* self, char * pchRenderModelName, char * pchComponentName) {
+uint64_t tr_ovw_GetComponentButtonMask(vr::IVRRenderModels* self, const char * pchRenderModelName, const char * pchComponentName) {
 	return self->GetComponentButtonMask(pchRenderModelName, pchComponentName);
 }
 
-uint32_t tr_ovw_GetComponentRenderModelName(vr::IVRRenderModels* self, char * pchRenderModelName, char * pchComponentName, char * pchComponentRenderModelName, uint32_t unComponentRenderModelNameLen) {
+uint32_t tr_ovw_GetComponentRenderModelName(vr::IVRRenderModels* self, const char * pchRenderModelName, const char * pchComponentName, char * pchComponentRenderModelName, uint32_t unComponentRenderModelNameLen) {
 	return self->GetComponentRenderModelName(pchRenderModelName, pchComponentName, pchComponentRenderModelName, unComponentRenderModelNameLen);
 }
 
-bool tr_ovw_GetComponentState(vr::IVRRenderModels* self, char * pchRenderModelName, char * pchComponentName, vr::VRControllerState_t * pControllerState, vr::RenderModel_ControllerMode_State_t * pState, vr::RenderModel_ComponentState_t * pComponentState) {
+bool tr_ovw_GetComponentStateForDevicePath(vr::IVRRenderModels* self, const char * pchRenderModelName, const char * pchComponentName, vr::VRInputValueHandle_t devicePath, vr::RenderModel_ControllerMode_State_t * pState, vr::RenderModel_ComponentState_t * pComponentState) {
+	return self->GetComponentStateForDevicePath(pchRenderModelName, pchComponentName, devicePath, pState, pComponentState);
+}
+
+bool tr_ovw_GetComponentState(vr::IVRRenderModels* self, const char * pchRenderModelName, const char * pchComponentName, vr::VRControllerState_t * pControllerState, vr::RenderModel_ControllerMode_State_t * pState, vr::RenderModel_ComponentState_t * pComponentState) {
 	return self->GetComponentState(pchRenderModelName, pchComponentName, pControllerState, pState, pComponentState);
 }
 
-bool tr_ovw_RenderModelHasComponent(vr::IVRRenderModels* self, char * pchRenderModelName, char * pchComponentName) {
+bool tr_ovw_RenderModelHasComponent(vr::IVRRenderModels* self, const char * pchRenderModelName, const char * pchComponentName) {
 	return self->RenderModelHasComponent(pchRenderModelName, pchComponentName);
 }
 
-uint32_t tr_ovw_GetRenderModelThumbnailURL(vr::IVRRenderModels* self, char * pchRenderModelName, char * pchThumbnailURL, uint32_t unThumbnailURLLen, vr::EVRRenderModelError * peError) {
+uint32_t tr_ovw_GetRenderModelThumbnailURL(vr::IVRRenderModels* self, const char * pchRenderModelName, char * pchThumbnailURL, uint32_t unThumbnailURLLen, vr::EVRRenderModelError * peError) {
 	return self->GetRenderModelThumbnailURL(pchRenderModelName, pchThumbnailURL, unThumbnailURLLen, peError);
 }
 
-uint32_t tr_ovw_GetRenderModelOriginalPath(vr::IVRRenderModels* self, char * pchRenderModelName, char * pchOriginalPath, uint32_t unOriginalPathLen, vr::EVRRenderModelError * peError) {
+uint32_t tr_ovw_GetRenderModelOriginalPath(vr::IVRRenderModels* self, const char * pchRenderModelName, char * pchOriginalPath, uint32_t unOriginalPathLen, vr::EVRRenderModelError * peError) {
 	return self->GetRenderModelOriginalPath(pchRenderModelName, pchOriginalPath, unOriginalPathLen, peError);
 }
 
@@ -1008,7 +1060,7 @@ const char * tr_ovw_GetRenderModelErrorNameFromEnum(vr::IVRRenderModels* self, v
 	return self->GetRenderModelErrorNameFromEnum(error);
 }
 
-vr::EVRNotificationError tr_ovw_CreateNotification(vr::IVRNotifications* self, vr::VROverlayHandle_t ulOverlayHandle, uint64_t ulUserValue, vr::EVRNotificationType type, char * pchText, vr::EVRNotificationStyle style, vr::NotificationBitmap_t * pImage, vr::VRNotificationId * pNotificationId) {
+vr::EVRNotificationError tr_ovw_CreateNotification(vr::IVRNotifications* self, vr::VROverlayHandle_t ulOverlayHandle, uint64_t ulUserValue, vr::EVRNotificationType type, const char * pchText, vr::EVRNotificationStyle style, vr::NotificationBitmap_t * pImage, vr::VRNotificationId * pNotificationId) {
 	return self->CreateNotification(ulOverlayHandle, ulUserValue, type, pchText, style, pImage, pNotificationId);
 }
 
@@ -1024,47 +1076,47 @@ bool tr_ovw_Sync(vr::IVRSettings* self, bool bForce, vr::EVRSettingsError * peEr
 	return self->Sync(bForce, peError);
 }
 
-void tr_ovw_SetBool(vr::IVRSettings* self, char * pchSection, char * pchSettingsKey, bool bValue, vr::EVRSettingsError * peError) {
+void tr_ovw_SetBool(vr::IVRSettings* self, const char * pchSection, const char * pchSettingsKey, bool bValue, vr::EVRSettingsError * peError) {
 	self->SetBool(pchSection, pchSettingsKey, bValue, peError);
 }
 
-void tr_ovw_SetInt32(vr::IVRSettings* self, char * pchSection, char * pchSettingsKey, int32_t nValue, vr::EVRSettingsError * peError) {
+void tr_ovw_SetInt32(vr::IVRSettings* self, const char * pchSection, const char * pchSettingsKey, int32_t nValue, vr::EVRSettingsError * peError) {
 	self->SetInt32(pchSection, pchSettingsKey, nValue, peError);
 }
 
-void tr_ovw_SetFloat(vr::IVRSettings* self, char * pchSection, char * pchSettingsKey, float flValue, vr::EVRSettingsError * peError) {
+void tr_ovw_SetFloat(vr::IVRSettings* self, const char * pchSection, const char * pchSettingsKey, float flValue, vr::EVRSettingsError * peError) {
 	self->SetFloat(pchSection, pchSettingsKey, flValue, peError);
 }
 
-void tr_ovw_SetString(vr::IVRSettings* self, char * pchSection, char * pchSettingsKey, char * pchValue, vr::EVRSettingsError * peError) {
+void tr_ovw_SetString(vr::IVRSettings* self, const char * pchSection, const char * pchSettingsKey, const char * pchValue, vr::EVRSettingsError * peError) {
 	self->SetString(pchSection, pchSettingsKey, pchValue, peError);
 }
 
-bool tr_ovw_GetBool(vr::IVRSettings* self, char * pchSection, char * pchSettingsKey, vr::EVRSettingsError * peError) {
+bool tr_ovw_GetBool(vr::IVRSettings* self, const char * pchSection, const char * pchSettingsKey, vr::EVRSettingsError * peError) {
 	return self->GetBool(pchSection, pchSettingsKey, peError);
 }
 
-int32_t tr_ovw_GetInt32(vr::IVRSettings* self, char * pchSection, char * pchSettingsKey, vr::EVRSettingsError * peError) {
+int32_t tr_ovw_GetInt32(vr::IVRSettings* self, const char * pchSection, const char * pchSettingsKey, vr::EVRSettingsError * peError) {
 	return self->GetInt32(pchSection, pchSettingsKey, peError);
 }
 
-float tr_ovw_GetFloat(vr::IVRSettings* self, char * pchSection, char * pchSettingsKey, vr::EVRSettingsError * peError) {
+float tr_ovw_GetFloat(vr::IVRSettings* self, const char * pchSection, const char * pchSettingsKey, vr::EVRSettingsError * peError) {
 	return self->GetFloat(pchSection, pchSettingsKey, peError);
 }
 
-void tr_ovw_GetString(vr::IVRSettings* self, char * pchSection, char * pchSettingsKey, char * pchValue, uint32_t unValueLen, vr::EVRSettingsError * peError) {
+void tr_ovw_GetString(vr::IVRSettings* self, const char * pchSection, const char * pchSettingsKey, char * pchValue, uint32_t unValueLen, vr::EVRSettingsError * peError) {
 	self->GetString(pchSection, pchSettingsKey, pchValue, unValueLen, peError);
 }
 
-void tr_ovw_RemoveSection(vr::IVRSettings* self, char * pchSection, vr::EVRSettingsError * peError) {
+void tr_ovw_RemoveSection(vr::IVRSettings* self, const char * pchSection, vr::EVRSettingsError * peError) {
 	self->RemoveSection(pchSection, peError);
 }
 
-void tr_ovw_RemoveKeyInSection(vr::IVRSettings* self, char * pchSection, char * pchSettingsKey, vr::EVRSettingsError * peError) {
+void tr_ovw_RemoveKeyInSection(vr::IVRSettings* self, const char * pchSection, const char * pchSettingsKey, vr::EVRSettingsError * peError) {
 	self->RemoveKeyInSection(pchSection, pchSettingsKey, peError);
 }
 
-vr::EVRScreenshotError tr_ovw_RequestScreenshot(vr::IVRScreenshots* self, vr::ScreenshotHandle_t * pOutScreenshotHandle, vr::EVRScreenshotType type, char * pchPreviewFilename, char * pchVRFilename) {
+vr::EVRScreenshotError tr_ovw_RequestScreenshot(vr::IVRScreenshots* self, vr::ScreenshotHandle_t * pOutScreenshotHandle, vr::EVRScreenshotType type, const char * pchPreviewFilename, const char * pchVRFilename) {
 	return self->RequestScreenshot(pOutScreenshotHandle, type, pchPreviewFilename, pchVRFilename);
 }
 
@@ -1084,19 +1136,167 @@ vr::EVRScreenshotError tr_ovw_UpdateScreenshotProgress(vr::IVRScreenshots* self,
 	return self->UpdateScreenshotProgress(screenshotHandle, flProgress);
 }
 
-vr::EVRScreenshotError tr_ovw_TakeStereoScreenshot(vr::IVRScreenshots* self, vr::ScreenshotHandle_t * pOutScreenshotHandle, char * pchPreviewFilename, char * pchVRFilename) {
+vr::EVRScreenshotError tr_ovw_TakeStereoScreenshot(vr::IVRScreenshots* self, vr::ScreenshotHandle_t * pOutScreenshotHandle, const char * pchPreviewFilename, const char * pchVRFilename) {
 	return self->TakeStereoScreenshot(pOutScreenshotHandle, pchPreviewFilename, pchVRFilename);
 }
 
-vr::EVRScreenshotError tr_ovw_SubmitScreenshot(vr::IVRScreenshots* self, vr::ScreenshotHandle_t screenshotHandle, vr::EVRScreenshotType type, char * pchSourcePreviewFilename, char * pchSourceVRFilename) {
+vr::EVRScreenshotError tr_ovw_SubmitScreenshot(vr::IVRScreenshots* self, vr::ScreenshotHandle_t screenshotHandle, vr::EVRScreenshotType type, const char * pchSourcePreviewFilename, const char * pchSourceVRFilename) {
 	return self->SubmitScreenshot(screenshotHandle, type, pchSourcePreviewFilename, pchSourceVRFilename);
 }
 
-uint32_t tr_ovw_LoadSharedResource(vr::IVRResources* self, char * pchResourceName, char * pchBuffer, uint32_t unBufferLen) {
+uint32_t tr_ovw_LoadSharedResource(vr::IVRResources* self, const char * pchResourceName, char * pchBuffer, uint32_t unBufferLen) {
 	return self->LoadSharedResource(pchResourceName, pchBuffer, unBufferLen);
 }
 
-uint32_t tr_ovw_GetResourceFullPath(vr::IVRResources* self, char * pchResourceName, char * pchResourceTypeDirectory, char * pchPathBuffer, uint32_t unBufferLen) {
+uint32_t tr_ovw_GetResourceFullPath(vr::IVRResources* self, const char * pchResourceName, const char * pchResourceTypeDirectory, char * pchPathBuffer, uint32_t unBufferLen) {
 	return self->GetResourceFullPath(pchResourceName, pchResourceTypeDirectory, pchPathBuffer, unBufferLen);
+}
+
+uint32_t tr_ovw_GetDriverCount(vr::IVRDriverManager* self) {
+	return self->GetDriverCount();
+}
+
+uint32_t tr_ovw_GetDriverName(vr::IVRDriverManager* self, vr::DriverId_t nDriver, char * pchValue, uint32_t unBufferSize) {
+	return self->GetDriverName(nDriver, pchValue, unBufferSize);
+}
+
+DriverHandle_t tr_ovw_GetDriverHandle(vr::IVRDriverManager* self, const char * pchDriverName) {
+	return self->GetDriverHandle(pchDriverName);
+}
+
+vr::EVRInputError tr_ovw_SetActionManifestPath(vr::IVRInput* self, const char * pchActionManifestPath) {
+	return self->SetActionManifestPath(pchActionManifestPath);
+}
+
+vr::EVRInputError tr_ovw_GetActionSetHandle(vr::IVRInput* self, const char * pchActionSetName, vr::VRActionSetHandle_t * pHandle) {
+	return self->GetActionSetHandle(pchActionSetName, pHandle);
+}
+
+vr::EVRInputError tr_ovw_GetActionHandle(vr::IVRInput* self, const char * pchActionName, vr::VRActionHandle_t * pHandle) {
+	return self->GetActionHandle(pchActionName, pHandle);
+}
+
+vr::EVRInputError tr_ovw_GetInputSourceHandle(vr::IVRInput* self, const char * pchInputSourcePath, vr::VRInputValueHandle_t * pHandle) {
+	return self->GetInputSourceHandle(pchInputSourcePath, pHandle);
+}
+
+vr::EVRInputError tr_ovw_UpdateActionState(vr::IVRInput* self, vr::VRActiveActionSet_t * pSets, uint32_t unSizeOfVRSelectedActionSet_t, uint32_t unSetCount) {
+	return self->UpdateActionState(pSets, unSizeOfVRSelectedActionSet_t, unSetCount);
+}
+
+vr::EVRInputError tr_ovw_GetDigitalActionData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::InputDigitalActionData_t * pActionData, uint32_t unActionDataSize, vr::VRInputValueHandle_t ulRestrictToDevice) {
+	return self->GetDigitalActionData(action, pActionData, unActionDataSize, ulRestrictToDevice);
+}
+
+vr::EVRInputError tr_ovw_GetAnalogActionData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::InputAnalogActionData_t * pActionData, uint32_t unActionDataSize, vr::VRInputValueHandle_t ulRestrictToDevice) {
+	return self->GetAnalogActionData(action, pActionData, unActionDataSize, ulRestrictToDevice);
+}
+
+vr::EVRInputError tr_ovw_GetPoseActionData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::ETrackingUniverseOrigin eOrigin, float fPredictedSecondsFromNow, vr::InputPoseActionData_t * pActionData, uint32_t unActionDataSize, vr::VRInputValueHandle_t ulRestrictToDevice) {
+	return self->GetPoseActionData(action, eOrigin, fPredictedSecondsFromNow, pActionData, unActionDataSize, ulRestrictToDevice);
+}
+
+vr::EVRInputError tr_ovw_GetSkeletalActionData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::InputSkeletalActionData_t * pActionData, uint32_t unActionDataSize) {
+	return self->GetSkeletalActionData(action, pActionData, unActionDataSize);
+}
+
+vr::EVRInputError tr_ovw_GetBoneCount(vr::IVRInput* self, vr::VRActionHandle_t action, uint32_t * pBoneCount) {
+	return self->GetBoneCount(action, pBoneCount);
+}
+
+vr::EVRInputError tr_ovw_GetBoneHierarchy(vr::IVRInput* self, vr::VRActionHandle_t action, vr::BoneIndex_t * pParentIndices, uint32_t unIndexArayCount) {
+	return self->GetBoneHierarchy(action, pParentIndices, unIndexArayCount);
+}
+
+vr::EVRInputError tr_ovw_GetBoneName(vr::IVRInput* self, vr::VRActionHandle_t action, vr::BoneIndex_t nBoneIndex, char * pchBoneName, uint32_t unNameBufferSize) {
+	return self->GetBoneName(action, nBoneIndex, pchBoneName, unNameBufferSize);
+}
+
+vr::EVRInputError tr_ovw_GetSkeletalReferenceTransforms(vr::IVRInput* self, vr::VRActionHandle_t action, vr::EVRSkeletalTransformSpace eTransformSpace, vr::EVRSkeletalReferencePose eReferencePose, vr::VRBoneTransform_t * pTransformArray, uint32_t unTransformArrayCount) {
+	return self->GetSkeletalReferenceTransforms(action, eTransformSpace, eReferencePose, pTransformArray, unTransformArrayCount);
+}
+
+vr::EVRInputError tr_ovw_GetSkeletalTrackingLevel(vr::IVRInput* self, vr::VRActionHandle_t action, vr::EVRSkeletalTrackingLevel * pSkeletalTrackingLevel) {
+	return self->GetSkeletalTrackingLevel(action, pSkeletalTrackingLevel);
+}
+
+vr::EVRInputError tr_ovw_GetSkeletalBoneData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::EVRSkeletalTransformSpace eTransformSpace, vr::EVRSkeletalMotionRange eMotionRange, vr::VRBoneTransform_t * pTransformArray, uint32_t unTransformArrayCount) {
+	return self->GetSkeletalBoneData(action, eTransformSpace, eMotionRange, pTransformArray, unTransformArrayCount);
+}
+
+vr::EVRInputError tr_ovw_GetSkeletalSummaryData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::VRSkeletalSummaryData_t * pSkeletalSummaryData) {
+	return self->GetSkeletalSummaryData(action, pSkeletalSummaryData);
+}
+
+vr::EVRInputError tr_ovw_GetSkeletalBoneDataCompressed(vr::IVRInput* self, vr::VRActionHandle_t action, vr::EVRSkeletalMotionRange eMotionRange, void * pvCompressedData, uint32_t unCompressedSize, uint32_t * punRequiredCompressedSize) {
+	return self->GetSkeletalBoneDataCompressed(action, eMotionRange, pvCompressedData, unCompressedSize, punRequiredCompressedSize);
+}
+
+vr::EVRInputError tr_ovw_DecompressSkeletalBoneData(vr::IVRInput* self, void * pvCompressedBuffer, uint32_t unCompressedBufferSize, vr::EVRSkeletalTransformSpace eTransformSpace, vr::VRBoneTransform_t * pTransformArray, uint32_t unTransformArrayCount) {
+	return self->DecompressSkeletalBoneData(pvCompressedBuffer, unCompressedBufferSize, eTransformSpace, pTransformArray, unTransformArrayCount);
+}
+
+vr::EVRInputError tr_ovw_TriggerHapticVibrationAction(vr::IVRInput* self, vr::VRActionHandle_t action, float fStartSecondsFromNow, float fDurationSeconds, float fFrequency, float fAmplitude, vr::VRInputValueHandle_t ulRestrictToDevice) {
+	return self->TriggerHapticVibrationAction(action, fStartSecondsFromNow, fDurationSeconds, fFrequency, fAmplitude, ulRestrictToDevice);
+}
+
+vr::EVRInputError tr_ovw_GetActionOrigins(vr::IVRInput* self, vr::VRActionSetHandle_t actionSetHandle, vr::VRActionHandle_t digitalActionHandle, vr::VRInputValueHandle_t * originsOut, uint32_t originOutCount) {
+	return self->GetActionOrigins(actionSetHandle, digitalActionHandle, originsOut, originOutCount);
+}
+
+vr::EVRInputError tr_ovw_GetOriginLocalizedName(vr::IVRInput* self, vr::VRInputValueHandle_t origin, char * pchNameArray, uint32_t unNameArraySize, int32_t unStringSectionsToInclude) {
+	return self->GetOriginLocalizedName(origin, pchNameArray, unNameArraySize, unStringSectionsToInclude);
+}
+
+vr::EVRInputError tr_ovw_GetOriginTrackedDeviceInfo(vr::IVRInput* self, vr::VRInputValueHandle_t origin, vr::InputOriginInfo_t * pOriginInfo, uint32_t unOriginInfoSize) {
+	return self->GetOriginTrackedDeviceInfo(origin, pOriginInfo, unOriginInfoSize);
+}
+
+vr::EVRInputError tr_ovw_ShowActionOrigins(vr::IVRInput* self, vr::VRActionSetHandle_t actionSetHandle, vr::VRActionHandle_t ulActionHandle) {
+	return self->ShowActionOrigins(actionSetHandle, ulActionHandle);
+}
+
+vr::EVRInputError tr_ovw_ShowBindingsForActionSet(vr::IVRInput* self, vr::VRActiveActionSet_t * pSets, uint32_t unSizeOfVRSelectedActionSet_t, uint32_t unSetCount, vr::VRInputValueHandle_t originToHighlight) {
+	return self->ShowBindingsForActionSet(pSets, unSizeOfVRSelectedActionSet_t, unSetCount, originToHighlight);
+}
+
+vr::EIOBufferError tr_ovw_Open(vr::IVRIOBuffer* self, const char * pchPath, vr::EIOBufferMode mode, uint32_t unElementSize, uint32_t unElements, vr::IOBufferHandle_t * pulBuffer) {
+	return self->Open(pchPath, mode, unElementSize, unElements, pulBuffer);
+}
+
+vr::EIOBufferError tr_ovw_Close(vr::IVRIOBuffer* self, vr::IOBufferHandle_t ulBuffer) {
+	return self->Close(ulBuffer);
+}
+
+vr::EIOBufferError tr_ovw_Read(vr::IVRIOBuffer* self, vr::IOBufferHandle_t ulBuffer, void * pDst, uint32_t unBytes, uint32_t * punRead) {
+	return self->Read(ulBuffer, pDst, unBytes, punRead);
+}
+
+vr::EIOBufferError tr_ovw_Write(vr::IVRIOBuffer* self, vr::IOBufferHandle_t ulBuffer, void * pSrc, uint32_t unBytes) {
+	return self->Write(ulBuffer, pSrc, unBytes);
+}
+
+vr::PropertyContainerHandle_t tr_ovw_PropertyContainer(vr::IVRIOBuffer* self, vr::IOBufferHandle_t ulBuffer) {
+	return self->PropertyContainer(ulBuffer);
+}
+
+bool tr_ovw_HasReaders(vr::IVRIOBuffer* self, vr::IOBufferHandle_t ulBuffer) {
+	return self->HasReaders(ulBuffer);
+}
+
+vr::EVRSpatialAnchorError tr_ovw_CreateSpatialAnchorFromDescriptor(vr::IVRSpatialAnchors* self, const char * pchDescriptor, vr::SpatialAnchorHandle_t * pHandleOut) {
+	return self->CreateSpatialAnchorFromDescriptor(pchDescriptor, pHandleOut);
+}
+
+vr::EVRSpatialAnchorError tr_ovw_CreateSpatialAnchorFromPose(vr::IVRSpatialAnchors* self, vr::TrackedDeviceIndex_t unDeviceIndex, vr::ETrackingUniverseOrigin eOrigin, vr::SpatialAnchorPose_t * pPose, vr::SpatialAnchorHandle_t * pHandleOut) {
+	return self->CreateSpatialAnchorFromPose(unDeviceIndex, eOrigin, pPose, pHandleOut);
+}
+
+vr::EVRSpatialAnchorError tr_ovw_GetSpatialAnchorPose(vr::IVRSpatialAnchors* self, vr::SpatialAnchorHandle_t unHandle, vr::ETrackingUniverseOrigin eOrigin, vr::SpatialAnchorPose_t * pPoseOut) {
+	return self->GetSpatialAnchorPose(unHandle, eOrigin, pPoseOut);
+}
+
+vr::EVRSpatialAnchorError tr_ovw_GetSpatialAnchorDescriptor(vr::IVRSpatialAnchors* self, vr::SpatialAnchorHandle_t unHandle, char * pchDescriptorOut, uint32_t * punDescriptorBufferLenInOut) {
+	return self->GetSpatialAnchorDescriptor(unHandle, pchDescriptorOut, punDescriptorBufferLenInOut);
 }
 
