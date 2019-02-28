@@ -1,7 +1,7 @@
 include(ExternalProject)
 
 # Use this version of openvr
-set(openvr_RELEASE_VERSION "1.2.10)
+set(openvr_RELEASE_VERSION "1.2.10")
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
     set(openvr_SYSTEM_NAME "win64")

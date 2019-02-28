@@ -22,12 +22,15 @@ typedef struct IVRInput IVRInput;
 typedef struct IVRIOBuffer IVRIOBuffer;
 typedef struct IVRSpatialAnchors IVRSpatialAnchors;
 
-// These were defined at the top for some reason
+// These were defined at the top for some reason, but duplicate
+// definitions make me uncomfortable so let's not
+/*
 typedef uint64_t PropertyContainerHandle_t;
 typedef uint32_t PropertyTypeTag_t;
 typedef uint64_t VRActionHandle_t;
 typedef uint64_t VRActionSetHandle_t;
 typedef uint64_t VRInputValueHandle_t;
+*/
 
 // OpenVR Constants
 // (in vr/constants.t)
@@ -2011,7 +2014,7 @@ void tr_ovw_AcknowledgeQuit_Exiting(IVRSystem* self);
 void tr_ovw_AcknowledgeQuit_UserPrompt(IVRSystem* self);
 void tr_ovw_GetWindowBounds(IVRExtendedDisplay* self, int32_t * pnX, int32_t * pnY, uint32_t * pnWidth, uint32_t * pnHeight);
 void tr_ovw_GetEyeOutputViewport(IVRExtendedDisplay* self, EVREye eEye, uint32_t * pnX, uint32_t * pnY, uint32_t * pnWidth, uint32_t * pnHeight);
-void tr_ovw_GetDXGIOutputInfo(IVRExtendedDisplay* self, int32_t * pnAdapterIndex, int32_t * pnAdapterOutputIndex);
+//void tr_ovw_GetDXGIOutputInfo(IVRExtendedDisplay* self, int32_t * pnAdapterIndex, int32_t * pnAdapterOutputIndex);
 const char * tr_ovw_GetCameraErrorNameFromEnum(IVRTrackedCamera* self, EVRTrackedCameraError eCameraError);
 EVRTrackedCameraError tr_ovw_HasCamera(IVRTrackedCamera* self, TrackedDeviceIndex_t nDeviceIndex, bool * pHasCamera);
 EVRTrackedCameraError tr_ovw_GetCameraFrameSize(IVRTrackedCamera* self, TrackedDeviceIndex_t nDeviceIndex, EVRTrackedCameraFrameType eFrameType, uint32_t * pnWidth, uint32_t * pnHeight, uint32_t * pnFrameBufferSize);

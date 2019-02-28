@@ -189,5 +189,4 @@ void* truss_openvr_get_input(OpenVRAddon* addon) {
         return NULL;
     }
 }    
-}
 

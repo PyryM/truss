@@ -196,9 +196,11 @@ void tr_ovw_GetEyeOutputViewport(vr::IVRExtendedDisplay* self, vr::EVREye eEye, 
 	self->GetEyeOutputViewport(eEye, pnX, pnY, pnWidth, pnHeight);
 }
 
+/* C-API can't have overloaded functions (same function name exists under vr::IVRSystem)
 void tr_ovw_GetDXGIOutputInfo(vr::IVRExtendedDisplay* self, int32_t * pnAdapterIndex, int32_t * pnAdapterOutputIndex) {
 	self->GetDXGIOutputInfo(pnAdapterIndex, pnAdapterOutputIndex);
 }
+*/
 
 const char * tr_ovw_GetCameraErrorNameFromEnum(vr::IVRTrackedCamera* self, vr::EVRTrackedCameraError eCameraError) {
 	return self->GetCameraErrorNameFromEnum(eCameraError);
@@ -1160,7 +1162,7 @@ uint32_t tr_ovw_GetDriverName(vr::IVRDriverManager* self, vr::DriverId_t nDriver
 	return self->GetDriverName(nDriver, pchValue, unBufferSize);
 }
 
-DriverHandle_t tr_ovw_GetDriverHandle(vr::IVRDriverManager* self, const char * pchDriverName) {
+vr::DriverHandle_t tr_ovw_GetDriverHandle(vr::IVRDriverManager* self, const char * pchDriverName) {
 	return self->GetDriverHandle(pchDriverName);
 }
 

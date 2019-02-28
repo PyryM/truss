@@ -99,7 +99,7 @@ TRUSS_C_API void tr_ovw_AcknowledgeQuit_Exiting(vr::IVRSystem* self);
 TRUSS_C_API void tr_ovw_AcknowledgeQuit_UserPrompt(vr::IVRSystem* self);
 TRUSS_C_API void tr_ovw_GetWindowBounds(vr::IVRExtendedDisplay* self, int32_t * pnX, int32_t * pnY, uint32_t * pnWidth, uint32_t * pnHeight);
 TRUSS_C_API void tr_ovw_GetEyeOutputViewport(vr::IVRExtendedDisplay* self, vr::EVREye eEye, uint32_t * pnX, uint32_t * pnY, uint32_t * pnWidth, uint32_t * pnHeight);
-TRUSS_C_API void tr_ovw_GetDXGIOutputInfo(vr::IVRExtendedDisplay* self, int32_t * pnAdapterIndex, int32_t * pnAdapterOutputIndex);
+//TRUSS_C_API void tr_ovw_GetDXGIOutputInfo(vr::IVRExtendedDisplay* self, int32_t * pnAdapterIndex, int32_t * pnAdapterOutputIndex);
 TRUSS_C_API const char * tr_ovw_GetCameraErrorNameFromEnum(vr::IVRTrackedCamera* self, vr::EVRTrackedCameraError eCameraError);
 TRUSS_C_API vr::EVRTrackedCameraError tr_ovw_HasCamera(vr::IVRTrackedCamera* self, vr::TrackedDeviceIndex_t nDeviceIndex, bool * pHasCamera);
 TRUSS_C_API vr::EVRTrackedCameraError tr_ovw_GetCameraFrameSize(vr::IVRTrackedCamera* self, vr::TrackedDeviceIndex_t nDeviceIndex, vr::EVRTrackedCameraFrameType eFrameType, uint32_t * pnWidth, uint32_t * pnHeight, uint32_t * pnFrameBufferSize);
@@ -340,7 +340,7 @@ TRUSS_C_API uint32_t tr_ovw_LoadSharedResource(vr::IVRResources* self, const cha
 TRUSS_C_API uint32_t tr_ovw_GetResourceFullPath(vr::IVRResources* self, const char * pchResourceName, const char * pchResourceTypeDirectory, char * pchPathBuffer, uint32_t unBufferLen);
 TRUSS_C_API uint32_t tr_ovw_GetDriverCount(vr::IVRDriverManager* self);
 TRUSS_C_API uint32_t tr_ovw_GetDriverName(vr::IVRDriverManager* self, vr::DriverId_t nDriver, char * pchValue, uint32_t unBufferSize);
-TRUSS_C_API DriverHandle_t tr_ovw_GetDriverHandle(vr::IVRDriverManager* self, const char * pchDriverName);
+TRUSS_C_API vr::DriverHandle_t tr_ovw_GetDriverHandle(vr::IVRDriverManager* self, const char * pchDriverName);
 TRUSS_C_API vr::EVRInputError tr_ovw_SetActionManifestPath(vr::IVRInput* self, const char * pchActionManifestPath);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetActionSetHandle(vr::IVRInput* self, const char * pchActionSetName, vr::VRActionSetHandle_t * pHandle);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetActionHandle(vr::IVRInput* self, const char * pchActionName, vr::VRActionHandle_t * pHandle);
