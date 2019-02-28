@@ -3,13 +3,13 @@
 ## Windows
 * Dependencies:
   * Download and install [`cmake`](https://cmake.org/download/)
-  * Download and install [`Visual Studio 2015`](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx)
+  * Download and install [`Visual Studio 2017`](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx)
 
 * Compilation
   * Run `cmake-gui`
     * Specify the source directory as your git checkout
     * Specify the build directory as your git checkout + `./build`
-    * Click `Configure` and select the compiler `Visual Studio 14 2015 Win64` (make sure to choose 64-bit).
+    * Click `Configure` and select the compiler `Visual Studio 15 2017 Win64` (make sure to choose 64-bit).
     * Click `Generate`
   * Open the `./build` directory and double-click `truss.sln`
   * In Visual Studio, build the `ALL_BUILD` project to build everything.
@@ -47,10 +47,5 @@
 
 Now you can run:
 ```bash
-./truss examples/00_buffercube.t
+./truss scripts/examples/new_basic.t
 ```
-
-> Note: if you want `bgfx` to use OpenGL > 2.1, then you need to compile it with
-> e.g. `#define BGFX_CONFIG_RENDERER_OPENGL 31`
-> either by manually setting this define (ex: in `bgfx/src/config.h`) or through
-> the build process somehow.
