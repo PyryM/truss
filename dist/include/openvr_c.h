@@ -21,6 +21,7 @@ typedef struct IVRResources IVRResources;
 typedef struct IVRInput IVRInput;
 typedef struct IVRIOBuffer IVRIOBuffer;
 typedef struct IVRSpatialAnchors IVRSpatialAnchors;
+typedef struct IVRDriverManager IVRDriverManager;
 
 // These were defined at the top for some reason, but duplicate
 // definitions make me uncomfortable so let's not
@@ -1412,13 +1413,18 @@ typedef struct VRTextureWithPoseAndDepth_t
 	struct VRTextureDepthInfo_t depth;
 } VRTextureWithPoseAndDepth_t;
 
+typedef struct VkInstance_T VkInstance_T;
+typedef struct VkPhysicalDevice_T VkPhysicalDevice_T;
+typedef struct VkQueue_T VkQueue_T;
+typedef struct VkDevice_T VkDevice_T;
+
 typedef struct VRVulkanTextureData_t
 {
 	uint64_t m_nImage;
-	struct VkDevice_T * m_pDevice; // struct VkDevice_T *
-	struct VkPhysicalDevice_T * m_pPhysicalDevice; // struct VkPhysicalDevice_T *
-	struct VkInstance_T * m_pInstance; // struct VkInstance_T *
-	struct VkQueue_T * m_pQueue; // struct VkQueue_T *
+	VkDevice_T * m_pDevice; // struct VkDevice_T *
+	VkPhysicalDevice_T * m_pPhysicalDevice; // struct VkPhysicalDevice_T *
+	VkInstance_T * m_pInstance; // struct VkInstance_T *
+	VkQueue_T * m_pQueue; // struct VkQueue_T *
 	uint32_t m_nQueueFamilyIndex;
 	uint32_t m_nWidth;
 	uint32_t m_nHeight;
@@ -1937,19 +1943,14 @@ typedef union
 } VREvent_Data_t;
 
 /** An event posted by the server to all running applications */
-struct VREvent_t
+typedef struct 
 {
 	uint32_t eventType; // EVREventType enum
 	TrackedDeviceIndex_t trackedDeviceIndex;
 	float eventAgeSeconds;
 	// event data must be the end of the struct as its size is variable
 	VREvent_Data_t data;
-};
-
-#if defined(__linux__) || defined(__APPLE__) 
-#pragma pack( pop )
-#endif
-
+} VREvent_t;
 
 typedef union
 {
@@ -1957,11 +1958,11 @@ typedef union
 	IntersectionMaskCircle_t m_Circle;
 } VROverlayIntersectionMaskPrimitive_Data_t;
 
-struct VROverlayIntersectionMaskPrimitive_t
+typedef struct 
 {
 	EVROverlayIntersectionMaskPrimitiveType m_nPrimitiveType;
 	VROverlayIntersectionMaskPrimitive_Data_t m_Primitive;
-};
+} VROverlayIntersectionMaskPrimitive_t;
 
 // OpenVR Function Pointer Tables (here replaced with static bindings)
 

@@ -205,7 +205,6 @@ function m._emit_event(evt_name, ...)
 end
 
 function m._update_trackables()
-  m.has_input_focus = openvr_c.tr_ovw_IsInputFocusCapturedByAnotherProcess(m.sysptr)
   local trackable_types = trackables.trackable_types
 
   for i = 0, m.MAX_TRACKABLES - 1 do
