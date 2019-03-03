@@ -30,7 +30,7 @@ function m.init(parent_openvr)
 end
 
 local function find_prop_error_name(prop_error)
-  local cname = openvr.c_api.tr_ovw_GetPropErrorNameFromEnum(openvr.sysptr,
+  local cname = openvr.c_api.GetPropErrorNameFromEnum(openvr.sysptr,
                                                              prop_error)
   return ffi.string(cname)
 end
@@ -51,7 +51,7 @@ local function get_prop(gfunc)
 end
 
 local function get_matrix34_prop(device_idx, prop_id)
-  local mat = openvr.c_api.tr_ovw_GetMatrix34TrackedDeviceProperty(openvr.sysptr, device_idx, prop_id, m.prop_error)
+  local mat = openvr.c_api.GetMatrix34TrackedDeviceProperty(openvr.sysptr, device_idx, prop_id, m.prop_error)
   local truss_mat = math.Matrix4()
   openvr.openvr_mat34_to_mat(mat, truss_mat)
   return check_prop_error(truss_mat, m.prop_error[0])
@@ -61,7 +61,7 @@ m.string_buff_size = 512
 m.string_buff = terralib.new(int8[m.string_buff_size])
 
 local function get_string_prop(device_idx, prop_id)
-  local retsize = openvr.c_api.tr_ovw_GetStringTrackedDeviceProperty(openvr.sysptr,
+  local retsize = openvr.c_api.GetStringTrackedDeviceProperty(openvr.sysptr,
     device_idx, prop_id, m.string_buff, m.string_buff_size, m.prop_error)
   if retsize < 1 then return nil end
   local ret = ffi.string(m.string_buff, retsize-1) -- strip null terminator
@@ -76,10 +76,10 @@ function m._parse_props()
   local patt = "^ETrackedDeviceProperty_Prop_([^_]*)_([^_]*)$"
   for k, prop_enum_val in pairs(c_api) do
     local prop_funcs = {
-      Bool = get_prop(openvr.c_api.tr_ovw_GetBoolTrackedDeviceProperty),
-      Float = get_prop(openvr.c_api.tr_ovw_GetFloatTrackedDeviceProperty),
-      Uint64 = get_prop(openvr.c_api.tr_ovw_GetUint64TrackedDeviceProperty),
-      Int32 = get_prop(openvr.c_api.tr_ovw_GetInt32TrackedDeviceProperty),
+      Bool = get_prop(openvr.c_api.GetBoolTrackedDeviceProperty),
+      Float = get_prop(openvr.c_api.GetFloatTrackedDeviceProperty),
+      Uint64 = get_prop(openvr.c_api.GetUint64TrackedDeviceProperty),
+      Int32 = get_prop(openvr.c_api.GetInt32TrackedDeviceProperty),
       String = get_string_prop,
       Matrix34 = get_matrix34_prop
     }
@@ -196,7 +196,7 @@ function Controller:vibrate(strength)
   if self._has_vibrated then return end
   local us_dur = math.min(math.floor(strength * 3500), 3500)
   if us_dur < 100 then return end
-  openvr.c_api.tr_ovw_TriggerHapticPulse(openvr.sysptr, self.device_idx, 0, us_dur)
+  openvr.c_api.TriggerHapticPulse(openvr.sysptr, self.device_idx, 0, us_dur)
   self._has_vibrated = true
 end
 
@@ -259,8 +259,7 @@ function Controller:update(src)
   local rawstate = self.rawstate
   local stateptr = self.rawstate_ptr or self.rawstate
   local statesize = self.statesize
-  openvr_c.tr_ovw_GetControllerState(openvr.sysptr, self.device_idx, stateptr,
-                                     statesize)
+  openvr_c.GetControllerState(openvr.sysptr, self.device_idx, stateptr, statesize)
   if self.rawstate_ptr then
     -- using horrible misaligned structures on linux
     rawstate:decode()

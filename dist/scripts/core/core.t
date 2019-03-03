@@ -201,6 +201,8 @@ function truss.set_app_directories(orgname, appname)
   local userpath = sdl.create_user_path(orgname, appname)
   log.info("Setting save dir to: " .. userpath)
   truss.C.set_raw_write_dir(userpath)
+  truss.absolute_data_path = userpath
+  return userpath
 end
 
 function truss.list_directory(path)

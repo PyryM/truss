@@ -23,7 +23,7 @@ function m.init(parent)
     var info: OverlayInfo
     info.err = 0
     info.handle = 0
-    info.err = openvr_c.tr_ovw_CreateOverlay(ptr, name, fname, &(info.handle))
+    info.err = openvr_c.CreateOverlay(ptr, name, fname, &(info.handle))
     return info
   end
 end
@@ -47,7 +47,7 @@ local function check_error(err)
     return true
   else
     log.error("overlay error: " .. tostring(err))
-    local serr = ffi.string(openvr_c.tr_ovw_GetOverlayErrorNameFromEnum(m.overlayptr, err))
+    local serr = ffi.string(openvr_c.GetOverlayErrorNameFromEnum(m.overlayptr, err))
     truss.error("Overlay error: " .. tostring(err) .. " : " .. serr)
     return false
   end
@@ -75,20 +75,20 @@ function Overlay:set_color(color)
   else -- assume list
     r, g, b = unpack(color) 
   end
-  check_error(openvr_c.tr_ovw_SetOverlayColor(m.overlayptr, self._handle, r, g, b))
+  check_error(openvr_c.SetOverlayColor(m.overlayptr, self._handle, r, g, b))
   return self
 end
 
 function Overlay:set_width(w)
-  check_error(openvr_c.tr_ovw_SetOverlayWidthInMeters(m.overlayptr, self._handle, w))
+  check_error(openvr_c.SetOverlayWidthInMeters(m.overlayptr, self._handle, w))
   return self
 end
 
 function Overlay:set_visible(v)
   if v then
-    check_error(openvr_c.tr_ovw_ShowOverlay(m.overlayptr, self._handle))
+    check_error(openvr_c.ShowOverlay(m.overlayptr, self._handle))
   else
-    check_error(openvr_c.tr_ovw_HideOverlay(m.overlayptr, self._handle))
+    check_error(openvr_c.HideOverlay(m.overlayptr, self._handle))
   end
   return self
 end
@@ -103,7 +103,7 @@ function Overlay:set_absolute_transform(tf, origin)
     truss.error("Unknown origin " .. origin)
   end
   openvr.mat_to_openvr_mat34(tf, self._ovr_m34)
-  check_error(openvr_c.tr_ovw_SetOverlayTransformAbsolute(
+  check_error(openvr_c.SetOverlayTransformAbsolute(
     m.overlayptr, self._handle, vr_origin, self._ovr_m34))
   return self
 end
@@ -111,14 +111,14 @@ end
 function Overlay:set_relative_transform(tf, device_index)
   device_index = device_index or 0 -- default to hmd (always idx 0)
   openvr.mat_to_openvr_mat34(tf, self._ovr_m34)
-  check_error(openvr_c.tr_ovw_SetOverlayTransformTrackedDeviceRelative(
+  check_error(openvr_c.SetOverlayTransformTrackedDeviceRelative(
     m.overlayptr, self._handle, device_index, self._ovr_m34))
   return self
 end
 
 function Overlay:set_texture(tex)
   if tex == nil then
-    check_error(openvr_c.tr_ovw_ClearOverlayTexture(m.overlayptr, self._handle))
+    check_error(openvr_c.ClearOverlayTexture(m.overlayptr, self._handle))
     self._tex = nil
     return self
   end
@@ -138,7 +138,7 @@ end
 
 function Overlay:update_texture()
   if not self._tex then return self end
-  check_error(openvr_c.tr_ovw_SetOverlayTexture(m.overlayptr, 
+  check_error(openvr_c.SetOverlayTexture(m.overlayptr, 
     self._handle, self._ovr_tex))
   return self
 end
