@@ -78,10 +78,10 @@ function m.init(options)
 
   if m.openvr_mode == "scene" then
     m._init_compositor()
-    m._init_trackables()
+    m._init_trackables(options.legacy_input ~= false)
     modelloader.init(m)
   elseif m.openvr_mode == "other" then
-    m._init_trackables()
+    m._init_trackables(options.legacy_input ~= false)
     modelloader.init(m)
   elseif m.openvr_mode == "overlay" then
     m._init_overlay()

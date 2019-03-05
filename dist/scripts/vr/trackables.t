@@ -9,7 +9,7 @@ local math = require("math")
 local const = require("vr/constants.t")
 local modelloader = nil
 
-function m.init(parent_openvr)
+function m.init(parent_openvr, use_legacy_input)
   openvr = parent_openvr
   -- not really sure why we make an array of two of these
   m.prop_error = terralib.new(openvr.c_api.ETrackedPropertyError[2])
@@ -17,11 +17,16 @@ function m.init(parent_openvr)
   m._create_button_masks()
 
   local openvr_c = openvr.c_api
+  local controller_constructor = m.Trackable
+  if use_legacy_input then
+    controller_constructor = m.Controller
+    log.info("OpenVR trackables initializing with legacy input")
+  end
   m.trackable_types = {
     [openvr_c.ETrackedDeviceClass_TrackedDeviceClass_HMD] =
       {name = "HMD", constructor = m.HMD},
     [openvr_c.ETrackedDeviceClass_TrackedDeviceClass_Controller] =
-      {name = "Controller", constructor = m.Controller},
+      {name = "Controller", constructor = controller_constructor},
     [openvr_c.ETrackedDeviceClass_TrackedDeviceClass_GenericTracker] =
       {name = "Generic", constructor = m.Trackable},
     [openvr_c.ETrackedDeviceClass_TrackedDeviceClass_TrackingReference] =
