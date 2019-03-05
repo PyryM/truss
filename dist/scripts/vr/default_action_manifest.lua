@@ -1,12 +1,6 @@
 -- Note: actions and action_sets should be sorted by .name
 -- so that the tests will pass
 return {
-  default_bindings = {
-    {
-      controller_type = "vive_controller",
-      binding_url = "vive_controller_bindings.json"
-    }
-  }, 
   actions = {
     {
       name = "/actions/driving/in/HonkHorn",

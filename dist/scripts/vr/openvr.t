@@ -79,9 +79,11 @@ function m.init(options)
   if m.openvr_mode == "scene" then
     m._init_compositor()
     m._init_trackables(options.legacy_input ~= false)
+    m._init_input(options.new_input == true)
     modelloader.init(m)
   elseif m.openvr_mode == "other" then
     m._init_trackables(options.legacy_input ~= false)
+    m._init_input(options.new_input == true)
     modelloader.init(m)
   elseif m.openvr_mode == "overlay" then
     m._init_overlay()
@@ -124,12 +126,18 @@ function m._init_compositor()
   m.eye_ids = {openvr_c.EVREye_Eye_Left, openvr_c.EVREye_Eye_Right}
 end
 
-function m._init_trackables()
+function m._init_trackables(use_legacy_input)
   log.info("Initializing trackables")
-  trackables.init(m)
+  trackables.init(m, use_legacy_input)
   m.MAX_TRACKABLES = const.k_unMaxTrackedDeviceCount
   m.trackable_poses = terralib.new(openvr_c.TrackedDevicePose_t[m.MAX_TRACKABLES])
   m.trackables = {}
+end
+
+function m._init_input(use_new_input)
+  if not use_new_input then return end
+  m.input = require("./input.t")
+  m.input.init()
 end
 
 function m.shutdown()
@@ -156,6 +164,7 @@ function m.begin_frame()
     m._update_trackables()
     m._update_projections()
     m._update_eye_poses()
+    if m.input then m.input._update() end
     modelloader.update()
     m._update_vr_events()
   elseif m.openvr_mode == "other" then
