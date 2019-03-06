@@ -187,6 +187,26 @@ function ControllerComponent:update()
   end
 end
 
+m.Bounds = function(_ecs, name, options)
+  options = options or {}
+  local material = options.material
+  if not material then
+    local color = options.color or {0.8, 0.8, 0.3, 1.0}
+    material = require("material/flat.t").FlatMaterial{color = color}
+  end
+  print(openvr.play_area.x_size, openvr.play_area.z_size)
+  local geo = require("geometry").rectangle_frame_geo{
+    width = openvr.play_area.x_size,
+    height = openvr.play_area.z_size,
+    thickness = options.thickness or 0.1
+  }
+  local bounds = graphics.Mesh(_ecs, name, geo, material)
+  bounds.quaternion:euler{x = -math.pi/2, y = 0, z = 0}
+  bounds.position:set(0, options.hover or 0.02, 0)
+  bounds:update_matrix()
+  return bounds
+end
+
 -- scrap these?
 
 local VRBeginFrameSystem = class("VRBeginFrameSystem")

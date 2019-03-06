@@ -78,6 +78,7 @@ function m.init(options)
 
   if m.openvr_mode == "scene" then
     m._init_compositor()
+    m._init_chaperone()
     m._init_trackables(options.legacy_input ~= false)
     m._init_input(options.new_input == true)
     modelloader.init(m)
@@ -124,6 +125,32 @@ function m._init_compositor()
   }
 
   m.eye_ids = {openvr_c.EVREye_Eye_Left, openvr_c.EVREye_Eye_Right}
+end
+
+function m._init_chaperone()
+  log.info("Initializing chaperone")
+  m.chaperoneptr = m.addonfuncs.truss_openvr_get_chaperone(m.addonptr)
+  m._play_area_size = {terralib.new(float[1]), terralib.new(float[1])}
+  m._play_area_rect = terralib.new(openvr_c.HmdQuad_t)
+  log.info("chaperone: " .. tostring(m.chaperoneptr))
+  m.update_play_area()
+end
+
+function m.update_play_area()
+  if not m.chaperoneptr then truss.error("No chaperone?") end
+  openvr_c.GetPlayAreaSize(m.chaperoneptr, m._play_area_size[1], m._play_area_size[2])
+  openvr_c.GetPlayAreaRect(m.chaperoneptr, m._play_area_rect)
+  local corners = {}
+  for i = 0, 3 do
+    corners[i+1] = math.Vector()
+    m.openvr_v3_to_vector(m._play_area_rect.vCorners[i], corners[i+1])
+  end
+  m.play_area = {
+    x_size = m._play_area_size[1][0],
+    z_size = m._play_area_size[2][0],
+    corners = corners
+  }
+  return m.play_area
 end
 
 function m._init_trackables(use_legacy_input)
