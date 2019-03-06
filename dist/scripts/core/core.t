@@ -169,6 +169,7 @@ local function extend_table(dest, addition)
   return dest
 end
 truss.extend_table = extend_table
+truss.copy_table = function(t) return extend_table({}, t) end
 
 local function slice_table(src, start_idx, stop_idx)
   local dest = {}

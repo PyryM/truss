@@ -141,6 +141,11 @@ function m.test_geometries(t)
                         Vec( 1, -1), Vec( 0.5,   0)}
   poly = geo.polygon_data{pts = cross_points}
   t.expect(#(poly.indices or {}), 8-2, "concave poly (8v): faces")
+
+  local frame = geo.rectangle_frame_data{}
+  t.expect(#(frame.attributes.position or {}), 4*2 + 2, "rect_frame: vertices")
+  t.expect(#(frame.indices or {}), 4*2, "rect_frame: faces")
+  t.ok(check_windings(Vec(0, 0, -1, 0), frame), "rect_frame: windings")
 end
 
 return m
