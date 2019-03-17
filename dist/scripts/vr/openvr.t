@@ -159,6 +159,7 @@ function m._init_trackables(use_legacy_input)
   m.MAX_TRACKABLES = const.k_unMaxTrackedDeviceCount
   m.trackable_poses = terralib.new(openvr_c.TrackedDevicePose_t[m.MAX_TRACKABLES])
   m.trackables = {}
+  m.controllers = {}
 end
 
 function m._init_input(use_new_input)
@@ -263,6 +264,9 @@ function m._update_trackables()
         log.info("New trackable " .. tostring(ttype))
         target = trackable_types[ttype].constructor(i, ttype)
         m.trackables[i+1] = target
+        if target.role then
+          self.controllers[target.role] = target
+        end
         m._emit_event("trackable_connected", target)
       end
       target:update(trackable_pose)

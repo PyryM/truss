@@ -54,6 +54,15 @@ truss.log = log
 -- use default lua error handling
 truss.error = error
 
+-- convenience
+function truss.assert(condition, error_msg)
+  if not condition then 
+    truss.error(error_msg or "assertion failure") 
+  else 
+    return condition 
+  end
+end
+
 -- from luajit
 ffi = require("ffi")
 bit = require("bit")

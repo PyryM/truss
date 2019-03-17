@@ -126,10 +126,9 @@ function DigitalAction:_update()
   if self.data.bActive == 0 then return end
   if self.data.bChanged > 0 then
     print(self.data.bChanged)
-    local state = (self.data.bState and "down") or "up"
-    self.state = state
-    self.down = self.data.bState
-    self.evt:emit(state, self)
+    self.state = ((self.data.bState > 0) and "down") or "up"
+    self.down = self.data.bState > 0
+    self.evt:emit(self.state, self)
     self.evt:emit("change", self)
   end
 end

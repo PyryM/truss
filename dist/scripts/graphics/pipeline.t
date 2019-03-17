@@ -15,6 +15,7 @@ function Pipeline:init(options)
   self._ordered_stages = {}
   self.verbose = options.verbose
   self.globals = options.globals or gfx.CompiledGlobals()
+  self.dirty = false -- zero stages are vacuously bound
 end
 
 local function _match_tags(stages, tags, target)
@@ -54,7 +55,13 @@ end
 
 function Pipeline:bind(start_view_id, num_views)
   local viewid = start_view_id or 0
-  local views_left = num_views or 255
+  local views_left = num_views or 0xffff
+  if (not self.dirty) and (viewid == self.start_view) and (views_left >= self.num_views) then
+    return
+  end
+  self.start_view = viewid
+  self.num_views = views_left
+  log.info(("Pipeline change: reassigning views %d -> %d"):format(viewid, viewid+views_left))
 
   for _, stage in ipairs(self._ordered_stages) do
     local nviews = stage:num_views() or 1
@@ -69,14 +76,41 @@ function Pipeline:bind(start_view_id, num_views)
     viewid = viewid + nviews
     views_left = views_left - nviews
   end
+  self.dirty = false
+end
+
+function Pipeline:insert_stage(position, stage, stage_name)
+  self.dirty = true
+  table.insert(self._ordered_stages, position or (#self._ordered_stages + 1), stage)
+  stage_name = stage_name or stage.stage_name
+  if stage_name then 
+    self.stages[stage_name] = stage 
+    stage._bound_name = stage_name
+  end
+  if stage.scene == nil then stage.scene = "default" end
+  return stage
 end
 
 function Pipeline:add_stage(stage, stage_name)
-  table.insert(self._ordered_stages, stage)
-  stage_name = stage_name or stage.stage_name
-  if stage_name then self.stages[stage_name] = stage end
-  if stage.scene == nil then stage.scene = "default" end
-  return stage
+  return self:insert_stage(nil, stage, stage_name)
+end
+
+function Pipeline:find_stage_index(stage_name)
+  if not stage_name then truss.error("stage_name was not provided or is false") end
+  for idx, stage in ipairs(self._ordered_stages) do
+    if stage._bound_name == stage_name then return idx end
+  end
+  return nil
+end
+
+function Pipeline:insert_after(insert_point, stage, stage_name)
+  local idx = truss.assert(self:find_stage_index(insert_point))
+  return self:insert_stage(idx+1, stage, stage_name)
+end
+
+function Pipeline:insert_before(insert_point, stage, stage_name)
+  local idx = truss.assert(self:find_stage_index(insert_point))
+  return self:insert_stage(idx, stage, stage_name)
 end
 
 local SubPipeline = class("SubPipeline")

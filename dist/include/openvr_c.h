@@ -1,6 +1,7 @@
 // Mostly auto generated c api to openvr 1.0.6
 
 #include <stdint.h>
+//#include <stdbool.h>
 
 typedef char bool;
 

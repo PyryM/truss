@@ -136,7 +136,14 @@ function Trackable:init(device_idx, device_class)
   self.device_idx = device_idx
   self.device_class = device_class
   self.device_class_name = m.trackable_types[device_class].name
+  local role = openvr_c.GetControllerRoleForTrackedDeviceIndex(openvr.sysptr, device_idx)
+  if role == openvr_c.ETrackedControllerRole_TrackedControllerRole_LeftHand then
+    self.role = "left"
+  elseif role == openvr_c.ETrackedControllerRole_TrackedControllerRole_RightHand then
+    self.role = "right"
+  end
   self.debug_name = self.device_idx .. "_" .. (self.device_class_name or "unknown")
+  if self.role then self.debug_name = self.debug_name .. "(" .. self.role .. ")" end
   log.info("Trackable found: " .. self.debug_name)
 end
 
@@ -173,6 +180,10 @@ function Trackable:update_pose(src)
   openvr.openvr_v3_to_vector(src.vAngularVelocity, self.angular_velocity)
   self.connected = (src.bDeviceIsConnected > 0)
   self.pose_valid = (src.bPoseIsValid > 0)
+end
+
+function Trackable:on()
+  truss.error("Base Trackable does not emit any events (are you trying to use legacy input?)")
 end
 
 Trackable.update = Trackable.update_pose
@@ -223,7 +234,7 @@ function Controller:_parse_axes_and_buttons()
     if axis_info ~= nil then
       axis_info[2] = axis_info[2] + 1 -- how many of this axis type we've seen
       local axis_name = axis_info[1] .. axis_info[2] -- e.g., "joystick3"
-      self.axes[axis_name] = {x = 0.0, y = 0.0, idx = i}
+      self.axes[axis_name] = math.Vector(0, 0)
       self.axes[i] = self.axes[axis_name]
     end
   end
@@ -275,15 +286,26 @@ function Controller:update(src)
     local v = 0 -- 0 = none, 1 = touched, 2 = pressed, 3 = touched+pressed
     if math.ulland(rawstate.ulButtonTouched, bmask) > 0 then v = v + 1 end
     if math.ulland(rawstate.ulButtonPressed, bmask) > 0 then v = v + 2 end
+    local prev_val = self.buttons[bname] or 0
+    if self.evt and prev_val ~= v then
+      self.evt:emit("button", {name = bname, state = v})
+    end
     self.buttons[bname] = v
   end
 
-  for _, axis in pairs(self.axes) do
-    axis.x = rawstate.rAxis[axis.idx].x
-    axis.y = rawstate.rAxis[axis.idx].y
+  for axis_name, axis in pairs(self.axes) do
+    axis:set(rawstate.rAxis[axis.idx].x, rawstate.rAxis[axis.idx].y)
+    if self.evt then
+      self.evt:emit("axis", {name = axis_name, state = axis})
+    end
   end
 
   self._has_vibrated = false
+end
+
+function Controller:on(...)
+  self.evt = self.evt or require("ecs/event.t").EventEmitter()
+  self.evt:on(...)
 end
 
 function Controller:get_parts()
