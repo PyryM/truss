@@ -72,8 +72,7 @@ function RenderSystem:_tree_render(entity, parentmat)
   local renderable = entity.renderable
   if renderable then
     local ops = self:_match(renderable)
-    local nops = #ops
-    for i = 1, nops do
+    for i = 1, #ops do
       ops[i](renderable, mw)
     end
   end

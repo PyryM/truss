@@ -39,13 +39,12 @@ function DebugTextStats:update()
   local frametime = self:find_evt("frame_end").cdt * 1000.0
 
   local utime = self:time_between("frame_start", "update")
-  local sgtime = self:time_between("update", "render_sg")
-  local rtime = self:time_between("render_sg", "render_post")
+  local rtime = self:time_between("update", "render_post")
 
   local ft = string.format("frame: %5.2f ms, ecs: %5.2f ms",
                             frametime, scripttime)
-  local sg = string.format("   u: %5.2f ms,  sg: %5.2f ms, render: %5.2f ms",
-                            utime, sgtime, rtime)
+  local sg = string.format("   update: %5.2f ms, render: %5.2f ms",
+                            utime, rtime)
 
   bgfx.dbg_text_clear(0, false)
   bgfx.dbg_text_printf(0, 2, 0x6f, ft)
