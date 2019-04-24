@@ -307,6 +307,9 @@ local function select_loader(fn)
   elseif fn:sub(-4) == ".lua" then
     log.debug("loading " .. fn .. " as lua")
     return load
+  elseif fn:sub(-5) == ".moon" then
+    log.debug("loading " .. fn .. " as moonscript")
+    return truss.require("moonscript").load
   else
     log.debug("loading " .. fn .. " as terra by default??")
     return terralib.load
@@ -461,7 +464,7 @@ local function add_paths()
 end
 
 -- create some environments
-truss.clean_subenv = extend_table({},  _G)
+truss.clean_subenv = extend_table({}, _G)
 truss.mainenv = extend_table({}, _G)
 extend_table(truss._module_env, _G)
 
