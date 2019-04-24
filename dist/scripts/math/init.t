@@ -3,17 +3,20 @@
 -- meta-module for all the math classes
 -- (also incorporates the standard math module)
 
-local m = {}
+local module = require("core/module.t")
 
 -- 'import' all the normal math functions
-for k,v in pairs(math) do m[k] = v end
+local m = module.reexport(math)
 
 -- 3d math
-m.Vector = require("math/vec.t").Vector
-m.Matrix4 = require("math/matrix.t").Matrix4
-m.Quaternion = require("math/quat.t").Quaternion
+m.Vector = require("./vec.t").Vector
+m.Matrix4 = require("./matrix.t").Matrix4
+m.Quaternion = require("./quat.t").Quaternion
 
--- 64 bit bitwise operations
-for k,v in pairs(require("math/bitops.t")) do m[k] = v end
+-- Additional stuff
+module.include_submodules({
+  "math/bitops.t",
+  "math/random.t"
+}, m)
 
 return m

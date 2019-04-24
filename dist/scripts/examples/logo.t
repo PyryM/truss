@@ -32,7 +32,7 @@ local function add_2d_drawable(f, state)
   local d = state or {}
   drawables[next_drawable] = d
   next_drawable = next_drawable + 1
-  async.run(f, d):next(print, print)
+  async.run(f, d):next(nil, print)
   return d
 end
 
@@ -135,15 +135,15 @@ function make_column_edges()
   return edges
 end
 
-terra zero(oldval: float, x: float, y: float, z: float): float
+local terra zero(oldval: float, x: float, y: float, z: float): float
   return 0.0
 end
 
-terra recenter(oldval: float, x: float, y: float, z: float): float
+local terra recenter(oldval: float, x: float, y: float, z: float): float
   return oldval - 0.8
 end
 
-function gen_cell(data, x, y, z, dg, funclist)
+local function gen_cell(data, x, y, z, dg, funclist)
   local limits = {
     x_start = x*dg, x_end = (x+1)*dg + 1,
     y_start = y*dg, y_end = (y+1)*dg + 1,
@@ -162,7 +162,7 @@ function gen_cell(data, x, y, z, dg, funclist)
   return mc.cubify_to_geo(data, 64000, nil, limits)
 end
 
-function generate_logo_mesh(parent, material, resolution)
+local function generate_logo_mesh(parent, material, resolution)
   local edge_funcs = {}
   for idx, edge in ipairs(make_column_edges()) do
     edge_funcs[idx] = ter_edge_dist_func(unpack(edge))
@@ -195,7 +195,7 @@ function generate_logo_mesh(parent, material, resolution)
   progress.dead = true
 end
 
-function Logo(_ecs, name, options)
+local function Logo(_ecs, name, options)
   local ret = ecs.Entity3d(_ecs, name)
   local rotator = ret:create_child(ecs.Entity3d, "_rotator")
   rotator:add_component(ecs.UpdateComponent(function(self)
@@ -209,18 +209,42 @@ function Logo(_ecs, name, options)
     tint = {1.0, 0.02, 0.2}, 
     roughness = 0.3
   }
-  async.run(generate_logo_mesh, rotator, mat, 2^(options.detail)):next(print, print)
+  async.run(generate_logo_mesh, rotator, mat, 2^(options.detail)):next(nil, print)
 
   return ret
 end
 
-function Skybox(_ecs, name, fn)
-  local sky_sphere = geometry.uvsphere_geo{lat_divs = 30, lon_divs = 30}
-  local skymat = flat.FlatMaterial{skybox = true, texture = gfx.Texture(fn)}
-  local skybox = graphics.Mesh(_ecs, name, sky_sphere, skymat)
-  skybox.scale:set(-10, -10, -10)
-  skybox:update_matrix()
-  return skybox
+local function Stars(_ecs, name, options)
+  options = options or {}
+  local nstars = options.nstars or 10000
+  local vinfo = gfx.create_basic_vertex_type({"position"})
+  local data = {indices = {}, attributes={position={}}}
+  local p = math.Vector()
+  local v = math.Vector()
+  local x = math.Vector()
+  local y = math.Vector()
+  for star_idx = 1, nstars do
+    math.rand_spherical(p)
+    p:normalize3()
+    math.rand_spherical(x):normalize3()
+    y:cross(x, p):normalize3()
+    x:cross(y, p):normalize3()
+    local start_index = #(data.indices)
+    for offset = 0, 2 do
+      local theta = offset * 2.0 * math.pi / 3.0
+      local s = math.random()*0.003 + 0.001
+      v:lincomb(x, y, math.cos(theta)*s, math.sin(theta)*s)
+      v:add(p)
+      table.insert(data.attributes.position, v:to_array())
+      table.insert(data.indices, start_index+offset)
+    end
+  end
+  local geo = gfx.StaticGeometry(name):from_data(data)
+  local mat = flat.FlatMaterial{skybox = true, state={cull=false}, color={0.3,0.3,0.3,1}}
+  local stars = graphics.Mesh(_ecs, name, geo, mat)
+  stars.scale:set(-10, -10, -10)
+  stars:update_matrix()
+  return stars
 end
 
 local NVGThing = graphics.NanoVGComponent:extend("NVGThing")
@@ -244,7 +268,7 @@ function init()
   logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
   logo:update_matrix()
 
-  myapp.scene:create_child(Skybox, 'sky', 'textures/starmap.ktx')
+  myapp.scene:create_child(Stars, 'sky', {nstars = 30000})
   myapp.scene:create_child(ecs.Entity3d, "logotext", NVGThing())
 
   async.run(function()
@@ -268,7 +292,6 @@ function init()
       })
       ypos = ypos + 24
       async.await_frames(5)
-      --self.print(capname .. ": " .. tostring(supported), color, 8)
     end
   end)
 end
