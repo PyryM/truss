@@ -14,8 +14,14 @@ local modelloader = require("vr/modelloader.t")
 local vr_modes = {}
 if truss.addons.openvr ~= nil then
   log.info("OpenVR support is available.")
-  openvr_c = terralib.includec("openvr_c.h")
+  local modutils = require("core/module.t")
+  local raw_openvr_c = terralib.includec("openvr_c.h")
+  openvr_c = modutils.reexport_renamed(raw_openvr_c, {
+    tr_ovw_ = ""
+  }, true)
+
   m.c_api = openvr_c
+  m.raw_c_api = raw_openvr_c
   m.available = true
   vr_modes = {
     other = openvr_c.EVRApplicationType_VRApplication_Other,
@@ -72,10 +78,13 @@ function m.init(options)
 
   if m.openvr_mode == "scene" then
     m._init_compositor()
-    m._init_trackables()
+    m._init_chaperone()
+    m._init_trackables(options.legacy_input ~= false)
+    m._init_input(options.new_input == true)
     modelloader.init(m)
   elseif m.openvr_mode == "other" then
-    m._init_trackables()
+    m._init_trackables(options.legacy_input ~= false)
+    m._init_input(options.new_input == true)
     modelloader.init(m)
   elseif m.openvr_mode == "overlay" then
     m._init_overlay()
@@ -118,12 +127,45 @@ function m._init_compositor()
   m.eye_ids = {openvr_c.EVREye_Eye_Left, openvr_c.EVREye_Eye_Right}
 end
 
-function m._init_trackables()
+function m._init_chaperone()
+  log.info("Initializing chaperone")
+  m.chaperoneptr = m.addonfuncs.truss_openvr_get_chaperone(m.addonptr)
+  m._play_area_size = {terralib.new(float[1]), terralib.new(float[1])}
+  m._play_area_rect = terralib.new(openvr_c.HmdQuad_t)
+  log.info("chaperone: " .. tostring(m.chaperoneptr))
+  m.update_play_area()
+end
+
+function m.update_play_area()
+  if not m.chaperoneptr then truss.error("No chaperone?") end
+  openvr_c.GetPlayAreaSize(m.chaperoneptr, m._play_area_size[1], m._play_area_size[2])
+  openvr_c.GetPlayAreaRect(m.chaperoneptr, m._play_area_rect)
+  local corners = {}
+  for i = 0, 3 do
+    corners[i+1] = math.Vector()
+    m.openvr_v3_to_vector(m._play_area_rect.vCorners[i], corners[i+1])
+  end
+  m.play_area = {
+    x_size = m._play_area_size[1][0],
+    z_size = m._play_area_size[2][0],
+    corners = corners
+  }
+  return m.play_area
+end
+
+function m._init_trackables(use_legacy_input)
   log.info("Initializing trackables")
-  trackables.init(m)
+  trackables.init(m, use_legacy_input)
   m.MAX_TRACKABLES = const.k_unMaxTrackedDeviceCount
   m.trackable_poses = terralib.new(openvr_c.TrackedDevicePose_t[m.MAX_TRACKABLES])
   m.trackables = {}
+  m.controllers = {}
+end
+
+function m._init_input(use_new_input)
+  if not use_new_input then return end
+  m.input = require("./input.t")
+  m.input.init()
 end
 
 function m.shutdown()
@@ -142,7 +184,7 @@ function m.begin_frame()
   if not m.available then return false end
 
   if m.openvr_mode == "scene" then
-    local err = openvr_c.tr_ovw_WaitGetPoses(m.compositorptr, m.trackable_poses, m.MAX_TRACKABLES, nil, 0)
+    local err = openvr_c.WaitGetPoses(m.compositorptr, m.trackable_poses, m.MAX_TRACKABLES, nil, 0)
     if err ~= openvr_c.EVRCompositorError_VRCompositorError_None then
       log.error("WaitGetPoses error: " .. tostring(err))
       return false
@@ -150,10 +192,11 @@ function m.begin_frame()
     m._update_trackables()
     m._update_projections()
     m._update_eye_poses()
+    if m.input then m.input._update() end
     modelloader.update()
     m._update_vr_events()
   elseif m.openvr_mode == "other" then
-    openvr_c.tr_ovw_GetDeviceToAbsoluteTrackingPose(m.sysptr, 
+    openvr_c.GetDeviceToAbsoluteTrackingPose(m.sysptr, 
       openvr_c.ETrackingUniverseOrigin_TrackingUniverseStanding, 
       0.0, m.trackable_poses, m.MAX_TRACKABLES)
     m._update_trackables()
@@ -168,7 +211,7 @@ function m.submit_frame(eye_texes)
     m.eye_submit_texes[eye].handle = bgfx.get_internal_texture_ptr(eye_texes[eye])
     m.eye_submit_texes[eye].eType = openvr_c.ETextureType_TextureType_DirectX
     m.eye_submit_texes[eye].eColorSpace = openvr_c.EColorSpace_ColorSpace_Auto
-    openvr_c.tr_ovw_Submit(m.compositorptr, m.eye_ids[eye],
+    openvr_c.Submit(m.compositorptr, m.eye_ids[eye],
                            m.eye_submit_texes[eye], nil, 0)
   end
 end
@@ -181,14 +224,14 @@ function m._process_vr_event()
   local evt = m.vr_event
   if evt.eventType == openvr_c.EVREventType_VREvent_Quit then
     log.info("Openvr requested application quit!")
-    openvr_c.tr_ovw_AcknowledgeQuit_Exiting(m.sysptr)
+    openvr_c.AcknowledgeQuit_Exiting(m.sysptr)
     truss.quit()
   end
 end
 
 function m._update_vr_events()
   local evtsize = sizeof(openvr_c.VREvent_t)
-  while openvr_c.tr_ovw_PollNextEvent(m.sysptr, m.vr_event, evtsize) > 0 do
+  while openvr_c.PollNextEvent(m.sysptr, m.vr_event, evtsize) > 0 do
     m._process_vr_event()
   end
 end
@@ -205,7 +248,6 @@ function m._emit_event(evt_name, ...)
 end
 
 function m._update_trackables()
-  m.has_input_focus = openvr_c.tr_ovw_IsInputFocusCapturedByAnotherProcess(m.sysptr)
   local trackable_types = trackables.trackable_types
 
   for i = 0, m.MAX_TRACKABLES - 1 do
@@ -213,7 +255,7 @@ function m._update_trackables()
     local target = m.trackables[i+1]
 
     if trackable_pose.bPoseIsValid > 0 then
-      local ttype = openvr_c.tr_ovw_GetTrackedDeviceClass(m.sysptr, i)
+      local ttype = openvr_c.GetTrackedDeviceClass(m.sysptr, i)
       if not target or target.device_class ~= ttype then
         if target then
           target:on_disconnect()
@@ -222,6 +264,9 @@ function m._update_trackables()
         log.info("New trackable " .. tostring(ttype))
         target = trackable_types[ttype].constructor(i, ttype)
         m.trackables[i+1] = target
+        if target.role then
+          self.controllers[target.role] = target
+        end
         m._emit_event("trackable_connected", target)
       end
       target:update(trackable_pose)
@@ -271,20 +316,20 @@ function m._update_projections()
   local near = m.nearClip or 0.05
   local far = m.farClip or 100.0
   for i, eyeID in ipairs(m.eye_ids) do
-    local m44 = openvr_c.tr_ovw_GetProjectionMatrix(m.sysptr, eyeID, near, far)
+    local m44 = openvr_c.GetProjectionMatrix(m.sysptr, eyeID, near, far)
     m.openvr_mat44_to_mat(m44, m.eye_projections[i])
   end
 end
 
 function m._update_eye_poses()
   for i, eyeID in ipairs(m.eye_ids) do
-    local m34 = openvr_c.tr_ovw_GetEyeToHeadTransform(m.sysptr, eyeID)
+    local m34 = openvr_c.GetEyeToHeadTransform(m.sysptr, eyeID)
     m.openvr_mat34_to_mat(m34, m.eye_offsets[i])
   end
 end
 
 terra m._get_target_size(sysptr: &openvr_c.IVRSystem, target: &m.TargetSize)
-  openvr_c.tr_ovw_GetRecommendedRenderTargetSize(sysptr, &target.w, &target.h)
+  openvr_c.GetRecommendedRenderTargetSize(sysptr, &target.w, &target.h)
 end
 
 function m.get_target_size()

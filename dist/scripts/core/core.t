@@ -54,6 +54,15 @@ truss.log = log
 -- use default lua error handling
 truss.error = error
 
+-- convenience
+function truss.assert(condition, error_msg)
+  if not condition then 
+    truss.error(error_msg or "assertion failure") 
+  else 
+    return condition 
+  end
+end
+
 -- from luajit
 ffi = require("ffi")
 bit = require("bit")
@@ -169,6 +178,7 @@ local function extend_table(dest, addition)
   return dest
 end
 truss.extend_table = extend_table
+truss.copy_table = function(t) return extend_table({}, t) end
 
 local function slice_table(src, start_idx, stop_idx)
   local dest = {}
@@ -201,6 +211,8 @@ function truss.set_app_directories(orgname, appname)
   local userpath = sdl.create_user_path(orgname, appname)
   log.info("Setting save dir to: " .. userpath)
   truss.C.set_raw_write_dir(userpath)
+  truss.absolute_data_path = userpath
+  return userpath
 end
 
 function truss.list_directory(path)

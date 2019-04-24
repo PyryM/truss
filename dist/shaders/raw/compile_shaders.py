@@ -49,6 +49,9 @@ def make_cmd(shader_type, platform, input_fn, output_fn):
             print("Unknown shader_type {}".format(shader_type))
             return None
         args.extend(["-O", "3"])
+    elif platform == "osx":
+        # do we need any special args?
+        args.extend(["-p", "metal"])
     else:
         print("Unknown platform {}".format(platform))
         return None
@@ -57,7 +60,7 @@ def make_cmd(shader_type, platform, input_fn, output_fn):
 if os.name == "posix":
     platforms = [("linux", "glsl")]
 else:
-    platforms = [("windows","dx11"), ("linux","glsl")] # compile gl even on windows
+    platforms = [("windows","dx11"), ("linux","glsl"), ("osx","mtl")] # compile gl even on windows
 
 def make_directories():
     for platform, desttype in platforms:

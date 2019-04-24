@@ -1,6 +1,6 @@
--- vr_01_vr.t
+-- vr_basic.t
 --
--- demonstration of using vrapp for vr
+-- basic demonstration of vr
 
 local VRApp = require("vr/vrapp.t").VRApp
 local geometry = require("geometry")
@@ -9,6 +9,7 @@ local gfx = require("gfx")
 local graphics = require("graphics")
 local ecs = require("ecs")
 local Grid = require("graphics/grid.t").Grid
+local vrcomps = require("vr/components.t")
 
 function randu(magnitude)
   return (math.random() * 2.0 - 1.0)*(magnitude or 1.0)
@@ -30,27 +31,30 @@ function create_geometry()
     tint = {0.001, 0.001, 0.001}, 
     roughness = 0.7
   }
-
-  local nspheres = 3000
-  for i = 1, nspheres do
+  for i = 1, 200 do
     local sphere = app.scene:create_child(graphics.Mesh, 'sphere', geo, mat)
     sphere:add_component(Jiggler())
-    sphere.position:set(randu(5), randu(5), randu(5))
+    sphere.position:set(randu(0.5), randu(0.5)+1.0, randu(0.5))
     sphere:update_matrix()
   end
 end
 
 function init()
   app = VRApp{
-    title = "vr_01_vr", stats = true,
+    title = "vr_basic", stats = true,
     width = 1280, height = 720,
     create_controllers = true
   }
   local grid = app.scene:create_child(Grid, "grid", {
-    thickness = 0.01, color = {0.6, 0.6, 0.6, 1}
+    thickness = 0.005, color = {0.6, 0.6, 0.6, 1}
   })
   grid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
   grid:update_matrix()
+
+  local bounds = app.scene:create_child(vrcomps.Bounds, "bounds", {
+    color = {0.6, 0.6, 0.3, 1}, thickness = 0.2
+  })
+
   create_geometry()
 end
 

@@ -9,7 +9,7 @@ local math = require("math")
 local const = require("vr/constants.t")
 local modelloader = nil
 
-function m.init(parent_openvr)
+function m.init(parent_openvr, use_legacy_input)
   openvr = parent_openvr
   -- not really sure why we make an array of two of these
   m.prop_error = terralib.new(openvr.c_api.ETrackedPropertyError[2])
@@ -17,11 +17,16 @@ function m.init(parent_openvr)
   m._create_button_masks()
 
   local openvr_c = openvr.c_api
+  local controller_constructor = m.Trackable
+  if use_legacy_input then
+    controller_constructor = m.Controller
+    log.info("OpenVR trackables initializing with legacy input")
+  end
   m.trackable_types = {
     [openvr_c.ETrackedDeviceClass_TrackedDeviceClass_HMD] =
       {name = "HMD", constructor = m.HMD},
     [openvr_c.ETrackedDeviceClass_TrackedDeviceClass_Controller] =
-      {name = "Controller", constructor = m.Controller},
+      {name = "Controller", constructor = controller_constructor},
     [openvr_c.ETrackedDeviceClass_TrackedDeviceClass_GenericTracker] =
       {name = "Generic", constructor = m.Trackable},
     [openvr_c.ETrackedDeviceClass_TrackedDeviceClass_TrackingReference] =
@@ -30,7 +35,7 @@ function m.init(parent_openvr)
 end
 
 local function find_prop_error_name(prop_error)
-  local cname = openvr.c_api.tr_ovw_GetPropErrorNameFromEnum(openvr.sysptr,
+  local cname = openvr.c_api.GetPropErrorNameFromEnum(openvr.sysptr,
                                                              prop_error)
   return ffi.string(cname)
 end
@@ -51,7 +56,7 @@ local function get_prop(gfunc)
 end
 
 local function get_matrix34_prop(device_idx, prop_id)
-  local mat = openvr.c_api.tr_ovw_GetMatrix34TrackedDeviceProperty(openvr.sysptr, device_idx, prop_id, m.prop_error)
+  local mat = openvr.c_api.GetMatrix34TrackedDeviceProperty(openvr.sysptr, device_idx, prop_id, m.prop_error)
   local truss_mat = math.Matrix4()
   openvr.openvr_mat34_to_mat(mat, truss_mat)
   return check_prop_error(truss_mat, m.prop_error[0])
@@ -61,7 +66,7 @@ m.string_buff_size = 512
 m.string_buff = terralib.new(int8[m.string_buff_size])
 
 local function get_string_prop(device_idx, prop_id)
-  local retsize = openvr.c_api.tr_ovw_GetStringTrackedDeviceProperty(openvr.sysptr,
+  local retsize = openvr.c_api.GetStringTrackedDeviceProperty(openvr.sysptr,
     device_idx, prop_id, m.string_buff, m.string_buff_size, m.prop_error)
   if retsize < 1 then return nil end
   local ret = ffi.string(m.string_buff, retsize-1) -- strip null terminator
@@ -76,10 +81,10 @@ function m._parse_props()
   local patt = "^ETrackedDeviceProperty_Prop_([^_]*)_([^_]*)$"
   for k, prop_enum_val in pairs(c_api) do
     local prop_funcs = {
-      Bool = get_prop(openvr.c_api.tr_ovw_GetBoolTrackedDeviceProperty),
-      Float = get_prop(openvr.c_api.tr_ovw_GetFloatTrackedDeviceProperty),
-      Uint64 = get_prop(openvr.c_api.tr_ovw_GetUint64TrackedDeviceProperty),
-      Int32 = get_prop(openvr.c_api.tr_ovw_GetInt32TrackedDeviceProperty),
+      Bool = get_prop(openvr.c_api.GetBoolTrackedDeviceProperty),
+      Float = get_prop(openvr.c_api.GetFloatTrackedDeviceProperty),
+      Uint64 = get_prop(openvr.c_api.GetUint64TrackedDeviceProperty),
+      Int32 = get_prop(openvr.c_api.GetInt32TrackedDeviceProperty),
       String = get_string_prop,
       Matrix34 = get_matrix34_prop
     }
@@ -131,7 +136,14 @@ function Trackable:init(device_idx, device_class)
   self.device_idx = device_idx
   self.device_class = device_class
   self.device_class_name = m.trackable_types[device_class].name
+  local role = openvr_c.GetControllerRoleForTrackedDeviceIndex(openvr.sysptr, device_idx)
+  if role == openvr_c.ETrackedControllerRole_TrackedControllerRole_LeftHand then
+    self.role = "left"
+  elseif role == openvr_c.ETrackedControllerRole_TrackedControllerRole_RightHand then
+    self.role = "right"
+  end
   self.debug_name = self.device_idx .. "_" .. (self.device_class_name or "unknown")
+  if self.role then self.debug_name = self.debug_name .. "(" .. self.role .. ")" end
   log.info("Trackable found: " .. self.debug_name)
 end
 
@@ -170,6 +182,10 @@ function Trackable:update_pose(src)
   self.pose_valid = (src.bPoseIsValid > 0)
 end
 
+function Trackable:on()
+  truss.error("Base Trackable does not emit any events (are you trying to use legacy input?)")
+end
+
 Trackable.update = Trackable.update_pose
 
 local HMD = Trackable:extend("HMD")
@@ -196,7 +212,7 @@ function Controller:vibrate(strength)
   if self._has_vibrated then return end
   local us_dur = math.min(math.floor(strength * 3500), 3500)
   if us_dur < 100 then return end
-  openvr.c_api.tr_ovw_TriggerHapticPulse(openvr.sysptr, self.device_idx, 0, us_dur)
+  openvr.c_api.TriggerHapticPulse(openvr.sysptr, self.device_idx, 0, us_dur)
   self._has_vibrated = true
 end
 
@@ -218,7 +234,7 @@ function Controller:_parse_axes_and_buttons()
     if axis_info ~= nil then
       axis_info[2] = axis_info[2] + 1 -- how many of this axis type we've seen
       local axis_name = axis_info[1] .. axis_info[2] -- e.g., "joystick3"
-      self.axes[axis_name] = {x = 0.0, y = 0.0, idx = i}
+      self.axes[axis_name] = math.Vector(0, 0)
       self.axes[i] = self.axes[axis_name]
     end
   end
@@ -259,8 +275,7 @@ function Controller:update(src)
   local rawstate = self.rawstate
   local stateptr = self.rawstate_ptr or self.rawstate
   local statesize = self.statesize
-  openvr_c.tr_ovw_GetControllerState(openvr.sysptr, self.device_idx, stateptr,
-                                     statesize)
+  openvr_c.GetControllerState(openvr.sysptr, self.device_idx, stateptr, statesize)
   if self.rawstate_ptr then
     -- using horrible misaligned structures on linux
     rawstate:decode()
@@ -271,15 +286,26 @@ function Controller:update(src)
     local v = 0 -- 0 = none, 1 = touched, 2 = pressed, 3 = touched+pressed
     if math.ulland(rawstate.ulButtonTouched, bmask) > 0 then v = v + 1 end
     if math.ulland(rawstate.ulButtonPressed, bmask) > 0 then v = v + 2 end
+    local prev_val = self.buttons[bname] or 0
+    if self.evt and prev_val ~= v then
+      self.evt:emit("button", {name = bname, state = v})
+    end
     self.buttons[bname] = v
   end
 
-  for _, axis in pairs(self.axes) do
-    axis.x = rawstate.rAxis[axis.idx].x
-    axis.y = rawstate.rAxis[axis.idx].y
+  for axis_name, axis in pairs(self.axes) do
+    axis:set(rawstate.rAxis[axis.idx].x, rawstate.rAxis[axis.idx].y)
+    if self.evt then
+      self.evt:emit("axis", {name = axis_name, state = axis})
+    end
   end
 
   self._has_vibrated = false
+end
+
+function Controller:on(...)
+  self.evt = self.evt or require("ecs/event.t").EventEmitter()
+  self.evt:on(...)
 end
 
 function Controller:get_parts()

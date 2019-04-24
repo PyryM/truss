@@ -44,7 +44,7 @@ end
 
 function RenderSystem:set_pipeline(p)
   self.pipeline = p
-  self.pipeline:bind(0, 255)
+  self.pipeline:bind(0, 0xffff)
   self._task_stages = self:_find_task_stages()
   return self
 end
@@ -72,8 +72,7 @@ function RenderSystem:_tree_render(entity, parentmat)
   local renderable = entity.renderable
   if renderable then
     local ops = self:_match(renderable)
-    local nops = #ops
-    for i = 1, nops do
+    for i = 1, #ops do
       ops[i](renderable, mw)
     end
   end
@@ -84,6 +83,7 @@ end
 
 function RenderSystem:update()
   if not self.pipeline then return end
+  self.pipeline:bind(0, 0xffff)
   self.pipeline:pre_render()
   self.ecs:insert_timing_event("render_sg")
   if not self._roots.default then

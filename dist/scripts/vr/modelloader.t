@@ -28,11 +28,11 @@ function m.init(_parent)
   m.targets = terralib.new(m.TargetStuff)
 
   terra m.ovr_load_model(ovrptr: &openvr_c.IVRRenderModels, fn: &int8, tgt: &m.TargetStuff) : openvr_c.EVRRenderModelError
-    return openvr_c.tr_ovw_LoadRenderModel_Async(ovrptr, fn, &(tgt.model))
+    return openvr_c.LoadRenderModel_Async(ovrptr, fn, &(tgt.model))
   end
 
   terra m.ovr_load_tex(ovrptr: &openvr_c.IVRRenderModels, texid: int32, tgt: &m.TargetStuff) : openvr_c.EVRRenderModelError
-    return openvr_c.tr_ovw_LoadTexture_Async(ovrptr, texid, &(tgt.texture))
+    return openvr_c.LoadTexture_Async(ovrptr, texid, &(tgt.texture))
   end
 
   -- if we need to pass a pointer to something, it's simpler to make an
@@ -54,7 +54,7 @@ local controller_info = nil
 function m.get_part_pose(controller_state, part)
   pose_info = pose_info or terralib.new(openvr_c.RenderModel_ComponentState_t)
   controller_info = controller_info or terralib.new(openvr_c.RenderModel_ControllerMode_State_t)
-  local happy = openvr_c.tr_ovw_GetComponentState(m.rendermodelsptr, 
+  local happy = openvr_c.GetComponentState(m.rendermodelsptr, 
                             part.parent_model_name, part.name, 
                             controller_state, 
                             controller_info, pose_info)
@@ -93,7 +93,7 @@ local function load_model_task(task)
     task.texid = texid
     m.cache[geo_name] = task.geo
     m._dispatch_success(task)
-    openvr_c.tr_ovw_FreeRenderModel(m.rendermodelsptr, m.targets.model)
+    openvr_c.FreeRenderModel(m.rendermodelsptr, m.targets.model)
     return true
   elseif loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_Loading then
     -- still loading (nothing to do but wait)
@@ -131,7 +131,7 @@ local function load_texture_task(task)
     task.texture = tex
     m.cache[tex_name] = tex
     m._dispatch_success(task)
-    openvr_c.tr_ovw_FreeTexture(m.rendermodelsptr, m.targets.texture)
+    openvr_c.FreeTexture(m.rendermodelsptr, m.targets.texture)
     return true
   elseif loaderr == openvr_c.EVRRenderModelError_VRRenderModelError_Loading then
     -- still loading (nothing to do but wait)
@@ -163,18 +163,18 @@ function m.enumerate_parts(trackable)
   if not trackable.device_idx then return nil end
   local base_model_name = trackable:get_prop("RenderModelName")
   log.info("Base model: " .. base_model_name)
-  local n_parts = openvr_c.tr_ovw_GetComponentCount(m.rendermodelsptr, base_model_name)
+  local n_parts = openvr_c.GetComponentCount(m.rendermodelsptr, base_model_name)
   log.info("num parts: " .. n_parts)
   local parts = {}
   for i = 1, n_parts do
-    local retlen = openvr_c.tr_ovw_GetComponentName(m.rendermodelsptr, 
+    local retlen = openvr_c.GetComponentName(m.rendermodelsptr, 
                                             base_model_name, i - 1, 
                                             m.string_buff, m.string_buff_size)
     if retlen > 0 then
       local part_name = ffi.string(m.string_buff, retlen-1) -- strip /0 term
-      local part_button_mask = openvr_c.tr_ovw_GetComponentButtonMask(m.rendermodelsptr,
+      local part_button_mask = openvr_c.GetComponentButtonMask(m.rendermodelsptr,
                                               base_model_name, part_name)
-      retlen = openvr_c.tr_ovw_GetComponentRenderModelName(m.rendermodelsptr, 
+      retlen = openvr_c.GetComponentRenderModelName(m.rendermodelsptr, 
                                               base_model_name, part_name, 
                                               m.string_buff, m.string_buff_size)
       local part_model_name = nil

@@ -16,9 +16,10 @@ local EYES = {left = 1, right = 2}
 local EyeComponent = graphics.CameraComponent:extend("EyeComponent")
 m.EyeComponent = EyeComponent
 
+-- A Camera for a single eye
 function EyeComponent:init(options)
   if (not options) or (not options.eye) then
-    truss.error("EyeComponent must have .eye specified")
+    truss.error("EyeComponent: options.eye must be specified")
   end
   EyeComponent.super.init(self, options)
   self.eye = options.eye
@@ -35,7 +36,6 @@ function EyeComponent:update()
   local eye_idx = EYES[self.eye]
   self.ent.matrix:copy(openvr.eye_offsets[eye_idx])
   self.proj_mat = openvr.eye_projections[eye_idx]
-  -- TODO: invert projection matrix too?
 end
 
 local HMDComponent = ecs.UpdateComponent:extend("HMDComponent")
@@ -43,15 +43,13 @@ function HMDComponent:update()
   if openvr.hmd then self.ent.matrix:copy(openvr.hmd.pose) end
 end
 
--- create a typical VR Root setup (HMD + two eyes)
+-- Typical VR Root setup (HMD + two eyes)
 function m.RoomRoot(_ecs, name)
   local parent = ecs.Entity3d(_ecs, name)
 
   local hmd = parent:create_child(ecs.Entity3d, "hmd", HMDComponent())
-  local left_eye = hmd:create_child(ecs.Entity3d, "left_eye", 
-                                    EyeComponent{eye = "left"})
-  local right_eye = hmd:create_child(ecs.Entity3d, "right_eye", 
-                                    EyeComponent{eye = "right"})
+  local left_eye = hmd:create_child(ecs.Entity3d, "left_eye", EyeComponent{eye = "left"})
+  local right_eye = hmd:create_child(ecs.Entity3d, "right_eye", EyeComponent{eye = "right"})
 
   return parent
 end
@@ -153,10 +151,6 @@ function ControllerComponent:load_part_model(partname, on_load, on_fail, load_te
   self._trackable:load_part_model(partname, on_load, on_fail, load_textures)
 end
 
-function ControllerComponent:enable_events(enabled)
-  self._emit_events = (enabled == nil) or enabled
-end
-
 function ControllerComponent:update()
   self.axes = self._trackable.axes
   self.buttons = self._trackable.buttons
@@ -164,56 +158,30 @@ function ControllerComponent:update()
   if self.parts and self._trackable.parts then
     self:_update_parts()
   end
-  if self._emit_events then
-    -- compare and copy old state
-    for k, v in pairs(self.axes) do
-      local px, py = self._prev_axes[k].x or 0, self._prev_axes[k].y or 0
-      if px ~= v.x or py ~= v.y then
-        self.ent:emit("axis", 
-          {axis = k, prev_x = px, prev_y = py, x = v.x, y = v.y, 
-           component = self})
-      end
-      self._prev_axes[k].x = v.x
-      self._prev_axes[k].y = v.y
-    end
-    for k, v in pairs(self.buttons) do
-      local pv = self._prev_buttons[k] or 0
-      if pv ~= v then
-        self.ent:emit("button", {button = k, prev = pv, value = v, 
-                                            component = self})
-      end
-      self._prev_buttons[k] = v
-    end
+end
+
+function ControllerComponent:on(...)
+  self._trackable:on(...)
+end
+
+m.Bounds = function(_ecs, name, options)
+  options = options or {}
+  local material = options.material
+  if not material then
+    local color = options.color or {0.8, 0.8, 0.3, 1.0}
+    material = require("material/flat.t").FlatMaterial{color = color}
   end
+  print(openvr.play_area.x_size, openvr.play_area.z_size)
+  local geo = require("geometry").rectangle_frame_geo{
+    width = openvr.play_area.x_size,
+    height = openvr.play_area.z_size,
+    thickness = options.thickness or 0.1
+  }
+  local bounds = graphics.Mesh(_ecs, name, geo, material)
+  bounds.quaternion:euler{x = -math.pi/2, y = 0, z = 0}
+  bounds.position:set(0, options.hover or 0.02, 0)
+  bounds:update_matrix()
+  return bounds
 end
-
--- scrap these?
-
-local VRBeginFrameSystem = class("VRBeginFrameSystem")
-m.VRBeginFrameSystem = VRBeginFrameSystem
-
-function VRBeginFrameSystem:init()
-  self.mount_name = "vr_begin"
-end
-
-function VRBeginFrameSystem:update()
-  openvr.begin_frame()
-end
-
-local VRSubmitSystem = class("VRSubmitSystem")
-m.VRSubmitSystem = VRSubmitSystem
-
-function VRSubmitSystem:init()
-  self.mount_name = "vr_submit"
-end
-
-function VRSubmitSystem:set_eye_textures(eye_texes)
-  self.eye_texes = eye_texes
-end
-
-function VRSubmitSystem:update()
-  openvr.submit_frame(self.eye_texes)
-end
-
 
 return m

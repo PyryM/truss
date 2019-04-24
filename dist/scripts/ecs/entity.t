@@ -35,7 +35,7 @@ end
 
 -- create an entity as a child of this entity
 function Entity:create_child(constructor, ...)
-  return self:add(self:create(constructor, ...))
+  return self:add_child(self:create(constructor, ...))
 end
 
 -- return a string identifying this component for error messages

@@ -20,8 +20,12 @@ local VRApp = class("VRApp")
 function VRApp:init(options)
   local t0 = truss.tic()
   self.options = options or {}
-  openvr.init()
+  openvr.init{
+    legacy_input = (options.legacy_input ~= false),
+    new_input = options.new_input
+  }
   log.info("up to openvr init: " .. tostring(truss.toc(t0) * 1000.0))
+
   local vw, vh = 800, 1280
   if openvr.available then
     vw, vh = openvr.get_target_size()
@@ -53,12 +57,36 @@ function VRApp:init(options)
   self:ecs_init()
   log.info("up to ecs init: " .. tostring(truss.toc(t0) * 1000.0))
 
+  if options.new_input then
+    self:register_actions(options)
+  end
+
   self:init_scene()
 
   if options.create_controllers then
     self.controllers = {}
     self:create_default_controllers()
   end
+end
+
+function VRApp:register_actions(options)
+  self.action_sets = openvr.input.register_action_sets(options.action_sets or {
+    main = {
+      primary = {
+        kind = 'boolean', description = 'Primary Action'
+      },
+      secondary = {
+        kind = 'boolean', description = 'Secondary Action'
+      },
+      mainhand = {
+        kind = 'pose', description = 'Main Hand'
+      },
+      cursor = {
+        kind = 'vector2', description = 'Emulated Mouse Cursor'
+      }
+    }
+  })
+  openvr.input.change_active_sets({options.active_action_set or 'main'})
 end
 
 function VRApp:gfx_init()
@@ -82,6 +110,9 @@ function VRApp:ecs_init()
   self.scene = ECS.scene
   ECS:add_system(sdl_input.SDLInputSystem())
   ECS:add_system(ecs.System("update", "update"))
+  if self.async ~= false then
+    ECS:add_system(require("async").AsyncSystem())
+  end
   ECS:add_system(graphics.RenderSystem())
   if self.stats then ECS:add_system(graphics.DebugTextStats()) end
   self:init_pipeline()

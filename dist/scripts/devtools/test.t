@@ -47,7 +47,10 @@ end
 
 local function deepeq(a, b)
   -- Different types: false
-  if type(a) ~= type(b) then return false end
+  if type(a) ~= type(b) then 
+    print(tostring(a) .. " != " .. tostring(b))
+    return false 
+  end
   -- Functions
   if type(a) == 'function' then
     return string.dump(a) == string.dump(b)
@@ -55,13 +58,22 @@ local function deepeq(a, b)
   -- Primitives and equal pointers
   if a == b then return true end
   -- Only equal tables could have passed previous tests
-  if type(a) ~= 'table' then return false end
+  if type(a) ~= 'table' then 
+    print("????: " .. tostring(a) .. " vs. " .. tostring(b))
+    return false 
+  end
   -- Compare tables field by field
   for k,v in pairs(a) do
-    if b[k] == nil or not deepeq(v, b[k]) then return false end
+    if b[k] == nil or not deepeq(v, b[k]) then 
+      print('keyfail: ' .. k)
+      return false 
+    end
   end
   for k,v in pairs(b) do
-    if a[k] == nil or not deepeq(v, a[k]) then return false end
+    if a[k] == nil or not deepeq(v, a[k]) then
+      print('keyfail: ' .. k) 
+      return false 
+    end
   end
   return true
 end
@@ -91,6 +103,20 @@ local function spy(f)
   return s
 end
 
+local function deepprint(v, seen)
+  seen = seen or {}
+  if type(v) == 'table' then
+    if seen[v] then return "[circular reference]" end
+    seen[v] = true
+    local frags = {}
+    for k, tv in pairs(v) do
+      table.insert(frags, tostring(k) .. "= " .. deepprint(tv, seen))
+    end
+    return "{" .. table.concat(frags, "\n") .. "}"
+  else
+    return tostring(v)
+  end
+end
 
 -- a weak-valued table for testing memory management
 local handle_table = {}
@@ -148,13 +174,17 @@ function m.test(name, f, async)
         handler('fail', name, msg)
       end
     end
-    funcs.expect = function(a, b, msg)
+    funcs.expect = function(a, b, msg, err_printer)
       msg = msg or (debug.getinfo(2, 'S').short_src .. ":"
         .. debug.getinfo(2, 'l').currentline)
       if deepeq(a, b) then
         handler('pass', name, msg)
       else
-        msg = msg .. ": expected " .. tostring(b) .. ", got " .. tostring(a)
+        if err_printer then
+          msg = msg .. ": " .. err_printer(a, b)
+        else
+          msg = msg .. ": expected " .. deepprint(b) .. ", got " .. deepprint(a)
+        end
         handler('fail', name, msg)
       end
     end

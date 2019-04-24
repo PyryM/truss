@@ -8,6 +8,7 @@ local m = {}
 -- if the returned module object has an explicit .exports, use that
 -- anything prefixed with _ isn't exported
 function m.reexport(srcmodule, desttable)
+  desttable = desttable or {}
   local src = srcmodule.exports or srcmodule
   for k,v in pairs(src) do
     if k:sub(1,1) ~= "_" then
@@ -20,6 +21,7 @@ function m.reexport(srcmodule, desttable)
       log.debug("Skipping " .. k)
     end
   end
+  return desttable
 end
 
 -- copy all public exports from a list of modules into a destination table
@@ -35,12 +37,32 @@ end
 -- copy values in srctable with prefix into desttable without prefix
 -- useful when including a C api that has library_ prefix names on everything
 function m.reexport_without_prefix(srctable, prefix, desttable)
+  desttable = desttable or {}
   for k,v in pairs(srctable) do
     -- only copy entries that have prefix
     if k:sub(1, prefix:len()) == prefix then
       desttable[k:sub(prefix:len() + 1)] = v
     end
   end
+  return desttable
+end
+
+function m.reexport_renamed(srctable, prefixes, export_unmatched, desttable)
+  desttable = desttable or {}
+  for k,v in pairs(srctable) do
+    local found_prefix = false
+    for prefix, replacement in pairs(prefixes) do
+      if k:sub(1, prefix:len()) == prefix then
+        desttable[replacement .. k:sub(prefix:len() + 1)] = v
+        found_prefix = true
+        break
+      end
+    end
+    if export_unmatched and (not found_prefix) then
+      desttable[k] = v
+    end
+  end
+  return desttable
 end
 
 -- create a table that will for the specified keys lazily load the value
