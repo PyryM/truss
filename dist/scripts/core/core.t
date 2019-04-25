@@ -474,7 +474,7 @@ local function load_and_run(fn)
     error("File [" .. fn .. "] does not exist or other IO error.")
     return
   end
-  local scriptfunc, loaderror = truss.load_named_string(script, fn)
+  local scriptfunc, loaderror = truss.load_named_string(script, fn, select_loader(fn))
   if scriptfunc == nil then
     error("Main script loading error: " .. loaderror)
     return

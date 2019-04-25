@@ -28,8 +28,22 @@ end
 
 m.loadstring = m.load
 
-function m.compile(s)
+function m.transpile(s)
   return m.moonscript.to_lua(s)
+end
+
+-- wrap a lua / 30log class into something that can
+-- be extended from in moonscript
+-- (*very* experimental)
+function m.wrap_lua_class(class)
+  -- not 100% thrilled with actually modifying the base class,
+  -- but creating a copy of the class proto doesn't seem right either
+  class.__init = class.init 
+  local parent = {
+    __base = class,
+    __name = "Wrapped_" .. (class.name or "Lua")
+  }
+  return parent
 end
 
 return m
