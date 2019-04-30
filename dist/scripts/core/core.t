@@ -1,5 +1,5 @@
 -- core.t
--- defines truss library functions, imports bgfx, sets up require system
+-- defines truss library functions, sets up require system
 
 -- add our compatibility C standard library headers so systems without
 -- dev tools can still use truss (e.g., windows without VS installed)
@@ -279,58 +279,62 @@ local function expand_name(name, path)
 end
 
 local function create_module_require(path)
-  return function(_modname, force)
+  return function(_modname, options)
     local expanded_name = expand_name(_modname, path)
-    return truss.require(expanded_name, force)
+    return truss.require(expanded_name, options)
   end
 end
 
-local function create_module_env(module_name, file_name)
+local function create_module_env(module_name, file_name, options)
   local modenv = extend_table({}, truss._module_env)
   modenv._module_name = module_name
   local path = find_path(file_name)
   modenv._path = path
   modenv.require = create_module_require(path)
-  setmetatable(modenv, disallow_globals_mt)
+  modenv._env = modenv
+  if not options.allow_globals then
+    setmetatable(modenv, disallow_globals_mt)
+  end
   return modenv
 end
 
--- require a module
--- unlike the built-in `require`, truss.require uses / as the path separator
--- and needs the file extension (e.g., require("core/module.t"))
--- if no file extension is present and the path is a directory, then truss
--- tries to load dir/init.t
-local function select_loader(fn)
-  if fn:sub(-2) == ".t" then
-    log.debug("loading " .. fn .. " as terra")
-    return terralib.load
-  elseif fn:sub(-4) == ".lua" then
-    log.debug("loading " .. fn .. " as lua")
-    return load
-  elseif fn:sub(-5) == ".moon" then
-    log.debug("loading " .. fn .. " as moonscript")
-    return truss.require("moonscript").load
-  else
-    log.debug("loading " .. fn .. " as terra by default??")
-    return terralib.load
+truss.loaders = {
+  [".t"] = terralib.load,
+  [".lua"] = load,
+  [".moon"] = function(...) 
+    return truss.require("moonscript").load(...)
   end
+}
+
+function truss.select_loader(fn)
+  for extension, loader in pairs(truss.loaders) do
+    if fn:sub(-(#extension)) == extension then 
+      return loader 
+    end
+  end
+  return truss.loaders.default
 end
 
 local loaded_libs = {}
 truss._loaded_libs = loaded_libs
-local require_prefix_path = ""
-function truss.require(modname, force)
+truss._script_path = "scripts/"
+
+function truss.require(modname, options)
+  options = options or {}
+  if type(options) == 'boolean' then
+    truss.error("Require now takes options table: require(fn, {force=true})")
+  end
   if loaded_libs[modname] == false then
     truss.error("require [" .. modname .. "] : cyclical require")
     return nil
   end
-  if loaded_libs[modname] == nil or force then
+  if loaded_libs[modname] == nil or options.force then
     local oldmodule = loaded_libs[modname] -- only relevant if force==true
     loaded_libs[modname] = false -- prevent possible infinite recursion
 
     -- if the filename is actually a directory, try to load init.t
     local filename = modname
-    local fullpath = "scripts/" .. require_prefix_path .. filename
+    local fullpath = truss._script_path .. filename
     if truss.C.check_file(fullpath) == 2 then
       fullpath = fullpath .. "/init.t"
       filename = filename .. "/init.t"
@@ -343,18 +347,22 @@ function truss.require(modname, force)
       truss.error("require('" .. filename .. "'): file does not exist.")
       return nil
     end
-    local loader = select_loader(fullpath)
+    local loader = truss.select_loader(fullpath)
+    if not loader then
+      truss.error("No loader for " .. fullpath)
+    end
     local module_def, loaderror = truss.load_named_string(funcsource, filename, loader)
     if not module_def then
       truss.error("require('" .. modname .. "'): syntax error: " .. loaderror)
       return nil
     end
-    setfenv(module_def, create_module_env(modname, filename))
+    local modenv = options.env or create_module_env(modname, filename, options)
+    setfenv(module_def, modenv)
     local evaluated_module = module_def()
-    if not evaluated_module then 
+    if not (evaluated_module or options.allow_globals) then 
       truss.error("Module [" .. modname .. "] did not return a table!")
     end
-    loaded_libs[modname] = evaluated_module
+    loaded_libs[modname] = evaluated_module or modenv
     log.info(string.format("Loaded [%s] in %.2f ms",
                           modname, truss.toc(t0) * 1000.0))
   end
@@ -364,13 +372,13 @@ truss._module_env.require = truss.require
 
 function truss.check_module_exists(filename)
   if loaded_libs[filename] then return true end
-  local fullpath = "scripts/" .. require_prefix_path .. filename
+  local fullpath = truss._script_path .. filename
   return truss.C.check_file(fullpath) ~= 0
 end
 
-function truss.require_as(filename, libname, force)
+function truss.require_as(filename, libname, options)
   log.info("Loading [" .. filename .. "] as [" .. libname .. "]")
-  local temp = truss.require(filename, force)
+  local temp = truss.require(filename, options)
   loaded_libs[libname] = temp
   return temp
 end
@@ -378,15 +386,6 @@ end
 -- just directly inserts a module
 function truss.insert_module(libname, libtable)
   loaded_libs[libname] = libtable
-end
-
--- used to require libraries that require files using relative paths
-function truss.require_relative(path, filename)
-  local oldprefix = require_prefix_path
-  require_prefix_path = path
-  local ret = truss.require(filename)
-  require_prefix_path = oldprefix
-  return ret
 end
 
 -- alias standard lua/luajit libraries so they can be 'required'
@@ -454,11 +453,8 @@ local function add_paths()
     if truss.args[i] == "--addpath" and i+2 <= nargs then
       local physicalPath = truss.args[i+1]
       local mountPath = truss.args[i+2]
-      log.info("Adding path " .. physicalPath ..
-       " => " .. mountPath)
-      truss.C.add_fs_path(physicalPath,
-        mountPath,
-        0)
+      log.info(("Adding path %s => %s"):format(physicalPath, mountPath))
+      truss.C.add_fs_path(physicalPath, mountPath, 0)
     end
   end
 end
@@ -466,24 +462,8 @@ end
 -- create some environments
 truss.clean_subenv = extend_table({}, _G)
 truss.mainenv = extend_table({}, _G)
+truss.mainenv._env = truss.mainenv
 extend_table(truss._module_env, _G)
-
-local function load_and_run(fn)
-  local script = truss.load_script_from_file(fn)
-  if script == nil then
-    error("File [" .. fn .. "] does not exist or other IO error.")
-    return
-  end
-  local scriptfunc, loaderror = truss.load_named_string(script, fn, select_loader(fn))
-  if scriptfunc == nil then
-    error("Main script loading error: " .. loaderror)
-    return
-  end
-  setfenv(scriptfunc, truss.mainenv)
-  local v = scriptfunc()
-  truss.mainobj = v or truss.mainenv
-  return v
-end
 
 -- use stack trace plus if it's available
 if truss.check_module_exists("lib/StackTracePlus.lua") then
@@ -499,16 +479,17 @@ local function error_handler(err)
   return err
 end
 
-function truss._import_main(fn)
-  log.info("Importing as main " .. fn)
-  local happy, errmsg = xpcall(load_and_run, error_handler, fn)
+local function load_main(fn)
+  log.info("Loading main " .. fn)
+  local happy, errmsg = xpcall(truss.require, error_handler, fn, 
+                               {allow_globals = true, env = truss.mainenv})
   if not happy then
     truss.enter_error_state(errmsg)
   end
   return errmsg
 end
 
-local function _call_on_main(funcname, arg)
+local function call_on_main(funcname, arg)
   local happy, errmsg = xpcall(truss.mainobj[funcname], error_handler, arg)
   if not happy then
     truss.enter_error_state(errmsg)
@@ -516,19 +497,17 @@ local function _call_on_main(funcname, arg)
 end
 
 -- These functions have to be global because
-function _core_init(argstring)
-  -- Set paths from command line arguments
+function _core_init()
   add_paths()
-  -- Load in argstring
   local t0 = truss.tic()
-  truss._import_main(argstring)
-  _call_on_main("init", truss.mainobj)
+  truss.mainobj = load_main("main.t")
+  call_on_main("init", truss.mainobj)
   local delta = truss.toc(t0) * 1000.0
   log.info(string.format("Time to init: %.2f ms", delta))
 end
 
 function _core_update()
-  _call_on_main("update", truss.mainobj)
+  call_on_main("update", truss.mainobj)
 end
 
 function _fallback_update()
