@@ -27,6 +27,10 @@ local function test_srand(t)
   end
   t.ok(maxval == 256, "saw byte 256")
 
+  -- test degenerate cases
+  t.expect(gen:rand_unsigned(1), 0, "rand [0,1) returns 0")
+  t.expect(gen:rand_unsigned(0), 0, "rand [0,0) returns 0")
+
   -- test big value generation
   local val = gen:rand_unsigned(100000)
   t.ok(val < 100000, "generated a big value?")

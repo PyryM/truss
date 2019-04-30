@@ -47,16 +47,23 @@ function StrongRandom:rand_unsigned(nvals)
   -- simply taking the modulus would (if nvals is non power of two)
   -- result in a non-uniform distribution, so instead we rejection
   -- sample under the tightest power of two range
+  if nvals < 2 then return 0 end -- what should rand[0,0) return? 0 I guess
   local nbits = math.ceil(math.log(nvals) / math.log(2))
   local nbytes = math.ceil(nbits / 8)
   if nbits > 52 then
     truss.error("Only up to 52 bit random numbers supported ATM!")
   end
   local modulus = 2^nbits
-  while true do
+  for _ = 1, 1000 do
+    -- worst case scenario has ~1/2 rejection rate:
+    -- p(1000 rejections) = 1/2^1000
+    -- (we do this to guard against potential infinite loop if something
+    --  goes wrong somewhere)
     local v = self:rand_uint_n(nbytes) % modulus
     if v < nvals then return v end
   end
+  log.warning("Saw 1000 rejections somehow?!")
+  return 0
 end
 
 function StrongRandom:rand_int(lower_bound, upper_bound)
