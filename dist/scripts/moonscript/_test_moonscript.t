@@ -2,8 +2,6 @@
 --
 -- moonscript tests
 
-local testlib = require("devtools/test.t")
-local test = testlib.test
 local m = {}
 
 local function test_loading(t)
@@ -32,7 +30,7 @@ my_second_function = -> print "another function"
   t.ok(v ~= nil, "called a function")
 end
 
-function m.run()
+function m.run(test)
   test("moonscript loading", test_loading)
 end
 

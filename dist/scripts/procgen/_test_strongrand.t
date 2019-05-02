@@ -1,7 +1,5 @@
 -- strongrand tests
 
-local testlib = require("devtools/test.t")
-local test = testlib.test
 local m = {}
 
 local function test_srand(t)
@@ -46,7 +44,7 @@ local function test_srand(t)
   end
 end
 
-function m.run()
+function m.run(test)
   test("strong random", test_srand)
 end
 

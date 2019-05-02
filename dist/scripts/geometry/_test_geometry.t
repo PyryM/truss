@@ -1,12 +1,10 @@
 -- geometry/tests.t
 --
 
-local testlib = require("devtools/test.t")
-local test = testlib.test
 local Vec = require("math").Vector
 local m = {}
 
-function m.run()
+function m.run(test)
   test("geometries", m.test_geometries)
   test("geoutils", m.test_geoutils)
 end

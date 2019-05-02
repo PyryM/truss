@@ -235,7 +235,7 @@ local function _run_test_file(dirpath)
   end
   print(make_header(req_path))
   local tt = require(req_path)
-  tt.run()
+  tt.run(m.test)
 end
 
 -- run tests on any files names _test*

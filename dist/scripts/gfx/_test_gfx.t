@@ -1,12 +1,9 @@
 -- gfx/tests.t
 --
 
-local testlib = require("devtools/test.t")
-local test = testlib.test
-
 local m = {}
 
-function m.run()
+function m.run(test)
   test("tagset", m.test_tagset)
 end
 

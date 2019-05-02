@@ -4,8 +4,6 @@
 
 local class = require("class")
 local ecs = require("ecs")
-local testlib = require("devtools/test.t")
-local test = testlib.test
 local m = {}
 
 -- test that adding to system during iteration/update works
@@ -298,7 +296,7 @@ local function test_components(t)
   t.ok(instance.bleh.done_thing, "Promoted component function called")
 end
 
-function m.run()
+function m.run(test)
   test("ECS scenegraph", test_scenegraph)
   test("ECS events", test_events)
   test("ECS systems", test_systems)
