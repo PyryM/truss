@@ -477,6 +477,10 @@ function ConsoleApp:init(options)
   self.env = m.env
 end
 
+function ConsoleApp:print_same_line(text)
+  m.print_same_line(text)
+end
+
 function ConsoleApp:print(text, fg, bg)
   m.print(text, fg, bg)
 end

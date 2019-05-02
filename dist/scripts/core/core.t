@@ -230,6 +230,16 @@ function truss.list_directory(path)
   return ret
 end
 
+function truss.extract_from_archive(src_path, dest_path)
+  if not (truss.is_file(src_path) and truss.is_archived(src_path)) then
+    truss.error(src_path .. " is not a file or is not in archive!")
+  end
+  local temp = truss.C.load_file(src_path)
+  if not temp then truss.error("Error reading " .. src_path) end
+  truss.C.save_file(dest_path, temp)
+  truss.C.release_message(temp)
+end
+
 function truss.is_file(path)
   if type(path) == 'table' then
     path = table.concat(path, '/')

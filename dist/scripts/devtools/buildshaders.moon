@@ -82,17 +82,17 @@ do_file = (fn) ->
   if filename == "varying.def.sc" then return
   prefix = filename\sub(1,1)
   errors = ""
+  errlangs = ""
   for platform, lang in pairs PLATFORMS
     cmd = make_cmd prefix, platform, fn, "#{SHADER_DIR}/#{lang}/#{filename\sub(1,-4)}.bin"
     res = do_cmd cmd
     if #res > 2
-      app\print "#{filename}: #{lang} =>"
-      app\print res, 6
       errors ..= (header lang, 80, '-') .. "\n" .. res
+      errlangs ..= " " .. lang
   if #errors > 0
-    errors
+    errors, errlangs
   else
-    nil
+    nil, nil
 
 concat = (t) ->
   table.concat ["#{header(k)}\n#{v}" for k,v in pairs t], "\n"
@@ -103,7 +103,7 @@ stdout_print = (_, text, fg, bg) ->
 export init = ->
   args = argparse.parse!
   app = if args['--repl'] 
-    mc.ConsoleApp {title: 'Shader Compiler'}
+    app = mc.ConsoleApp {title: 'Shader Compiler'}
   else
     {print: stdout_print, update: ->, clear: ->, finish: truss.quit}
 
@@ -111,15 +111,35 @@ export init = ->
     app\clear!
     app\print "Compiling shaders:"
     errors = {}
-    for dir in *(find_shader_dirs "#{SHADER_DIR}/raw")
+    total_errors = 0
+    shader_dirs = if args['-i']
+      {"#{SHADER_DIR}/raw/#{args['-i']}"}
+    else
+      find_shader_dirs "#{SHADER_DIR}/raw"
+    for dir in *shader_dirs
       app\print dir
+      nerrs, nshaders = 0, 0
       for fn in *(find_loose_shaders dir)
-        app\print fn
-        errors[fn] = do_file fn
+        if args['-v'] then app\print fn
+        errors[fn], errlangs = do_file fn
+        if errors[fn]
+          app\print "\179 ! #{fn} -> #{errlangs}"
+          nerrs += 1
+        nshaders += 1
         async.await_frames 1
+      app\print "\192 #{nshaders - nerrs} / #{nshaders}"
+      total_errors += nerrs
     app\print "Done."
-    if args['-o']
-      truss.save_string args['-o'], (concat errors, '\n')
+    errstr = (concat errors, '\n')
+    if total_errors > 0
+      if args['-o']
+        app\print "Errors during compilation; see #{args['-o']}"
+        truss.save_string args['-o'], errstr
+      else
+        app\print "Errors during shader compilation: "
+        app\print errstr
+    else
+      app\print "All shaders compiled successfully."
     if app.finish then app\finish!
 
 export update = ->
