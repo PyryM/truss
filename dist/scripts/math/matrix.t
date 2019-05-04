@@ -485,8 +485,8 @@ function Matrix4:look_at(point, up)
   else
     ty:set(0.0, 1.0, 0.0, 0.0)
   end
-  tx:cross(ty, tz)
-  ty:cross(tz, tx)
+  tx:cross(ty, tz):normalize3()
+  ty:cross(tz, tx):normalize3()
   self:set_column(1, tx)
   self:set_column(2, ty)
   self:set_column(3, tz)

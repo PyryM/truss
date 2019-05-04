@@ -15,6 +15,7 @@ function CompositeStage:init(options)
   self._num_views = 1
   self._render_ops = {}
   self.composite_ops = {}
+  self.enabled = true
   self.options = options
   self.scene = options.scene
   self.options.proj_matrix = math.Matrix4():orthographic_projection(0, 1, 0, 1, -1, 1)
@@ -104,6 +105,7 @@ function CompositeStage:composite(op)
 end
 
 function CompositeStage:pre_render()
+  if not self.enabled then return end
   for _, op in pairs(self.composite_ops) do
     if op.visible ~= false then
       self:composite(op)

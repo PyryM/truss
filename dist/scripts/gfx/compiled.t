@@ -7,6 +7,7 @@ local _uniforms = require("./uniforms.t")
 local _shaders = require("./shaders.t")
 local _common = require("./common.t")
 local _texture = require("./texture.t")
+local _tagset = require("./tagset.t")
 local mathtypes = require("math/types.t")
 local bgfx = require("./bgfx.t")
 local m = {}
@@ -119,6 +120,10 @@ function MatProxy:_set(pos, v)
                 .. " or a 16-element list")
   end
   return self
+end
+
+function MatProxy:set(v)
+  self:_set(1, v)
 end
 
 local TexProxy = UniformProxy:extend("TexProxy")
@@ -377,6 +382,15 @@ function BaseMaterial:set_program(p)
   return self
 end
 
+function BaseMaterial:set_uniforms(uniforms)
+  for uni_name, uni_val in pairs(uniforms) do
+    if not self.uniforms[uni_name] then
+      truss.error(("Material [%s] does not have uniform [%s]"):format(self.name, uni_name))
+    end
+    self.uniforms[uni_name]:set(uni_val)
+  end
+end
+
 function BaseMaterial:bind(globals)
   self._binder(self._value, globals)
   bgfx.set_state(self._value.state, 0)
@@ -407,7 +421,7 @@ function m.define_base_material(options)
   local material_t, material_bind, material_copy = compile_uniforms(canonical_name, uniforms)
 
   local Material = BaseMaterial:extend(options.name)
-  function Material:_init()
+  function Material:_init(uniform_values)
     self._value = terralib.new(material_t)
     self._ttype = material_t
     self._binder = material_bind
@@ -419,12 +433,21 @@ function m.define_base_material(options)
       local pcon = proxy_constructors[uniform.kind]
       self.uniforms[uname] = pcon(self._value, uname, uniform.kind, 
                                   0, uniform.count or 1)
+      if uniform.default then
+        self.uniforms[uname]:set(uniform.default)
+      end
     end
     self:set_state(options.state or {})
     if options.program then
       self:set_program(options.program)
     else
       self:set_program(_shaders.error_program())
+    end
+    if options.tags then
+      self.tags = _tagset.tagset(options.tags)
+    end
+    if uniform_values then
+      self:set_uniforms(uniform_values)
     end
   end
   Material.init = Material._init
@@ -454,7 +477,8 @@ function m.anonymous_material(options)
       truss.error("anonymous_material{} must specify textures as {sampler, tex}")
     elseif uni_val[2] and (uni_val[2]._handle or uni_val[2].raw_tex) then
       -- correctly passed texture
-      uniforms[uni_name] = {kind = 'tex', sampler = uni_val[1]}
+      uniforms[uni_name] = {kind = 'tex', sampler = uni_val[1], 
+                            flags = uni_val.flags or uni_val[3]}
       uvals[uni_name] = uni_val[2]
     else
       truss.error("Couldn't infer uniform type for [" .. uni_name .. "]")
