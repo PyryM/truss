@@ -9,15 +9,15 @@ argparse = require "utils/argparse.t"
 
 local app
 
-is_shader = (fn) -> (fn\sub -3) == ".sc"
+listdir = (dir) -> [{fn, "#{dir}/#{fn}"} for fn in *(truss.list_directory dir)]
 
-listdir = (dir) -> ["#{dir}/#{fn}" for fn in *(truss.list_directory dir)]
+is_shader = (fn) -> (fn != 'varying.def.sc') and ((fn\sub -3) == '.sc')
 
 find_loose_shaders = (dir) ->
-  [fn for fn in *(listdir dir) when (is_shader fn) and (not truss.is_archived fn)]
+  [{fn, p} for {fn, p} in *(listdir dir) when (is_shader fn) and (not truss.is_archived p)]
 
 find_shader_dirs = (dir) ->
-  [p for p in *(listdir dir) when truss.is_directory p]
+  [p for {_, p} in *(listdir dir) when truss.is_directory p]
 
 normpath = (path) ->
   if truss.os == 'Windows'
@@ -76,15 +76,12 @@ header = (s, n = 80, char = "=") ->
   pre = math.floor n / 2
   "#{string.rep(char, pre)} #{s} #{string.rep(char, n - pre)}"
 
-do_file = (fn) ->
-  parts = sutil.split "/", fn
-  filename = parts[#parts]
-  if filename == "varying.def.sc" then return
-  prefix = filename\sub(1,1)
+do_file = (fn, path, platforms) ->
+  prefix = fn\sub(1,1)
   errors = ""
   errlangs = ""
-  for platform, lang in pairs PLATFORMS
-    cmd = make_cmd prefix, platform, fn, "#{SHADER_DIR}/#{lang}/#{filename\sub(1,-4)}.bin"
+  for platform, lang in pairs platforms
+    cmd = make_cmd prefix, platform, path, "#{SHADER_DIR}/#{lang}/#{fn\sub(1,-4)}.bin"
     res = do_cmd cmd
     if #res > 2
       errors ..= (header lang, 80, '-') .. "\n" .. res
@@ -100,12 +97,25 @@ concat = (t) ->
 stdout_print = (_, text, fg, bg) ->
   print(text)
 
+finish = -> if app.finish then app\finish!
+
 export init = ->
   args = argparse.parse!
   app = if args['--repl'] 
     app = mc.ConsoleApp {title: 'Shader Compiler'}
   else
     {print: stdout_print, update: ->, clear: ->, finish: truss.quit}
+
+  platforms = if args['--platform']
+    p = args['--platform']\lower()
+    {[p]: PLATFORMS[p]}
+  else
+    PLATFORMS
+
+  if #[k for k,v in pairs platforms] == 0
+    app\print "Invalid platform #{args['--platform']}"
+    finish!
+    return
 
   async.run ->
     app\clear!
@@ -117,14 +127,17 @@ export init = ->
     else
       find_shader_dirs "#{SHADER_DIR}/raw"
     for dir in *shader_dirs
+      loose_shaders = find_loose_shaders dir
+      if #loose_shaders == 0 then continue
       app\print dir
       nerrs, nshaders = 0, 0
-      for fn in *(find_loose_shaders dir)
-        if args['-v'] then app\print fn
-        errors[fn], errlangs = do_file fn
+      for {fn, path} in *loose_shaders
+        errors[fn], errlangs = do_file fn, path, platforms
         if errors[fn]
-          app\print "\179 ! #{fn} -> #{errlangs}"
+          app\print "\179!#{fn} -> #{errlangs}"
           nerrs += 1
+        elseif args['-v']
+          app\print "\179 #{fn}"
         nshaders += 1
         async.await_frames 1
       app\print "\192 #{nshaders - nerrs} / #{nshaders}"
@@ -140,7 +153,7 @@ export init = ->
         app\print errstr
     else
       app\print "All shaders compiled successfully."
-    if app.finish then app\finish!
+    finish!
 
 export update = ->
   async\update!
