@@ -67,12 +67,16 @@ TRUSS_C_API const char* truss_sdl_get_clipboard(SDLAddon* addon);
 TRUSS_C_API const char* truss_sdl_get_user_path(SDLAddon* addon, const char* orgname, const char* appname);
 TRUSS_C_API bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode);
+TRUSS_C_API void truss_sdl_show_cursor(SDLAddon* addon, int visible);
+TRUSS_C_API int truss_sdl_create_cursor(SDLAddon* addon, int cursorSlot, const unsigned char* data, const unsigned char* mask, int w, int h, int hx, int hy);
+TRUSS_C_API int truss_sdl_set_cursor(SDLAddon* addon, int cursorSlot);
 TRUSS_C_API int truss_sdl_num_controllers(SDLAddon* addon);
 TRUSS_C_API int truss_sdl_enable_controller(SDLAddon* addon, int controllerIdx);
 TRUSS_C_API void truss_sdl_disable_controller(SDLAddon* addon, int controllerIdx);
 TRUSS_C_API const char* truss_sdl_get_controller_name(SDLAddon* addon, int controllerIdx);
 
 #define MAX_CONTROLLERS 16
+#define MAX_CURSORS     16
 
 class SDLAddon : public truss::Addon {
 public:
@@ -97,6 +101,10 @@ public:
 
 	const char* getClipboardText();
 
+	bool createCursor(int cursorSlot, const unsigned char* data, const unsigned char* mask, int w, int h, int hx, int hy);
+	bool setCursor(int slot);
+	void showCursor(int visible);
+
 	int numEvents();
 	truss_sdl_event& getEvent(int index);
 
@@ -115,6 +123,7 @@ private:
 	std::vector<truss_sdl_event> eventBuffer_;
 	truss_sdl_event errorEvent_;
 	SDL_GameController* controllers_[MAX_CONTROLLERS];
+	SDL_Cursor* cursors_[MAX_CURSORS];
 };
 
 extern "C" {

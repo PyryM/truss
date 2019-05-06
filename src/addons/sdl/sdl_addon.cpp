@@ -95,6 +95,9 @@ SDLAddon::SDLAddon() {
 		const char* truss_sdl_get_user_path(Addon* addon, const char* orgname, const char* appname);
 		bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(Addon* addon);
 		void truss_sdl_set_relative_mouse_mode(Addon* addon, int mod);
+		void truss_sdl_show_cursor(Addon* addon, int visible);
+		int truss_sdl_create_cursor(Addon* addon, int cursorSlot, const unsigned char* data, const unsigned char* mask, int w, int h, int hx, int hy);
+		int truss_sdl_set_cursor(Addon* addon, int cursorSlot);
 		int truss_sdl_num_controllers(Addon* addon);
 		int truss_sdl_enable_controller(Addon* addon, int controllerIdx);
 		void truss_sdl_disable_controller(Addon* addon, int controllerIdx);
@@ -103,6 +106,9 @@ SDLAddon::SDLAddon() {
 	errorEvent_.event_type = TRUSS_SDL_EVENT_OUTOFBOUNDS;
 	for (unsigned int i = 0; i < MAX_CONTROLLERS; ++i) {
 		controllers_[i] = NULL;
+	}
+	for (unsigned int i = 0; i < MAX_CURSORS; ++i) {
+		cursors_[i] = NULL;
 	}
 }
 
@@ -333,6 +339,30 @@ const char* SDLAddon::getClipboardText() {
 	return clipboard_.c_str();
 }
 
+bool SDLAddon::createCursor(int cursorSlot, const unsigned char* data, const unsigned char* mask, int w, int h, int hx, int hy) {
+	if (cursorSlot < 0 || cursorSlot >= MAX_CURSORS) return false;
+	if (cursors_[cursorSlot] != NULL) {
+		SDL_FreeCursor(cursors_[cursorSlot]);
+		cursors_[cursorSlot] = NULL;
+	}
+	cursors_[cursorSlot] = SDL_CreateCursor(data, mask, w, h, hx, hy);
+	return cursors_[cursorSlot] != NULL;
+}
+
+bool SDLAddon::setCursor(int slot) {
+	if (slot < 0 || slot >= MAX_CURSORS) return false;
+	if (cursors_[slot] != NULL) {
+		SDL_SetCursor(cursors_[slot]);
+		return true;
+	} else {
+		return false;
+	}
+}
+
+void SDLAddon::showCursor(int visible) {
+	SDL_ShowCursor(visible);
+}
+
 SDLAddon::~SDLAddon() {
 	shutdown();
 }
@@ -404,6 +434,18 @@ void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode) {
 	} else {
 		SDL_SetRelativeMouseMode(SDL_FALSE);
 	}
+}
+
+void truss_sdl_show_cursor(SDLAddon* addon, int visible) {
+	addon->showCursor(visible);
+}
+
+int truss_sdl_create_cursor(SDLAddon* addon, int cursorSlot, const unsigned char* data, const unsigned char* mask, int w, int h, int hx, int hy) {
+	return addon->createCursor(cursorSlot, data, mask, w, h, hx, hy) ? 1 : 0;
+}
+
+int truss_sdl_set_cursor(SDLAddon* addon, int cursorSlot) {
+	return addon->setCursor(cursorSlot) ? 1 : 0;
 }
 
 int truss_sdl_num_controllers(SDLAddon* addon) {
