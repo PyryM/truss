@@ -81,7 +81,17 @@ SDLAddon::SDLAddon() {
 		    int flags;
 		} truss_sdl_event;
 
-		void truss_sdl_create_window(Addon* addon, int width, int height, const char* name, int is_fullscreen);
+		typedef struct {
+			int x;
+			int y;
+			int w;
+			int h;
+		} truss_sdl_bounds;
+
+		int truss_sdl_get_display_count(Addon* addon);
+		truss_sdl_bounds truss_sdl_get_display_bounds(Addon* addon, int display);
+		void truss_sdl_create_window(Addon* addon, int width, int height, const char* name, int is_fullscreen, int display);
+		void truss_sdl_create_window_ex(Addon* addon, int x, int y, int w, int h, const char* name, int is_borderless);
 		void truss_sdl_destroy_window(Addon* addon);
 		void truss_sdl_resize_window(Addon* addon, int width, int height, int fullscreen);
 		int truss_sdl_window_width(Addon* addon);
@@ -255,17 +265,42 @@ void SDLAddon::update(double dt) {
 	}
 }
 
-void SDLAddon::createWindow(int width, int height, const char* name, int is_fullscreen) {
+void SDLAddon::createWindow(int width, int height, const char* name, int is_fullscreen, int display) {
 	uint32_t flags = SDL_WINDOW_SHOWN;
 	if (is_fullscreen > 0) {
-		flags = flags | SDL_WINDOW_BORDERLESS | SDL_WINDOW_MAXIMIZED;
+		flags = flags | SDL_WINDOW_BORDERLESS;
+	}
+	int xpos = SDL_WINDOWPOS_CENTERED;
+	int ypos = SDL_WINDOWPOS_CENTERED;
+	SDL_Rect bounds;
+	if (SDL_GetDisplayBounds(display, &bounds) == 0) {
+		if (is_fullscreen > 0) {
+			xpos = bounds.x;
+			ypos = bounds.y;
+			width = bounds.w;
+			height = bounds.h;
+		} else {
+			xpos = bounds.x + (bounds.w / 2) - width / 2;
+			ypos = bounds.y + (bounds.h / 2) - height / 2;
+		}
+	} else if (is_fullscreen > 0) {
+		flags = flags | SDL_WINDOW_MAXIMIZED;
 	}
 	window_ = SDL_CreateWindow(name
-			, SDL_WINDOWPOS_UNDEFINED
-			, SDL_WINDOWPOS_UNDEFINED
+			, xpos
+			, ypos
 			, width
 			, height
 			, flags);
+	registerBGFX();
+}
+
+void SDLAddon::createWindow(int x, int y, int w, int h, const char* name, int is_borderless) {
+	uint32_t flags = SDL_WINDOW_SHOWN;
+	if (is_borderless > 0) {
+		flags = flags | SDL_WINDOW_BORDERLESS;
+	}
+	window_ = SDL_CreateWindow(name, x, y, w, h, flags);
 	registerBGFX();
 }
 
@@ -380,9 +415,31 @@ truss_sdl_event& SDLAddon::getEvent(int index) {
 	}
 }
 
-void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name, int is_fullscreen) {
-	addon->createWindow(width, height, name, is_fullscreen);
+int truss_sdl_get_display_count(SDLAddon* addon) {
+	return SDL_GetNumVideoDisplays();
 }
+
+truss_sdl_bounds truss_sdl_get_display_bounds(SDLAddon* addon, int display) {
+	SDL_Rect rect;
+	truss_sdl_bounds ret = {-1, -1, -1, -1};
+	int happy = SDL_GetDisplayBounds(display, &rect);
+	if (happy == 0) {
+		ret.x = rect.x;
+		ret.y = rect.y;
+		ret.w = rect.w;
+		ret.h = rect.h;
+	}
+	return ret;
+}
+
+void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name, int is_fullscreen, int display) {
+	addon->createWindow(width, height, name, is_fullscreen, display);
+}
+
+void truss_sdl_create_window_ex(SDLAddon* addon, int x, int y, int w, int h, const char* name, int is_borderless) {
+	addon->createWindow(x, y, w, h, name, is_borderless);
+}
+
 
 void truss_sdl_destroy_window(SDLAddon* addon) {
 	addon->destroyWindow();

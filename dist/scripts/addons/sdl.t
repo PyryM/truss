@@ -46,11 +46,26 @@ function m.stop_text_input()
   return m.rawfunctions.truss_sdl_stop_textinput(raw_pointer)
 end
 
-function m.create_window(width, height, name, fullscreen)
+function m.create_window(width, height, name, fullscreen, display)
   local t0 = truss.tic()
-  raw_create_window(raw_pointer, width, height, name, fullscreen or 0)
+  raw_create_window(raw_pointer, width, height, name, fullscreen or 0, display or 0)
   local dt = truss.toc(t0) * 1000.0
   log.info(string.format("Took %.2f ms to create window.", dt))
+end
+
+function m.get_displays()
+  local n_displays = m.rawfunctions.truss_sdl_get_display_count(raw_pointer)
+  local ret = {}
+  for idx = 1, n_displays do
+    ret[idx] = m.rawfunctions.truss_sdl_get_display_bounds(raw_pointer, idx-1)
+  end
+  return ret
+end
+
+function m.create_window_ex(x, y, w, h, name, is_borderless)
+  m.rawfunctions.truss_sdl_create_window_ex(
+    raw_pointer, x, y, w, h, name, (is_borderless and 1) or 0
+  )
 end
 
 function m.resize_window(width, height, fullscreen)

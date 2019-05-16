@@ -53,7 +53,17 @@ typedef struct {
 	int flags;
 } truss_sdl_event;
 
-TRUSS_C_API void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name, int is_fullscreen);
+typedef struct {
+	int x;
+	int y;
+	int w;
+	int h;
+} truss_sdl_bounds;
+
+TRUSS_C_API int truss_sdl_get_display_count(SDLAddon* addon);
+TRUSS_C_API truss_sdl_bounds truss_sdl_get_display_bounds(SDLAddon* addon, int display);
+TRUSS_C_API void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name, int is_fullscreen, int display);
+TRUSS_C_API void truss_sdl_create_window_ex(SDLAddon* addon, int x, int y, int w, int h, const char* name, int is_borderless);
 TRUSS_C_API void truss_sdl_destroy_window(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_resize_window(SDLAddon* addon, int width, int height, int fullscreen);
 TRUSS_C_API int truss_sdl_window_width(SDLAddon* addon);
@@ -88,7 +98,8 @@ public:
 	void shutdown();
 	void update(double dt);
 
-	void createWindow(int width, int height, const char* name, int is_fullscreen);
+	void createWindow(int width, int height, const char* name, int is_fullscreen, int display);
+	void createWindow(int x, int y, int w, int h, const char* name, int is_borderless);
 	int windowWidth();
 	int windowHeight();
 	void registerBGFX();
