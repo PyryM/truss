@@ -208,8 +208,8 @@ function RenderTarget:get_layer_info(idx)
   end
   local w, h = self.width, self.height
   local fmt = layer.format
-  local pixelsize = fmt.pixel_size
-  local datasize = w*h*(pixelsize or 0)
+  local pixel_size = fmt.pixel_size
+  local data_size = w*h*(pixel_size or 0)
   return {width = w, height = h, depth = 1, 
           format = fmt, pixel_size = pixel_size, data_size = data_size}
 end
@@ -224,12 +224,12 @@ function RenderTarget:_create_read_back_buffer(idx)
 
   local w, h = self.width, self.height
   local fmt = layer.format
-  local pixelsize = fmt.pixel_size
-  if not pixelsize then 
+  local pixel_size = fmt.pixel_size
+  if not pixel_size then 
     truss.error("Format " .. fmt.name .. " has no pixel size; " 
                 .. "(depth formats cannot be read back)")
   end
-  local datasize = w*h*pixelsize
+  local data_size = w*h*pixel_size
 
   local flags = math.combine_flags(
     --bgfx.TEXTURE_RT,
@@ -243,7 +243,7 @@ function RenderTarget:_create_read_back_buffer(idx)
   log.info("Flags: " .. tostring(flags))
 
   local dest = bgfx.create_texture_2d(w, h, false, 1, fmt, flags, nil)
-  local buffer = truss.create_message(datasize)
+  local buffer = truss.create_message(data_size)
   local src = self.attachments[idx].handle
 
   return {src = src, dest = dest, buffer = buffer}

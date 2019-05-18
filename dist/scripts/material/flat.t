@@ -32,7 +32,7 @@ function m.FlatMaterial(options)
     local vs_name = "vs_flat"
     local fs_name = "fs_flattextured"
     if options.skybox then vs_name = "vs_flat_skybox" end
-    if options.texture.is_cubemap then
+    if options.texture:is_cubemap() then
       vs_name, fs_name = "vs_flatcubemap", "fs_flatcubemap"
     elseif options.texture.depth > 1 then
       vs_name, fs_name = "vs_flat", "fs_flat_3dtex"

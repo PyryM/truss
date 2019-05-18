@@ -41,6 +41,7 @@ function m.wrap_lua_class(class)
   class.__init = class.init 
   local parent = {
     __base = class,
+    __init = class.init,
     __name = "Wrapped_" .. (class.name or "Lua")
   }
   return parent

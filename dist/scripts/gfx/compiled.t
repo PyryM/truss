@@ -489,7 +489,8 @@ function m.anonymous_material(options)
     name = "AnonymousMaterial",
     uniforms = uniforms,
     state = options.state or {},
-    program = options.program
+    program = options.program,
+    tags = options.tags
   }()
 
   for uname, val in pairs(uvals) do

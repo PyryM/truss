@@ -16,7 +16,7 @@ function Stage:init(options)
   for _, op in ipairs(options.render_ops or {}) do
     self:add_render_op(op)
   end
-  self.enabled = true
+  self.enabled = (options.enabled == nil) or options.enabled
   self.filter = options.filter
   self.globals = options.globals or nil
   self._exclusive = options.exclusive

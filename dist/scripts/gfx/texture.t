@@ -70,14 +70,21 @@ function Texture:is_readable()
   return self.flags.read_back
 end
 
+function Texture:is_cubemap()
+  return self._is_cubemap
+end
+
 function Texture:raw_blit_copy(src_handle, view)
   if not self._handle then
     truss.error("No texture handle!")
   end
-  if not self.is_blittable() then
+  if not self:is_blittable() then
     truss.error("Texture not a blit_dest!")
   end
-  local viewid = (view and view._viewid) or view or 0
+  local viewid = view or 0
+  if type(viewid) == 'table' then
+    viewid = view._viewid or 0
+  end
   bgfx.blit(viewid,
         self._handle, 0, 0, 0, 0,
         src_handle, 0, 0, 0, 0,
@@ -88,7 +95,7 @@ function Texture:read_back(mip, callback)
   if not self._handle then
     truss.error("No texture handle!")
   end
-  if not self.is_readable() then 
+  if not self:is_readable() then 
     truss.error("Texture does not have read_back flag.")
   end
   if not self.cdata then
@@ -123,7 +130,7 @@ function Texture:_raw_set_handle(handle, info)
   self.depth = info.depth
   self.has_mips = info.numMips > 0
   self.array_count = info.numLayers
-  self.is_cubemap = info.cubeMap
+  self._is_cubemap = info.cubeMap
   self.dynamic = false
   self.format = fmt.find_format_from_enum(info.format)
 end
@@ -149,7 +156,7 @@ function TextureCube:init(options)
   self.height = options.size
   self.size = options.size
   self.depth = 1
-  self.is_cubemap = true
+  self._is_cubemap = true
   self:_set_or_create_data(options)
 end
 
@@ -181,6 +188,7 @@ function Texture:_allocate_data()
   log.debug("Allocating texture data for " .. npixels .. " pixels.")
   local nchannels = self.format.n_channels
   local datatype = self.format.channel_type
+  self.cdatalen = npixels * nchannels
   self.cdatasize = self.format.channel_size * npixels * nchannels
   self.cdata = terralib.new(datatype[npixels * nchannels])
 end
@@ -337,8 +345,8 @@ function m.Texture(filename, flags, sampler_flags)
   return loader(filename, flags, sampler_flags)
 end
 
-function m.RTReadbackTexture(src, layer)
-  layer = layer or 0 
+function m.ReadbackTexture(src, layer)
+  layer = layer or 1 
   local info = src:get_layer_info(layer)
   local flags = {
     blit_dest = true, read_back = true
@@ -353,7 +361,7 @@ function m.RTReadbackTexture(src, layer)
     format = info.format
   }
   tex.read_source = {rt = src, layer = layer}
-  return tex
+  return tex:commit()
 end
 
 -- load just the raw pixel data of a texture
