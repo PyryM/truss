@@ -141,6 +141,7 @@ function TexProxy:set(tex)
   end
   if not texhandle then truss.error("No texture handle?") end
   self._target[self._field][self._start_index] = texhandle
+  self._ref = tex -- prevent GC-related segfaults
 end
 
 local proxy_constructors = {

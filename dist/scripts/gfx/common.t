@@ -250,7 +250,7 @@ local state_aliases = {
 
 m.DefaultStateOptions = {
   write_rgb = true, write_a = true, write_z = true,
-  conservative_raster = false, msaa = true,
+  conservative_raster = false, msaa = false, lineaa = false,
   depth_test = "less", cull = "cw", blend = false, pt = false
 }
 
