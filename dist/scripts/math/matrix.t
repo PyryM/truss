@@ -389,14 +389,6 @@ function Matrix4:decompose(pos, quat, scale)
   if scale then self:get_scale(scale) end
 end
 
--- if src==nil (or not provided), then inverts the matrix
--- itself in place, otherwise inverts src into this matrix
-function Matrix4:invert(src)
-  src = src or self
-  m.invert_matrix(self.data, src.data)
-  return self
-end
-
 -- matrix multiplication:
 -- if one argument is provided,
 -- self = self * a
@@ -507,6 +499,18 @@ function Matrix4:prettystr()
     if row < 3 then ret = ret .. ",\n" end
   end
   ret = ret .. "}"
+  return ret
+end
+
+function Matrix4:to_table()
+  local ret = {}
+  local data = self.data
+  -- column major
+  for p = 0,3 do
+    local dest = {}
+    ret[p+1] = dest
+    dest[1], dest[2], dest[3], dest[4] = data[p], data[p+4], data[p+8], data[p+12]
+  end
   return ret
 end
 

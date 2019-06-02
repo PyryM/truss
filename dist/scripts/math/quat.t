@@ -20,9 +20,9 @@ end
 function Quaternion:euler(euler, order)
   -- handle either {x=..., y=..., z=...} or {x,y,z} style
   if euler.elem then euler = euler.elem end -- handle passing in vectors
-  local x = euler.x or euler[1]
-  local y = euler.y or euler[2]
-  local z = euler.z or euler[3]
+  local x = euler.x or euler[1] or 0.0
+  local y = euler.y or euler[2] or 0.0
+  local z = euler.z or euler[3] or 0.0
 
   local c1 = math.cos( x / 2 )
   local c2 = math.cos( y / 2 )

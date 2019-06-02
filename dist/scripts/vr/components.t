@@ -123,6 +123,18 @@ function ControllerComponent:create_mesh_parts(default_geo, default_mat)
   end
 end
 
+function ControllerComponent:create_mesh(default_geo, default_mat, create_parts)
+  if create_parts then
+    return self:create_mesh_parts(default_geo, default_mat)
+  end
+
+  if not self.ent.mesh then
+    self.ent:add_component(graphics.MeshComponent(default_geo, default_mat))
+  end
+
+  self:load_geo_to_component("mesh")
+end
+
 function ControllerComponent:_update_parts()
   for partname, part_entity in pairs(self._dynamic_parts) do
     local p_src = self._trackable.parts[partname]
