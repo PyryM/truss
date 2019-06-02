@@ -22,6 +22,8 @@ function m.load_obj(filename, invert)
   return ret
 end
 
+m.load = m.load_obj
+
 -- implementation details
 
 local strfind = string.find
