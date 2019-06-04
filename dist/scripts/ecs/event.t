@@ -12,6 +12,7 @@ function EventEmitter:init()
   -- TODO
   self._listeners = {}
   self._pending = {}
+  self._anon_receivers = {}
 end
 
 local function create_weak_table()
@@ -49,8 +50,30 @@ function EventEmitter:emit(evtname, evt)
   end
 end
 
+local AnonReceiver = class("AnonReceiver")
+function AnonReceiver:init(emitter)
+  self._emitter = emitter
+  self._dead = false
+end
+
+function AnonReceiver:remove()
+  self._dead = true
+  self._emitter:remove_all(self)
+  self._emitter._anon_receivers[self] = nil
+end
+
+function EventEmitter:_create_anon_receiver()
+  local rec = AnonReceiver(self)
+  self._anon_receivers[rec] = true
+  return rec
+end
+
 function EventEmitter:on(evtname, receiver, callback)
-  if not receiver then truss.error("nil receiver!") end
+  if type(receiver) == "function" and (callback == nil) then
+    callback = receiver
+    receiver = self:_create_anon_receiver()
+  end
+  if type(receiver) ~= "table" then truss.error("receiver must be table!") end
   if callback == nil then 
     truss.error("nil callback! (use false to remove)")
   elseif callback == false then
@@ -64,6 +87,7 @@ function EventEmitter:on(evtname, receiver, callback)
     self._listeners[evtname] = create_weak_table()
   end
   self._listeners[evtname][receiver] = callback
+  return receiver
 end
 
 function EventEmitter:remove(evtname, receiver)

@@ -77,6 +77,22 @@ local function test_events(t)
   evt:emit("ping2")
   t.ok(callcount == 0, "gc'ed receiver was not called")
 
+  -- test anonymous receivers
+  callcount = 0
+  local anon_rec = evt:on("ping3", function(rec, evtname, evt)
+    callcount = callcount + 1
+  end)
+  evt:emit("ping3")
+  t.ok(callcount == 1)
+  -- make sure anonymous receiver isn't garbage collected
+  collectgarbage("collect")
+  evt:emit("ping3")
+  t.ok(callcount == 2)
+  -- try removing it
+  anon_rec:remove()
+  evt:emit("ping3")
+  t.ok(callcount == 2) -- should be unchanged
+
   -- test using a class as a receiver
   local Foo = class("Foo")
   function Foo:update(evtname, evt)
