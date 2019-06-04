@@ -495,7 +495,7 @@ function Matrix4:prettystr()
     local p = row
     -- column major
     local a,b,c,d = data[p], data[p+4], data[p+8], data[p+12]
-    ret = ret .. ("{%.2f, %.2f, %.2f, %.2f}"):format(a,b,c,d)
+    ret = ret .. ("{%.4f, %.4f, %.4f, %.4f}"):format(a,b,c,d)
     if row < 3 then ret = ret .. ",\n" end
   end
   ret = ret .. "}"

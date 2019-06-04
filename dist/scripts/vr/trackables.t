@@ -163,7 +163,6 @@ function Trackable:load_model(on_load, on_fail, load_textures)
 end
 
 function Trackable:on_lost_pose()
-  --  log.info("Trackable " .. self.device_class_name .. " lost pose.")
   self.pose_valid = false
 end
 
@@ -184,7 +183,7 @@ function Trackable:update_pose(src)
 end
 
 function Trackable:on()
-  truss.error("Base Trackable does not emit any events (are you trying to use legacy input?)")
+  log.warning("Base Trackable does not emit any events")
 end
 
 Trackable.update = Trackable.update_pose
@@ -230,6 +229,7 @@ function Controller:_parse_axes_and_buttons()
     [tonumber(openvr_c.EVRControllerAxisType_k_eControllerAxis_Trigger)] = {"trigger", 0}
   }
 
+  local n_axes = 0
   for i = 0, const.k_unControllerStateAxisCount - 1 do
     local axis_type = self:get_prop("Axis" .. i .. "Type")
     local axis_info = axislabels[tonumber(axis_type)]
@@ -244,15 +244,17 @@ function Controller:_parse_axes_and_buttons()
       self.axes[axis_name] = axis
       self.axes[i] = axis
       self._axes[i] = axis
+      n_axes = n_axes + 1
     end
   end
+  log.info("Found " .. n_axes .. " axes")
 
   self.buttons = {}
   self._buttons = {}
   local supported_buttons, properr = self:get_prop("SupportedButtons")
   if not supported_buttons then
-    log.error(self.debug_name .. " does not have SupportedButtons")
-    supported_buttons = 0
+    log.warning(self.debug_name .. " does not have SupportedButtons, assuming every button is supported")
+    supported_buttons = 0xffffffffffffffffULL
   end
   for bname, bmask in pairs(m.button_masks) do
     if math.ulland(supported_buttons, bmask) > 0 then
