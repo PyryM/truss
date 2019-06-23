@@ -48,6 +48,9 @@ end
 
 function m.create_window(width, height, name, fullscreen, display)
   local t0 = truss.tic()
+  if type(fullscreen) ~= "number" then
+    fullscreen = (fullscreen and 1) or 0
+  end
   raw_create_window(raw_pointer, width, height, name, fullscreen or 0, display or 0)
   local dt = truss.toc(t0) * 1000.0
   log.info(string.format("Took %.2f ms to create window.", dt))

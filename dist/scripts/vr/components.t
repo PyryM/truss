@@ -104,6 +104,10 @@ function TrackableComponent:update()
   self.ent.matrix:copy(self._trackable.pose)
 end
 
+function TrackableComponent:on(...)
+  self._trackable:on(...)
+end
+
 local ControllerComponent = TrackableComponent:extend("ControllerComponent")
 m.ControllerComponent = ControllerComponent
 
@@ -170,10 +174,6 @@ function ControllerComponent:update()
   if self.parts and self._trackable.parts then
     self:_update_parts()
   end
-end
-
-function ControllerComponent:on(...)
-  self._trackable:on(...)
 end
 
 m.Bounds = function(_ecs, name, options)
