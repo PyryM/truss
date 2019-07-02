@@ -144,6 +144,10 @@ function TexProxy:set(tex)
   self._ref = tex -- prevent GC-related segfaults
 end
 
+function TexProxy:refresh()
+  self:set(self._ref)
+end
+
 local proxy_constructors = {
   vec = VecProxy,
   mat4 = MatProxy,
@@ -389,6 +393,12 @@ function BaseMaterial:set_uniforms(uniforms)
       truss.error(("Material [%s] does not have uniform [%s]"):format(self.name, uni_name))
     end
     self.uniforms[uni_name]:set(uni_val)
+  end
+end
+
+function BaseMaterial:refresh()
+  for _, uni in pairs(self.uniforms) do
+    if uni.refresh then uni:refresh() end
   end
 end
 

@@ -67,7 +67,6 @@ export init = ->
       loader = switch (modelname\sub -4) 
         when '.obj' then require "loaders/objloader.t"
         when '.stl' then require "loaders/stlloader.t"
-        else nil
       (gfx.StaticGeometry!)\from_data (loader.load modelname)
 
     modelmat = pbr.FacetedPBRMaterial{
@@ -105,7 +104,6 @@ export init = ->
           model.scale\set model_scale, model_scale, model_scale
           model\update_matrix!
         when 'ApplicationMenu'
-          print "Dumping poses to json!"
           dump_relative_poses model, widgets 
   t\next print, print
 

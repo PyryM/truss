@@ -153,7 +153,7 @@ local function gen_cell(data, x, y, z, dg, funclist)
   local t0 = truss.tic()
   for _, f in ipairs(funclist) do
     mc.mc_data_from_terra(data, f, limits)
-    if truss.toc(t0)*1000.0 > 25.0 then
+    if truss.toc(t0)*1000.0 > 10.0 then
       async.await_frames(1)
       t0 = truss.tic()
     end
@@ -167,7 +167,7 @@ local function generate_logo_mesh(parent, material, resolution)
   for idx, edge in ipairs(make_column_edges()) do
     edge_funcs[idx] = ter_edge_dist_func(unpack(edge))
   end
-  local ndivs = 8
+  local ndivs = 4
   local dg = resolution / ndivs -- just assume no remainder
   local data = mc.mc_data_from_function(
     function() return 0.0 end, 
@@ -264,7 +264,7 @@ function init()
   }
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
   myapp.camera.orbit_control:set(0, 0, 0.7)
-  local logo = myapp.scene:create_child(Logo, "logo", {detail = 8})
+  local logo = myapp.scene:create_child(Logo, "logo", {detail = 7})
   logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
   logo:update_matrix()
 
@@ -279,7 +279,7 @@ function init()
     async.await_frames(5)
     add_2d_drawable(textbox, {
       x = 390, y = 10, w = 220, h = 120,
-      font_size = 100, text = '0.1.0'
+      font_size = 100, text = '0.1.α'
     })
     if gif_mode then return end
     -- spawn caps
