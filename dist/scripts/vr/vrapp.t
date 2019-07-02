@@ -18,6 +18,8 @@ local m = {}
 local VRApp = class("VRApp")
 
 function VRApp:init(options)
+  self.evt = ecs.EventEmitter()
+
   local t0 = truss.tic()
   self.options = options or {}
   openvr.init{
@@ -67,6 +69,10 @@ function VRApp:init(options)
     self.controllers = {}
     self:create_default_controllers()
   end
+end
+
+function VRApp:on(...)
+  self.evt:on(...)
 end
 
 function VRApp:register_actions(options)
@@ -218,6 +224,11 @@ function VRApp:add_controller_model(trackable)
   controller:add_component(vrcomps.ControllerComponent(trackable))
   controller.controller:create_mesh_parts(geo, mat)
   table.insert(self.controllers, controller)
+
+  self.evt:emit("controller_connected", {
+    controller = controller,
+    idx = #self.controllers
+  })
 end
 
 function VRApp:update()

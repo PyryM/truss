@@ -265,7 +265,8 @@ function m._update_trackables()
         target = trackable_types[ttype].constructor(i, ttype)
         m.trackables[i+1] = target
         if target.role then
-          self.controllers[target.role] = target
+          m.controllers[target.role] = target
+          log.info("New trackable role " .. target.role)
         end
         m._emit_event("trackable_connected", target)
       end

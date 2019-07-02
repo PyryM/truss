@@ -5,7 +5,7 @@
 local modutils = require("core/module.t")
 
 local bgfx_c = terralib.includec("bgfx_truss.c99.h")
-local bgfx_const = truss.require("core/bgfx_constants.t")
+local bgfx_const = require("./bgfx_constants.t")
 
 local bgfx = {}
 modutils.reexport_without_prefix(bgfx_c, "bgfx_", bgfx)

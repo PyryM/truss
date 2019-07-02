@@ -28,6 +28,13 @@ function RenderSystem:set_scene_root(scene, root)
   self._roots[scene] = root
 end
 
+function RenderSystem:create_scene_root(scene)
+  if self._roots[scene] then truss.error(scene .. " already has root!") end
+  local root = self.ecs:create(ecs.Entity3d, scene .. "_root")
+  self:set_scene_root(scene, root)
+  return root
+end
+
 function RenderSystem:_find_task_stages()
   local ret = {}
   for _, stage in ipairs(self.pipeline._ordered_stages) do
@@ -102,6 +109,7 @@ function RenderSystem:update()
   --for _, task_stage in ipairs(self:_task_stages or {}) do
   for _, task_stage in ipairs(self:_find_task_stages()) do
     while self._tasks:size() > 0 and task_stage:capacity() > 0 do
+      if (self._tasks:peek().size or 1) > task_stage:capacity() then break end
       task_stage:dispatch_task(self._tasks:pop())
     end
   end

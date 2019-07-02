@@ -71,14 +71,19 @@ end
 
 -- TODO: handle textures
 function m.PBRMaterial(options)
-  local ret = PbrMaterial()
+  local ret = (options.texture and TexPbrMaterial()) or PbrMaterial()
   set_pbr_options(ret, options)
   return ret
 end
 
 function m.FacetedPBRMaterial(options)
-  local ret = PbrMaterial()
-  ret:set_program{"vs_basicpbr", "fs_basicpbr_faceted_x4"}
+  local ret = (options.texture and TexPbrMaterial()) or PbrMaterial()
+  local vs, fs = "vs_basicpbr", "fs_basicpbr_faceted_x4"
+  if options.texture then
+    vs = vs .. "_tex" 
+    fs = fs .. "_tex" 
+  end
+  ret:set_program{vs, fs}
   set_pbr_options(ret, options)
   return ret
 end

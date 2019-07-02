@@ -17,7 +17,8 @@ function App:init(options)
   options = options or {}
   sdl.create_window(options.width or 1280, options.height or 720,
                     options.title or 'truss',
-                    options.fullscreen and 1)
+                    options.fullscreen and 1,
+                    options.display or 0)
   self.width, self.height = sdl.get_window_size()
   self.stats = options.stats
   options.debugtext = options.stats

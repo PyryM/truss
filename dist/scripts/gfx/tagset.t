@@ -61,6 +61,7 @@ local mt = {
 }
 
 function m.tagset(tags)
+  if tags and tags.clone then return tags:clone() end
   local tset = {_inner = truss.extend_table({}, tags)}
   setmetatable(tset, mt)
   return tset

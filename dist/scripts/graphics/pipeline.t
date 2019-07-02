@@ -6,6 +6,30 @@ local m = {}
 local class = require("class")
 local gfx = require("gfx")
 
+local CallbackStage = class("CallbackStage")
+m.CallbackStage = CallbackStage
+
+function CallbackStage:init(f)
+  self.enabled = true
+  self.f = f
+end
+
+function CallbackStage:match()
+  -- NOOP
+end
+
+function CallbackStage:pre_render()
+  if self.enabled then self.f() end
+end
+
+function CallbackStage:num_views()
+  return 0
+end
+
+function CallbackStage:bind()
+  -- NOOP
+end
+
 local Pipeline = class("Pipeline")
 m.Pipeline = Pipeline
 
@@ -93,6 +117,10 @@ end
 
 function Pipeline:add_stage(stage, stage_name)
   return self:insert_stage(nil, stage, stage_name)
+end
+
+function Pipeline:add_callback(f)
+  return self:insert_stage(nil, CallbackStage(f))
 end
 
 function Pipeline:find_stage_index(stage_name)

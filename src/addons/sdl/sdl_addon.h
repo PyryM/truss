@@ -53,7 +53,17 @@ typedef struct {
 	int flags;
 } truss_sdl_event;
 
-TRUSS_C_API void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name, int is_fullscreen);
+typedef struct {
+	int x;
+	int y;
+	int w;
+	int h;
+} truss_sdl_bounds;
+
+TRUSS_C_API int truss_sdl_get_display_count(SDLAddon* addon);
+TRUSS_C_API truss_sdl_bounds truss_sdl_get_display_bounds(SDLAddon* addon, int display);
+TRUSS_C_API void truss_sdl_create_window(SDLAddon* addon, int width, int height, const char* name, int is_fullscreen, int display);
+TRUSS_C_API void truss_sdl_create_window_ex(SDLAddon* addon, int x, int y, int w, int h, const char* name, int is_borderless);
 TRUSS_C_API void truss_sdl_destroy_window(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_resize_window(SDLAddon* addon, int width, int height, int fullscreen);
 TRUSS_C_API int truss_sdl_window_width(SDLAddon* addon);
@@ -67,12 +77,16 @@ TRUSS_C_API const char* truss_sdl_get_clipboard(SDLAddon* addon);
 TRUSS_C_API const char* truss_sdl_get_user_path(SDLAddon* addon, const char* orgname, const char* appname);
 TRUSS_C_API bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode);
+TRUSS_C_API void truss_sdl_show_cursor(SDLAddon* addon, int visible);
+TRUSS_C_API int truss_sdl_create_cursor(SDLAddon* addon, int cursorSlot, const unsigned char* data, const unsigned char* mask, int w, int h, int hx, int hy);
+TRUSS_C_API int truss_sdl_set_cursor(SDLAddon* addon, int cursorSlot);
 TRUSS_C_API int truss_sdl_num_controllers(SDLAddon* addon);
 TRUSS_C_API int truss_sdl_enable_controller(SDLAddon* addon, int controllerIdx);
 TRUSS_C_API void truss_sdl_disable_controller(SDLAddon* addon, int controllerIdx);
 TRUSS_C_API const char* truss_sdl_get_controller_name(SDLAddon* addon, int controllerIdx);
 
 #define MAX_CONTROLLERS 16
+#define MAX_CURSORS     16
 
 class SDLAddon : public truss::Addon {
 public:
@@ -84,7 +98,8 @@ public:
 	void shutdown();
 	void update(double dt);
 
-	void createWindow(int width, int height, const char* name, int is_fullscreen);
+	void createWindow(int width, int height, const char* name, int is_fullscreen, int display);
+	void createWindow(int x, int y, int w, int h, const char* name, int is_borderless);
 	int windowWidth();
 	int windowHeight();
 	void registerBGFX();
@@ -96,6 +111,10 @@ public:
 	const char* getControllerName(int controllerIdx);
 
 	const char* getClipboardText();
+
+	bool createCursor(int cursorSlot, const unsigned char* data, const unsigned char* mask, int w, int h, int hx, int hy);
+	bool setCursor(int slot);
+	void showCursor(int visible);
 
 	int numEvents();
 	truss_sdl_event& getEvent(int index);
@@ -115,6 +134,7 @@ private:
 	std::vector<truss_sdl_event> eventBuffer_;
 	truss_sdl_event errorEvent_;
 	SDL_GameController* controllers_[MAX_CONTROLLERS];
+	SDL_Cursor* cursors_[MAX_CURSORS];
 };
 
 extern "C" {

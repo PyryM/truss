@@ -26,6 +26,8 @@ function m.load_stl(filename, invert)
 	return ret
 end
 
+m.load = m.load_stl
+
 -- read a little endian uint32
 terra m.read_uint32_le(buffer: &uint8, startpos: uint32)
 	var ret: uint32 = [uint32](buffer[startpos  ])       or

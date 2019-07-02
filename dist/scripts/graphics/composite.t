@@ -15,8 +15,10 @@ function CompositeStage:init(options)
   self._num_views = 1
   self._render_ops = {}
   self.composite_ops = {}
+  self.enabled = true
   self.options = options
   self.scene = options.scene
+  self.post_callback = options.post_callback
   self.options.proj_matrix = math.Matrix4():orthographic_projection(0, 1, 0, 1, -1, 1)
   self.options.view_matrix = math.Matrix4():identity()
   self._identity_mat = math.Matrix4():identity()
@@ -99,11 +101,14 @@ function CompositeStage:composite(op)
   self._quad_geo:quad(self:_op_to_floats(op)):bind()
   local mat = op.material or self._material
   if op.source then mat.uniforms.s_srcTex:set(op.source) end
+  if mat.refresh then mat:refresh() end
+  self.view:apply_render_target()
   mat:bind()
   gfx.submit(self.view, mat._value.program)
 end
 
 function CompositeStage:pre_render()
+  if not self.enabled then return end
   for _, op in pairs(self.composite_ops) do
     if op.visible ~= false then
       self:composite(op)

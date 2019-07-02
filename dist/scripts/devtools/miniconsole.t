@@ -238,6 +238,11 @@ function m.set_header(line)
   m.height = m.totalHeight - 2 - #(m._headerlines)
 end
 
+function m.print_same_line(line)
+  local info = m._linebuffer[#m._linebuffer]
+  info[1] = info[1] .. line
+end
+
 function m.print(line, fg, bg)
   local color = fg or m.colors.default
   if bg then
@@ -470,7 +475,18 @@ function ConsoleApp:init(options)
   m.set_header(options.title or "Console", options.header_color or 0x83)
   if options.print_help ~= false then m.print_mini_help() end
   self.env = m.env
-  self.print = m.print
+end
+
+function ConsoleApp:print_same_line(text)
+  m.print_same_line(text)
+end
+
+function ConsoleApp:print(text, fg, bg)
+  m.print(text, fg, bg)
+end
+
+function ConsoleApp:clear()
+  m.clear()
 end
 
 function ConsoleApp:update()

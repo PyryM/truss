@@ -50,6 +50,7 @@ local struct chacha20_ctx
   keystream: uint32[16];
   available: uint64;
 }
+m.chacha20_ctx = chacha20_ctx
 
 terra m.setup(ctx: &chacha20_ctx, key: &uint8, length: uint64,
   nonce: &uint8)
@@ -146,9 +147,24 @@ local function to_hex(s, slen)
   end
   return ret
 end
+m.to_hex = to_hex
 
 local terra to_uint8_str(s: &int8): &uint8
   return [&uint8](s)
+end
+m.to_uint8_str = to_uint8_str
+
+function m.pad_string_to_key(s, nonce)
+  s = tostring(s)
+  local key = terralib.new(uint8[32])
+  local nonce = terralib.new(uint8[8])
+  for i = 0, 31 do
+    key[i] = s:byte(i+1) or 0
+  end
+  for i = 0, 7 do
+    nonce[i] = 0
+  end
+  return key, nonce
 end
 
 function m.test_basic()

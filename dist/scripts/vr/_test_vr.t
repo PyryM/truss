@@ -1,8 +1,6 @@
 -- test parts of vr that can reasonably be tested
 -- without actually starting vr
 
-local testlib = require("devtools/test.t")
-local test = testlib.test
 local vrinput = require("vr/input.t")
 local json = require("lib/json.lua")
 local m = {}
@@ -43,7 +41,7 @@ local function test_manifest_generation(t)
   end)
 end
 
-function m.run()
+function m.run(test)
   test("VR Input Manifest Generation", test_manifest_generation)
 end
 

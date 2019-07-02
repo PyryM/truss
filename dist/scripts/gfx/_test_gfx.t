@@ -1,12 +1,9 @@
 -- gfx/tests.t
 --
 
-local testlib = require("devtools/test.t")
-local test = testlib.test
-
 local m = {}
 
-function m.run()
+function m.run(test)
   test("tagset", m.test_tagset)
 end
 
@@ -51,6 +48,10 @@ function m.test_tagset(t)
   sa = tagset.tagset{x = 12}
   sa:extend(tagset.tagset{y = true})
   t.expect(sa.hash, sb.hash, "extension with other tagset works")
+
+  sa = tagset.tagset{x = 12}
+  sb = tagset.tagset(sa)
+  t.expect(sb.hash, sa.hash, "hashes are same")
 end
 
 return m

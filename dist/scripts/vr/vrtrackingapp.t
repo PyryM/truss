@@ -16,19 +16,20 @@ m.VRTrackingApp = VRTrackingApp
 function VRTrackingApp:init(options)
   VRTrackingApp.super.init(self, options)
   openvr.init{mode = "other"}
-  self.controllers = {}
-  if options.auto_create_controllers ~= false then
+  self.trackables = {}
+  if options.create_trackables ~= false then
     openvr.on("trackable_connected", function(trackable)
-      self:add_controller(trackable)
+      self:add_trackable(trackable)
     end)
   end
+  self._evt = ecs.EventEmitter()
 end
 
-function VRTrackingApp:add_controller(trackable)
-  if trackable.device_class_name ~= "Controller" then
-    return
-  end
+function VRTrackingApp:on(...)
+  return self._evt:on(...)
+end
 
+function VRTrackingApp:add_trackable(trackable)
   local geometry = require("geometry")
   local pbr = require("material/pbr.t")
   local geo = geometry.icosphere_geo{radius = 0.1, detail = 3}
@@ -38,11 +39,16 @@ function VRTrackingApp:add_controller(trackable)
     roughness = 0.7
   }
   
-  local controller = self.scene:create_child(ecs.Entity3d, 
-                                               "controller")
-  controller:add_component(vrcomps.ControllerComponent(trackable))
-  controller.controller:create_mesh_parts(geo, mat)
-  table.insert(self.controllers, controller)
+  local trackable_entity = self.scene:create_child(ecs.Entity3d, "trackable")
+  trackable_entity:add_component(vrcomps.TrackableComponent(trackable))
+  trackable_entity.trackable:create_mesh(geo, mat)
+  table.insert(self.trackables, trackable_entity)
+
+  self._evt:emit("trackable_connected", {
+    trackable = trackable,
+    entity = trackable_entity,
+    idx = #self.trackables
+  })
 end
 
 function VRTrackingApp:update()

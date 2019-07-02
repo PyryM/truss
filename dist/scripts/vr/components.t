@@ -86,10 +86,26 @@ function TrackableComponent:load_model(on_load, on_fail, load_textures)
   self._trackable:load_model(on_load, on_fail, load_textures)
 end
 
+function TrackableComponent:create_mesh(default_geo, default_mat, create_parts)
+  if create_parts and self.create_mesh_parts then
+    return self:create_mesh_parts(default_geo, default_mat)
+  end
+
+  if not self.ent.mesh then
+    self.ent:add_component(graphics.MeshComponent(default_geo, default_mat))
+  end
+
+  self:load_geo_to_component("mesh")
+end
+
 function TrackableComponent:update()
   self.axes = self._trackable.axes
   self.buttons = self._trackable.buttons
   self.ent.matrix:copy(self._trackable.pose)
+end
+
+function TrackableComponent:on(...)
+  self._trackable:on(...)
 end
 
 local ControllerComponent = TrackableComponent:extend("ControllerComponent")
@@ -158,10 +174,6 @@ function ControllerComponent:update()
   if self.parts and self._trackable.parts then
     self:_update_parts()
   end
-end
-
-function ControllerComponent:on(...)
-  self._trackable:on(...)
 end
 
 m.Bounds = function(_ecs, name, options)

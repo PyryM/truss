@@ -285,6 +285,12 @@ function Vector:dot(a, b)
   return ae.x * be.x + ae.y * be.y + ae.z * be.z + ae.w * be.w
 end
 
+function Vector:dot3(a, b)
+  local ae = a.elem
+  local be = (b and b.elem) or self.elem
+  return ae.x * be.x + ae.y * be.y + ae.z * be.z
+end
+
 local VectorD = Vector:extend("VectorD")
 function VectorD:init(x, y, z, w)
   self.elem = terralib.new(vec4d_)

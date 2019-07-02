@@ -136,6 +136,7 @@ function Trackable:init(device_idx, device_class)
   self.device_idx = device_idx
   self.device_class = device_class
   self.device_class_name = m.trackable_types[device_class].name
+  local openvr_c = openvr.c_api
   local role = openvr_c.GetControllerRoleForTrackedDeviceIndex(openvr.sysptr, device_idx)
   if role == openvr_c.ETrackedControllerRole_TrackedControllerRole_LeftHand then
     self.role = "left"
@@ -162,7 +163,6 @@ function Trackable:load_model(on_load, on_fail, load_textures)
 end
 
 function Trackable:on_lost_pose()
-  --  log.info("Trackable " .. self.device_class_name .. " lost pose.")
   self.pose_valid = false
 end
 
@@ -183,7 +183,7 @@ function Trackable:update_pose(src)
 end
 
 function Trackable:on()
-  truss.error("Base Trackable does not emit any events (are you trying to use legacy input?)")
+  log.warning("Base Trackable does not emit any events")
 end
 
 Trackable.update = Trackable.update_pose
@@ -220,6 +220,7 @@ end
 -- "trigger1", "joystick1", etc.
 function Controller:_parse_axes_and_buttons()
   self.axes = {}
+  self._axes = {}
   local openvr_c = openvr.c_api
 
   local axislabels = {
@@ -228,23 +229,32 @@ function Controller:_parse_axes_and_buttons()
     [tonumber(openvr_c.EVRControllerAxisType_k_eControllerAxis_Trigger)] = {"trigger", 0}
   }
 
+  local n_axes = 0
   for i = 0, const.k_unControllerStateAxisCount - 1 do
     local axis_type = self:get_prop("Axis" .. i .. "Type")
     local axis_info = axislabels[tonumber(axis_type)]
     if axis_info ~= nil then
       axis_info[2] = axis_info[2] + 1 -- how many of this axis type we've seen
       local axis_name = axis_info[1] .. axis_info[2] -- e.g., "joystick3"
-      self.axes[axis_name] = math.Vector(0, 0)
-      self.axes[i] = self.axes[axis_name]
+      local axis = {
+        name = axis_name, idx = i, 
+        kind = axis_info[1], 
+        value = math.Vector(0, 0)
+      }
+      self.axes[axis_name] = axis
+      self.axes[i] = axis
+      self._axes[i] = axis
+      n_axes = n_axes + 1
     end
   end
+  log.info("Found " .. n_axes .. " axes")
 
   self.buttons = {}
   self._buttons = {}
   local supported_buttons, properr = self:get_prop("SupportedButtons")
   if not supported_buttons then
-    log.error(self.debug_name .. " does not have SupportedButtons")
-    supported_buttons = 0
+    log.warning(self.debug_name .. " does not have SupportedButtons, assuming every button is supported")
+    supported_buttons = 0xffffffffffffffffULL
   end
   for bname, bmask in pairs(m.button_masks) do
     if math.ulland(supported_buttons, bmask) > 0 then
@@ -288,15 +298,20 @@ function Controller:update(src)
     if math.ulland(rawstate.ulButtonPressed, bmask) > 0 then v = v + 2 end
     local prev_val = self.buttons[bname] or 0
     if self.evt and prev_val ~= v then
-      self.evt:emit("button", {name = bname, state = v})
+      self.evt:emit("button", {
+        name = bname, trackable = self,
+        prev_state = prev_val, state = v
+      })
     end
     self.buttons[bname] = v
   end
 
-  for axis_name, axis in pairs(self.axes) do
-    axis:set(rawstate.rAxis[axis.idx].x, rawstate.rAxis[axis.idx].y)
+  for axis_name, axis in pairs(self._axes) do
+    axis.value:set(rawstate.rAxis[axis.idx].x, rawstate.rAxis[axis.idx].y)
     if self.evt then
-      self.evt:emit("axis", {name = axis_name, state = axis})
+      self.evt:emit("axis", {
+        axis = axis, trackable = self, state = axis.value
+      })
     end
   end
 

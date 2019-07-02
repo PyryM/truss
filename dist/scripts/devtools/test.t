@@ -235,7 +235,7 @@ local function _run_test_file(dirpath)
   end
   print(make_header(req_path))
   local tt = require(req_path)
-  tt.run()
+  tt.run(m.test)
 end
 
 -- run tests on any files names _test*
@@ -269,14 +269,10 @@ function m.run_tests(dirpath, verbose, test_archives)
 end
 
 function m.init()
-  -- horrible hack: the main script is not loaded as a real module,
-  -- which causes issues, so we need to require *ourself*
-  -- TODO: figure out best way to deal with this
-  local tt = require("devtools/test.t")
   if truss.args[3] then
-    tt.run_tests(truss.args[3], true)
+    m.run_tests(truss.args[3], true)
   else -- if no path specified, run all tests, but non-verbose
-    tt.run_tests(nil, false)
+    m.run_tests(nil, false)
   end
 end
 
