@@ -67,6 +67,7 @@ SDLAddon::SDLAddon() {
 		#define TRUSS_SDL_EVENT_GP_AXIS      11
 		#define TRUSS_SDL_EVENT_GP_BUTTONDOWN 12
 		#define TRUSS_SDL_EVENT_GP_BUTTONUP 13
+		#define TRUSS_SDL_EVENT_FILEDROP    14
 
 		typedef struct Addon Addon;
 		typedef struct bgfx_callback_interface bgfx_callback_interface_t;
@@ -103,6 +104,7 @@ SDLAddon::SDLAddon() {
 		void truss_sdl_set_clipboard(Addon* addon, const char* data);
 		const char* truss_sdl_get_clipboard(Addon* addon);
 		const char* truss_sdl_get_user_path(Addon* addon, const char* orgname, const char* appname);
+		const char* truss_sdl_get_filedrop_path(Addon* addon);
 		bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(Addon* addon);
 		void truss_sdl_set_relative_mouse_mode(Addon* addon, int mod);
 		void truss_sdl_show_cursor(Addon* addon, int visible);
@@ -181,6 +183,7 @@ void hackCStrCpy(char* dest, char* src, size_t destsize) {
 void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	truss_sdl_event newEvent;
 	bool isValid = true;
+	char* temp = NULL;
 	switch(event.type) {
 	case SDL_KEYDOWN:
 	case SDL_KEYUP:
@@ -241,6 +244,12 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	case SDL_CONTROLLERDEVICEREMOVED:
 		newEvent.event_type = TRUSS_SDL_EVENT_GP_REMOVED;
 		newEvent.flags = event.cdevice.which;
+		break;
+	case SDL_DROPFILE:
+		newEvent.event_type = TRUSS_SDL_EVENT_FILEDROP;
+		temp = event.drop.file;
+		filedrop_ = temp;
+		SDL_free(temp);
 		break;
 	default: // a whole mess of event types we don't care about
 		isValid = false;
@@ -374,6 +383,10 @@ const char* SDLAddon::getClipboardText() {
 	return clipboard_.c_str();
 }
 
+const char* SDLAddon::getFiledropText() {
+	return filedrop_.c_str();
+}
+
 bool SDLAddon::createCursor(int cursorSlot, const unsigned char* data, const unsigned char* mask, int w, int h, int hx, int hy) {
 	if (cursorSlot < 0 || cursorSlot >= MAX_CURSORS) return false;
 	if (cursors_[cursorSlot] != NULL) {
@@ -483,6 +496,10 @@ const char* truss_sdl_get_clipboard(SDLAddon* addon) {
 
 const char* truss_sdl_get_user_path(SDLAddon* addon, const char* orgname, const char* appname) {
 	return SDL_GetPrefPath(orgname, appname);
+}
+
+const char* truss_sdl_get_filedrop_path(SDLAddon* addon) {
+	return addon->getFiledropText();
 }
 
 void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode) {

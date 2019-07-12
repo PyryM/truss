@@ -22,7 +22,8 @@ local EVENT_INFO = {
   [10] = {"gamepad_removed", "gamepad_sys"},
   [11] = {"gamepad_axis", "gamepad"},
   [12] = {"gamepad_buttondown", "gamepad"},
-  [13] = {"gamepad_buttonup", "gamepad"}
+  [13] = {"gamepad_buttonup", "gamepad"},
+  [14] = {"filedrop", "filedrop"}
 }
 
 local sdl = nil
@@ -88,6 +89,12 @@ local function convert_gamepad_event(evt_type, evt)
   return ret
 end
 
+local function convert_filedrop_event(evt_type, evt)
+  return {
+    path = sdl.get_filedrop_path() or ""
+  }
+end
+
 local function convert_event(evt)
   local evt_name, evt_class = unpack(EVENT_INFO[evt.event_type])
   local new_evt
@@ -105,6 +112,8 @@ local function convert_event(evt)
     new_evt = evt
   elseif evt_class == "gamepad" then
     new_evt = convert_gamepad_event(evt_name, evt)
+  elseif evt_class == "filedrop" then
+    new_evt = convert_filedrop_event(evt_name, evt)
   end
   return evt_name, new_evt
 end

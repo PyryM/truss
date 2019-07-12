@@ -92,6 +92,12 @@ function m.get_clipboard()
   return ffi.string(cstr)
 end
 
+function m.get_filedrop_path()
+  local cstr = m.rawfunctions.truss_sdl_get_filedrop_path(raw_pointer)
+  if not cstr then return nil end
+  return ffi.string(cstr)
+end
+
 function m.create_user_path(orgname, appname)
   local cpath = m.rawfunctions.truss_sdl_get_user_path(raw_pointer, 
                                                        orgname, appname)
