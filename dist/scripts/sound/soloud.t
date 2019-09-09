@@ -32,6 +32,10 @@ function m.init()
   m._named_wavs = {}
 end
 
+function m.set_volume(volume)
+  C.setGlobalVolume(m._instance, volume)
+end
+
 local Voice = class("Voice")
 function Voice:init(handle)
   self._handle = handle
@@ -50,6 +54,22 @@ function Voice:set_looping(looping, loop_point)
   if loop_point then
     C.setLoopPoint(m._instance, self._handle, loop_point)
   end
+end
+
+function Voice:schedule_pause(dt)
+  C.schedulePause(m._instance, self._handle, dt)
+end
+
+function Voice:schedule_stop(dt)
+  C.scheduleStop(m._instance, self._handle, dt)
+end
+
+function Voice:fade_volume(target_volume, dt)
+  C.fadeVolume(m._instance, self._handle, target_volume, dt)
+end
+
+function Voice:set_volume(volume)
+  C.setVolume(m._instance, self._handle, volume)
 end
 
 function Voice:set_inaudible_behavior(must_tick, kill)
@@ -347,6 +367,24 @@ function Speech:set_text(text)
 end
 
 function Speech:say(text, volume, pan, paused)
+  self:set_text(text)
+  return self:play(volume, pan, paused)
+end
+
+-- it's not obvious but this is an alternate speech synthesizer
+local Vizsn, Vizsn_C = def_source("Vizsn", "Vizsn")
+m.Vizsn = Vizsn
+
+function Vizsn:init()
+  self:create()
+  Vizsn.super.init(self, self._ptr)
+end
+
+function Vizsn:set_text(text)
+  Vizsn_C.setText(self._ptr, text)
+end
+
+function Vizsn:say(text, volume, pan, paused)
   self:set_text(text)
   return self:play(volume, pan, paused)
 end

@@ -48,7 +48,7 @@ function init()
   --bgmusic = soloud.loadWav("sounds/tetsno.ogg")
   bgmusic = soloud.WavStream("sounds/ambience.ogg")
   bgmusic:set_looping(true)
-  bgmusic:play()
+  bgmusic:play():set_volume(0.2)
 
   hitsound = soloud.Wav("sounds/bell.wav")
 
@@ -59,14 +59,15 @@ function init()
     declination = 1.0,
     waveform = "warble"
   }
+  speech:set_volume(3.0)
   local filter = soloud.EchoFilter{delay = 0.1, decay = 0.6}
   speech:set_filter(filter)
   speech:say("so now I am going to say the words that confuse the internet: " ..
-             "laurel yanny laurel yanny laurel yanny", 5.0)
+             "laurel yanny laurel yanny laurel yanny")
 
   myapp.ECS.systems.input:on("keydown", myapp, function(self, evtname, evt)
-    hitsound:play(0.6)
-    speech:say("you pressed " .. evt.keyname, 5.0)
+    hitsound:play(0.6):set_volume(math.random()*0.5 + 0.5)
+    speech:say("you pressed " .. evt.keyname)
   end)
 end
 
