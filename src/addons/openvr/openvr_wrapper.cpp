@@ -172,10 +172,6 @@ bool tr_ovw_ShouldApplicationReduceRenderingWork(vr::IVRSystem* self) {
 	return self->ShouldApplicationReduceRenderingWork();
 }
 
-uint32_t tr_ovw_DriverDebugRequest(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unDeviceIndex, const char * pchRequest, char * pchResponseBuffer, uint32_t unResponseBufferSize) {
-	return self->DriverDebugRequest(unDeviceIndex, pchRequest, pchResponseBuffer, unResponseBufferSize);
-}
-
 vr::EVRFirmwareError tr_ovw_PerformFirmwareUpdate(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unDeviceIndex) {
 	return self->PerformFirmwareUpdate(unDeviceIndex);
 }
@@ -186,6 +182,14 @@ void tr_ovw_AcknowledgeQuit_Exiting(vr::IVRSystem* self) {
 
 void tr_ovw_AcknowledgeQuit_UserPrompt(vr::IVRSystem* self) {
 	self->AcknowledgeQuit_UserPrompt();
+}
+
+uint32_t tr_ovw_GetAppContainerFilePaths(vr::IVRSystem* self, char * pchBuffer, uint32_t unBufferSize) {
+	return self->GetAppContainerFilePaths(pchBuffer, unBufferSize);
+}
+
+const char * tr_ovw_GetRuntimeVersion(vr::IVRSystem* self) {
+	return self->GetRuntimeVersion();
 }
 
 void tr_ovw_GetWindowBounds(vr::IVRExtendedDisplay* self, int32_t * pnX, int32_t * pnY, uint32_t * pnWidth, uint32_t * pnHeight) {
@@ -482,6 +486,10 @@ void tr_ovw_HideWorkingSetPreview(vr::IVRChaperoneSetup* self) {
 	self->HideWorkingSetPreview();
 }
 
+void tr_ovw_RoomSetupStarting(vr::IVRChaperoneSetup* self) {
+	self->RoomSetupStarting();
+}
+
 void tr_ovw_SetTrackingSpace(vr::IVRCompositor* self, vr::ETrackingUniverseOrigin eOrigin) {
 	self->SetTrackingSpace(eOrigin);
 }
@@ -656,6 +664,14 @@ vr::EVRCompositorError tr_ovw_SubmitExplicitTimingData(vr::IVRCompositor* self) 
 
 bool tr_ovw_IsMotionSmoothingEnabled(vr::IVRCompositor* self) {
 	return self->IsMotionSmoothingEnabled();
+}
+
+bool tr_ovw_IsMotionSmoothingSupported(vr::IVRCompositor* self) {
+	return self->IsMotionSmoothingSupported();
+}
+
+bool tr_ovw_IsCurrentSceneFocusAppLoading(vr::IVRCompositor* self) {
+	return self->IsCurrentSceneFocusAppLoading();
 }
 
 vr::EVROverlayError tr_ovw_FindOverlay(vr::IVROverlay* self, const char * pchOverlayKey, vr::VROverlayHandle_t * pOverlayHandle) {
@@ -1162,8 +1178,12 @@ uint32_t tr_ovw_GetDriverName(vr::IVRDriverManager* self, vr::DriverId_t nDriver
 	return self->GetDriverName(nDriver, pchValue, unBufferSize);
 }
 
-vr::DriverHandle_t tr_ovw_GetDriverHandle(vr::IVRDriverManager* self, const char * pchDriverName) {
+DriverHandle_t tr_ovw_GetDriverHandle(vr::IVRDriverManager* self, const char * pchDriverName) {
 	return self->GetDriverHandle(pchDriverName);
+}
+
+bool tr_ovw_IsEnabled(vr::IVRDriverManager* self, vr::DriverId_t nDriver) {
+	return self->IsEnabled(nDriver);
 }
 
 vr::EVRInputError tr_ovw_SetActionManifestPath(vr::IVRInput* self, const char * pchActionManifestPath) {
@@ -1194,8 +1214,12 @@ vr::EVRInputError tr_ovw_GetAnalogActionData(vr::IVRInput* self, vr::VRActionHan
 	return self->GetAnalogActionData(action, pActionData, unActionDataSize, ulRestrictToDevice);
 }
 
-vr::EVRInputError tr_ovw_GetPoseActionData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::ETrackingUniverseOrigin eOrigin, float fPredictedSecondsFromNow, vr::InputPoseActionData_t * pActionData, uint32_t unActionDataSize, vr::VRInputValueHandle_t ulRestrictToDevice) {
-	return self->GetPoseActionData(action, eOrigin, fPredictedSecondsFromNow, pActionData, unActionDataSize, ulRestrictToDevice);
+vr::EVRInputError tr_ovw_GetPoseActionDataRelativeToNow(vr::IVRInput* self, vr::VRActionHandle_t action, vr::ETrackingUniverseOrigin eOrigin, float fPredictedSecondsFromNow, vr::InputPoseActionData_t * pActionData, uint32_t unActionDataSize, vr::VRInputValueHandle_t ulRestrictToDevice) {
+	return self->GetPoseActionDataRelativeToNow(action, eOrigin, fPredictedSecondsFromNow, pActionData, unActionDataSize, ulRestrictToDevice);
+}
+
+vr::EVRInputError tr_ovw_GetPoseActionDataForNextFrame(vr::IVRInput* self, vr::VRActionHandle_t action, vr::ETrackingUniverseOrigin eOrigin, vr::InputPoseActionData_t * pActionData, uint32_t unActionDataSize, vr::VRInputValueHandle_t ulRestrictToDevice) {
+	return self->GetPoseActionDataForNextFrame(action, eOrigin, pActionData, unActionDataSize, ulRestrictToDevice);
 }
 
 vr::EVRInputError tr_ovw_GetSkeletalActionData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::InputSkeletalActionData_t * pActionData, uint32_t unActionDataSize) {
@@ -1226,8 +1250,8 @@ vr::EVRInputError tr_ovw_GetSkeletalBoneData(vr::IVRInput* self, vr::VRActionHan
 	return self->GetSkeletalBoneData(action, eTransformSpace, eMotionRange, pTransformArray, unTransformArrayCount);
 }
 
-vr::EVRInputError tr_ovw_GetSkeletalSummaryData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::VRSkeletalSummaryData_t * pSkeletalSummaryData) {
-	return self->GetSkeletalSummaryData(action, pSkeletalSummaryData);
+vr::EVRInputError tr_ovw_GetSkeletalSummaryData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::EVRSummaryType eSummaryType, vr::VRSkeletalSummaryData_t * pSkeletalSummaryData) {
+	return self->GetSkeletalSummaryData(action, eSummaryType, pSkeletalSummaryData);
 }
 
 vr::EVRInputError tr_ovw_GetSkeletalBoneDataCompressed(vr::IVRInput* self, vr::VRActionHandle_t action, vr::EVRSkeletalMotionRange eMotionRange, void * pvCompressedData, uint32_t unCompressedSize, uint32_t * punRequiredCompressedSize) {
@@ -1254,12 +1278,20 @@ vr::EVRInputError tr_ovw_GetOriginTrackedDeviceInfo(vr::IVRInput* self, vr::VRIn
 	return self->GetOriginTrackedDeviceInfo(origin, pOriginInfo, unOriginInfoSize);
 }
 
+vr::EVRInputError tr_ovw_GetActionBindingInfo(vr::IVRInput* self, vr::VRActionHandle_t action, vr::InputBindingInfo_t * pOriginInfo, uint32_t unBindingInfoSize, uint32_t unBindingInfoCount, uint32_t * punReturnedBindingInfoCount) {
+	return self->GetActionBindingInfo(action, pOriginInfo, unBindingInfoSize, unBindingInfoCount, punReturnedBindingInfoCount);
+}
+
 vr::EVRInputError tr_ovw_ShowActionOrigins(vr::IVRInput* self, vr::VRActionSetHandle_t actionSetHandle, vr::VRActionHandle_t ulActionHandle) {
 	return self->ShowActionOrigins(actionSetHandle, ulActionHandle);
 }
 
 vr::EVRInputError tr_ovw_ShowBindingsForActionSet(vr::IVRInput* self, vr::VRActiveActionSet_t * pSets, uint32_t unSizeOfVRSelectedActionSet_t, uint32_t unSetCount, vr::VRInputValueHandle_t originToHighlight) {
 	return self->ShowBindingsForActionSet(pSets, unSizeOfVRSelectedActionSet_t, unSetCount, originToHighlight);
+}
+
+bool tr_ovw_IsUsingLegacyInput(vr::IVRInput* self) {
+	return self->IsUsingLegacyInput();
 }
 
 vr::EIOBufferError tr_ovw_Open(vr::IVRIOBuffer* self, const char * pchPath, vr::EIOBufferMode mode, uint32_t unElementSize, uint32_t unElements, vr::IOBufferHandle_t * pulBuffer) {
@@ -1301,4 +1333,21 @@ vr::EVRSpatialAnchorError tr_ovw_GetSpatialAnchorPose(vr::IVRSpatialAnchors* sel
 vr::EVRSpatialAnchorError tr_ovw_GetSpatialAnchorDescriptor(vr::IVRSpatialAnchors* self, vr::SpatialAnchorHandle_t unHandle, char * pchDescriptorOut, uint32_t * punDescriptorBufferLenInOut) {
 	return self->GetSpatialAnchorDescriptor(unHandle, pchDescriptorOut, punDescriptorBufferLenInOut);
 }
+
+vr::EVRDebugError tr_ovw_EmitVrProfilerEvent(vr::IVRDebug* self, const char * pchMessage) {
+	return self->EmitVrProfilerEvent(pchMessage);
+}
+
+vr::EVRDebugError tr_ovw_BeginVrProfilerEvent(vr::IVRDebug* self, vr::VrProfilerEventHandle_t * pHandleOut) {
+	return self->BeginVrProfilerEvent(pHandleOut);
+}
+
+vr::EVRDebugError tr_ovw_FinishVrProfilerEvent(vr::IVRDebug* self, vr::VrProfilerEventHandle_t hHandle, const char * pchMessage) {
+	return self->FinishVrProfilerEvent(hHandle, pchMessage);
+}
+
+uint32_t tr_ovw_DriverDebugRequest(vr::IVRDebug* self, vr::TrackedDeviceIndex_t unDeviceIndex, const char * pchRequest, char * pchResponseBuffer, uint32_t unResponseBufferSize) {
+	return self->DriverDebugRequest(unDeviceIndex, pchRequest, pchResponseBuffer, unResponseBufferSize);
+}
+
 
