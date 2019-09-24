@@ -55,6 +55,16 @@ function m.load_program(vshadername, fshadername)
   return m._programs[pname]
 end
 
+function m.load_compute_program(cshadername)
+  local pname = cshadername
+  if not m._programs[pname] then
+    local cshader = m.load_shader(cshadername)
+    m._programs[pname] = bgfx.create_compute_program(cshader, true)
+    log.debug("Loaded compute program " .. pname)
+  end
+  return m._programs[pname]
+end
+
 local _error_program = nil
 function m.error_program()
   if not _error_program then

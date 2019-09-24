@@ -6,6 +6,7 @@ local class = require("class")
 local math = require("math")
 local fmt = require("./formats.t")
 local bgfx = require("./bgfx.t")
+local gfx_common = require("./common.t")
 
 local m = {}
 
@@ -74,6 +75,10 @@ function Texture:is_cubemap()
   return self._is_cubemap
 end
 
+function Texture:is_compute_writeable()
+  return self.flags.compute_write
+end
+
 function Texture:raw_blit_copy(src_handle, view)
   if not self._handle then
     truss.error("No texture handle!")
@@ -121,6 +126,12 @@ function Texture:async_read_rt(view, mip)
   local layer = self.read_source.layer
   self:raw_blit_copy(rt:get_layer_handle(layer), view or 0)
   return self:async_read_back(mip or 0)
+end
+
+function Texture:bind_compute(stage, mip, access, format)
+  access = gfx_common.resolve_access(access)
+  if type(format) == 'table' then format = format.bgfx_enum end
+  bgfx.set_image(stage, self._handle, mip or 0, access, format or bgfx.TEXTURE_FORMAT_COUNT)
 end
 
 function Texture:_raw_set_handle(handle, info)

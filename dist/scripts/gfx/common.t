@@ -309,4 +309,22 @@ function m.save_screenshot(filename, target)
   bgfx.request_screen_shot(fb, filename)
 end
 
+local ACCESS = {
+  read = bgfx.ACCESS_READ,
+  write = bgfx.ACCESS_WRITE,
+  readwrite = bgfx.ACCESS_READWRITE,
+  r = bgfx.ACCESS_READ,
+  w = bgfx.ACCESS_WRITE,
+  rw = bgfx.ACCESS_READWRITE
+}
+
+function m.resolve_access(access)
+  if not access then return ACCESS.read end
+  if type(access) == 'string' then
+    access = ACCESS[access]
+    if not access then truss.error("Unknown access specifier " .. access) end
+  end
+  return access
+end
+
 return m

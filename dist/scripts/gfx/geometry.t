@@ -6,6 +6,7 @@ local class = require("class")
 local math = require("math")
 local bufferutils = require("./bufferutils.t")
 local bgfx = require("./bgfx.t")
+local gfx_common = require("./common.t")
 local gfx = nil -- need to delay load
 
 local Quaternion = math.Quaternion
@@ -180,7 +181,7 @@ function m.make_fast_transient_quad_func(vinfo)
   return fastQuad
 end
 
-function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
+function TransientGeometry:quad_uv(x0, y0, x1, y1, u0, v0, u1, v1, z, vinfo)
   if not vinfo then
     local vdefs = require("gfx/vertexdefs.t")
     vinfo = vdefs.create_basic_vertex_type({"position", "texcoord0"})
@@ -189,22 +190,26 @@ function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
   local vs = self.verts
   local v0,v1,v2,v3 = vs[0],vs[1],vs[2],vs[3]
   v0.position[0], v0.position[1], v0.position[2] = x0, y0, z
-  v0.texcoord0[0], v0.texcoord0[1] = 0.0, 1.0
+  v0.texcoord0[0], v0.texcoord0[1] = u0, v1
 
   v1.position[0], v1.position[1], v1.position[2] = x1, y0, z
-  v1.texcoord0[0], v1.texcoord0[1] = 1.0, 1.0
+  v1.texcoord0[0], v1.texcoord0[1] = u1, v1
 
   v2.position[0], v2.position[1], v2.position[2] = x1, y1, z
-  v2.texcoord0[0], v2.texcoord0[1] = 1.0, 0.0
+  v2.texcoord0[0], v2.texcoord0[1] = u1, v0
 
   v3.position[0], v3.position[1], v3.position[2] = x0, y1, z
-  v3.texcoord0[0], v3.texcoord0[1] = 0.0, 0.0
+  v3.texcoord0[0], v3.texcoord0[1] = u0, v0
 
   local idx = self.indices
   idx[0], idx[1], idx[2] = 0, 1, 2
   idx[3], idx[4], idx[5] = 2, 3, 0
 
   return self
+end
+
+function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
+  self:quad_uv(x0, y0, x1, y1, 0.0, 0.0, 1.0, 1.0, z, vinfo)
 end
 
 function TransientGeometry:bind()
@@ -483,6 +488,11 @@ local function check_committed(geo)
   return false
 end
 
+function StaticGeometry:assert_committed()
+  if not check_committed(self) then truss.error("Geometry is not committed.") end
+end
+DynamicGeometry.assert_committed = StaticGeometry.assert_committed
+
 function StaticGeometry:set_slice(vtx_start, vtx_count, idx_start, idx_count)
   self._vtx_start = vtx_start
   self._idx_start = idx_start
@@ -508,6 +518,26 @@ function DynamicGeometry:bind()
     self._vtx_start or 0, self._vtx_count or bgfx.UINT32_MAX)
   bgfx.set_dynamic_index_buffer(self._ibh, 
     self._idx_start or 0, self._idx_count or bgfx.UINT32_MAX)
+end
+
+function StaticGeometry:bind_index_compute(stage, access)
+  self:assert_committed()
+  bgfx.set_compute_index_buffer(stage, self._ibh, gfx_common.resolve_access(access))
+end
+
+function StaticGeometry:bind_vertex_compute(stage, access)
+  self:assert_committed()
+  bgfx.set_compute_vertex_buffer(stage, self._ibh, gfx_common.resolve_access(access))
+end
+
+function DynamicGeometry:bind_index_compute(stage, access)
+  self:assert_committed()
+  bgfx.set_compute_dynamic_index_buffer(stage, self._ibh, gfx_common.resolve_access(access))
+end
+
+function DynamicGeometry:bind_vertex_compute(stage, access)
+  self:assert_committed()
+  bgfx.set_compute_dynamic_vertex_buffer(stage, self._ibh, gfx_common.resolve_access(access))
 end
 
 function DynamicGeometry:update()
