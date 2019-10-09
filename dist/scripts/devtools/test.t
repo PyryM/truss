@@ -200,6 +200,9 @@ function m.test(name, f, async)
         handler('fail', name, msg)
       end
     end
+    funcs.print = function(...)
+      if test_stats.verbose then print(...) end
+    end
 
     handler('begin', name)
     local ok, err = pcall(f, funcs, finish_test)

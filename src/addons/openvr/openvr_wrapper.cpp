@@ -1178,7 +1178,7 @@ uint32_t tr_ovw_GetDriverName(vr::IVRDriverManager* self, vr::DriverId_t nDriver
 	return self->GetDriverName(nDriver, pchValue, unBufferSize);
 }
 
-DriverHandle_t tr_ovw_GetDriverHandle(vr::IVRDriverManager* self, const char * pchDriverName) {
+vr::DriverHandle_t tr_ovw_GetDriverHandle(vr::IVRDriverManager* self, const char * pchDriverName) {
 	return self->GetDriverHandle(pchDriverName);
 }
 
