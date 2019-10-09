@@ -16,7 +16,15 @@ local terra fmix64(k: uint64): uint64
   return k
 end
 
-local terra MurmurHash3_128(data: &uint8, len: uint64, seed: uint64, out: &uint64)
+local struct hash128_t {
+  union {
+    u64: uint64[2];
+    u32: uint32[4];
+    bytes: uint8[16];
+  }
+}
+
+local terra MurmurHash3_128(data: &uint8, len: uint64, seed: uint64): hash128_t
   var nblocks = len / 16
 
   var h1: uint64 = seed
@@ -93,8 +101,10 @@ local terra MurmurHash3_128(data: &uint8, len: uint64, seed: uint64, out: &uint6
   h1 = h1 + h2
   h2 = h2 + h1
 
-  out[0] = h1
-  out[1] = h2
+  var out: hash128_t
+  out.u64[0] = h1
+  out.u64[1] = h2
+  return out
 end
 
-return {murmur_128 = MurmurHash3_128}
+return {hash128_t = hash128_t, murmur_128 = MurmurHash3_128}
