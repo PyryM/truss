@@ -181,7 +181,7 @@ function m.make_fast_transient_quad_func(vinfo)
   return fastQuad
 end
 
-function TransientGeometry:quad_uv(x0, y0, x1, y1, u0, v0, u1, v1, z, vinfo)
+function TransientGeometry:quad_uv(x0, y0, x1, y1, tu0, tv0, tu1, tv1, z, vinfo)
   if not vinfo then
     local vdefs = require("gfx/vertexdefs.t")
     vinfo = vdefs.create_basic_vertex_type({"position", "texcoord0"})
@@ -190,16 +190,16 @@ function TransientGeometry:quad_uv(x0, y0, x1, y1, u0, v0, u1, v1, z, vinfo)
   local vs = self.verts
   local v0,v1,v2,v3 = vs[0],vs[1],vs[2],vs[3]
   v0.position[0], v0.position[1], v0.position[2] = x0, y0, z
-  v0.texcoord0[0], v0.texcoord0[1] = u0, v1
+  v0.texcoord0[0], v0.texcoord0[1] = tu0, tv1
 
   v1.position[0], v1.position[1], v1.position[2] = x1, y0, z
-  v1.texcoord0[0], v1.texcoord0[1] = u1, v1
+  v1.texcoord0[0], v1.texcoord0[1] = tu1, tv1
 
   v2.position[0], v2.position[1], v2.position[2] = x1, y1, z
-  v2.texcoord0[0], v2.texcoord0[1] = u1, v0
+  v2.texcoord0[0], v2.texcoord0[1] = tu1, tv0
 
   v3.position[0], v3.position[1], v3.position[2] = x0, y1, z
-  v3.texcoord0[0], v3.texcoord0[1] = u0, v0
+  v3.texcoord0[0], v3.texcoord0[1] = tu0, tv0
 
   local idx = self.indices
   idx[0], idx[1], idx[2] = 0, 1, 2
@@ -209,7 +209,7 @@ function TransientGeometry:quad_uv(x0, y0, x1, y1, u0, v0, u1, v1, z, vinfo)
 end
 
 function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
-  self:quad_uv(x0, y0, x1, y1, 0.0, 0.0, 1.0, 1.0, z, vinfo)
+  return self:quad_uv(x0, y0, x1, y1, 0.0, 0.0, 1.0, 1.0, z, vinfo)
 end
 
 function TransientGeometry:bind()

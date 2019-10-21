@@ -40,6 +40,19 @@ local function export_tex_format(channels, n_channels, bitformat, has_color, has
   return m[export_name]
 end
 
+-- special case this kind of weird texture format
+m.TEX_R5G6B5 = {
+  name = "R5G6B5",
+  bgfx_enum = bgfx.TEXTURE_FORMAT_R5G6B5,
+  n_channels = 1,
+  channel_size = 2,
+  pixel_size = 2,
+  channel_type = uint16,
+  has_color = true,
+  has_depth = false,
+  has_stencil = false
+}
+
 -- color formats
 local channel_names = {R = 1, RG = 2, RGBA = 4, BGRA = 4}
 for channel_name, n_channels in pairs(channel_names) do
