@@ -107,4 +107,12 @@ local terra MurmurHash3_128(data: &uint8, len: uint64, seed: uint64): hash128_t
   return out
 end
 
-return {hash128_t = hash128_t, murmur_128 = MurmurHash3_128}
+local function hash_to_string(h)
+  local s = ""
+  for i = 0, 3 do
+    s = s .. ("%08x"):format(h.u32[i])
+  end
+  return s
+end
+
+return {hash128_t = hash128_t, murmur_128 = MurmurHash3_128, hash_to_string = hash_to_string}

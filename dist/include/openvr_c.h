@@ -23,6 +23,7 @@ typedef struct IVRInput IVRInput;
 typedef struct IVRIOBuffer IVRIOBuffer;
 typedef struct IVRSpatialAnchors IVRSpatialAnchors;
 typedef struct IVRDriverManager IVRDriverManager;
+typedef struct IVRDebug IVRDebug;
 
 // These were defined at the top for some reason, but duplicate
 // definitions make me uncomfortable so let's not
@@ -2054,7 +2055,7 @@ HmdMatrix34_t tr_ovw_GetEyeToHeadTransform(IVRSystem* self, EVREye eEye);
 bool tr_ovw_GetTimeSinceLastVsync(IVRSystem* self, float * pfSecondsSinceLastVsync, uint64_t * pulFrameCounter);
 int32_t tr_ovw_GetD3D9AdapterIndex(IVRSystem* self);
 void tr_ovw_GetDXGIOutputInfo(IVRSystem* self, int32_t * pnAdapterIndex);
-void tr_ovw_GetOutputDevice(IVRSystem* self, uint64_t * pnDevice, ETextureType textureType, VkInstance_T * pInstance);
+void tr_ovw_GetOutputDevice(IVRSystem* self, uint64_t * pnDevice, ETextureType textureType, struct VkInstance_T * pInstance);
 bool tr_ovw_IsDisplayOnDesktop(IVRSystem* self);
 bool tr_ovw_SetDisplayVisibility(IVRSystem* self, bool bIsVisibleOnDesktop);
 void tr_ovw_GetDeviceToAbsoluteTrackingPose(IVRSystem* self, ETrackingUniverseOrigin eOrigin, float fPredictedSecondsToPhotonsFromNow, TrackedDevicePose_t * pTrackedDevicePoseArray, uint32_t unTrackedDevicePoseArrayCount);
@@ -2208,7 +2209,7 @@ bool tr_ovw_ReleaseSharedGLTexture(IVRCompositor* self, glUInt_t glTextureId, gl
 void tr_ovw_LockGLSharedTextureForAccess(IVRCompositor* self, glSharedTextureHandle_t glSharedTextureHandle);
 void tr_ovw_UnlockGLSharedTextureForAccess(IVRCompositor* self, glSharedTextureHandle_t glSharedTextureHandle);
 uint32_t tr_ovw_GetVulkanInstanceExtensionsRequired(IVRCompositor* self, char * pchValue, uint32_t unBufferSize);
-uint32_t tr_ovw_GetVulkanDeviceExtensionsRequired(IVRCompositor* self, VkPhysicalDevice_T * pPhysicalDevice, char * pchValue, uint32_t unBufferSize);
+uint32_t tr_ovw_GetVulkanDeviceExtensionsRequired(IVRCompositor* self, struct VkPhysicalDevice_T * pPhysicalDevice, char * pchValue, uint32_t unBufferSize);
 void tr_ovw_SetExplicitTimingMode(IVRCompositor* self, EVRCompositorTimingMode eTimingMode);
 EVRCompositorError tr_ovw_SubmitExplicitTimingData(IVRCompositor* self);
 bool tr_ovw_IsMotionSmoothingEnabled(IVRCompositor* self);
