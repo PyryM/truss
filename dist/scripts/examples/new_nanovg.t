@@ -102,6 +102,10 @@ function init()
   sdl.set_cursor(1)
 
   myapp.ECS.systems.input:on("mousemove", mouse_state, on_mouse)
+  myapp.ECS.systems.input:on("filedrop", function(_, evtname, evt)
+    print("Filedrop!")
+    print(evt.path)
+  end)
   myapp.camera:add_component(orbitcam.OrbitControl({min_rad = 1, max_rad = 4}))
 
   local geo = geometry.icosphere_geo{radius = 1, detail = 1}

@@ -14,7 +14,7 @@ ms = require "moonscript"
 async = require "async"
 orbitcam = require "graphics/orbitcam.t"
 simplex = require "procgen/simplex.t"
-objloader = require "loaders/objloader.t"
+objloader = require "formats/obj.t"
 
 TEX_SIZE = 512
 
@@ -83,10 +83,11 @@ functex = (src_data, f) ->
 
 export init = ->
   app = NoiseTextureApp {
-    width: 720, 
-    height: 720,
+    width: 160*4, 
+    height: 128*4,
     title: "readback example",
-    msaa: 4
+    msaa: 4,
+    lowlatency: true
   }
   print(app)
   app.camera\add_component orbitcam.OrbitControl {min_rad:1, max_rad: 6}
@@ -111,7 +112,7 @@ export init = ->
 
   thingy = app.scene\create_child graphics.Mesh, "mesh", geo, worldspace_material
   (async.run ->
-    async.await_frames 3
+    async.await_frames 2
     async.await app.worldreadback\async_read_rt!
     math.randomseed os.time!
     params = [math.random()*2+0.1 for i = 1, 5]
