@@ -1,7 +1,8 @@
--- objloader.t
+-- formats/obj.t
 --
--- loads wavefront .obj files
+-- reads/writes wavefront .obj files
 
+local class = require("class")
 local m = {}
 
 m.verbose = false
@@ -195,6 +196,102 @@ function m.parse_obj(objstring, invert)
   end
 
   return ret
+end
+
+local ObjDumper = class("ObjDumper")
+function ObjDumper:init()
+  self.v = {}
+  self.vn = {}
+  self.vt = {}
+  self.f = {}
+end
+
+function ObjDumper:_push_attr(aname, x, y, z)
+  if z then
+    table.insert(self[aname], ("%s %f %f %f"):format(aname, x, y, z))
+  else
+    table.insert(self[aname], ("%s %f %f"):format(aname, x, y))
+  end
+end
+
+function ObjDumper:_push_attr_var(aname, aval)
+  if aval.elem then -- vector
+    aval = aval.elem
+  end
+  if aval.x then -- {x = , y =, z =} table
+    self:_push_attr(aname, aval.x, aval.y, aval.z)
+  else -- assume array
+    self:_push_attr(aname, aval[1], aval[2], aval[3])
+  end
+end
+
+function ObjDumper:push_vert(v, vt, vn)
+  if v.position then -- compiled vertex type
+    self:_push_attr("v", v.position[0], v.position[1], v.position[2])
+    if v.normal then
+      self:_push_attr("vn", v.normal[0], v.normal[1], v.normal[2])
+    end
+    if v.texcoord0 then
+      self:_push_attr("vt", v.texcoord0[0], v.texcoord0[1])
+    end
+  else
+    self:_push_attr_var("v", v)
+    self:_push_attr_var("vn", v)
+    self:_push_attr_var("vt", v)
+  end
+end
+
+function ObjDumper:push_face(i1, i2, i3)
+  if type(i1) == "table" then
+    return self:push_face(unpack(i1))
+  end
+  if not self.face_format then
+    local ff = "%d"
+    if #self.vn > 0 or #self.vt > 0 then
+      if #self.vt > 0 then
+        ff = ff .. "/%d"
+      else
+        ff = ff .. "/"
+      end
+      if #self.vn > 0 then
+        ff = ff .. "/%d"
+      end
+    end
+    self.face_format = ff
+  end
+  local ff = self.face_format
+  i1 = i1 + 1 -- obj format is 1-indexed
+  i2 = i2 + 1
+  i3 = i3 + 1
+  local s1 = ff:format(i1,i1,i1)
+  local s2 = ff:format(i2,i2,i2)
+  local s3 = ff:format(i3,i3,i3)
+  table.insert(self.f, ("f %s %s %s"):format(s1, s2, s3))
+end
+
+function ObjDumper:dump()
+  local vcount = #self.v
+  if #self.vn > 0 and #self.vn ~= vcount then
+    truss.error("Vertex count mismatch: v: ", vcount, " vn: ", #self.vn)
+  end
+  if #self.vt > 0 and #self.vt ~= vcount then
+    truss.error("Vertex count mismatch: v: ", vcount, " vt: ", #self.vt)
+  end
+  local ret = table.concat(self.v, "\n")
+  ret = ret .. "\n" .. table.concat(self.vt, "\n")
+  ret = ret .. "\n" .. table.concat(self.vn, "\n")
+  ret = ret .. "\n" .. table.concat(self.f, "\n")
+  return ret
+end
+
+local gexport = require("./geoexport.t")
+
+function m.dump(geo)
+  return gexport.dump(geo, ObjDumper())
+end
+
+function m.save(filename, geo)
+  return gexport.save(filename, geo, ObjDumper())
 end
 
 return m
