@@ -267,6 +267,25 @@ function truss.save_string(filename, s)
   truss.C.save_data(filename, s, #s)
 end
 
+function truss.save_data(filename, data, datasize)
+  local dtype = terralib.type(data)
+  if dtype == "cdata" then
+    local ttype = terralib.typeof(data)
+    if ttype:isarray() then
+      local dsize = terralib.sizeof(ttype) * ttype.N
+      if not datasize then datasize = dsize end
+      if datasize > dsize then
+        truss.error("Provided datasize is too large! " .. datasize .. " > " .. dsize)
+      end
+    end
+    truss.C.save_data(filename, terralib.cast(&int8, data), datasize)
+  elseif dtype == "string" then
+    truss.save_string(filename, data:sub(1, datasize))
+  else
+    truss.error("Only CDATA and strings can be saved, got [" .. dtype .. "]")
+  end
+end
+
 local function find_path(file_name)
   local spos = 0
   for i = #file_name, 1, -1 do
@@ -476,7 +495,7 @@ truss.mainenv._env = truss.mainenv
 extend_table(truss._module_env, _G)
 
 -- use stack trace plus if it's available
-if truss.check_module_exists("lib/StackTracePlus.lua") then
+if false and truss.check_module_exists("lib/StackTracePlus.lua") then
   log.debug("Using StackTracePlus for stacktraces")
   debug.traceback = truss.require("lib/StackTracePlus.lua").stacktrace
 end
