@@ -384,6 +384,7 @@ function m.allocate_triangles(max_verts)
   tridata.vertices = verts
   tridata.max_vertices = max_verts
   tridata.index = 0
+  print("alloc: ", max_verts)
   return {verts = verts, triangles = tridata}
 end
 
@@ -636,15 +637,18 @@ function m.cubify_to_geo(data, max_tris, scale, limits, target)
   local triangles = tris.triangles
   scale = scale or (1.0 / (data.dsize - 1))
   local created_target = (not target)
+  if triangles.index == 0 then return nil end
   if created_target then
     local gfx = require("gfx")
     local vtype = gfx.create_basic_vertex_type{"position"}
+    print(triangles.index)
     target = gfx.StaticGeometry("mc"):allocate(
       triangles.index, triangles.index, vtype
     )
   end
 
   local nverts = math.min(math.min(target.n_verts, target.n_indices), triangles.index)
+  print(triangles, triangles.index, nverts)
   local v_target, i_target = target.verts, target.indices
   for i = 0, nverts-1 do
     local v = v_target[i].position
@@ -691,6 +695,8 @@ function m.mc_data_from_function(f, target_or_size)
     cd.w, cd.h, cd.d = dsize, dsize, dsize
     cd.x_start, cd.y_start, cd.z_start = 0, 0, 0
     cd.x_end, cd.y_end, cd.z_end = dsize-1, dsize-1, dsize-1
+    print(dsize)
+    print(data)
     ret = {cubedata = cd, data = data, dsize = dsize}
   else
     dsize = target_or_size.dsize

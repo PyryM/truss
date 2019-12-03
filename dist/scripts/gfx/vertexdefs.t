@@ -80,10 +80,10 @@ function m.create_vertex_type(attrib_table, attrib_order)
 
   local entries = {}
   local ntype = terralib.types.newstruct(canon_name)
-  local vdecl = terralib.new(bgfx.vertex_decl_t)
+  local vdecl = terralib.new(bgfx.vertex_layout_t)
   local acounts = {}
 
-  bgfx.vertex_decl_begin(vdecl, bgfx.get_renderer_type())
+  bgfx.vertex_layout_begin(vdecl, bgfx.get_renderer_type())
   for i, atuple in ipairs(attrib_list) do
     local aname, ainfo = atuple[1], atuple[2]
     local atype = ainfo.ctype
@@ -93,9 +93,9 @@ function m.create_vertex_type(attrib_table, attrib_order)
     acounts[aname] = acount
     local bgfx_enum = m.ATTRIBUTE_INFO[aname].bgfx_enum
     local bgfx_type = BGFX_ATTRIBUTE_TYPES[atype]
-    bgfx.vertex_decl_add(vdecl, bgfx_enum, acount, bgfx_type, normalized, false)
+    bgfx.vertex_layout_add(vdecl, bgfx_enum, acount, bgfx_type, normalized, false)
   end
-  bgfx.vertex_decl_end(vdecl)
+  bgfx.vertex_layout_end(vdecl)
 
   ntype.entries = entries
   ntype:complete() -- complete the terra type now to avoid cryptic bugs

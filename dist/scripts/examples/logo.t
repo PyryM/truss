@@ -182,16 +182,20 @@ local function generate_logo_mesh(parent, material, resolution)
   for iz = 0, ndivs-1 do
     for iy = 0, ndivs-1 do
       for ix = 0, ndivs-1 do
+        print(ix, iy, iz)
         local geo = gen_cell(data, ix, iy, iz, dg, edge_funcs)
-        local mesh = parent:create_child(graphics.Mesh, "_logo_" .. partidx,
-                                         geo, material)
-        mesh.position:set(-0.5, -0.5, -0.5)
-        mesh:update_matrix()
+        if geo then
+          local mesh = parent:create_child(graphics.Mesh, "_logo_" .. partidx,
+                                          geo, material)
+          mesh.position:set(-0.5, -0.5, -0.5)
+          mesh:update_matrix()
+        end
         progress.text = ("Generating mesh [%03d / %03d]"):format(partidx, ndivs^3)
         partidx = partidx + 1
       end
     end
   end
+  print("DONE?")
   progress.dead = true
 end
 
@@ -264,7 +268,7 @@ function init()
   }
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
   myapp.camera.orbit_control:set(0, 0, 0.7)
-  local logo = myapp.scene:create_child(Logo, "logo", {detail = 7})
+  local logo = myapp.scene:create_child(Logo, "logo", {detail = 8})
   logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
   logo:update_matrix()
 
@@ -288,9 +292,9 @@ function init()
       local color = (supported and {200,255,200,255}) or {100,100,100,255}
       add_2d_drawable(textbox, {
         x = 1000, y = ypos, w = 250, h = 23, 
-        font_size = 22, text = capname, color = color, font = 'mono'
+        font_size = 20, text = capname, color = color, font = 'mono'
       })
-      ypos = ypos + 24
+      ypos = ypos + 20
       async.await_frames(5)
     end
   end)
