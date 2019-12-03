@@ -210,8 +210,9 @@ namespace
 	#include "vs_nanovg_fill.bin.h"
 	#include "fs_nanovg_fill.bin.h"
 
-	static bgfx_vertex_decl_t s_nvgDecl;
+	const static bgfx_vertex_layout_handle_t INVALID_LAYOUT = {BGFX_INVALID_HANDLE};
 
+	static bgfx_vertex_layout_t s_nvgDecl;
 	enum GLNVGshaderType
 	{
 		NSVG_SHADER_FILLGRAD,
@@ -483,10 +484,10 @@ namespace
 			gl->u_halfTexel.idx = BGFX_INVALID_HANDLE_IDX;
 		}
 
-		bgfx_vertex_decl_begin(&s_nvgDecl, bgfx_get_renderer_type());
-		bgfx_vertex_decl_add(&s_nvgDecl, BGFX_ATTRIB_POSITION, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
-		bgfx_vertex_decl_add(&s_nvgDecl, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
-		bgfx_vertex_decl_end(&s_nvgDecl);
+		bgfx_vertex_layout_begin(&s_nvgDecl, bgfx_get_renderer_type());
+		bgfx_vertex_layout_add(&s_nvgDecl, BGFX_ATTRIB_POSITION, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+		bgfx_vertex_layout_add(&s_nvgDecl, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+		bgfx_vertex_layout_end(&s_nvgDecl);
 
 		int align = 16;
 		gl->fragSize = sizeof(struct GLNVGfragUniforms) + align - sizeof(struct GLNVGfragUniforms) % align;
@@ -806,7 +807,7 @@ namespace
 					| BGFX_STENCIL_OP_FAIL_Z_KEEP
 					| BGFX_STENCIL_OP_PASS_Z_DECR
 				);
-				bgfx_set_transient_vertex_buffer(0, &gl->tvb, 0, UINT32_MAX);
+				bgfx_set_transient_vertex_buffer(0, &gl->tvb, 0, UINT32_MAX, INVALID_LAYOUT);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 				fan(paths[i].fillOffset, paths[i].fillCount);
 				bgfx_submit(gl->m_viewId, gl->prog, 0, false);
@@ -837,7 +838,7 @@ namespace
 					| BGFX_STENCIL_OP_FAIL_Z_KEEP
 					| BGFX_STENCIL_OP_PASS_Z_DECR
 				);
-				bgfx_set_transient_vertex_buffer(0, &gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
+				bgfx_set_transient_vertex_buffer(0, &gl->tvb, paths[i].strokeOffset, paths[i].strokeCount, INVALID_LAYOUT);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 				bgfx_submit(gl->m_viewId, gl->prog, 0, false);
 			}
@@ -845,7 +846,7 @@ namespace
 
 		// Draw fill
 		bgfx_set_state(gl->state, 0);
-		bgfx_set_transient_vertex_buffer(0, &gl->tvb, call->vertexOffset, call->vertexCount);
+		bgfx_set_transient_vertex_buffer(0, &gl->tvb, call->vertexOffset, call->vertexCount, INVALID_LAYOUT);
 		bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 		bgfx_set_stencil(0
 			| BGFX_STENCIL_TEST_NOTEQUAL
@@ -874,7 +875,7 @@ namespace
 		{
 			if (paths[i].fillCount == 0) continue;
 			bgfx_set_state(gl->state, 0);
-			bgfx_set_transient_vertex_buffer(0, &gl->tvb, 0, UINT32_MAX);
+			bgfx_set_transient_vertex_buffer(0, &gl->tvb, 0, UINT32_MAX, INVALID_LAYOUT);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 			fan(paths[i].fillOffset, paths[i].fillCount);
 			bgfx_submit(gl->m_viewId, gl->prog, 0, false);
@@ -888,7 +889,7 @@ namespace
 				bgfx_set_state(gl->state
 					| BGFX_STATE_PT_TRISTRIP
 					, 0);
-				bgfx_set_transient_vertex_buffer(0, &gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
+				bgfx_set_transient_vertex_buffer(0, &gl->tvb, paths[i].strokeOffset, paths[i].strokeCount, INVALID_LAYOUT);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 				bgfx_submit(gl->m_viewId, gl->prog, 0, false);
 			}
@@ -908,7 +909,7 @@ namespace
 			bgfx_set_state(gl->state
 				| BGFX_STATE_PT_TRISTRIP
 				, 0);
-			bgfx_set_transient_vertex_buffer(0, &gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
+			bgfx_set_transient_vertex_buffer(0, &gl->tvb, paths[i].strokeOffset, paths[i].strokeCount, INVALID_LAYOUT);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 			bgfx_submit(gl->m_viewId, gl->prog, 0, false);
 		}
@@ -921,7 +922,7 @@ namespace
 			nvgRenderSetUniforms(gl, call->uniformOffset, call->image);
 
 			bgfx_set_state(gl->state, 0);
-			bgfx_set_transient_vertex_buffer(0, &gl->tvb, call->vertexOffset, call->vertexCount);
+			bgfx_set_transient_vertex_buffer(0, &gl->tvb, call->vertexOffset, call->vertexCount, INVALID_LAYOUT);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 			bgfx_submit(gl->m_viewId, gl->prog, 0, false);
 		}
