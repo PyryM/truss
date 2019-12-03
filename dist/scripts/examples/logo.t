@@ -182,7 +182,6 @@ local function generate_logo_mesh(parent, material, resolution)
   for iz = 0, ndivs-1 do
     for iy = 0, ndivs-1 do
       for ix = 0, ndivs-1 do
-        print(ix, iy, iz)
         local geo = gen_cell(data, ix, iy, iz, dg, edge_funcs)
         if geo then
           local mesh = parent:create_child(graphics.Mesh, "_logo_" .. partidx,
@@ -195,7 +194,6 @@ local function generate_logo_mesh(parent, material, resolution)
       end
     end
   end
-  print("DONE?")
   progress.dead = true
 end
 
@@ -268,7 +266,7 @@ function init()
   }
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
   myapp.camera.orbit_control:set(0, 0, 0.7)
-  local logo = myapp.scene:create_child(Logo, "logo", {detail = 8})
+  local logo = myapp.scene:create_child(Logo, "logo", {detail = 7})
   logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
   logo:update_matrix()
 

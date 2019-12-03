@@ -252,6 +252,18 @@ function StaticGeometry:allocate(n_verts, n_indices, vertinfo)
   end
   self.index_type = index_type
 
+  -- prevent segfault on OSX when allocating zero vertices
+  if n_verts == 0 then
+    log.warn("Allocated zero verts for " .. self.name)
+    n_verts = 1
+    self._vtx_count = 0
+  end
+  if n_indices == 0 then
+    log.warn("Allocated zero indices for " .. self.name)
+    n_indices = 3
+    self._idx_count = 0
+  end
+
   self.vertinfo = vertinfo
   self.verts = truss.allocate(vertinfo.ttype[n_verts])
   self.n_verts = n_verts
