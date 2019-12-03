@@ -19,6 +19,8 @@
 
 #define BGFX_INVALID_HANDLE 0xffff
 
+typedef uint16_t bgfx_view_id_t;
+
 //#include <bgfx/defines.h>
 typedef enum bgfx_fatal
 {

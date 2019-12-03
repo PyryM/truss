@@ -42,8 +42,13 @@ PLATFORMS = {
   osx: "mtl"
 }
 
+CHARS = if truss.os == "OSX"
+  {vert: "│", term: "└"}
+else
+  {vert: "\179", term: "\192"}
+
 make_cmd = (shader_type, platform, input_fn, output_fn) ->
-  args = if platform == "linux"
+  args = if platform == "linux" or platform == "osx"
     {"./#{SHADER_DIR}/raw/shadercRelease"}
   else
     {"#{SHADER_DIR}/raw/shadercRelease"}
@@ -134,13 +139,13 @@ export init = ->
       for {fn, path} in *loose_shaders
         errors[fn], errlangs = do_file fn, path, platforms
         if errors[fn]
-          app\print "\179!#{fn} -> #{errlangs}"
+          app\print "#{CHARS.vert}!#{fn} -> #{errlangs}"
           nerrs += 1
         elseif args['-v']
-          app\print "\179 #{fn}"
+          app\print "#{CHARS.vert} #{fn}"
         nshaders += 1
         async.await_frames 1
-      app\print "\192 #{nshaders - nerrs} / #{nshaders}"
+      app\print "#{CHARS.term} #{nshaders - nerrs} / #{nshaders}"
       total_errors += nerrs
     app\print "Done."
     errstr = (concat errors, '\n')
