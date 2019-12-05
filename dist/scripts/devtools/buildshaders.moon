@@ -49,9 +49,9 @@ else
 
 make_cmd = (shader_type, platform, input_fn, output_fn) ->
   args = if platform == "linux" or platform == "osx"
-    {"./#{SHADER_DIR}/raw/shadercRelease"}
+    {"./bin/shadercRelease"}
   else
-    {"#{SHADER_DIR}/raw/shadercRelease"}
+    {"bin/shadercRelease"}
   extend args, {
     "-f", input_fn, 
     "-o", output_fn,
@@ -122,9 +122,13 @@ export init = ->
     finish!
     return
 
+  platlist = [v for k,v in pairs platforms]
+  table.sort platlist
+  platlist = table.concat platlist, " "
+
   async.run ->
     app\clear!
-    app\print "Compiling shaders:"
+    app\print "Compiling shaders (#{platlist}):"
     errors = {}
     total_errors = 0
     shader_dirs = if args['-i']
