@@ -8,6 +8,27 @@ argparse = require "utils/argparse.t"
 
 BGFX_PATH = "/bgfx_EXTERNAL-prefix/src/bgfx_EXTERNAL"
 
+os_exec = (cmd) ->
+  f = io.popen cmd, "r"
+  ret = f\read "*all"
+  f\close!
+  ret
+
+os_copy = (srcfn, destfn) ->
+  cmd = if truss.os == "Windows"
+    "copy \"#{srcfn\gsub("/", "\\")}\" \"#{destfn\gsub("/", "\\")}\" /y"
+  else
+    "cp \"#{srcfn}\" \"#{destfn}\""
+  print cmd
+  print os_exec cmd
+
+copy_files = (buildpath) ->
+  srcpath = "#{buildpath}#{BGFX_PATH}"
+  os_copy "#{srcpath}/include/bgfx/defines.h", "include/bgfxdefines.h"
+  os_copy "#{srcpath}/examples/common/shaderlib.sh", "shaders/raw/common/shaderlib.sh"
+  os_copy "#{srcpath}/src/bgfx_shader.sh", "shaders/raw/common/bgfx_shader.sh"
+  os_copy "#{srcpath}/src/bgfx_compute.sh", "shaders/raw/common/bgfx_compute.sh"
+
 rawload = (fn) -> (io.open fn, "rt")\read "*a"
 
 to_snake_case = (s) ->
@@ -71,24 +92,25 @@ load_idl = (buildpath) ->
   idl = exec_in env, "#{path}/scripts/idl.lua"
   exec_in idl, "#{path}/scripts/bgfx.idl"
 
-SNAKE_ENUMS = {
-  "Fatal": true
-  "Topology": true
-  "TopologyConvert": true
-  "TopologySort": true
-  "ViewMode": true
-  "RenderFrame": true
-  "RendererType": false
-  "Access": false
-  "Attrib": false
-  "AttribType": false
-  "TextureFormat": false
-  "UniformType": false
-  "OcclusionQueryResult": false
-}
+is_api_func = (line) ->
+  parts = sutil.split " ", line
+  if parts[1] != "BGFX_C_API" then return nil
+  api_key = (parts[2] != "const" and parts[3]) or parts[4] or line
+  api_key = (sutil.split "%(", api_key)[1]
+  (table.concat [p for p in *parts[2,]], " "), api_key
+
+get_functions = (buildpath) ->
+  -- generating function signatures from the IDL is too much of a pain
+  -- instead just read them from the C-api header
+  path = "#{buildpath}#{BGFX_PATH}/include/bgfx/c99/bgfx.h"
+  api_funcs = {}
+  for line in *(sutil.split_lines rawload path)
+    api_line, api_order_key = is_api_func line
+    if api_line then api_funcs[api_order_key] = api_line
+  key_sorted_concat api_funcs, "\n"
 
 gen_enum = (e) ->
-  format_val = if e.underscore --SNAKE_ENUMS[e.name]
+  format_val = if e.underscore
     (v) -> upper_snake v
   else
     (v) -> v\upper!
@@ -209,6 +231,9 @@ export init = ->
   print gen_handles idl
   print "\n"
   print gen_structs idl
+  print "\n"
+  print get_functions "../build"
+  copy_files "../build"
   truss.quit!
 
 export update = ->
