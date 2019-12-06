@@ -87,10 +87,13 @@ flatten = (lists) -> _flatten {}, lists
 
 conflatten = (lists) -> table.concat (flatten lists), "\n"
 
+ordered_concat = (t, keyorder, sep) ->
+  table.concat [t[k] for k in *keyorder], (sep or "\n\n")
+
 key_sorted_concat = (t, sep) ->
   sorted_keys = [k for k, v in pairs t]
   table.sort sorted_keys
-  table.concat [t[k] for k in *sorted_keys], (sep or "\n\n")
+  ordered_concat t, sorted_keys, sep
 
 exec_in = (env, fn) ->
   chunk, err = loadstring fix5p1 rawload fn
@@ -131,7 +134,7 @@ gen_enum = (e) ->
   name = "bgfx_#{lower_snake e.name}"
   conflatten {
     "typedef enum #{name} {",
-    (table.concat ["    #{name\upper!}_#{format_val v.name}" for v in *e.enum], ",\n"),
+    (table.concat ["    #{name\upper!}_#{format_val v.name}" for v in *e.enum], ",\n") .. ",",
     "    #{name\upper!}_COUNT",
     "} #{name}_t;"
   }
@@ -203,7 +206,6 @@ format_type = (t, parent) ->
       res = FIXED_TYPES[t]
     else
       res = lower_snake ((is_enum t) or t)
-      print "Checking #{parent}_#{res}"
       if parent and namespaced_structs["#{parent}_#{res}"]
         res = "#{parent}_#{res}"
       res = "bgfx_" .. res .. "_t"
@@ -224,31 +226,82 @@ gen_struct = (struct) ->
   name = lower_snake struct.name
   if struct.namespace
     name = "#{lower_snake struct.namespace}_#{name}"
-    print "NS: #{name}"
     namespaced_structs[name] = true
   if #struct.struct == 0
-    return "typedef struct bgfx_#{name}_s bgfx_#{name}_t;"
-  conflatten {
+    return name, "typedef struct bgfx_#{name}_s bgfx_#{name}_t;"
+  name, conflatten {
     "typedef struct bgfx_#{name}_s {",
     [format_field f, name for f in *struct.struct]
-    "} bgfx_#{name}_t"
+    "} bgfx_#{name}_t;"
   }
 
 gen_structs = (idl) ->
-  structs = {t.name, gen_struct t for t in *idl.types when t.struct}
-  key_sorted_concat structs, "\n\n"
+  structs = {}
+  for t in *idl.types
+    if not t.struct then continue
+    name, struct = gen_struct t
+    table.insert structs, struct
+  table.concat structs, "\n\n"
+
+PREAMBLE = [[
+/*
+ * BGFX Copyright 2011-2016 Branimir Karadzic. All rights reserved.
+ * License: https://github.com/bkaradzic/bgfx/blob/master/LICENSE
+ *
+ * This header is slightly modified to make it easier for Terra
+ * to digest; it is automatically generated from the 'real' BGFX
+ * headers and IDL by `devtools/bgfxgen.moon`.
+ */
+
+#ifndef BGFX_C99_H_HEADER_GUARD
+#define BGFX_C99_H_HEADER_GUARD
+
+//#include <stdarg.h>  // va_list
+#include <stdbool.h> // bool
+#include <stdint.h>  // uint32_t
+#include <stdlib.h>  // size_t
+
+#undef UINT32_MAX
+#define UINT32_MAX 4294967295
+#define BGFX_UINT32_MAX 4294967295
+
+#define BGFX_INVALID_HANDLE 0xffff
+typedef uint16_t bgfx_view_id_t;
+
+typedef struct bgfx_interface_vtbl bgfx_interface_vtbl_t;
+typedef struct bgfx_callback_interface bgfx_callback_interface_t;
+typedef struct bgfx_callback_vtbl bgfx_callback_vtbl_t;
+typedef struct bgfx_allocator_interface bgfx_allocator_interface_t;
+typedef struct bgfx_allocator_vtbl bgfx_allocator_vtbl_t;
+
+typedef void (*bgfx_release_fn_t)(void* _ptr, void* _userData);
+]]
+
+gen_header = (buildpath) ->
+  idl = load_idl buildpath
+  conflatten {
+    PREAMBLE,
+    "\n\n/* Enums: */\n",
+    gen_enums idl,
+    "\n\n/* Handle types: */\n",
+    gen_handles idl,
+    "\n\n/* Structs: */\n",
+    gen_structs idl,
+    "\n\n/* Functions: */\n",
+    get_functions buildpath,
+    "\n",
+    "#endif // BGFX_C99_H_HEADER_GUARD"
+  }
 
 export init = ->
-  idl = load_idl "../build"
-  print gen_enums idl
-  print "\n"
-  print gen_handles idl
-  print "\n"
-  print gen_structs idl
-  print "\n"
-  print get_functions "../build"
-  copy_files "../build"
-  print get_constants!
+  bpath = "../build"
+  print "Copying files"
+  copy_files bpath
+  print "Generating include/bgfx_truss.c99.h"
+  truss.save_string "include/bgfx_truss.c99.h", (gen_header bpath)
+  print "Generating scripts/gfx/bgfx_constants.t"
+  truss.save_string "scripts/gfx/bgfx_constants.t", get_constants!
+  print "Done."
   truss.quit!
 
 export update = ->
