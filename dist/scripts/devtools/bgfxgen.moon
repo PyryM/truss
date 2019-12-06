@@ -5,6 +5,7 @@
 
 sutil = require "utils/stringutils.t"
 argparse = require "utils/argparse.t"
+genconstants = require "devtools/genconstants.t"
 
 BGFX_PATH = "/bgfx_EXTERNAL-prefix/src/bgfx_EXTERNAL"
 
@@ -30,6 +31,19 @@ copy_files = (buildpath) ->
   os_copy "#{srcpath}/src/bgfx_compute.sh", "shaders/raw/common/bgfx_compute.sh"
 
 rawload = (fn) -> (io.open fn, "rt")\read "*a"
+
+DEFINE_PATT = "^#define%s*([%w_]*)[^%(%w_]"
+
+get_define_names = () ->
+  -- assumes `defines.h` has been copied to `include/bgfxdefines.h`
+  defnames = {}
+  for line in *(sutil.split_lines rawload "include/bgfxdefines.h")
+    name = line\match DEFINE_PATT
+    if name and name != ""
+      table.insert defnames, name
+  defnames
+
+get_constants = () -> genconstants.gen_constants_file get_define_names!
 
 to_snake_case = (s) ->
   s_first = s\sub(1,1)\upper!
@@ -234,6 +248,7 @@ export init = ->
   print "\n"
   print get_functions "../build"
   copy_files "../build"
+  print get_constants!
   truss.quit!
 
 export update = ->
