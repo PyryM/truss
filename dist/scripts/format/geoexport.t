@@ -1,4 +1,4 @@
--- formats/geoexport.t
+-- format/geoexport.t
 --
 -- general geometry exporting thing
 

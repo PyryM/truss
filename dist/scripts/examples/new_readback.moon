@@ -14,7 +14,7 @@ ms = require "moonscript"
 async = require "async"
 orbitcam = require "graphics/orbitcam.t"
 simplex = require "procgen/simplex.t"
-objloader = require "formats/obj.t"
+objloader = require "format/obj.t"
 
 TEX_SIZE = 512
 

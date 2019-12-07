@@ -65,8 +65,8 @@ export init = ->
       async.await p
     else
       loader = switch (modelname\sub -4) 
-        when '.obj' then require "formats/obj.t"
-        when '.stl' then require "formats/stl.t"
+        when '.obj' then require "format/obj.t"
+        when '.stl' then require "format/stl.t"
       (gfx.StaticGeometry!)\from_data (loader.load modelname)
 
     modelmat = pbr.FacetedPBRMaterial{
