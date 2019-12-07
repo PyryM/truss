@@ -6,7 +6,7 @@ local class = require('class')
 local math = require("math")
 local gfx = require("gfx")
 local ecs = require("ecs")
-local sdl = require("addons/sdl.t")
+local sdl = require("addon/sdl.t")
 local sdl_input = require("input/sdl_input.t")
 local graphics = require("graphics")
 

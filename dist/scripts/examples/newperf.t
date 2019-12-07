@@ -3,7 +3,7 @@
 -- performance experiments
 
 local gfx = require("gfx")
-local sdl = require("addons/sdl.t")
+local sdl = require("addon/sdl.t")
 local math = require("math")
 local geometry = require("geometry")
 local pbr = require("shaders/pbr.t")

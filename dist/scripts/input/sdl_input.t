@@ -28,7 +28,7 @@ local EVENT_INFO = {
 
 local sdl = nil
 function SDLInputSystem:init(options)
-  sdl = sdl or require("addons/sdl.t")
+  sdl = sdl or require("addon/sdl.t")
   self.mount_name = "input"
   options = options or {}
   self._autoclose = (options.autoclose ~= false)

@@ -5,7 +5,7 @@ local graphics = require("graphics")
 local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
 local ecs = require("ecs")
-local sdl = require("addons/sdl.t")
+local sdl = require("addon/sdl.t")
 
 local FONT_SIZE = 20
 local FONT_X_MARGIN = 5

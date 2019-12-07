@@ -122,7 +122,7 @@ end
 m.downkeys = {}
 
 function m.handle_inputs()
-  local sdl = require("addons/sdl.t")
+  local sdl = require("addon/sdl.t")
   for evt in sdl:events() do
     local etype = evt.event_type
     if etype == sdl.EVENT_WINDOW and evt.flags == 14 then
@@ -424,7 +424,7 @@ function m.init(width, height)
     padding = padding .. " "
   end
   m.create_env()
-  local sdl = require("addons/sdl.t")
+  local sdl = require("addon/sdl.t")
   sdl.start_text_input()
 end
 
@@ -463,7 +463,7 @@ m.ConsoleApp = ConsoleApp
 
 function ConsoleApp:init(options)
   options = options or {}
-  local sdl = require("addons/sdl.t")
+  local sdl = require("addon/sdl.t")
   local gfx = require("gfx")
 
   sdl.create_window(options.width or 1280,
