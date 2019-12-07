@@ -1,4 +1,4 @@
--- devtools/htmlgen.t
+-- dev/htmlgen.t
 --
 -- tools for generating html
 

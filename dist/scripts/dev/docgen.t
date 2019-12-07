@@ -1,4 +1,4 @@
--- devtools/docgen.t
+-- dev/docgen.t
 --
 -- generates documentation
 

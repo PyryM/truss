@@ -1,4 +1,4 @@
--- devtools/debug.t
+-- dev/debug.t
 --
 -- helpful debuggin utilities
 

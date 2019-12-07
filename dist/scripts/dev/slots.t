@@ -1,4 +1,4 @@
--- devtools/slots.t
+-- dev/slots.t
 --
 -- simulates a slot machine in the terminal.......
 

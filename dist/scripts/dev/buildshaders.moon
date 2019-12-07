@@ -2,7 +2,7 @@
 --
 -- shader builder (in moonscript I guess?)
 
-mc = require "devtools/miniconsole.t"
+mc = require "dev/miniconsole.t"
 sutil = require "util/string.t"
 async = require "async"
 argparse = require "util/argparse.t"

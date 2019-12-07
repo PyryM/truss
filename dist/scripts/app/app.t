@@ -58,7 +58,7 @@ function App:reset_graphics(newoptions)
 end
 
 function App:install_console()
-  require("devtools/miniconsole.t").install()
+  require("dev/miniconsole.t").install()
 end
 
 function App:init_ecs()

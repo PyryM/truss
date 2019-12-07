@@ -1,8 +1,8 @@
--- devtools/test_tests.t
+-- dev/test_tests.t
 --
 -- tests the testing framework
 
-local testlib = require("devtools/test.t")
+local testlib = require("dev/test.t")
 local test = testlib.test
 
 function run_tests()

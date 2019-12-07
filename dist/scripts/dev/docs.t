@@ -1,10 +1,10 @@
--- devtools/docs.t
+-- dev/docs.t
 --
 -- 'main' file to generate docs
 
 local futils = require("util/file.t")
-local docgen = require("devtools/docgen.t")
-local htmlgen = require("devtools/htmldocgen.t")
+local docgen = require("dev/docgen.t")
+local htmlgen = require("dev/htmldocgen.t")
 
 function init()
   local parser = docgen.DocParser()

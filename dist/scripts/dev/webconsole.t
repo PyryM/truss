@@ -64,7 +64,7 @@ function m.createEnvironment()
     m.env.raw_print = print
     m.env.print = m.print
 
-    m.ct = require("devtools/consoletools.t").ConsoleTools{print = m.print,
+    m.ct = require("dev/consoletools.t").ConsoleTools{print = m.print,
                                                            width = m.width}
 
     m.env.info = m.ct:wrap("info")

@@ -1,4 +1,4 @@
--- devtools/test.t
+-- dev/test.t
 --
 -- largely adapted from 'gambiarra':
 -- https://bitbucket.org/zserge/gambiarra
@@ -264,10 +264,10 @@ function m.run_tests(dirpath, verbose, test_archives)
   print("PASSED: " .. test_stats.total_passed)
   print("FAILED: " .. test_stats.total_failed)
   if test_stats.total_failed == 0 and test_stats.errors == 0 then
-    local slots = require("devtools/slots.t")
+    local slots = require("dev/slots.t")
     print("Good job! " .. slots.do_slots(true))
   elseif test_stats.errors > 0 then
-    print("Tests had errors!!!!")
+    print("Tests had errors!")
   end
 end
 

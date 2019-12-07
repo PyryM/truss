@@ -1,4 +1,4 @@
--- devtools/miniconsole.t
+-- dev/miniconsole.t
 --
 -- a console that displays using the bgfx debug text
 
@@ -197,7 +197,7 @@ end
 
 function m.attach_webconsole()
   if m.webconsole then return true end
-  local webconsole = require("devtools/webconsole.t")
+  local webconsole = require("dev/webconsole.t")
   if webconsole then
     local connected = webconsole.start()
     if connected then
@@ -209,7 +209,7 @@ function m.attach_webconsole()
       m.print("Webconsole: connection error", m.colors.error)
     end
   else
-    m.print("Webconsole: devtools/webconsole.t not present", m.colors.error)
+    m.print("Webconsole: dev/webconsole.t not present", m.colors.error)
   end
 end
 
@@ -311,7 +311,7 @@ function m.print_chars()
 end
 
 function m.create_env()
-  m.ct = require("devtools/consoletools.t").ConsoleTools{print = m.print,
+  m.ct = require("dev/consoletools.t").ConsoleTools{print = m.print,
                                                          width = m.width}
 
   m.env = {}

@@ -1,11 +1,11 @@
--- devtools/bgfxgen.moon
+-- dev/bgfxgen.moon
 --
 -- generate bgfx auxilliary files
 -- assumes truss has been built into "../build/"
 
 sutil = require "util/string.t"
 argparse = require "util/argparse.t"
-genconstants = require "devtools/genconstants.t"
+genconstants = require "dev/genconstants.t"
 
 BGFX_PATH = "/bgfx_EXTERNAL-prefix/src/bgfx_EXTERNAL"
 
@@ -250,7 +250,7 @@ PREAMBLE = [[
  *
  * This header is slightly modified to make it easier for Terra
  * to digest; it is automatically generated from the 'real' BGFX
- * headers and IDL by `devtools/bgfxgen.moon`.
+ * headers and IDL by `dev/bgfxgen.moon`.
  */
 
 #ifndef BGFX_C99_H_HEADER_GUARD
