@@ -30,7 +30,7 @@ function m.createTGA(imWidth, imHeight, imData, bbDest)
     header.bitsperpixel = 32
     header.imagedescriptor = 8 -- alpha??
     local dsize = (imWidth * imHeight * 4) + 100
-    local bb = bbDest or require("utils/stringutils.t").ByteBuffer(dsize)
+    local bb = bbDest or require("util/string.t").ByteBuffer(dsize)
     bb:appendStruct(header, sizeof(m.TGAHeader))
     bb:appendBytes(imData, imWidth*imHeight*4)
     return bb

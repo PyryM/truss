@@ -1,4 +1,4 @@
--- utils/queue.t
+-- util/queue.t
 --
 -- a basic queue
 -- (adapted from https://www.lua.org/pil/11.4.html)

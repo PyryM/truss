@@ -8,7 +8,7 @@
 
 local class = require("class")
 local lpeg = require("lib/lulpeg.lua")
-local sutils = require("utils/stringutils.t")
+local sutils = require("util/string.t")
 local html = require("./htmlgen.t")
 local m = {}
 

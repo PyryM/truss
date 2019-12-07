@@ -1,4 +1,4 @@
--- utils/ring.t
+-- util/ring.t
 --
 -- a buffer that rotates among options
 

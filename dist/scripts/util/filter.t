@@ -1,4 +1,4 @@
--- utils/filter.t
+-- util/filter.t
 --
 -- utilities for creating filtering functions
 

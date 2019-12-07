@@ -243,7 +243,7 @@ end
 
 -- run tests on any files names _test*
 local function _run_tests(dirpath, force)
-  local futils = require("utils/fileutils.t")
+  local futils = require("util/file.t")
   local file_filter = futils.filter_file_prefix("_test")
   for path in futils.iter_walk_files(dirpath, nil, file_filter) do
     _run_test_file(path)

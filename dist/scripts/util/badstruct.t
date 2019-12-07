@@ -1,4 +1,4 @@
--- utils/badstruct.t
+-- util/badstruct.t
 --
 -- deal with misaligned structures
 -- (I'm looking at you, VALVE)

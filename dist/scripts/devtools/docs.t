@@ -2,7 +2,7 @@
 --
 -- 'main' file to generate docs
 
-local futils = require("utils/fileutils.t")
+local futils = require("util/file.t")
 local docgen = require("devtools/docgen.t")
 local htmlgen = require("devtools/htmldocgen.t")
 

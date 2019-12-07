@@ -1,4 +1,4 @@
--- utils/imagesearch.t
+-- util/imagesearch.t
 --
 -- searches an image for a subimage
 

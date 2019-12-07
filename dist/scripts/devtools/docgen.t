@@ -3,7 +3,7 @@
 -- generates documentation
 
 local class = require("class")
-local stringutils = require("utils/stringutils.t")
+local stringutils = require("util/string.t")
 local m = {}
 
 local DocParser = class("DocParser")

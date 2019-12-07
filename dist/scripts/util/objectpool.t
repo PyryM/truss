@@ -1,4 +1,4 @@
--- utils/objectpool.t
+-- util/objectpool.t
 --
 -- manages a pool of (terra) objects backed by a flat array
 

@@ -8,7 +8,7 @@ local gfx = require("gfx")
 local graphics = require("graphics")
 local ecs = require("ecs")
 local openvr = require("vr/openvr.t")
-local stateutils = require("utils/state.t")
+local stateutils = require("util/state.t")
 local m = {}
 
 local EYES = {left = 1, right = 2}

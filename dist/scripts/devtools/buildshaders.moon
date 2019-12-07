@@ -3,9 +3,9 @@
 -- shader builder (in moonscript I guess?)
 
 mc = require "devtools/miniconsole.t"
-sutil = require "utils/stringutils.t"
+sutil = require "util/string.t"
 async = require "async"
-argparse = require "utils/argparse.t"
+argparse = require "util/argparse.t"
 
 local app
 

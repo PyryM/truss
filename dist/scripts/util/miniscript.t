@@ -1,9 +1,9 @@
--- utils/miniscript.t
+-- util/miniscript.t
 --
 -- some co-routine trickery
 
 local class = require("class")
-local queue = require("utils/queue.t")
+local queue = require("util/queue.t")
 local m = {}
 
 local ScriptContext

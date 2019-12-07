@@ -2,7 +2,7 @@
 --
 -- create proxy/mock require/env
 
-local sutil = require("utils/stringutils.t")
+local sutil = require("util/string.t")
 local m = {}
 
 function m.create_prefix_resolver(prefix, suffix)

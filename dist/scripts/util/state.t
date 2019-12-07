@@ -1,4 +1,4 @@
--- utils/state.t
+-- util/state.t
 --
 -- utilities for turning state changes into events
 

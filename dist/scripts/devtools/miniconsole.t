@@ -3,7 +3,7 @@
 -- a console that displays using the bgfx debug text
 
 local m = {}
-local stringutils = require("utils/stringutils.t")
+local stringutils = require("util/string.t")
 local class = require("class")
 local bgfx = require("gfx/bgfx.t")
 

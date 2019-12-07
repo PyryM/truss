@@ -1,4 +1,4 @@
--- utils/config.t
+-- util/config.t
 --
 -- save/load configuration files
 

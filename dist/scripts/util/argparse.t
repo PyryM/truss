@@ -1,4 +1,4 @@
--- utils/argparse.t
+-- util/argparse.t
 --
 -- does some basic argument parsing
 

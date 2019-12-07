@@ -1,4 +1,4 @@
--- utils/functable.t
+-- util/functable.t
 --
 -- wraps a function (and optionally table) into a 'functable'
 -- (e.g., a callable table)

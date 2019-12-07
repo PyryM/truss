@@ -3,8 +3,8 @@
 -- generate bgfx auxilliary files
 -- assumes truss has been built into "../build/"
 
-sutil = require "utils/stringutils.t"
-argparse = require "utils/argparse.t"
+sutil = require "util/string.t"
+argparse = require "util/argparse.t"
 genconstants = require "devtools/genconstants.t"
 
 BGFX_PATH = "/bgfx_EXTERNAL-prefix/src/bgfx_EXTERNAL"

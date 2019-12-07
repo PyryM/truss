@@ -9,7 +9,7 @@ pbr = require "material/pbr.t"
 ecs = require "ecs"
 ms = require "moonscript"
 async = require "async"
-argparse = require "utils/argparse.t"
+argparse = require "util/argparse.t"
 math = require "math"
 
 openvr = require "vr/openvr.t"

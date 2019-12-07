@@ -31,7 +31,7 @@ local strfind = string.find
 local tinsert = table.insert
 local strsub = string.sub
 
-local stringutils = require("utils/stringutils.t")
+local stringutils = require("util/string.t")
 local strsplit = stringutils.split
 
 local function is_comment(linegps)

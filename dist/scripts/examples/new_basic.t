@@ -16,7 +16,7 @@ local Grid = require("graphics/grid.t").Grid
 local pbr = require("material/pbr.t")
 local flat = require("material/flat.t")
 local orbitcam = require("graphics/orbitcam.t")
-local Config = require("utils/config.t").Config
+local Config = require("util/config.t").Config
 
 --[[ 
   A script loaded as the 'main' script has to define two functions:
