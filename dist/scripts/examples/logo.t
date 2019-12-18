@@ -296,6 +296,23 @@ function init()
       async.await_frames(5)
     end
   end)
+
+  -- just barf texture caps to console because there is not remotely
+  -- room on screen for them
+  local texcaps = {}
+  for fname, fcaps in pairs(gfx.get_caps().texture_formats) do
+    local scaps = fname .. ": "
+    for capname, present in pairs(fcaps) do
+      if capname:sub(1,1) ~= "_" and present then 
+        scaps = scaps .. capname .. " " 
+      end
+    end
+    table.insert(texcaps, {fname, scaps})
+  end
+  table.sort(texcaps, function(a, b) return a[1] < b[1] end)
+  for _, v in ipairs(texcaps) do
+    print(v[2])
+  end
 end
 
 function update()

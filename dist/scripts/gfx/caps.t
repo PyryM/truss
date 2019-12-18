@@ -1,4 +1,5 @@
 local bgfx = require("./bgfx.t")
+local _formats = require("./formats.t")
 local math = require("math")
 local m = {}
 
@@ -39,11 +40,28 @@ local function parse_limits(limits)
   return ret
 end
 
+local TEX_CAP_MASKS = {}
+for k, v in pairs(bgfx.raw_constants) do
+  local capname = k:match("CAPS_FORMAT_TEXTURE_(.*)")
+  if capname and capname ~= "NONE" then
+    TEX_CAP_MASKS[capname:lower()] = v
+  end
+end
+
+local function parse_tex_caps(bitflags)
+  local ret = {_flags = bitflags}
+  for capname, capmask in pairs(TEX_CAP_MASKS) do
+    ret[capname] = math.ulland(bitflags, capmask) > 0
+  end
+  return ret
+end
+
 local function parse_formats(formats)
   local ret = {}
-  for idx = 1, bgfx.TEXTURE_FORMAT_COUNT do
-    local flags = formats[idx-1]
-    ret[idx] = flags
+  for idx = 0, bgfx.TEXTURE_FORMAT_COUNT-1 do
+    local flags = formats[idx]
+    local fname = _formats.find_name_from_enum(idx)
+    if fname then ret[fname] = parse_tex_caps(flags) end
   end
   return ret
 end

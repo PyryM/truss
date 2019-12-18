@@ -84,6 +84,7 @@ export_depth_format("D32",  false)
 export_depth_format("D16F", false)
 export_depth_format("D24F", false)
 export_depth_format("D32F", false)
+export_depth_format("D0S8", true)  -- well ok this also has *only* stencil
 
 -- compressed formats aren't exported, and can only appear when loading
 -- a texture from a ktx, dds, etc.
@@ -114,6 +115,15 @@ list_compressed_format("PTC12A")
 list_compressed_format("PTC14A")
 list_compressed_format("PTC22")
 list_compressed_format("PTC24")
+list_compressed_format("ATC")
+list_compressed_format("ATCE")
+list_compressed_format("ATCI")
+list_compressed_format("ASTC4X4")
+list_compressed_format("ASTC5X5")
+list_compressed_format("ASTC6X6")
+list_compressed_format("ASTC8X5")
+list_compressed_format("ASTC8X6")
+list_compressed_format("ASTC10X5")
 
 function m.find_format_from_enum(bgfx_enum_val)
   for _, format in pairs(all_formats) do
@@ -122,6 +132,18 @@ function m.find_format_from_enum(bgfx_enum_val)
     end
   end
   return all_formats.unknown_format
+end
+
+local format_names = {}
+for k, v in pairs(bgfx) do
+  local fname = k:match("TEXTURE_FORMAT_(.*)")
+  if fname then
+    format_names[v] = fname
+  end
+end
+
+function m.find_name_from_enum(bgfx_enum_val)
+  return format_names[bgfx_enum_val]
 end
 
 return m
