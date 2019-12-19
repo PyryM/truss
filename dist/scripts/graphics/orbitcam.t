@@ -131,13 +131,14 @@ end
 function OrbitControl:mousemove(evtname, evt)
   local rdx, rdy = evt.dx, evt.dy
   local button = evt.flags
-  if button == self.rotate_button then
-    self:move_theta(rdx)
-    self:move_phi(-rdy)
-  elseif button == self.pan_button then
+  local force_pan = self.input.keystate["Left Shift"] or self.input.keystate["Right Shift"]
+  if force_pan or button == self.pan_button then
     -- scale pan_rate to rad so that it's reasonable at all zooms
     self:pan_orbit_point(-rdx * self.pan_rate * self.rad, 
                           rdy * self.pan_rate * self.rad)
+  elseif button == self.rotate_button then
+    self:move_theta(rdx)
+    self:move_phi(-rdy)
   end
 end
 

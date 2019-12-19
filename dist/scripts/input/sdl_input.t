@@ -33,6 +33,7 @@ function SDLInputSystem:init(options)
   options = options or {}
   self._autoclose = (options.autoclose ~= false)
   self.evt = ecs.EventEmitter()
+  self.keystate = {}
 end
 
 function SDLInputSystem:on(...)
@@ -124,6 +125,11 @@ function SDLInputSystem:update()
       truss.quit()
     end
     local evtname, new_evt = convert_event(evt)
+    if evtname == "keydown" then
+      self.keystate[new_evt.keyname] = true
+    elseif evtname == "keyup" then
+      self.keystate[new_evt.keyname] = false
+    end
     self.evt:emit(evtname, new_evt)
   end
 end
