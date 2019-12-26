@@ -5,8 +5,8 @@ local raw_destroy_window = nil
 local raw_pointer = nil
 local raw_get_event = nil
 local raw_num_events = nil
-local raw_window_width = nil
-local raw_window_height = nil
+local raw_window_size = nil
+local raw_window_gl_size = nil
 local raw_resize_window = nil
 
 local function wrap(addon)
@@ -24,8 +24,8 @@ local function wrap(addon)
   raw_resize_window = addon_c.truss_sdl_resize_window
   raw_num_events = addon_c.truss_sdl_num_events
   raw_get_event = addon_c.truss_sdl_get_event
-  raw_window_width = addon_c.truss_sdl_window_width
-  raw_window_height = addon_c.truss_sdl_window_height
+  raw_window_size = addon_c.truss_sdl_window_size
+  raw_window_gl_size = addon_c.truss_sdl_window_gl_size
   raw_pointer = addon_pointer
 
   m.VERSION = addon_version
@@ -76,10 +76,13 @@ function m.resize_window(width, height, fullscreen)
 end
 
 function m.get_window_size()
-  local h = raw_window_height(raw_pointer)
-  local w = raw_window_width(raw_pointer)
+  local s = raw_window_size(raw_pointer)
+  return s.w, s.h
+end
 
-  return w, h
+function m.get_window_gl_size()
+  local s = raw_window_gl_size(raw_pointer)
+  return s.w, s.h
 end
 
 function m.set_clipboard(data)

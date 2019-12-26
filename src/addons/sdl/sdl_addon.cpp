@@ -95,8 +95,8 @@ SDLAddon::SDLAddon() {
 		void truss_sdl_create_window_ex(Addon* addon, int x, int y, int w, int h, const char* name, int is_borderless);
 		void truss_sdl_destroy_window(Addon* addon);
 		void truss_sdl_resize_window(Addon* addon, int width, int height, int fullscreen);
-		int truss_sdl_window_width(Addon* addon);
-		int truss_sdl_window_height(Addon* addon);
+		truss_sdl_bounds truss_sdl_window_size(Addon* addon);
+		truss_sdl_bounds truss_sdl_window_gl_size(Addon* addon);
 		int  truss_sdl_num_events(Addon* addon);
 		truss_sdl_event truss_sdl_get_event(Addon* addon, int index);
 		void truss_sdl_start_textinput(Addon* addon);
@@ -144,6 +144,7 @@ void SDLAddon::init(truss::Interpreter* owner) {
 		" at this point, the mostly likely reason is that you are using" <<
 		" the mesa software renderer.\n";
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+	SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
 	SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0) {
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
@@ -275,7 +276,7 @@ void SDLAddon::update(double dt) {
 }
 
 void SDLAddon::createWindow(int width, int height, const char* name, int is_fullscreen, int display) {
-	uint32_t flags = SDL_WINDOW_SHOWN;
+	uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
 	if (is_fullscreen > 0) {
 		flags = flags | SDL_WINDOW_BORDERLESS;
 	}
@@ -313,18 +314,26 @@ void SDLAddon::createWindow(int x, int y, int w, int h, const char* name, int is
 	registerBGFX();
 }
 
-int SDLAddon::windowWidth() {
-	if (window_ == NULL) return -1;
-	int w, h;
-	SDL_GetWindowSize(window_, &w, &h);
-	return w;
+truss_sdl_bounds SDLAddon::windowSize() {
+	truss_sdl_bounds ret;
+	ret.x = 0;
+	ret.y = 0;
+	ret.w = -1;
+	ret.h = -1;
+	if (window_ == NULL) return ret;
+	SDL_GetWindowSize(window_, &ret.w, &ret.h);
+	return ret;
 }
 
-int SDLAddon::windowHeight() {
-	if (window_ == NULL) return -1;
-	int w, h;
-	SDL_GetWindowSize(window_, &w, &h);
-	return h;
+truss_sdl_bounds SDLAddon::windowGLSize() {
+	truss_sdl_bounds ret;
+	ret.x = 0;
+	ret.y = 0;
+	ret.w = -1;
+	ret.h = -1;
+	if (window_ == NULL) return ret;
+	SDL_GL_GetDrawableSize(window_, &ret.w, &ret.h);
+	return ret;
 }
 
 void SDLAddon::registerBGFX() {
@@ -462,12 +471,12 @@ void truss_sdl_resize_window(SDLAddon* addon, int width, int height, int fullscr
 	addon->resizeWindow(width, height, fullscreen);
 }
 
-int truss_sdl_window_width(SDLAddon* addon) {
-	return addon->windowWidth();
+truss_sdl_bounds truss_sdl_window_size(SDLAddon* addon) {
+	return addon->windowSize();
 }
 
-int truss_sdl_window_height(SDLAddon* addon) {
-	return addon->windowHeight();
+truss_sdl_bounds truss_sdl_window_gl_size(SDLAddon* addon) {
+	return addon->windowGLSize();
 }
 
 int  truss_sdl_num_events(SDLAddon* addon) {

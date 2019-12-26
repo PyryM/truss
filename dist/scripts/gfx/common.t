@@ -65,6 +65,9 @@ function m._make_reset_flags(options)
   if options.srgb then
     reset = reset + bgfx.RESET_SRGB_BACKBUFFER
   end
+  if options.hidpi then
+    reset = reset + bgfx.RESET_HIDPI
+  end
   if options.lowlatency then
     -- extra flags that may help with latency
     reset = reset + bgfx.RESET_FLIP_AFTER_RENDER +
@@ -148,7 +151,13 @@ function m.init_gfx(options)
 
   local w, h = options.width, options.height
   if options.window then
-    w, h = options.window.get_window_size()
+    if options.hidpi and renderer_type == bgfx.RENDERER_TYPE_OPENGL then
+      print("Possible HIDPI?")
+      w, h = options.window.get_window_gl_size()
+    else
+      w, h = options.window.get_window_size()
+    end
+    print("Got window size: ", w, h)
     if options.window.get_bgfx_callback then
       cb_ptr = options.window.get_bgfx_callback()
     end

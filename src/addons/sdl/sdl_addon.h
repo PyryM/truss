@@ -67,8 +67,8 @@ TRUSS_C_API void truss_sdl_create_window(SDLAddon* addon, int width, int height,
 TRUSS_C_API void truss_sdl_create_window_ex(SDLAddon* addon, int x, int y, int w, int h, const char* name, int is_borderless);
 TRUSS_C_API void truss_sdl_destroy_window(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_resize_window(SDLAddon* addon, int width, int height, int fullscreen);
-TRUSS_C_API int truss_sdl_window_width(SDLAddon* addon);
-TRUSS_C_API int truss_sdl_window_height(SDLAddon* addon);
+TRUSS_C_API truss_sdl_bounds truss_sdl_window_size(SDLAddon* addon);
+TRUSS_C_API truss_sdl_bounds truss_sdl_window_gl_size(SDLAddon* addon);
 TRUSS_C_API int truss_sdl_num_events(SDLAddon* addon);
 TRUSS_C_API truss_sdl_event truss_sdl_get_event(SDLAddon* addon, int index);
 TRUSS_C_API void truss_sdl_start_textinput(SDLAddon* addon);
@@ -102,8 +102,8 @@ public:
 
 	void createWindow(int width, int height, const char* name, int is_fullscreen, int display);
 	void createWindow(int x, int y, int w, int h, const char* name, int is_borderless);
-	int windowWidth();
-	int windowHeight();
+	truss_sdl_bounds windowSize();
+	truss_sdl_bounds windowGLSize();
 	void registerBGFX();
 	void destroyWindow();
 	void resizeWindow(int width, int height, int fullscreen);
