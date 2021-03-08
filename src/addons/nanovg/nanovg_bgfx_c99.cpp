@@ -767,7 +767,7 @@ namespace
 	{
 		uint32_t numTris = _count-2;
 		bgfx_transient_index_buffer_t tib;
-		bgfx_alloc_transient_index_buffer(&tib, numTris*3);
+		bgfx_alloc_transient_index_buffer(&tib, numTris*3, false);
 		uint16_t* data = (uint16_t*)tib.data;
 		for (uint32_t ii = 0; ii < numTris; ++ii)
 		{

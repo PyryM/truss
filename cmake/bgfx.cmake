@@ -3,7 +3,7 @@ include(ExternalProject)
 # Download `bx` and extract source path.
 ExternalProject_Add(bx_EXTERNAL
     GIT_REPOSITORY "https://github.com/bkaradzic/bx.git"
-    GIT_TAG "d175bde9d0059b126fd2a3084167623077586fe9"
+    GIT_TAG "f939b2c3172b1c19f15659613b2f9f9de1f5e820"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -21,7 +21,7 @@ set(bx_GENIE "${SOURCE_DIR}/tools/bin/${bx_SYSTEM_NAME}/genie")
 # Download `bimg` and extract source path.
 ExternalProject_Add(bimg_EXTERNAL
     GIT_REPOSITORY "https://github.com/bkaradzic/bimg.git"
-    GIT_TAG "ed5fec9e82f975b2b37641e238f6f78d51c5b82c"
+    GIT_TAG "7b70810f4bfd2cf81c755c413c66e0e82ea8acc5"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -38,9 +38,9 @@ set(bimg_INCLUDE_DIR "${SOURCE_DIR}/include")
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     set(bgfx_SYSTEM_NAME "win")
 elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
-    set(bgfx_SYSTEM_NAME "osx")
+    set(bgfx_SYSTEM_NAME "osx-x64")
     set(bgfx_COMPILER "clang")
-    set(bgfx_GENIE_GCC "osx")
+    set(bgfx_GENIE_GCC "osx-x64")
 elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
     set(bgfx_SYSTEM_NAME "linux")
     set(bgfx_COMPILER "gcc")
@@ -69,8 +69,8 @@ endif()
 # and build it using `bx`.
 ExternalProject_Add(bgfx_EXTERNAL
     DEPENDS bx_EXTERNAL bimg_EXTERNAL
-    GIT_REPOSITORY "https://github.com/PyryM/bgfx.git"
-    GIT_TAG "3fcb1faf5d898acef00a22d9e7ff407d654fffdd"
+    GIT_REPOSITORY "https://github.com/bkaradzic/bgfx.git"
+    GIT_TAG "02e4786e04acdfdda944c962c01047c03dd58b52"
     CONFIGURE_COMMAND ${bgfx_CONFIGURE_COMMAND}
     BUILD_COMMAND ${bgfx_BUILD_COMMAND}
     INSTALL_COMMAND ""
@@ -95,7 +95,7 @@ endif()
 # Recover BGFX paths for additional settings.
 ExternalProject_Get_Property(bgfx_EXTERNAL SOURCE_DIR)
 set(bgfx_INCLUDE_DIR "${SOURCE_DIR}/include")
-set(bgfx_LIBRARIES_DIR "${SOURCE_DIR}/.build/${bgfx_SYSTEM_NAME}64_${bgfx_COMPILER}/bin")
+set(bgfx_LIBRARIES_DIR "${SOURCE_DIR}/.build/${bgfx_SYSTEM_NAME}/bin")
 set(bgfx_LIBRARY "${bgfx_LIBRARIES_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}bgfx-shared-libRelease${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set(bgfx_IMPLIB "${bgfx_LIBRARIES_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}bgfx-shared-libRelease${CMAKE_STATIC_LIBRARY_SUFFIX}")
 set(bgfx_BINARIES
