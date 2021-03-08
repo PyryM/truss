@@ -7,6 +7,7 @@ local class = require("class")
 local fmt = require("./formats.t")
 local bgfx = require("./bgfx.t")
 local texture = require("./texture.t")
+local gfx_common = require("./common.t")
 
 local m = {}
 local RenderTarget = class("RenderTarget")
@@ -259,6 +260,13 @@ function RenderTarget:get_read_back_buffer(idx)
     self._readbuffers[idx] = self:_create_read_back_buffer(idx)
   end
   return self._readbuffers[idx]
+end
+
+function RenderTarget:bind_compute(stage, mip, access, format)
+  access = gfx_common.resolve_access(access)
+  format = assert(format or self._layers[1].format)
+  if type(format) == 'table' then format = format.bgfx_enum end
+  bgfx.set_image(stage, self.raw_tex, mip or 0, access, format or bgfx.TEXTURE_FORMAT_COUNT)
 end
 
 function RenderTarget:destroy()

@@ -86,6 +86,9 @@ function Texture:raw_blit_copy(src_handle, view)
   if not self:is_blittable() then
     truss.error("Texture not a blit_dest!")
   end
+  if type(src_handle) == 'table' then
+    src_handle = assert(src_handle._handle)
+  end
   local viewid = view or 0
   if type(viewid) == 'table' then
     viewid = view._viewid or 0
@@ -93,7 +96,7 @@ function Texture:raw_blit_copy(src_handle, view)
   bgfx.blit(viewid,
         self._handle, 0, 0, 0, 0,
         src_handle, 0, 0, 0, 0,
-        self.width, self.height, 0)
+        self.width, self.height, self.depth)
 end
 
 function Texture:read_back(mip, callback)
@@ -130,6 +133,7 @@ end
 
 function Texture:bind_compute(stage, mip, access, format)
   access = gfx_common.resolve_access(access)
+  format = format or self.format
   if type(format) == 'table' then format = format.bgfx_enum end
   bgfx.set_image(stage, self._handle, mip or 0, access, format or bgfx.TEXTURE_FORMAT_COUNT)
 end
