@@ -39,7 +39,11 @@ WIN_SHADER_TYPES = {
 PLATFORMS = {
   windows: "dx11",
   linux: "glsl",
-  osx: "mtl"
+  osx: "mtl",
+  vulkan: "spirv"
+}
+PLATFORM_ALIASES = {
+  vulkan: "linux"
 }
 
 CHARS = if truss.os == "OSX"
@@ -57,7 +61,7 @@ make_cmd = (shader_type, platform, input_fn, output_fn) ->
     "-o", output_fn,
     "--type", shader_type,
     "-i", "#{SHADER_DIR}/raw/common/",
-    "--platform", platform
+    "--platform", PLATFORM_ALIASES[platform] or platform
   }
   extend args, switch platform 
     when "linux"
@@ -67,6 +71,8 @@ make_cmd = (shader_type, platform, input_fn, output_fn) ->
        "-O", "3"}
     when "osx"
       {"-p", "metal"}
+    when "vulkan"
+      {"-p", "spirv"}
   args[#args+1] = "2>&1"
   normpath table.concat args, " "
 

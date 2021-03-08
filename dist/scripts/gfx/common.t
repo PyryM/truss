@@ -153,6 +153,7 @@ function m.init_gfx(options)
   local cb_ptr = nil
   local renderer_type = bgfx.RENDERER_TYPE_COUNT
   if options.backend then
+    log.info("Requested backend: ", options.backend)
     local rname = "RENDERER_TYPE_" .. string.upper(options.backend)
     renderer_type = bgfx[rname]
     if not renderer_type then
@@ -204,6 +205,9 @@ function m.init_gfx(options)
 
   log.info("initted bgfx")
   local backend_type = bgfx.get_renderer_type()
+  if options.backend and (backend_type ~= renderer_type) then
+    log.warn("Requested backend", options.backend, "is not available!")
+  end
   local backend_name = ffi.string(bgfx.get_renderer_name(backend_type))
   gfx.backend_name = backend_name
   gfx.backend_type = backend_type
