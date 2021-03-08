@@ -49,9 +49,11 @@ function m._make_reset_flags(options)
   local reset = 0
   if options.debugtext then
     debug = debug + bgfx.DEBUG_TEXT
+    log.debug("DEBUG FLAG: DEBUG TEXT")
   end
   if options.vsync ~= false then
     reset = reset + bgfx.RESET_VSYNC
+    log.debug("RESET FLAG: VSYNC")
   end
   local msaa = options.msaa
   if msaa then
@@ -61,17 +63,21 @@ function m._make_reset_flags(options)
                   .. "(passed in " .. tostring(msaa) .. ")")
     end
     reset = reset + bgfx['RESET_MSAA_X' .. msaa]
+    log.debug("RESET FLAG: MSAA", msaa)
   end
   if options.srgb then
     reset = reset + bgfx.RESET_SRGB_BACKBUFFER
+    log.debug("RESET FLAG: SRGB BACKBUFFER")
   end
   if options.hidpi then
     reset = reset + bgfx.RESET_HIDPI
+    log.debug("RESET FLAG: HIDPI")
   end
   if options.lowlatency then
     -- extra flags that may help with latency
     reset = reset + bgfx.RESET_FLIP_AFTER_RENDER +
           bgfx.RESET_FLUSH_AFTER_RENDER
+    log.debug("RESET FLAG: LOWLATENCY")
   end
   return reset, debug
 end
@@ -130,7 +136,13 @@ function m.init_gfx(options)
 
   local reset, debug = m._make_reset_flags(options)
 
-  if options.lowlatency then
+  local single_threaded = options.lowlatency
+  if truss.os == "OSX" then
+    log.warn("Forcing single-threaded for OSX because otherwise BGFX crashes!")
+    single_threaded = true
+  end
+
+  if single_threaded then
     log.info("Trying to init bgfx in single-threaded mode...")
     m._safe_wait_frames = 1
     -- secret bgfx feature: call render_frame before init => single-threaded
@@ -265,7 +277,8 @@ m.DefaultStateOptions = {
 
 function m.submit(view, program, depth, preserve_state)
   if type(view) == "table" then view = view._viewid end
-  bgfx.submit(view, program, depth or 0, not not preserve_state)
+  local flags = (preserve_state and bgfx.DISCARD_NONE) or bgfx.DISCARD_ALL
+  bgfx.submit(view, program, depth or 0, flags)
 end
 
 function m.create_state(user_options)

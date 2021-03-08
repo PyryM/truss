@@ -167,12 +167,22 @@ function RenderTarget:_construct(layers)
     end
     table.insert(self.attachments, {handle = handle})
     table.insert(self._layers, layer)
+    --[[
     cattachments[i-1].access = (layer.random_access and bgfx.ACCESS_READWRITE)
                                                      or bgfx.ACCESS_WRITE
     cattachments[i-1].handle = handle
     cattachments[i-1].mip = layer.mip or 0
     cattachments[i-1].layer = layer.layer or 0
     cattachments[i-1].resolve = (layer.has_mips and bgfx.RESOLVE_AUTO_GEN_MIPS) or 0
+    ]]
+    bgfx.attachment_init(cattachments[i-1], 
+      handle, 
+      (layer.random_access and bgfx.ACCESS_READWRITE) or bgfx.ACCESS_WRITE, 
+      layer.layer or 0, 
+      1, 
+      layer.mip or 0, 
+      (layer.has_mips and bgfx.RESOLVE_AUTO_GEN_MIPS) or 0
+    )
     self.has_color = self.has_color or layer.has_color
     self.has_depth = self.has_depth or layer.has_depth
     self.has_stencil = self.has_stencil or layer.has_stencil

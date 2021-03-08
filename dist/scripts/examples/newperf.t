@@ -174,7 +174,7 @@ terra fast_submit(lights: &light_info_t, draw: &draw_info_t)
   bgfx.set_uniform(lights.light_dir_handle, &lights.light_dir_data, 4)
   bgfx.set_uniform(lights.light_rgb_handle, &lights.light_rgb_data, 4)
   bgfx.set_state(draw.state, 0)
-  bgfx.submit(0, draw.program, 0.0, false)
+  bgfx.submit(0, draw.program, 0.0, bgfx.DISCARD_ALL)
 end
 
 function draw_box_hand_compiled(x, y, theta)

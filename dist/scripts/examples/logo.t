@@ -264,7 +264,6 @@ function init()
     width = (gif_mode and 720) or 1280, height = 720, 
     msaa = true, hidpi = true, stats = false,
     title = "truss | logo.t", clear_color = 0x000000ff,
-    backend = "opengl"
   }
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
   myapp.camera.orbit_control:set(0, 0, 0.7)

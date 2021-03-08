@@ -41,14 +41,23 @@ local TRUSS_ID = TRUSS_INTERPRETER_ID
 truss.TRUSS_ID = TRUSS_ID
 truss.interpreter_id = TRUSS_ID
 
+local function stringify_args(...)
+  local nargs = select('#', ...)
+  local frags = {}
+  for i = 1, nargs do
+    frags[i] = tostring(select(i, ...))
+  end
+  return table.concat(frags, " ")
+end
+
 -- let log be a global because it's inconvenient to have to do truss.log
 log = {}
-log.debug = function(msg) ctruss.truss_log(4, tostring(msg)) end
-log.info = function(msg) ctruss.truss_log(3, tostring(msg)) end
-log.warn = function(msg) ctruss.truss_log(2, tostring(msg)) end
+log.debug = function(...) ctruss.truss_log(4, stringify_args(...)) end
+log.info = function(...) ctruss.truss_log(3, stringify_args(...)) end
+log.warn = function(...) ctruss.truss_log(2, stringify_args(...)) end
 log.warning = log.warn
-log.error = function(msg) ctruss.truss_log(1, tostring(msg)) end
-log.critical = function(msg) ctruss.truss_log(0, tostring(msg)) end
+log.error = function(...) ctruss.truss_log(1, stringify_args(...)) end
+log.critical = function(...) ctruss.truss_log(0, stringify_args(...)) end
 truss.log = log
 
 -- use default lua error handling
