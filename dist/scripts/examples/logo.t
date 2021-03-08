@@ -174,7 +174,8 @@ local function generate_logo_mesh(parent, material, resolution)
     resolution+1 -- need 1 voxel padding for reasons
   )
   local progress = add_2d_drawable(textbox, {
-    x = 1280/2 - 400/2, y = 300, w = 400, h = 30, font_size = 30,
+    x = gfx.backbuffer_width/2 - 400/2, y = gfx.backbuffer_height/2, 
+    w = 400, h = 30, font_size = 30,
     color = {255,255,255,255},
     text = "Generating mesh", font = 'mono'
   })
@@ -261,8 +262,9 @@ local gif_mode = false
 function init()
   myapp = app.App{
     width = (gif_mode and 720) or 1280, height = 720, 
-    msaa = true, stats = false,
-    title = "truss | logo.t", clear_color = 0x000000ff
+    msaa = true, hidpi = true, stats = false,
+    title = "truss | logo.t", clear_color = 0x000000ff,
+    backend = "opengl"
   }
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
   myapp.camera.orbit_control:set(0, 0, 0.7)
@@ -272,6 +274,8 @@ function init()
 
   myapp.scene:create_child(Stars, 'sky', {nstars = 30000})
   myapp.scene:create_child(ecs.Entity3d, "logotext", NVGThing())
+
+  print(myapp.width)
 
   async.run(function()
     add_2d_drawable(textbox, {
@@ -286,13 +290,14 @@ function init()
     if gif_mode then return end
     -- spawn caps
     local ypos = 5
+    local mult = gfx.backbuffer_width / myapp.width
     for capname, supported in pairs(gfx.get_caps().features) do
       local color = (supported and {200,255,200,255}) or {100,100,100,255}
       add_2d_drawable(textbox, {
-        x = 1000, y = ypos, w = 250, h = 23, 
-        font_size = 20, text = capname, color = color, font = 'mono'
+        x = gfx.backbuffer_width - 280 * mult, y = ypos, w = 250 * mult, h = 23 * mult, 
+        font_size = 20 * mult, text = capname, color = color, font = 'mono'
       })
-      ypos = ypos + 20
+      ypos = ypos + 20 * mult
       async.await_frames(5)
     end
   end)

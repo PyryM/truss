@@ -444,6 +444,24 @@ function DynamicGeometry:_create_bgfx_buffers(flags)
       self:_mem_ref(self.indices, self.index_data_size), flags )
 end
 
+local _compute_access = {
+  read = bgfx.BGFX_BUFFER_COMPUTE_READ,
+  write = bgfx.BGFX_BUFFER_COMPUTE_WRITE,
+  readwrite = bgfx.BGFX_BUFFER_COMPUTE_READ_WRITE
+}
+_compute_access.r = _compute_access.read
+_compute_access.w = _compute_access.write
+_compute_access.rw = _compute_access.readwrite
+
+function StaticGeometry:set_compute_access(access)
+  if self.committed then
+    truss.error("Cannot change compute access after commit!")
+  end
+  self.compute_flags = assert(_compute_access[access])
+  return self
+end
+DynamicGeometry.set_compute_access = StaticGeometry.set_compute_access
+
 function StaticGeometry:commit()
   if not self.allocated then
     truss.error("Cannot commit geometry with no allocated data!")
@@ -454,10 +472,10 @@ function StaticGeometry:commit()
     return self
   end
 
-  local flags = bgfx.BUFFER_NONE
+  local flags = self.compute_flags or bgfx.BUFFER_NONE
   if self.index_type == uint32 then
     log.debug("Building w/ 32 bit index buffer!")
-    flags = bgfx.BUFFER_INDEX32
+    flags = flags + bgfx.BUFFER_INDEX32
   end
 
   self:_create_bgfx_buffers(flags)

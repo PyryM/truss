@@ -33,7 +33,7 @@ function init()
     appname = "basic_example", 
     use_global_save_dir = false,
     defaults = {
-      width = 1280, height = 1024, msaa = true, stats = true
+      width = 1280, height = 1024, msaa = true, stats = true, lowlatency = true,
     }
   }:load()
   -- because these settings don't have defaults, they won't be

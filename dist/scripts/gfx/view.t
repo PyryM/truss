@@ -59,6 +59,7 @@ function View:set_viewport(rect)
   else
     self._viewport = rect or self._viewport
   end
+  self:apply_viewport()
 end
 
 function View:apply_viewport()
