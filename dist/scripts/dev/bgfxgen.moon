@@ -245,7 +245,7 @@ gen_structs = (idl) ->
 
 PREAMBLE = [[
 /*
- * BGFX Copyright 2011-2016 Branimir Karadzic. All rights reserved.
+ * BGFX Copyright 2011-2021 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bgfx/blob/master/LICENSE
  *
  * This header is slightly modified to make it easier for Terra
