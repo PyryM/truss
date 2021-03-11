@@ -36,6 +36,11 @@
     sudo checkinstall
     ```
 
+    If X11 is not detected by SDL (symptom: error complaining about x11 not being a member of SDLSysWMInfo),
+    easiest fix is `sudo apt-get install libsdl2-dev`.
+
+    If at the end a link error with Terra not finding `libtinfo.5.so`, just `sudo apt-get install libtinfo5-dev`.
+
 * Compilation
 
   ```bash
