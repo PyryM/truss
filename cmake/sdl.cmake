@@ -1,13 +1,14 @@
 include(ExternalProject)
 
-# Use this version of physfs.
-set(sdl_VERSION "2.0.4")
-set(sdl_MD5 "c72b19abc246640eddc60db87f1025f5")
+# Use this version of SDL.
+set(sdl_VERSION "2.0.14")
+#set(sdl_VERSION "2.0.4")
+#set(sdl_MD5 "c72b19abc246640eddc60db87f1025f5")
 
-# Download `physfs` and build it using CMake.
+# Download `SDL` and build it using CMake.
 ExternalProject_Add(sdl_EXTERNAL
     URL "https://libsdl.org/release/SDL2-${sdl_VERSION}.zip"
-    URL_MD5 "${sdl_MD5}"
+    #URL_MD5 "${sdl_MD5}"
     INSTALL_COMMAND ""
     CMAKE_GENERATOR "${CMAKE_GENERATOR}"
     CMAKE_ARGS
