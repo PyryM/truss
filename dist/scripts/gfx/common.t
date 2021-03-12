@@ -180,6 +180,17 @@ function m.init_gfx(options)
     return false
   end
 
+  if options.headless then
+    log.info("Attempting headless BGFX")
+    m._headless_pdata = terralib.new(bgfx.platform_data_t)
+    m._headless_pdata.ndt = nil
+    m._headless_pdata.nwh = nil
+    m._headless_pdata.context = nil
+    m._headless_pdata.backBuffer = nil
+    m._headless_pdata.backBufferDS = nil
+    bgfx.set_platform_data(m._headless_pdata)
+  end
+
   log.debug("bgfx init ctor")
   m._init_struct = terralib.new(bgfx.init_t)
   bgfx.init_ctor(m._init_struct)
