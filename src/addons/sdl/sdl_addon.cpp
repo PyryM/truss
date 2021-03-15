@@ -555,7 +555,17 @@ void bgfx_cb_fatal(bgfx_callback_interface_t* _this, const char* _filePath, uint
 
 void bgfx_cb_trace_vargs(bgfx_callback_interface_t* _this, const char* _filePath, uint16_t _line, const char* _format, va_list _argList) {
 	// oh boy what is this supposed to do?
-	truss_log(TRUSS_LOG_CRITICAL, "I have no clue what the trace_vargs callback is supposed to do??");
+	//truss_log(TRUSS_LOG_CRITICAL, "I have no clue what the trace_vargs callback is supposed to do??");
+	char temp[8192];
+	char* out = temp;
+	int32_t len = vsnprintf(out, sizeof(temp), _format, _argList);
+	if ((int32_t)sizeof(temp) < len)
+	{
+		out = (char*)alloca(len + 1);
+		len = vsnprintf(out, len, _format, _argList);
+	}
+	out[len] = '\0';
+	truss_log(TRUSS_LOG_DEBUG, out);
 }
 
 void bgfx_cb_profiler_begin(bgfx_callback_interface_t* _this, const char* _name, uint32_t _abgr, const char* _filePath, uint16_t _line) {

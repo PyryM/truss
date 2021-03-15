@@ -174,6 +174,8 @@ function m.init_gfx(options)
     if options.window.get_bgfx_callback then
       cb_ptr = options.window.get_bgfx_callback()
     end
+  elseif options.cb_ptr then
+    cb_ptr = options.cb_ptr
   end
   if not (w and h) then
     truss.error("gfx.init_gfx needs to be supplied with width and height.")
