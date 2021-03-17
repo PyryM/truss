@@ -45,7 +45,7 @@ function ImmediateApp:init_ecs()
   -- create ecs
   local ECS = ecs.ECS()
   self.ECS = ECS
-  if self.headless then
+  if not self.headless then
     ECS:add_system(require("input/sdl_input.t").SDLInputSystem())
     ECS.systems.input:on("keydown", self, self.keydown)
   end

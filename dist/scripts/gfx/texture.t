@@ -39,6 +39,26 @@ function Texture:release()
 end
 Texture.destroy = Texture.release
 
+function Texture:is_possible()
+  local format = self.format
+  if type(format) == 'table' then format = format.bgfx_enum end
+  return bgfx.is_texture_valid(
+    self.depth or 1, 
+    self:is_cubemap(), 
+    1, -- layers
+    format,   
+    self._cflags or 0)
+end
+
+function Texture:_assert_possible()
+  if not self:is_possible() then
+    local errstr = ("Tex cfg invalid: d:%d, cm:%s, fmt:%s, flags:%s"):format(
+      self.depth or 1, tostring(self:is_cubemap()), self.format.name,
+      m.print_tex_flags(self.flags or {}))
+    truss.error(errstr)
+  end
+end
+
 function Texture:_set_or_create_data(options)
   if options.cdata and options.cdatasize then
     self.cdata, self.cdatasize = options.cdata, options.cdatasize
@@ -72,7 +92,7 @@ function Texture:is_readable()
 end
 
 function Texture:is_cubemap()
-  return self._is_cubemap
+  return not not self._is_cubemap
 end
 
 function Texture:is_compute_writeable()
@@ -180,6 +200,7 @@ function Texture:commit()
     truss.error("Cannot commit texture twice.")
   end
   log.debug("Committing texture.")
+  self:_assert_possible()
   self:_create_handle()
   return self
 end
@@ -297,6 +318,14 @@ function m.combine_tex_flags(_options, prefix)
   end
 
   return state, options
+end
+
+function m.print_tex_flags(flags)
+  local frags = {}
+  for k, v in pairs(flags) do
+    table.insert(frags, ("%s: %s"):format(k, tostring(v)))
+  end
+  return table.concat(frags, ",")
 end
 
 local nvg_utils = truss.addons.nanovg.functions

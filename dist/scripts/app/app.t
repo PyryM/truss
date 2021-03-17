@@ -15,18 +15,24 @@ local App = class('App')
 function App:init(options)
   log.debug("App: init")
   options = options or {}
-  sdl.create_window(options.width or 1280, options.height or 720,
-                    options.title or 'truss',
-                    options.fullscreen and 1,
-                    options.display or 0)
-  self.width, self.height = sdl.get_window_size()
-  self.stats = options.stats
-  options.debugtext = options.stats
-  options.window = sdl
+  self.headless = not not options.headless
+  if not self.headless then
+    sdl.create_window(options.width or 1280, options.height or 720,
+                      options.title or 'truss',
+                      options.fullscreen and 1,
+                      options.display or 0)
+    self.width, self.height = sdl.get_window_size()
+    self.stats = options.stats
+    options.window = sdl
+  else
+    self.width, self.height = options.width or 256, options.height or 256
+    self.stats = false
+  end
+  options.debugtext = self.stats
   gfx.init_gfx(options)
   log.debug("App: window+gfx initialized")
   self.clear_color = options.clear_color or 0x000000ff
-  if options.error_console ~= false then
+  if (not self.headless) and options.error_console ~= false then
     self:install_console()
   end
   self._init_options = options
@@ -40,6 +46,7 @@ end
 -- (maybe it should?)
 -- You will need to update the pipeline yourself.
 function App:reset_graphics(newoptions)
+  if self.headless then error("Reset NYI for headless mode!") end
   local options = self._init_options
   for k,v in pairs(newoptions) do
     options[k] = v
@@ -65,19 +72,27 @@ function App:init_ecs()
   -- create ecs
   local ECS = ecs.ECS()
   self.ECS = ECS
-  ECS:add_system(sdl_input.SDLInputSystem())
+  if not self.headless then
+    ECS:add_system(sdl_input.SDLInputSystem())
+    ECS.systems.input:on("keydown", self, self.keydown)
+  end
   ECS:add_system(ecs.System("update", "update"))
   if self.async ~= false then
     ECS:add_system(require("async").AsyncSystem())
   end
   ECS:add_system(graphics.RenderSystem())
   if self.stats then ECS:add_system(graphics.DebugTextStats()) end
-  ECS.systems.input:on("keydown", self, self.keydown)
 end
 
 -- this creates a basic forward pbr pipeline; if you want something fancier,
 -- feel free to override this
 function App:init_pipeline(options)
+  if self.headless then
+    self.forward_target = gfx.ColorDepthTarget{width = self.width, height = self.height}
+  else
+    self.forward_target = gfx.BACKBUFFER
+  end
+
   local Vector = math.Vector
   -- just requiring this should cause appropriate global uniforms
   -- to be registered
@@ -92,7 +107,8 @@ function App:init_pipeline(options)
     always_clear = true,
     clear = {color = self.clear_color or 0x000000ff, depth = 1.0},
     globals = p.globals,
-    render_ops = {graphics.DrawOp(), graphics.CameraControlOp()}
+    render_ops = {graphics.DrawOp(), graphics.CameraControlOp()},
+    render_target = self.forward_target,
   })
   p.globals.u_lightDir:set_multiple({
       Vector( 1.0,  1.0,  0.0),
@@ -109,7 +125,8 @@ function App:init_pipeline(options)
       name = "nanovg",
       clear = false,
       setup = options.nvg_setup,
-      draw = options.nvg_draw
+      draw = options.nvg_draw,
+      render_target = self.forward_target,
     })
   end
 
@@ -124,6 +141,21 @@ function App:init_scene()
                                             {fov = 65,
                                              aspect = self.width / self.height})
   self.scene = self.ECS.scene
+end
+
+function App:save_headless_screenshot(fn)
+  assert(fn)
+  if not self.async then 
+    truss.error("save_headless_screenshot requires async") 
+  end
+  local async = require("async")
+  local imwrite = require("io/imagewrite.t")
+  if not self.forward_readback then
+    self.forward_readback = gfx.ReadbackTexture(self.forward_target)
+  end
+  async.await(self.forward_readback:async_read_rt())
+  imwrite.write_tga(self.width, self.height, self.forward_readback.cdata, fn)
+  print("Saved headless screenshot: " .. fn)
 end
 
 function App:keydown(evtname, evt)
