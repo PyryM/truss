@@ -13,14 +13,7 @@ jobs:
         os: [ubuntu-latest]
     steps:
     - uses: actions/checkout@v2
-    - name: Install APT On Linux
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get update -qq -y
-        sudo apt-get install -qq -y libgeos-dev
-    - name: Make Directories
-      run: mkdir build && cd build
     - name: Run CMake
-      run: cmake ..
+      run: ls && mkdir build && cd build && cmake ..
     - name: Build
       run: make
