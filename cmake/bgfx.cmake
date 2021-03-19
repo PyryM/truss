@@ -75,8 +75,8 @@ endif()
 # and build it using `bx`.
 ExternalProject_Add(bgfx_EXTERNAL
     DEPENDS bx_EXTERNAL bimg_EXTERNAL
-    GIT_REPOSITORY "https://github.com/bkaradzic/bgfx.git"
-    GIT_TAG "02e4786e04acdfdda944c962c01047c03dd58b52"
+    GIT_REPOSITORY "https://github.com/pyrym/bgfx.git"
+    GIT_TAG "e368f78c9562e37c071e56b754e3c712d3601ef1"
     CONFIGURE_COMMAND ${bgfx_CONFIGURE_COMMAND}
     BUILD_COMMAND ${bgfx_BUILD_COMMAND}
     INSTALL_COMMAND ""
