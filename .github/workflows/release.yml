@@ -16,4 +16,4 @@ jobs:
     - name: Run CMake
       run: ls && mkdir build && cd build && cmake ..
     - name: Build
-      run: make
+      run: ls && ls .. && make
