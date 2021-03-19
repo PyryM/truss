@@ -21,6 +21,5 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=release
     - name: Build
       run: |
-        ls
-        pwd
+        cd build
         make
