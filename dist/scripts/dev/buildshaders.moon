@@ -34,7 +34,7 @@ SHADER_DIR = "shaders"
 WIN_SHADER_TYPES = {
   f: "ps_4_0"
   v: "vs_4_0"
-  c: "cs_4_0"
+  c: "cs_5_0"
 }
 PLATFORMS = {
   windows: "dx11",
