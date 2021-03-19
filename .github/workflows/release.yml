@@ -14,13 +14,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Run CMake
-      run:
-        - ls
-        - mkdir build
-        - cd build
-        - cmake .. -DCMAKE_BUILD_TYPE=release
+      run: |
+        ls
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=release
     - name: Build
-      run:
-        - ls
-        - ls ..
-        - make
+      run: |
+        ls
+        pwd
+        make
