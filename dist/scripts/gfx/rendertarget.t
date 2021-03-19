@@ -7,6 +7,7 @@ local class = require("class")
 local fmt = require("./formats.t")
 local bgfx = require("./bgfx.t")
 local texture = require("./texture.t")
+local gfx_common = require("./common.t")
 
 local m = {}
 local RenderTarget = class("RenderTarget")
@@ -166,12 +167,22 @@ function RenderTarget:_construct(layers)
     end
     table.insert(self.attachments, {handle = handle})
     table.insert(self._layers, layer)
+    --[[
     cattachments[i-1].access = (layer.random_access and bgfx.ACCESS_READWRITE)
                                                      or bgfx.ACCESS_WRITE
     cattachments[i-1].handle = handle
     cattachments[i-1].mip = layer.mip or 0
     cattachments[i-1].layer = layer.layer or 0
     cattachments[i-1].resolve = (layer.has_mips and bgfx.RESOLVE_AUTO_GEN_MIPS) or 0
+    ]]
+    bgfx.attachment_init(cattachments[i-1], 
+      handle, 
+      (layer.random_access and bgfx.ACCESS_READWRITE) or bgfx.ACCESS_WRITE, 
+      layer.layer or 0, 
+      1, 
+      layer.mip or 0, 
+      (layer.has_mips and bgfx.RESOLVE_AUTO_GEN_MIPS) or 0
+    )
     self.has_color = self.has_color or layer.has_color
     self.has_depth = self.has_depth or layer.has_depth
     self.has_stencil = self.has_stencil or layer.has_stencil
@@ -259,6 +270,13 @@ function RenderTarget:get_read_back_buffer(idx)
     self._readbuffers[idx] = self:_create_read_back_buffer(idx)
   end
   return self._readbuffers[idx]
+end
+
+function RenderTarget:bind_compute(stage, mip, access, format)
+  access = gfx_common.resolve_access(access)
+  format = assert(format or self._layers[1].format)
+  if type(format) == 'table' then format = format.bgfx_enum end
+  bgfx.set_image(stage, self.raw_tex, mip or 0, access, format or bgfx.TEXTURE_FORMAT_COUNT)
 end
 
 function RenderTarget:destroy()

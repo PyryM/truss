@@ -4,7 +4,7 @@
 
 local class = require("class")
 local promise = require("./promise.t")
-local queue = require("utils/queue.t")
+local queue = require("util/queue.t")
 local scheduler = require("./scheduler.t")
 local m = {}
 

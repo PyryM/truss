@@ -15,8 +15,6 @@ set(truss_HEADERS
     src/truss.h
     src/trussapi.h
     src/addons/sdl/sdl_addon.h
-    src/addons/wsclient/easywsclient.hpp
-    src/addons/wsclient/wsclient_addon.h
     src/addons/nanovg/nanovg.h
     src/addons/nanovg/nanovg_addon.h
 )
@@ -26,8 +24,6 @@ set(truss_SOURCES
     src/truss/interpreter.cpp
     src/truss/trussapi.cpp
     src/addons/sdl/sdl_addon.cpp
-    src/addons/wsclient/easywsclient.cpp
-    src/addons/wsclient/wsclient_addon.cpp
     src/addons/nanovg/nanovg.cpp
     src/addons/nanovg/nanovg_addon.cpp
     src/addons/nanovg/nanovg_bgfx_c99.cpp

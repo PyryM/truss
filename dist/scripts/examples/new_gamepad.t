@@ -5,7 +5,7 @@ local graphics = require("graphics")
 local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
 local gfx = require("gfx")
-local sdl = require("addons/sdl.t")
+local sdl = require("addon/sdl.t")
 
 function gamepad_added(app, evtname, evt)
   print("Enabling controller " .. evt.flags)

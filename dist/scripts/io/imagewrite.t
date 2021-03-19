@@ -17,7 +17,7 @@ struct m.TGAHeader {
     imagedescriptor: uint8;
 }
 
-function m.createTGA(imWidth, imHeight, imData, bbDest)
+function m.create_tga(imWidth, imHeight, imData, bbDest)
     local header = terralib.new(m.TGAHeader)
     header.idlength = 0
     header.colourmaptype = 0
@@ -30,9 +30,9 @@ function m.createTGA(imWidth, imHeight, imData, bbDest)
     header.bitsperpixel = 32
     header.imagedescriptor = 8 -- alpha??
     local dsize = (imWidth * imHeight * 4) + 100
-    local bb = bbDest or require("utils/stringutils.t").ByteBuffer(dsize)
-    bb:appendStruct(header, sizeof(m.TGAHeader))
-    bb:appendBytes(imData, imWidth*imHeight*4)
+    local bb = bbDest or require("util/string.t").ByteBuffer(dsize)
+    bb:append_struct(header, sizeof(m.TGAHeader))
+    bb:append_bytes(imData, imWidth*imHeight*4)
     return bb
 end
 
@@ -51,13 +51,9 @@ function m.flipRGBAVertical(imW, imH, imData)
     end
 end
 
-function m.writeTGA(imW, imH, imData, filename)
-    local bb = m.createTGA(imW, imH, imData)
-    bb:writeToFile(filename)
-end
-
-function m.createPPM(imwidth, imheight, data, bytebufferdest)
-    -- eh
+function m.write_tga(imW, imH, imData, filename)
+    local bb = m.create_tga(imW, imH, imData)
+    bb:write_to_file(filename)
 end
 
 return m

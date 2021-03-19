@@ -17,7 +17,7 @@ function RenderSystem:init(options)
     log.warning("Render system created without any scene roots")
   end
   self._roots = options.roots or {}
-  self._tasks = options.tasks or require("utils/queue.t").Queue()
+  self._tasks = options.tasks or require("util/queue.t").Queue()
 end
 
 function RenderSystem:set_scene_root(scene, root)

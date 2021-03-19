@@ -7,7 +7,7 @@ local math = require("math")
 local ecs = require("ecs")
 local stage = require("graphics/stage.t")
 local renderer = require("graphics/renderer.t")
-local nanovg = require("addons/nanovg.t")
+local nanovg = require("addon/nanovg.t")
 local m = {}
 
 local NanoVGStage = stage.Stage:extend("NanoVGStage")

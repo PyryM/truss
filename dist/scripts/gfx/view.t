@@ -33,6 +33,15 @@ function View:set(options)
   return self
 end
 
+function View:copy_settings(src)
+  self:set_render_target(src._rendertarget)
+  self:set_matrices(src._viewmat, src._projmat)
+  self:set_viewport(src._viewport)
+  self:set_clear(src._clear)
+  self:set_sequential(src._sequential)
+  return self
+end
+
 function View:set_matrices(view, proj)
   if view then self._viewmat:copy(view) end
   if proj then self._projmat:copy(proj) end
@@ -50,6 +59,7 @@ function View:set_viewport(rect)
   else
     self._viewport = rect or self._viewport
   end
+  self:apply_viewport()
 end
 
 function View:apply_viewport()

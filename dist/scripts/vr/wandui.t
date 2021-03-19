@@ -3,7 +3,7 @@
 -- a really minimal UI to display on the wands
 
 local class = require("class")
-local Miniscript = require("utils/miniscript.t").Miniscript
+local Miniscript = require("util/miniscript.t").Miniscript
 
 local m = {}
 

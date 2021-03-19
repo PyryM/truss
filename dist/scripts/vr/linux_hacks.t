@@ -2,7 +2,7 @@
 --
 -- deal with linux issues
 
-local BadStruct = require("utils/badstruct.t").BadStruct
+local BadStruct = require("util/badstruct.t").BadStruct
 
 local m = {}
 

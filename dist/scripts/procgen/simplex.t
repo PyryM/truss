@@ -1,6 +1,6 @@
 -- procgen/simplex.t
 
---
+--[[LICENSE
 -- Based on code in "Simplex noise demystified", by Stefan Gustavson
 -- www.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf
 --
@@ -26,7 +26,7 @@
 -- SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --
 -- [ MIT license: http://www.opensource.org/licenses/mit-license.php ]
---
+--]]
 
 -- Ported to Terra by Pyry Matikainen 2017
 

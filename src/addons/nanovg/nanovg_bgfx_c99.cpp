@@ -210,8 +210,7 @@ namespace
 	#include "vs_nanovg_fill.bin.h"
 	#include "fs_nanovg_fill.bin.h"
 
-	static bgfx_vertex_decl_t s_nvgDecl;
-
+	static bgfx_vertex_layout_t s_nvgDecl;
 	enum GLNVGshaderType
 	{
 		NSVG_SHADER_FILLGRAD,
@@ -483,10 +482,10 @@ namespace
 			gl->u_halfTexel.idx = BGFX_INVALID_HANDLE_IDX;
 		}
 
-		bgfx_vertex_decl_begin(&s_nvgDecl, bgfx_get_renderer_type());
-		bgfx_vertex_decl_add(&s_nvgDecl, BGFX_ATTRIB_POSITION, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
-		bgfx_vertex_decl_add(&s_nvgDecl, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
-		bgfx_vertex_decl_end(&s_nvgDecl);
+		bgfx_vertex_layout_begin(&s_nvgDecl, bgfx_get_renderer_type());
+		bgfx_vertex_layout_add(&s_nvgDecl, BGFX_ATTRIB_POSITION, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+		bgfx_vertex_layout_add(&s_nvgDecl, BGFX_ATTRIB_TEXCOORD0, 2, BGFX_ATTRIB_TYPE_FLOAT, false, false);
+		bgfx_vertex_layout_end(&s_nvgDecl);
 
 		int align = 16;
 		gl->fragSize = sizeof(struct GLNVGfragUniforms) + align - sizeof(struct GLNVGfragUniforms) % align;
@@ -768,7 +767,7 @@ namespace
 	{
 		uint32_t numTris = _count-2;
 		bgfx_transient_index_buffer_t tib;
-		bgfx_alloc_transient_index_buffer(&tib, numTris*3);
+		bgfx_alloc_transient_index_buffer(&tib, numTris*3, false);
 		uint16_t* data = (uint16_t*)tib.data;
 		for (uint32_t ii = 0; ii < numTris; ++ii)
 		{
@@ -809,7 +808,7 @@ namespace
 				bgfx_set_transient_vertex_buffer(0, &gl->tvb, 0, UINT32_MAX);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 				fan(paths[i].fillOffset, paths[i].fillCount);
-				bgfx_submit(gl->m_viewId, gl->prog, 0, false);
+				bgfx_submit(gl->m_viewId, gl->prog, 0, BGFX_DISCARD_ALL);
 			}
 		}
 
@@ -839,7 +838,7 @@ namespace
 				);
 				bgfx_set_transient_vertex_buffer(0, &gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
-				bgfx_submit(gl->m_viewId, gl->prog, 0, false);
+				bgfx_submit(gl->m_viewId, gl->prog, 0, BGFX_DISCARD_ALL);
 			}
 		}
 
@@ -860,7 +859,7 @@ namespace
 			| BGFX_STENCIL_OP_FAIL_Z_ZERO
 			| BGFX_STENCIL_OP_PASS_Z_ZERO
 		);
-		bgfx_submit(gl->m_viewId, gl->prog, 0, false);
+		bgfx_submit(gl->m_viewId, gl->prog, 0, BGFX_DISCARD_ALL);
 	}
 
 	static void glnvg__convexFill(struct GLNVGcontext* gl, struct GLNVGcall* call)
@@ -877,7 +876,7 @@ namespace
 			bgfx_set_transient_vertex_buffer(0, &gl->tvb, 0, UINT32_MAX);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
 			fan(paths[i].fillOffset, paths[i].fillCount);
-			bgfx_submit(gl->m_viewId, gl->prog, 0, false);
+			bgfx_submit(gl->m_viewId, gl->prog, 0, BGFX_DISCARD_ALL);
 		}
 
 		if (gl->edgeAntiAlias)
@@ -890,7 +889,7 @@ namespace
 					, 0);
 				bgfx_set_transient_vertex_buffer(0, &gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
 				bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
-				bgfx_submit(gl->m_viewId, gl->prog, 0, false);
+				bgfx_submit(gl->m_viewId, gl->prog, 0, BGFX_DISCARD_ALL);
 			}
 		}
 	}
@@ -910,7 +909,7 @@ namespace
 				, 0);
 			bgfx_set_transient_vertex_buffer(0, &gl->tvb, paths[i].strokeOffset, paths[i].strokeCount);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
-			bgfx_submit(gl->m_viewId, gl->prog, 0, false);
+			bgfx_submit(gl->m_viewId, gl->prog, 0, BGFX_DISCARD_ALL);
 		}
 	}
 
@@ -923,7 +922,7 @@ namespace
 			bgfx_set_state(gl->state, 0);
 			bgfx_set_transient_vertex_buffer(0, &gl->tvb, call->vertexOffset, call->vertexCount);
 			bgfx_set_texture(0, gl->s_tex, gl->th, UINT32_MAX);
-			bgfx_submit(gl->m_viewId, gl->prog, 0, false);
+			bgfx_submit(gl->m_viewId, gl->prog, 0, BGFX_DISCARD_ALL);
 		}
 	}
 

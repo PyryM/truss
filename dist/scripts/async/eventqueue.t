@@ -3,7 +3,7 @@
 -- a queue that accumulates events
 
 local class = require("class")
-local queue = require("utils/queue.t")
+local queue = require("util/queue.t")
 local event = require("ecs/event.t")
 local async = require("async/async.t")
 local promise = require("async/promise.t")

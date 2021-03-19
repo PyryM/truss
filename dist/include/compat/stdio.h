@@ -5,6 +5,8 @@
 #ifndef TRUSS_STDIO_H
 #define TRUSS_STDIO_H
 
+#include "stddef.h"
+
 /*
  * Used by truss to check whether this header has been included from compat
  * or from the actual system includes

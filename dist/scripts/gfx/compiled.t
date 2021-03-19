@@ -564,7 +564,7 @@ local function compile_draw_call(opts)
     set_index(geo.ibh, geo.idx_start, geo.idx_count)
     bind_material(mat, globals)
     bgfx.set_state(mat.state, 0)
-    bgfx.submit(view, mat.program, 0.0, false)
+    bgfx.submit(view, mat.program, 0.0, bgfx.DISCARD_ALL)
   end
 
   local terra multi_draw(start_view: uint8, n_views: uint8, geo: &geo_t, 
@@ -577,8 +577,11 @@ local function compile_draw_call(opts)
     bgfx.set_state(mat.state, 0)
     for i = 0, n_views do
       var viewid: uint8 = start_view + i
-      var preserve: bool = ((i + 1) < n_views)
-      bgfx.submit(viewid, mat.program, 0.0, preserve)
+      var flags = bgfx.DISCARD_ALL
+      if ((i + 1) < n_views) then
+        flags = bgfx.DISCARD_NONE
+      end
+      bgfx.submit(viewid, mat.program, 0.0, flags)
     end
   end
   m._draw_call_cache[call_name] = {geo_t, draw, multi_draw}

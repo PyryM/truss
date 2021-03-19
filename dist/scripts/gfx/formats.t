@@ -40,6 +40,19 @@ local function export_tex_format(channels, n_channels, bitformat, has_color, has
   return m[export_name]
 end
 
+-- special case this kind of weird texture format
+m.TEX_R5G6B5 = {
+  name = "R5G6B5",
+  bgfx_enum = bgfx.TEXTURE_FORMAT_R5G6B5,
+  n_channels = 1,
+  channel_size = 2,
+  pixel_size = 2,
+  channel_type = uint16,
+  has_color = true,
+  has_depth = false,
+  has_stencil = false
+}
+
 -- color formats
 local channel_names = {R = 1, RG = 2, RGBA = 4, BGRA = 4}
 for channel_name, n_channels in pairs(channel_names) do
@@ -71,6 +84,7 @@ export_depth_format("D32",  false)
 export_depth_format("D16F", false)
 export_depth_format("D24F", false)
 export_depth_format("D32F", false)
+export_depth_format("D0S8", true)  -- well ok this also has *only* stencil
 
 -- compressed formats aren't exported, and can only appear when loading
 -- a texture from a ktx, dds, etc.
@@ -101,6 +115,15 @@ list_compressed_format("PTC12A")
 list_compressed_format("PTC14A")
 list_compressed_format("PTC22")
 list_compressed_format("PTC24")
+list_compressed_format("ATC")
+list_compressed_format("ATCE")
+list_compressed_format("ATCI")
+list_compressed_format("ASTC4X4")
+list_compressed_format("ASTC5X5")
+list_compressed_format("ASTC6X6")
+list_compressed_format("ASTC8X5")
+list_compressed_format("ASTC8X6")
+list_compressed_format("ASTC10X5")
 
 function m.find_format_from_enum(bgfx_enum_val)
   for _, format in pairs(all_formats) do
@@ -109,6 +132,18 @@ function m.find_format_from_enum(bgfx_enum_val)
     end
   end
   return all_formats.unknown_format
+end
+
+local format_names = {}
+for k, v in pairs(bgfx) do
+  local fname = k:match("TEXTURE_FORMAT_(.*)")
+  if fname then
+    format_names[v] = fname
+  end
+end
+
+function m.find_name_from_enum(bgfx_enum_val)
+  return format_names[bgfx_enum_val]
 end
 
 return m

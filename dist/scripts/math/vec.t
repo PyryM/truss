@@ -63,6 +63,15 @@ function Vector:from_array(arr)
   return self
 end
 
+-- from a zero-indexed cdata array
+function Vector:from_carray(arr, count)
+  local ELEM_ORDER = {"x", "y", "z", "w"}
+  for i = 1, count do
+    self.elem[ELEM_ORDER[i]] = arr[i-1]
+  end
+  return self
+end
+
 function Vector:to_array(arr)
   local e = self.elem
   return {e.x, e.y, e.z, e.w}

@@ -3,7 +3,6 @@
 #include "truss.h"
 #include "addons/sdl/sdl_addon.h"
 #include "addons/nanovg/nanovg_addon.h"
-#include "addons/wsclient/wsclient_addon.h"
 #if !defined(__APPLE__)
 #include "addons/openvr/openvr_addon.h"
 #endif
@@ -63,7 +62,6 @@ int main(int argc, char** argv) {
 	interpreter->setDebug(0); // want most verbose debugging output
 	interpreter->attachAddon(new SDLAddon);
 	interpreter->attachAddon(new NanoVGAddon);
-	interpreter->attachAddon(new WSClientAddon);
 #if !defined(__APPLE__)
 	// OpenVR supported on Win+Linux
 	interpreter->attachAddon(new OpenVRAddon);

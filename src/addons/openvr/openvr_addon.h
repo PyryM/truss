@@ -93,10 +93,11 @@ TRUSS_C_API bool tr_ovw_IsInputAvailable(vr::IVRSystem* self);
 TRUSS_C_API bool tr_ovw_IsSteamVRDrawingControllers(vr::IVRSystem* self);
 TRUSS_C_API bool tr_ovw_ShouldApplicationPause(vr::IVRSystem* self);
 TRUSS_C_API bool tr_ovw_ShouldApplicationReduceRenderingWork(vr::IVRSystem* self);
-TRUSS_C_API uint32_t tr_ovw_DriverDebugRequest(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unDeviceIndex, const char * pchRequest, char * pchResponseBuffer, uint32_t unResponseBufferSize);
 TRUSS_C_API vr::EVRFirmwareError tr_ovw_PerformFirmwareUpdate(vr::IVRSystem* self, vr::TrackedDeviceIndex_t unDeviceIndex);
 TRUSS_C_API void tr_ovw_AcknowledgeQuit_Exiting(vr::IVRSystem* self);
 TRUSS_C_API void tr_ovw_AcknowledgeQuit_UserPrompt(vr::IVRSystem* self);
+TRUSS_C_API uint32_t tr_ovw_GetAppContainerFilePaths(vr::IVRSystem* self, char * pchBuffer, uint32_t unBufferSize);
+TRUSS_C_API const char * tr_ovw_GetRuntimeVersion(vr::IVRSystem* self);
 TRUSS_C_API void tr_ovw_GetWindowBounds(vr::IVRExtendedDisplay* self, int32_t * pnX, int32_t * pnY, uint32_t * pnWidth, uint32_t * pnHeight);
 TRUSS_C_API void tr_ovw_GetEyeOutputViewport(vr::IVRExtendedDisplay* self, vr::EVREye eEye, uint32_t * pnX, uint32_t * pnY, uint32_t * pnWidth, uint32_t * pnHeight);
 //TRUSS_C_API void tr_ovw_GetDXGIOutputInfo(vr::IVRExtendedDisplay* self, int32_t * pnAdapterIndex, int32_t * pnAdapterOutputIndex);
@@ -170,6 +171,7 @@ TRUSS_C_API bool tr_ovw_ExportLiveToBuffer(vr::IVRChaperoneSetup* self, char * p
 TRUSS_C_API bool tr_ovw_ImportFromBufferToWorking(vr::IVRChaperoneSetup* self, const char * pBuffer, uint32_t nImportFlags);
 TRUSS_C_API void tr_ovw_ShowWorkingSetPreview(vr::IVRChaperoneSetup* self);
 TRUSS_C_API void tr_ovw_HideWorkingSetPreview(vr::IVRChaperoneSetup* self);
+TRUSS_C_API void tr_ovw_RoomSetupStarting(vr::IVRChaperoneSetup* self);
 TRUSS_C_API void tr_ovw_SetTrackingSpace(vr::IVRCompositor* self, vr::ETrackingUniverseOrigin eOrigin);
 TRUSS_C_API vr::ETrackingUniverseOrigin tr_ovw_GetTrackingSpace(vr::IVRCompositor* self);
 TRUSS_C_API vr::EVRCompositorError tr_ovw_WaitGetPoses(vr::IVRCompositor* self, vr::TrackedDevicePose_t * pRenderPoseArray, uint32_t unRenderPoseArrayCount, vr::TrackedDevicePose_t * pGamePoseArray, uint32_t unGamePoseArrayCount);
@@ -214,6 +216,8 @@ TRUSS_C_API uint32_t tr_ovw_GetVulkanDeviceExtensionsRequired(vr::IVRCompositor*
 TRUSS_C_API void tr_ovw_SetExplicitTimingMode(vr::IVRCompositor* self, vr::EVRCompositorTimingMode eTimingMode);
 TRUSS_C_API vr::EVRCompositorError tr_ovw_SubmitExplicitTimingData(vr::IVRCompositor* self);
 TRUSS_C_API bool tr_ovw_IsMotionSmoothingEnabled(vr::IVRCompositor* self);
+TRUSS_C_API bool tr_ovw_IsMotionSmoothingSupported(vr::IVRCompositor* self);
+TRUSS_C_API bool tr_ovw_IsCurrentSceneFocusAppLoading(vr::IVRCompositor* self);
 TRUSS_C_API vr::EVROverlayError tr_ovw_FindOverlay(vr::IVROverlay* self, const char * pchOverlayKey, vr::VROverlayHandle_t * pOverlayHandle);
 TRUSS_C_API vr::EVROverlayError tr_ovw_CreateOverlay(vr::IVROverlay* self, const char * pchOverlayKey, const char * pchOverlayName, vr::VROverlayHandle_t * pOverlayHandle);
 TRUSS_C_API vr::EVROverlayError tr_ovw_DestroyOverlay(vr::IVROverlay* self, vr::VROverlayHandle_t ulOverlayHandle);
@@ -341,6 +345,7 @@ TRUSS_C_API uint32_t tr_ovw_GetResourceFullPath(vr::IVRResources* self, const ch
 TRUSS_C_API uint32_t tr_ovw_GetDriverCount(vr::IVRDriverManager* self);
 TRUSS_C_API uint32_t tr_ovw_GetDriverName(vr::IVRDriverManager* self, vr::DriverId_t nDriver, char * pchValue, uint32_t unBufferSize);
 TRUSS_C_API vr::DriverHandle_t tr_ovw_GetDriverHandle(vr::IVRDriverManager* self, const char * pchDriverName);
+TRUSS_C_API bool tr_ovw_IsEnabled(vr::IVRDriverManager* self, vr::DriverId_t nDriver);
 TRUSS_C_API vr::EVRInputError tr_ovw_SetActionManifestPath(vr::IVRInput* self, const char * pchActionManifestPath);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetActionSetHandle(vr::IVRInput* self, const char * pchActionSetName, vr::VRActionSetHandle_t * pHandle);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetActionHandle(vr::IVRInput* self, const char * pchActionName, vr::VRActionHandle_t * pHandle);
@@ -348,7 +353,8 @@ TRUSS_C_API vr::EVRInputError tr_ovw_GetInputSourceHandle(vr::IVRInput* self, co
 TRUSS_C_API vr::EVRInputError tr_ovw_UpdateActionState(vr::IVRInput* self, vr::VRActiveActionSet_t * pSets, uint32_t unSizeOfVRSelectedActionSet_t, uint32_t unSetCount);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetDigitalActionData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::InputDigitalActionData_t * pActionData, uint32_t unActionDataSize, vr::VRInputValueHandle_t ulRestrictToDevice);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetAnalogActionData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::InputAnalogActionData_t * pActionData, uint32_t unActionDataSize, vr::VRInputValueHandle_t ulRestrictToDevice);
-TRUSS_C_API vr::EVRInputError tr_ovw_GetPoseActionData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::ETrackingUniverseOrigin eOrigin, float fPredictedSecondsFromNow, vr::InputPoseActionData_t * pActionData, uint32_t unActionDataSize, vr::VRInputValueHandle_t ulRestrictToDevice);
+TRUSS_C_API vr::EVRInputError tr_ovw_GetPoseActionDataRelativeToNow(vr::IVRInput* self, vr::VRActionHandle_t action, vr::ETrackingUniverseOrigin eOrigin, float fPredictedSecondsFromNow, vr::InputPoseActionData_t * pActionData, uint32_t unActionDataSize, vr::VRInputValueHandle_t ulRestrictToDevice);
+TRUSS_C_API vr::EVRInputError tr_ovw_GetPoseActionDataForNextFrame(vr::IVRInput* self, vr::VRActionHandle_t action, vr::ETrackingUniverseOrigin eOrigin, vr::InputPoseActionData_t * pActionData, uint32_t unActionDataSize, vr::VRInputValueHandle_t ulRestrictToDevice);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetSkeletalActionData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::InputSkeletalActionData_t * pActionData, uint32_t unActionDataSize);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetBoneCount(vr::IVRInput* self, vr::VRActionHandle_t action, uint32_t * pBoneCount);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetBoneHierarchy(vr::IVRInput* self, vr::VRActionHandle_t action, vr::BoneIndex_t * pParentIndices, uint32_t unIndexArayCount);
@@ -356,15 +362,17 @@ TRUSS_C_API vr::EVRInputError tr_ovw_GetBoneName(vr::IVRInput* self, vr::VRActio
 TRUSS_C_API vr::EVRInputError tr_ovw_GetSkeletalReferenceTransforms(vr::IVRInput* self, vr::VRActionHandle_t action, vr::EVRSkeletalTransformSpace eTransformSpace, vr::EVRSkeletalReferencePose eReferencePose, vr::VRBoneTransform_t * pTransformArray, uint32_t unTransformArrayCount);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetSkeletalTrackingLevel(vr::IVRInput* self, vr::VRActionHandle_t action, vr::EVRSkeletalTrackingLevel * pSkeletalTrackingLevel);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetSkeletalBoneData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::EVRSkeletalTransformSpace eTransformSpace, vr::EVRSkeletalMotionRange eMotionRange, vr::VRBoneTransform_t * pTransformArray, uint32_t unTransformArrayCount);
-TRUSS_C_API vr::EVRInputError tr_ovw_GetSkeletalSummaryData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::VRSkeletalSummaryData_t * pSkeletalSummaryData);
+TRUSS_C_API vr::EVRInputError tr_ovw_GetSkeletalSummaryData(vr::IVRInput* self, vr::VRActionHandle_t action, vr::EVRSummaryType eSummaryType, vr::VRSkeletalSummaryData_t * pSkeletalSummaryData);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetSkeletalBoneDataCompressed(vr::IVRInput* self, vr::VRActionHandle_t action, vr::EVRSkeletalMotionRange eMotionRange, void * pvCompressedData, uint32_t unCompressedSize, uint32_t * punRequiredCompressedSize);
 TRUSS_C_API vr::EVRInputError tr_ovw_DecompressSkeletalBoneData(vr::IVRInput* self, void * pvCompressedBuffer, uint32_t unCompressedBufferSize, vr::EVRSkeletalTransformSpace eTransformSpace, vr::VRBoneTransform_t * pTransformArray, uint32_t unTransformArrayCount);
 TRUSS_C_API vr::EVRInputError tr_ovw_TriggerHapticVibrationAction(vr::IVRInput* self, vr::VRActionHandle_t action, float fStartSecondsFromNow, float fDurationSeconds, float fFrequency, float fAmplitude, vr::VRInputValueHandle_t ulRestrictToDevice);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetActionOrigins(vr::IVRInput* self, vr::VRActionSetHandle_t actionSetHandle, vr::VRActionHandle_t digitalActionHandle, vr::VRInputValueHandle_t * originsOut, uint32_t originOutCount);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetOriginLocalizedName(vr::IVRInput* self, vr::VRInputValueHandle_t origin, char * pchNameArray, uint32_t unNameArraySize, int32_t unStringSectionsToInclude);
 TRUSS_C_API vr::EVRInputError tr_ovw_GetOriginTrackedDeviceInfo(vr::IVRInput* self, vr::VRInputValueHandle_t origin, vr::InputOriginInfo_t * pOriginInfo, uint32_t unOriginInfoSize);
+TRUSS_C_API vr::EVRInputError tr_ovw_GetActionBindingInfo(vr::IVRInput* self, vr::VRActionHandle_t action, vr::InputBindingInfo_t * pOriginInfo, uint32_t unBindingInfoSize, uint32_t unBindingInfoCount, uint32_t * punReturnedBindingInfoCount);
 TRUSS_C_API vr::EVRInputError tr_ovw_ShowActionOrigins(vr::IVRInput* self, vr::VRActionSetHandle_t actionSetHandle, vr::VRActionHandle_t ulActionHandle);
 TRUSS_C_API vr::EVRInputError tr_ovw_ShowBindingsForActionSet(vr::IVRInput* self, vr::VRActiveActionSet_t * pSets, uint32_t unSizeOfVRSelectedActionSet_t, uint32_t unSetCount, vr::VRInputValueHandle_t originToHighlight);
+TRUSS_C_API bool tr_ovw_IsUsingLegacyInput(vr::IVRInput* self);
 TRUSS_C_API vr::EIOBufferError tr_ovw_Open(vr::IVRIOBuffer* self, const char * pchPath, vr::EIOBufferMode mode, uint32_t unElementSize, uint32_t unElements, vr::IOBufferHandle_t * pulBuffer);
 TRUSS_C_API vr::EIOBufferError tr_ovw_Close(vr::IVRIOBuffer* self, vr::IOBufferHandle_t ulBuffer);
 TRUSS_C_API vr::EIOBufferError tr_ovw_Read(vr::IVRIOBuffer* self, vr::IOBufferHandle_t ulBuffer, void * pDst, uint32_t unBytes, uint32_t * punRead);
@@ -375,5 +383,9 @@ TRUSS_C_API vr::EVRSpatialAnchorError tr_ovw_CreateSpatialAnchorFromDescriptor(v
 TRUSS_C_API vr::EVRSpatialAnchorError tr_ovw_CreateSpatialAnchorFromPose(vr::IVRSpatialAnchors* self, vr::TrackedDeviceIndex_t unDeviceIndex, vr::ETrackingUniverseOrigin eOrigin, vr::SpatialAnchorPose_t * pPose, vr::SpatialAnchorHandle_t * pHandleOut);
 TRUSS_C_API vr::EVRSpatialAnchorError tr_ovw_GetSpatialAnchorPose(vr::IVRSpatialAnchors* self, vr::SpatialAnchorHandle_t unHandle, vr::ETrackingUniverseOrigin eOrigin, vr::SpatialAnchorPose_t * pPoseOut);
 TRUSS_C_API vr::EVRSpatialAnchorError tr_ovw_GetSpatialAnchorDescriptor(vr::IVRSpatialAnchors* self, vr::SpatialAnchorHandle_t unHandle, char * pchDescriptorOut, uint32_t * punDescriptorBufferLenInOut);
+TRUSS_C_API vr::EVRDebugError tr_ovw_EmitVrProfilerEvent(vr::IVRDebug* self, const char * pchMessage);
+TRUSS_C_API vr::EVRDebugError tr_ovw_BeginVrProfilerEvent(vr::IVRDebug* self, vr::VrProfilerEventHandle_t * pHandleOut);
+TRUSS_C_API vr::EVRDebugError tr_ovw_FinishVrProfilerEvent(vr::IVRDebug* self, vr::VrProfilerEventHandle_t hHandle, const char * pchMessage);
+TRUSS_C_API uint32_t tr_ovw_DriverDebugRequest(vr::IVRDebug* self, vr::TrackedDeviceIndex_t unDeviceIndex, const char * pchRequest, char * pchResponseBuffer, uint32_t unResponseBufferSize);
 
 #endif

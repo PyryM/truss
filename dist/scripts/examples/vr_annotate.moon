@@ -9,7 +9,7 @@ pbr = require "material/pbr.t"
 ecs = require "ecs"
 ms = require "moonscript"
 async = require "async"
-argparse = require "utils/argparse.t"
+argparse = require "util/argparse.t"
 math = require "math"
 
 openvr = require "vr/openvr.t"
@@ -65,8 +65,8 @@ export init = ->
       async.await p
     else
       loader = switch (modelname\sub -4) 
-        when '.obj' then require "loaders/objloader.t"
-        when '.stl' then require "loaders/stlloader.t"
+        when '.obj' then require "format/obj.t"
+        when '.stl' then require "format/stl.t"
       (gfx.StaticGeometry!)\from_data (loader.load modelname)
 
     modelmat = pbr.FacetedPBRMaterial{

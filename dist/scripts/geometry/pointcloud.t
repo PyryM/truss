@@ -2,6 +2,8 @@
 --
 -- a pointcloud
 
+-- TODO: this while thing is broken now
+
 local class = require("class")
 local math = require("math")
 local Matrix4 = math.Matrix4
@@ -10,7 +12,6 @@ local Vector = math.Vector
 local geometry = require("gfx/geometry.t")
 local Object3D = require("gfx/object3d.t").Object3D
 local uniforms = require("gfx/uniforms.t")
-local shaderutils = require("utils/shaderutils.t")
 
 local m = {}
 
@@ -76,7 +77,7 @@ function PointCloudShader:init(invz, vshader, fshader)
     if vertexProgram == nil and invz then
         vertexProgram = "vs_points_invz"
     end
-    self.program = shaderutils.loadProgram(vertexProgram or "vs_points",
+    self.program = gfx.load_program(vertexProgram or "vs_points",
                                            fshader or "fs_points")
 end
 

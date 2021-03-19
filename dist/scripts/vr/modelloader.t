@@ -6,7 +6,7 @@
 local m = {}
 local openvr_c = nil
 local openvr = nil
-local Queue = require("utils/queue.t").Queue
+local Queue = require("util/queue.t").Queue
 local gfx = require("gfx")
 local math = require("math")
 

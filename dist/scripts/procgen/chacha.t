@@ -4,21 +4,21 @@
 
 local m = {}
 
---[[
-Copyright (C) 2014 insane coder (http://insanecoding.blogspot.com/, http://chacha20.insanecoding.org/)
+--[[LICENSE
+-- Copyright (C) 2014 insane coder (http://insanecoding.blogspot.com/, http://chacha20.insanecoding.org/)
 
-Permission to use, copy, modify, and distribute this software for any
-purpose with or without fee is hereby granted, provided that the above
-copyright notice and this permission notice appear in all copies.
+-- Permission to use, copy, modify, and distribute this software for any
+-- purpose with or without fee is hereby granted, provided that the above
+-- copyright notice and this permission notice appear in all copies.
 
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-*/]]--
+-- THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+-- WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+-- MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+-- ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+-- WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+-- ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+-- OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+--]]
 
 local terra ROTL32(v: uint32, n: uint32): uint32
   return (v << n) or (v >> (32 - n))
@@ -52,8 +52,7 @@ local struct chacha20_ctx
 }
 m.chacha20_ctx = chacha20_ctx
 
-terra m.setup(ctx: &chacha20_ctx, key: &uint8, length: uint64,
-  nonce: &uint8)
+terra chacha20_ctx:setup(key: &uint8, length: uint64, nonce: &uint8)
   var constants: &uint8
   if length == 32 then
     constants = [&uint8]("expand 32-byte k")
@@ -61,31 +60,31 @@ terra m.setup(ctx: &chacha20_ctx, key: &uint8, length: uint64,
     constants = [&uint8]("expand 16-byte k")
   end
 
-  ctx.schedule[0] = LE(constants + 0)
-  ctx.schedule[1] = LE(constants + 4)
-  ctx.schedule[2] = LE(constants + 8)
-  ctx.schedule[3] = LE(constants + 12)
-  ctx.schedule[4] = LE(key + 0)
-  ctx.schedule[5] = LE(key + 4)
-  ctx.schedule[6] = LE(key + 8)
-  ctx.schedule[7] = LE(key + 12)
-  ctx.schedule[8] = LE(key + 16 % length)
-  ctx.schedule[9] = LE(key + 20 % length)
-  ctx.schedule[10] = LE(key + 24 % length)
-  ctx.schedule[11] = LE(key + 28 % length)
+  self.schedule[0] = LE(constants + 0)
+  self.schedule[1] = LE(constants + 4)
+  self.schedule[2] = LE(constants + 8)
+  self.schedule[3] = LE(constants + 12)
+  self.schedule[4] = LE(key + 0)
+  self.schedule[5] = LE(key + 4)
+  self.schedule[6] = LE(key + 8)
+  self.schedule[7] = LE(key + 12)
+  self.schedule[8] = LE(key + 16 % length)
+  self.schedule[9] = LE(key + 20 % length)
+  self.schedule[10] = LE(key + 24 % length)
+  self.schedule[11] = LE(key + 28 % length)
   -- Surprise! This is really a block cipher in CTR mode
-  ctx.schedule[12] = 0 -- Counter
-  ctx.schedule[13] = 0 -- Counter
-  ctx.schedule[14] = LE(nonce+0)
-  ctx.schedule[15] = LE(nonce+4)
+  self.schedule[12] = 0 -- Counter
+  self.schedule[13] = 0 -- Counter
+  self.schedule[14] = LE(nonce+0)
+  self.schedule[15] = LE(nonce+4)
 
-  ctx.available = 0
+  self.available = 0
 end
 
-terra m.counter_set(ctx: &chacha20_ctx, counter: uint64)
-  ctx.schedule[12] = counter and 0xFFFFFFFF
-  ctx.schedule[13] = counter >> 32
-  ctx.available = 0
+terra chacha20_ctx:set_counter(counter: uint64)
+  self.schedule[12] = counter and 0xFFFFFFFF
+  self.schedule[13] = counter >> 32
+  self.available = 0
 end
 
 local terra QUARTERROUND(x: &uint32, a: uint8, b: uint8, c: uint8, d: uint8)
@@ -99,11 +98,11 @@ local terra QUARTERROUND(x: &uint32, a: uint8, b: uint8, c: uint8, d: uint8)
   x[b] = ROTL32(x[b] ^ x[c], 7)
 end
 
-terra m.block(ctx: &chacha20_ctx, output: &uint32)
-  var nonce: &uint32 = (ctx.schedule) + 12 --12 is where the 128 bit counter is
+terra chacha20_ctx:block(output: &uint32)
+  var nonce: &uint32 = (self.schedule) + 12 --12 is where the 128 bit counter is
 
   for i = 0,16 do
-    output[i] = ctx.schedule[i]
+    output[i] = self.schedule[i]
   end
 
   for i = 0,10 do -- 10*8 quarter rounds = 20 rounds
@@ -117,7 +116,7 @@ terra m.block(ctx: &chacha20_ctx, output: &uint32)
     QUARTERROUND(output, 3, 4, 9, 14)
   end
   for i = 0,16 do
-    var result: uint32 = output[i] + ctx.schedule[i]
+    var result: uint32 = output[i] + self.schedule[i]
     --FROMLE((uint8_t *)(output+i), result);
     output[i] = result
   end
@@ -137,6 +136,37 @@ terra m.block(ctx: &chacha20_ctx, output: &uint32)
         nonce[3] = nonce[3] + 1
       end
     end
+  end
+end
+
+local terra stream_xor(keystream: &uint8, inptr: &uint8, outptr: &uint8, length: uint64)
+  for i = 0,length do
+    outptr[i] = inptr[i] ^ keystream[i]
+  end
+end
+
+terra chacha20_ctx:encrypt_raw(inptr: &uint8, outptr: &uint8, length: uint64)
+  if length == 0 then return end
+  var keystream: &uint8 = [&uint8](&(self.keystream))
+  var pos: uint64 = 0
+
+  -- First, use any buffered keystream from previous calls
+  if self.available > 0 then
+    var amount = MIN(length, self.available)
+    stream_xor(keystream + (64 - self.available), inptr, outptr, amount)
+    self.available = self.available - amount
+    length = length - amount
+    pos = pos + amount
+  end
+
+  -- Then, handle new blocks
+  while length > 0 do
+    var amount = MIN(length, 64)
+    self:block(self.keystream)
+    stream_xor(keystream, inptr + pos, outptr + pos, amount)
+    length = length - amount
+    self.available = 64 - amount
+    pos = pos + amount
   end
 end
 
@@ -186,8 +216,8 @@ function m.test_basic()
   print("key: " .. to_hex(key, 32))
   print("nonce: " .. to_hex(nonce, 8))
 
-  m.setup(ctx, key, 32, nonce)
-  m.block(ctx, output)
+  ctx:setup(key, 32, nonce)
+  ctx:block(output)
 
   local foutput = terralib.cast(&uint8, output)
   print("output: " .. to_hex(foutput, 16*4))
@@ -198,7 +228,7 @@ function m.test_basic()
   local nchars = #plaintext
   print("nchars: " .. nchars)
   local outtext = terralib.new(int8[nchars])
-  m.setup(ctx, key, 32, nonce)
+  ctx:setup(key, 32, nonce)
   m.encrypt_raw(ctx, to_uint8_str(plaintext), to_uint8_str(outtext), nchars)
   local cipher = ffi.string(outtext, nchars)
   print("length of ciper: " .. #cipher)
@@ -208,37 +238,6 @@ function m.test_basic()
   m.setup(ctx, key, 32, nonce)
   m.encrypt_raw(ctx, to_uint8_str(outtext), to_uint8_str(outtext2), nchars)
   print("output2: " .. ffi.string(outtext2, nchars))
-end
-
-local terra stream_xor(keystream: &uint8, inptr: &uint8, outptr: &uint8, length: uint64)
-  for i = 0,length do
-    outptr[i] = inptr[i] ^ keystream[i]
-  end
-end
-
-terra m.encrypt_raw(ctx: &chacha20_ctx, inptr: &uint8, outptr: &uint8, length: uint64)
-  if length == 0 then return end
-  var keystream: &uint8 = [&uint8](&(ctx.keystream))
-  var pos: uint64 = 0
-
-  -- First, use any buffered keystream from previous calls
-  if ctx.available > 0 then
-    var amount = MIN(length, ctx.available)
-    stream_xor(keystream + (64 - ctx.available), inptr, outptr, amount)
-    ctx.available = ctx.available - amount
-    length = length - amount
-    pos = pos + amount
-  end
-
-  -- Then, handle new blocks
-  while length > 0 do
-    var amount = MIN(length, 64)
-    m.block(ctx, ctx.keystream)
-    stream_xor(keystream, inptr + pos, outptr + pos, amount)
-    length = length - amount
-    ctx.available = 64 - amount
-    pos = pos + amount
-  end
 end
 
 return m

@@ -16,7 +16,7 @@ local Grid = require("graphics/grid.t").Grid
 local pbr = require("material/pbr.t")
 local flat = require("material/flat.t")
 local orbitcam = require("graphics/orbitcam.t")
-local Config = require("utils/config.t").Config
+local Config = require("util/config.t").Config
 
 --[[ 
   A script loaded as the 'main' script has to define two functions:
@@ -33,7 +33,7 @@ function init()
     appname = "basic_example", 
     use_global_save_dir = false,
     defaults = {
-      width = 1280, height = 1024, msaa = true, stats = true
+      width = 1280, height = 1024, msaa = true, stats = true, lowlatency = true,
     }
   }:load()
   -- because these settings don't have defaults, they won't be
