@@ -16,7 +16,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update -qq -y
-        sudo apt-get install -qq -y libsdl2-dev flex bison libtinfo5-dev
+        sudo apt-get install -qq -y libsdl2-dev flex bison libtinfo-dev
     - uses: actions/checkout@v2
     - name: Run CMake
       run: |
