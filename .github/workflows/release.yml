@@ -12,6 +12,11 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
+    - name: Install APT On Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update -qq -y
+        sudo apt-get install -qq -y libsdl2-dev flex bison libtinfo5-dev
     - uses: actions/checkout@v2
     - name: Run CMake
       run: |
