@@ -1,0 +1,26 @@
+name: Release Trimesh
+
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    name: Run Unit Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install APT On Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update -qq -y
+        sudo apt-get install -qq -y libgeos-dev
+    - name: Make Directories
+      run: mkdir build && cd build
+    - name: Run CMake
+      run: cmake ..
+    - name: Build
+      run: make
