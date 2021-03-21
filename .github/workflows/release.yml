@@ -1,4 +1,4 @@
-name: Release Trimesh
+name: Release Truss
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
     steps:
     - name: Install APT On Linux
       if: matrix.os == 'ubuntu-latest'
