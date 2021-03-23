@@ -41,7 +41,7 @@ jobs:
     - name: Prepare Artifacts
       run: |
         ls 
-	ls build
+        ls build
         zip -r "truss_${{ matrix.os }}.zip" dist/
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
