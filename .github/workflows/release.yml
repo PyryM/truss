@@ -29,11 +29,13 @@ jobs:
       run: |
         cd build
         make
-    - name: Build Windows
+    - name: MSBuild Install Windows
       if: matrix.os == 'windows-latest'
       uses: microsoft/setup-msbuild@v1.0.2
       with:
         vs-version: '[16.4,16.5)'
+    - name: Build Windows
+      if: matrix.os == 'windows-latest'
       run: |
         cd build
         dir
