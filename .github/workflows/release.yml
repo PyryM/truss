@@ -29,15 +29,19 @@ jobs:
       run: |
         cd build
         make
-    - name: Build Ubuntu
+    - name: Build Windows
       if: matrix.os == 'windows-latest'
+      uses: microsoft/setup-msbuild@v1.0.2
+      with:
+        vs-version: '[16.4,16.5)'
       run: |
         cd build
         dir
         msbuild truss.sln
     - name: Prepare Artifacts
       run: |
-        cd build
+        ls 
+	ls build
         zip -r "truss_${{ matrix.os }}.zip" dist/
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
