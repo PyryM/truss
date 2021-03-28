@@ -2,7 +2,7 @@
 --
 -- just launches a basic text repl
 
-local mc = require("devtools/miniconsole.t")
+local mc = require("dev/miniconsole.t")
 
 function init()
   app = mc.ConsoleApp{title = 'truss repl'}

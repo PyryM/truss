@@ -23,7 +23,6 @@ function OrbitControl:init(options)
 
   self.phi_rate = options.phi_rate or 0.01
   self.theta_rate = options.theta_rate or 0.01
-  self.rad_rate = options.rad_rate or 0.4
   self.pan_rate = options.pan_rate or 0.01
 
   self.input = options.input
@@ -32,10 +31,8 @@ function OrbitControl:init(options)
   self.rotate_button = 1
   self.pan_button = 2
 
-  self.minrad = options.min_rad or 0.1
-  self.maxrad = options.max_rad or 10.0
-  self.rad = options.rad or ((self.minrad + self.maxrad) / 2.0)
-  self.rad_target = self.rad
+  self.rad = options.rad
+  self:set_zoom_limits(options.min_rad or 0.1, options.max_rad or 10.0, options.rad_steps or 10)
 
   self.orbitpoint = math.Vector(0, 0, 0)
 
@@ -53,9 +50,21 @@ function OrbitControl:mount()
   self:wake()
 end
 
-function OrbitControl:set_zoom_limits(minrad, maxrad)
+function OrbitControl:set_zoom_limits(minrad, maxrad, steps)
   self.minrad = minrad
   self.maxrad = maxrad
+  if self.minrad <= 0.0 then
+    truss.error("min_rad must be positive: " .. self.minrad)
+  end
+  if not self.rad then
+    self.rad = (self.minrad + self.maxrad) / 2.0
+  end
+  self.rad = math.max(self.minrad, math.min(self.maxrad, self.rad))
+  self.rad_target = self.rad
+
+  self.rad_steps = steps or self.rad_steps
+  self.rad_ratio = (self.maxrad / self.minrad)^(1.0 / self.rad_steps)
+
   return self
 end
 
@@ -90,7 +99,12 @@ function OrbitControl:move_phi(dv)
 end
 
 function OrbitControl:move_rad(dv)
-  self.rad_target = self.rad_target + (dv * self.rad_rate)
+  --self.rad_target = self.rad_target + (dv * self.rad_rate)
+  if dv > 0.0 then
+    self.rad_target = self.rad_target * self.rad_ratio
+  elseif dv < 0.0 then
+    self.rad_target = self.rad_target / self.rad_ratio
+  end
   self.rad_target = math.max(self.minrad, math.min(self.maxrad, self.rad_target))
 end
 
@@ -117,13 +131,14 @@ end
 function OrbitControl:mousemove(evtname, evt)
   local rdx, rdy = evt.dx, evt.dy
   local button = evt.flags
-  if button == self.rotate_button then
-    self:move_theta(rdx)
-    self:move_phi(-rdy)
-  elseif button == self.pan_button then
+  local force_pan = self.input.keystate["Left Shift"] or self.input.keystate["Right Shift"]
+  if force_pan or button == self.pan_button then
     -- scale pan_rate to rad so that it's reasonable at all zooms
     self:pan_orbit_point(-rdx * self.pan_rate * self.rad, 
                           rdy * self.pan_rate * self.rad)
+  elseif button == self.rotate_button then
+    self:move_theta(rdx)
+    self:move_phi(-rdy)
   end
 end
 

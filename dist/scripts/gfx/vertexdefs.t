@@ -70,6 +70,30 @@ local function order_attributes(attrib_table, attrib_order)
   return table.concat(name_parts, "_"), alist
 end
 
+local function _infer_compute_layout(attrib_list)
+  local elem_type
+  local elem_count = 0
+  for _, tup in ipairs(attrib_list) do
+    local name, info = unpack(tup)
+    elem_count = elem_count + info.count
+    if elem_type and elem_type ~= info.ctype then
+      -- mismatched type: compute buffers are assumed homogeneous
+      return nil, nil, nil
+    end
+    elem_type = info.ctype
+  end
+  local elem_size = terralib.sizeof(elem_type)
+  local bitcount = elem_size * 8
+  -- e.g., like: `BGFX_BUFFER_COMPUTE_FORMAT_32X4`
+  -- (truss bgfx module strips leading `BGFX_` though)
+  local flagname = ("BUFFER_COMPUTE_FORMAT_%dX%d"):format(bitcount, elem_count)
+  if not bgfx[flagname] then
+    return nil, nil, nil, nil
+  end
+
+  return bgfx[flagname], elem_size, elem_count, elem_type
+end
+
 m._vertex_types = {}
 function m.create_vertex_type(attrib_table, attrib_order)
   local canon_name, attrib_list = order_attributes(attrib_table, attrib_order)
@@ -80,10 +104,10 @@ function m.create_vertex_type(attrib_table, attrib_order)
 
   local entries = {}
   local ntype = terralib.types.newstruct(canon_name)
-  local vdecl = terralib.new(bgfx.vertex_decl_t)
+  local vdecl = terralib.new(bgfx.vertex_layout_t)
   local acounts = {}
 
-  bgfx.vertex_decl_begin(vdecl, bgfx.get_renderer_type())
+  bgfx.vertex_layout_begin(vdecl, bgfx.get_renderer_type())
   for i, atuple in ipairs(attrib_list) do
     local aname, ainfo = atuple[1], atuple[2]
     local atype = ainfo.ctype
@@ -93,17 +117,25 @@ function m.create_vertex_type(attrib_table, attrib_order)
     acounts[aname] = acount
     local bgfx_enum = m.ATTRIBUTE_INFO[aname].bgfx_enum
     local bgfx_type = BGFX_ATTRIBUTE_TYPES[atype]
-    bgfx.vertex_decl_add(vdecl, bgfx_enum, acount, bgfx_type, normalized, false)
+    bgfx.vertex_layout_add(vdecl, bgfx_enum, acount, bgfx_type, normalized, false)
   end
-  bgfx.vertex_decl_end(vdecl)
+  bgfx.vertex_layout_end(vdecl)
 
   ntype.entries = entries
   ntype:complete() -- complete the terra type now to avoid cryptic bugs
 
+  local compute_flags, compute_el_size, compute_el_count, compute_el_type = 
+    _infer_compute_layout(attrib_list)
+
   m._vertex_types[canon_name] = {ttype = ntype,
                                  vdecl = vdecl,
                                  type_id = canon_name,
-                                 attributes = acounts}
+                                 attributes = acounts,
+                                 compute_flags = compute_flags,
+                                 compute_elem_size = compute_el_size,
+                                 compute_elem_count = compute_el_count,
+                                 compute_elem_type = compute_el_type
+                                }
   return m._vertex_types[canon_name]
 end
 

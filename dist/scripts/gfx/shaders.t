@@ -13,7 +13,7 @@ local subpaths = {
   DIRECT3D11 = "dx11",
   DIRECT3D12 = "dx11", -- not a typo, same shaders
   GNM = "pssl",
-  METAL = "metal",
+  METAL = "mtl",
   OPENGLES = "essl",
   OPENGL = "glsl",
   VULKAN = "spirv"
@@ -51,6 +51,16 @@ function m.load_program(vshadername, fshadername)
     local fshader = m.load_shader(fshadername)
     m._programs[pname] = bgfx.create_program(vshader, fshader, true)
     log.debug("Loaded program " .. pname)
+  end
+  return m._programs[pname]
+end
+
+function m.load_compute_program(cshadername)
+  local pname = cshadername
+  if not m._programs[pname] then
+    local cshader = m.load_shader(cshadername)
+    m._programs[pname] = bgfx.create_compute_program(cshader, true)
+    log.debug("Loaded compute program " .. pname)
   end
   return m._programs[pname]
 end

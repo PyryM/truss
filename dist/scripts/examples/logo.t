@@ -174,7 +174,8 @@ local function generate_logo_mesh(parent, material, resolution)
     resolution+1 -- need 1 voxel padding for reasons
   )
   local progress = add_2d_drawable(textbox, {
-    x = 1280/2 - 400/2, y = 300, w = 400, h = 30, font_size = 30,
+    x = gfx.backbuffer_width/2 - 400/2, y = gfx.backbuffer_height/2, 
+    w = 400, h = 30, font_size = 30,
     color = {255,255,255,255},
     text = "Generating mesh", font = 'mono'
   })
@@ -183,10 +184,12 @@ local function generate_logo_mesh(parent, material, resolution)
     for iy = 0, ndivs-1 do
       for ix = 0, ndivs-1 do
         local geo = gen_cell(data, ix, iy, iz, dg, edge_funcs)
-        local mesh = parent:create_child(graphics.Mesh, "_logo_" .. partidx,
-                                         geo, material)
-        mesh.position:set(-0.5, -0.5, -0.5)
-        mesh:update_matrix()
+        if geo then
+          local mesh = parent:create_child(graphics.Mesh, "_logo_" .. partidx,
+                                          geo, material)
+          mesh.position:set(-0.5, -0.5, -0.5)
+          mesh:update_matrix()
+        end
         progress.text = ("Generating mesh [%03d / %03d]"):format(partidx, ndivs^3)
         partidx = partidx + 1
       end
@@ -259,8 +262,8 @@ local gif_mode = false
 function init()
   myapp = app.App{
     width = (gif_mode and 720) or 1280, height = 720, 
-    msaa = true, stats = false,
-    title = "truss | logo.t", clear_color = 0x000000ff
+    msaa = true, hidpi = true, stats = false,
+    title = "truss | logo.t", clear_color = 0x000000ff,
   }
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
   myapp.camera.orbit_control:set(0, 0, 0.7)
@@ -270,6 +273,8 @@ function init()
 
   myapp.scene:create_child(Stars, 'sky', {nstars = 30000})
   myapp.scene:create_child(ecs.Entity3d, "logotext", NVGThing())
+
+  print(myapp.width)
 
   async.run(function()
     add_2d_drawable(textbox, {
@@ -284,16 +289,34 @@ function init()
     if gif_mode then return end
     -- spawn caps
     local ypos = 5
+    local mult = gfx.backbuffer_width / myapp.width
     for capname, supported in pairs(gfx.get_caps().features) do
       local color = (supported and {200,255,200,255}) or {100,100,100,255}
       add_2d_drawable(textbox, {
-        x = 1000, y = ypos, w = 250, h = 23, 
-        font_size = 22, text = capname, color = color, font = 'mono'
+        x = gfx.backbuffer_width - 280 * mult, y = ypos, w = 250 * mult, h = 23 * mult, 
+        font_size = 20 * mult, text = capname, color = color, font = 'mono'
       })
-      ypos = ypos + 24
+      ypos = ypos + 20 * mult
       async.await_frames(5)
     end
   end)
+
+  -- just barf texture caps to console because there is not remotely
+  -- room on screen for them
+  local texcaps = {}
+  for fname, fcaps in pairs(gfx.get_caps().texture_formats) do
+    local scaps = fname .. ": "
+    for capname, present in pairs(fcaps) do
+      if capname:sub(1,1) ~= "_" and present then 
+        scaps = scaps .. capname .. " " 
+      end
+    end
+    table.insert(texcaps, {fname, scaps})
+  end
+  table.sort(texcaps, function(a, b) return a[1] < b[1] end)
+  for _, v in ipairs(texcaps) do
+    print(v[2])
+  end
 end
 
 function update()

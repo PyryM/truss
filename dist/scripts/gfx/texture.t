@@ -6,6 +6,7 @@ local class = require("class")
 local math = require("math")
 local fmt = require("./formats.t")
 local bgfx = require("./bgfx.t")
+local gfx_common = require("./common.t")
 
 local m = {}
 
@@ -37,6 +38,26 @@ function Texture:release()
   end
 end
 Texture.destroy = Texture.release
+
+function Texture:is_possible()
+  local format = self.format
+  if type(format) == 'table' then format = format.bgfx_enum end
+  return bgfx.is_texture_valid(
+    self.depth or 1, 
+    self:is_cubemap(), 
+    1, -- layers
+    format,   
+    self._cflags or 0)
+end
+
+function Texture:_assert_possible()
+  if not self:is_possible() then
+    local errstr = ("Tex cfg invalid: d:%d, cm:%s, fmt:%s, flags:%s"):format(
+      self.depth or 1, tostring(self:is_cubemap()), self.format.name,
+      m.print_tex_flags(self.flags or {}))
+    truss.error(errstr)
+  end
+end
 
 function Texture:_set_or_create_data(options)
   if options.cdata and options.cdatasize then
@@ -71,7 +92,11 @@ function Texture:is_readable()
 end
 
 function Texture:is_cubemap()
-  return self._is_cubemap
+  return not not self._is_cubemap
+end
+
+function Texture:is_compute_writeable()
+  return self.flags.compute_write
 end
 
 function Texture:raw_blit_copy(src_handle, view)
@@ -81,6 +106,9 @@ function Texture:raw_blit_copy(src_handle, view)
   if not self:is_blittable() then
     truss.error("Texture not a blit_dest!")
   end
+  if type(src_handle) == 'table' then
+    src_handle = assert(src_handle._handle)
+  end
   local viewid = view or 0
   if type(viewid) == 'table' then
     viewid = view._viewid or 0
@@ -88,7 +116,7 @@ function Texture:raw_blit_copy(src_handle, view)
   bgfx.blit(viewid,
         self._handle, 0, 0, 0, 0,
         src_handle, 0, 0, 0, 0,
-        self.width, self.height, 0)
+        self.width, self.height, self.depth)
 end
 
 function Texture:read_back(mip, callback)
@@ -121,6 +149,13 @@ function Texture:async_read_rt(view, mip)
   local layer = self.read_source.layer
   self:raw_blit_copy(rt:get_layer_handle(layer), view or 0)
   return self:async_read_back(mip or 0)
+end
+
+function Texture:bind_compute(stage, mip, access, format)
+  access = gfx_common.resolve_access(access)
+  format = format or self.format
+  if type(format) == 'table' then format = format.bgfx_enum end
+  bgfx.set_image(stage, self._handle, mip or 0, access, format or bgfx.TEXTURE_FORMAT_COUNT)
 end
 
 function Texture:_raw_set_handle(handle, info)
@@ -165,6 +200,7 @@ function Texture:commit()
     truss.error("Cannot commit texture twice.")
   end
   log.debug("Committing texture.")
+  self:_assert_possible()
   self:_create_handle()
   return self
 end
@@ -282,6 +318,14 @@ function m.combine_tex_flags(_options, prefix)
   end
 
   return state, options
+end
+
+function m.print_tex_flags(flags)
+  local frags = {}
+  for k, v in pairs(flags) do
+    table.insert(frags, ("%s: %s"):format(k, tostring(v)))
+  end
+  return table.concat(frags, ",")
 end
 
 local nvg_utils = truss.addons.nanovg.functions

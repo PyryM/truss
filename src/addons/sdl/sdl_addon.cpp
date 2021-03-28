@@ -67,6 +67,7 @@ SDLAddon::SDLAddon() {
 		#define TRUSS_SDL_EVENT_GP_AXIS      11
 		#define TRUSS_SDL_EVENT_GP_BUTTONDOWN 12
 		#define TRUSS_SDL_EVENT_GP_BUTTONUP 13
+		#define TRUSS_SDL_EVENT_FILEDROP    14
 
 		typedef struct Addon Addon;
 		typedef struct bgfx_callback_interface bgfx_callback_interface_t;
@@ -94,8 +95,8 @@ SDLAddon::SDLAddon() {
 		void truss_sdl_create_window_ex(Addon* addon, int x, int y, int w, int h, const char* name, int is_borderless);
 		void truss_sdl_destroy_window(Addon* addon);
 		void truss_sdl_resize_window(Addon* addon, int width, int height, int fullscreen);
-		int truss_sdl_window_width(Addon* addon);
-		int truss_sdl_window_height(Addon* addon);
+		truss_sdl_bounds truss_sdl_window_size(Addon* addon);
+		truss_sdl_bounds truss_sdl_window_gl_size(Addon* addon);
 		int  truss_sdl_num_events(Addon* addon);
 		truss_sdl_event truss_sdl_get_event(Addon* addon, int index);
 		void truss_sdl_start_textinput(Addon* addon);
@@ -103,6 +104,7 @@ SDLAddon::SDLAddon() {
 		void truss_sdl_set_clipboard(Addon* addon, const char* data);
 		const char* truss_sdl_get_clipboard(Addon* addon);
 		const char* truss_sdl_get_user_path(Addon* addon, const char* orgname, const char* appname);
+		const char* truss_sdl_get_filedrop_path(Addon* addon);
 		bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(Addon* addon);
 		void truss_sdl_set_relative_mouse_mode(Addon* addon, int mod);
 		void truss_sdl_show_cursor(Addon* addon, int visible);
@@ -142,6 +144,7 @@ void SDLAddon::init(truss::Interpreter* owner) {
 		" at this point, the mostly likely reason is that you are using" <<
 		" the mesa software renderer.\n";
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+	SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
 	SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0) {
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
@@ -181,6 +184,7 @@ void hackCStrCpy(char* dest, char* src, size_t destsize) {
 void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 	truss_sdl_event newEvent;
 	bool isValid = true;
+	char* temp = NULL;
 	switch(event.type) {
 	case SDL_KEYDOWN:
 	case SDL_KEYUP:
@@ -242,6 +246,12 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 		newEvent.event_type = TRUSS_SDL_EVENT_GP_REMOVED;
 		newEvent.flags = event.cdevice.which;
 		break;
+	case SDL_DROPFILE:
+		newEvent.event_type = TRUSS_SDL_EVENT_FILEDROP;
+		temp = event.drop.file;
+		filedrop_ = temp;
+		SDL_free(temp);
+		break;
 	default: // a whole mess of event types we don't care about
 		isValid = false;
 		break;
@@ -266,7 +276,7 @@ void SDLAddon::update(double dt) {
 }
 
 void SDLAddon::createWindow(int width, int height, const char* name, int is_fullscreen, int display) {
-	uint32_t flags = SDL_WINDOW_SHOWN;
+	uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
 	if (is_fullscreen > 0) {
 		flags = flags | SDL_WINDOW_BORDERLESS;
 	}
@@ -304,18 +314,26 @@ void SDLAddon::createWindow(int x, int y, int w, int h, const char* name, int is
 	registerBGFX();
 }
 
-int SDLAddon::windowWidth() {
-	if (window_ == NULL) return -1;
-	int w, h;
-	SDL_GetWindowSize(window_, &w, &h);
-	return w;
+truss_sdl_bounds SDLAddon::windowSize() {
+	truss_sdl_bounds ret;
+	ret.x = 0;
+	ret.y = 0;
+	ret.w = -1;
+	ret.h = -1;
+	if (window_ == NULL) return ret;
+	SDL_GetWindowSize(window_, &ret.w, &ret.h);
+	return ret;
 }
 
-int SDLAddon::windowHeight() {
-	if (window_ == NULL) return -1;
-	int w, h;
-	SDL_GetWindowSize(window_, &w, &h);
-	return h;
+truss_sdl_bounds SDLAddon::windowGLSize() {
+	truss_sdl_bounds ret;
+	ret.x = 0;
+	ret.y = 0;
+	ret.w = -1;
+	ret.h = -1;
+	if (window_ == NULL) return ret;
+	SDL_GL_GetDrawableSize(window_, &ret.w, &ret.h);
+	return ret;
 }
 
 void SDLAddon::registerBGFX() {
@@ -372,6 +390,10 @@ const char* SDLAddon::getClipboardText() {
 	clipboard_ = temp;
 	SDL_free(temp);
 	return clipboard_.c_str();
+}
+
+const char* SDLAddon::getFiledropText() {
+	return filedrop_.c_str();
 }
 
 bool SDLAddon::createCursor(int cursorSlot, const unsigned char* data, const unsigned char* mask, int w, int h, int hx, int hy) {
@@ -449,12 +471,12 @@ void truss_sdl_resize_window(SDLAddon* addon, int width, int height, int fullscr
 	addon->resizeWindow(width, height, fullscreen);
 }
 
-int truss_sdl_window_width(SDLAddon* addon) {
-	return addon->windowWidth();
+truss_sdl_bounds truss_sdl_window_size(SDLAddon* addon) {
+	return addon->windowSize();
 }
 
-int truss_sdl_window_height(SDLAddon* addon) {
-	return addon->windowHeight();
+truss_sdl_bounds truss_sdl_window_gl_size(SDLAddon* addon) {
+	return addon->windowGLSize();
 }
 
 int  truss_sdl_num_events(SDLAddon* addon) {
@@ -483,6 +505,10 @@ const char* truss_sdl_get_clipboard(SDLAddon* addon) {
 
 const char* truss_sdl_get_user_path(SDLAddon* addon, const char* orgname, const char* appname) {
 	return SDL_GetPrefPath(orgname, appname);
+}
+
+const char* truss_sdl_get_filedrop_path(SDLAddon* addon) {
+	return addon->getFiledropText();
 }
 
 void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode) {
@@ -529,7 +555,17 @@ void bgfx_cb_fatal(bgfx_callback_interface_t* _this, const char* _filePath, uint
 
 void bgfx_cb_trace_vargs(bgfx_callback_interface_t* _this, const char* _filePath, uint16_t _line, const char* _format, va_list _argList) {
 	// oh boy what is this supposed to do?
-	truss_log(TRUSS_LOG_CRITICAL, "I have no clue what the trace_vargs callback is supposed to do??");
+	//truss_log(TRUSS_LOG_CRITICAL, "I have no clue what the trace_vargs callback is supposed to do??");
+	char temp[8192];
+	char* out = temp;
+	int32_t len = vsnprintf(out, sizeof(temp), _format, _argList);
+	if ((int32_t)sizeof(temp) < len)
+	{
+		out = (char*)alloca(len + 1);
+		len = vsnprintf(out, len, _format, _argList);
+	}
+	out[len] = '\0';
+	truss_log(TRUSS_LOG_DEBUG, out);
 }
 
 void bgfx_cb_profiler_begin(bgfx_callback_interface_t* _this, const char* _name, uint32_t _abgr, const char* _filePath, uint16_t _line) {

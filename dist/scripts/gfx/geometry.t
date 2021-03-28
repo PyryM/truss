@@ -6,6 +6,7 @@ local class = require("class")
 local math = require("math")
 local bufferutils = require("./bufferutils.t")
 local bgfx = require("./bgfx.t")
+local gfx_common = require("./common.t")
 local gfx = nil -- need to delay load
 
 local Quaternion = math.Quaternion
@@ -180,7 +181,7 @@ function m.make_fast_transient_quad_func(vinfo)
   return fastQuad
 end
 
-function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
+function TransientGeometry:quad_uv(x0, y0, x1, y1, tu0, tv0, tu1, tv1, z, vinfo)
   if not vinfo then
     local vdefs = require("gfx/vertexdefs.t")
     vinfo = vdefs.create_basic_vertex_type({"position", "texcoord0"})
@@ -189,22 +190,26 @@ function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
   local vs = self.verts
   local v0,v1,v2,v3 = vs[0],vs[1],vs[2],vs[3]
   v0.position[0], v0.position[1], v0.position[2] = x0, y0, z
-  v0.texcoord0[0], v0.texcoord0[1] = 0.0, 1.0
+  v0.texcoord0[0], v0.texcoord0[1] = tu0, tv1
 
   v1.position[0], v1.position[1], v1.position[2] = x1, y0, z
-  v1.texcoord0[0], v1.texcoord0[1] = 1.0, 1.0
+  v1.texcoord0[0], v1.texcoord0[1] = tu1, tv1
 
   v2.position[0], v2.position[1], v2.position[2] = x1, y1, z
-  v2.texcoord0[0], v2.texcoord0[1] = 1.0, 0.0
+  v2.texcoord0[0], v2.texcoord0[1] = tu1, tv0
 
   v3.position[0], v3.position[1], v3.position[2] = x0, y1, z
-  v3.texcoord0[0], v3.texcoord0[1] = 0.0, 0.0
+  v3.texcoord0[0], v3.texcoord0[1] = tu0, tv0
 
   local idx = self.indices
   idx[0], idx[1], idx[2] = 0, 1, 2
   idx[3], idx[4], idx[5] = 2, 3, 0
 
   return self
+end
+
+function TransientGeometry:quad(x0, y0, x1, y1, z, vinfo)
+  return self:quad_uv(x0, y0, x1, y1, 0.0, 0.0, 1.0, 1.0, z, vinfo)
 end
 
 function TransientGeometry:bind()
@@ -247,6 +252,18 @@ function StaticGeometry:allocate(n_verts, n_indices, vertinfo)
   end
   self.index_type = index_type
 
+  -- prevent segfault on OSX when allocating zero vertices
+  if n_verts == 0 then
+    log.warn("Allocated zero verts for " .. self.name)
+    n_verts = 1
+    self._vtx_count = 0
+  end
+  if n_indices == 0 then
+    log.warn("Allocated zero indices for " .. self.name)
+    n_indices = 3
+    self._idx_count = 0
+  end
+
   self.vertinfo = vertinfo
   self.verts = truss.allocate(vertinfo.ttype[n_verts])
   self.n_verts = n_verts
@@ -258,6 +275,20 @@ function StaticGeometry:allocate(n_verts, n_indices, vertinfo)
   return self
 end
 DynamicGeometry.allocate = StaticGeometry.allocate
+
+function StaticGeometry:get_compute_vertex_view()
+  if not self.allocated then
+    truss.error("Cannot get compute view: geometry has not been allocated!")
+  end
+  if not self.vertinfo.compute_elem_type then
+    truss.error("Vertex type " .. self.vertinfo.type_id .. " is not compute compatible! " 
+                .. "(vertex type is either wrong size or has mixed element types)")
+  end
+  local ecount = self.n_verts * self.vertinfo.compute_elem_count
+  local viewptr = terralib.cast(&self.vertinfo.compute_elem_type, self.verts)
+  return viewptr, ecount
+end
+DynamicGeometry.get_compute_vertex_view = StaticGeometry.get_compute_vertex_view
 
 function StaticGeometry:copy(src)
   if not src.allocated then truss.error("Cannot copy unallocated geometry") end
@@ -386,12 +417,16 @@ end
 DynamicGeometry.set_from_data = StaticGeometry.set_from_data
 
 function StaticGeometry:_create_bgfx_buffers(flags)
-  self._vbh = bgfx.create_vertex_buffer(
-      bgfx.make_ref(self.verts, self.vert_data_size),
-      self.vertinfo.vdecl, flags )
+  if self.vert_data_size > 0 then
+    self._vbh = bgfx.create_vertex_buffer(
+        bgfx.make_ref(self.verts, self.vert_data_size),
+        self.vertinfo.vdecl, flags )
+  end
 
-  self._ibh = bgfx.create_index_buffer(
-      bgfx.make_ref(self.indices, self.index_data_size), flags )
+  if self.index_data_size > 0 then
+    self._ibh = bgfx.create_index_buffer(
+        bgfx.make_ref(self.indices, self.index_data_size), flags )
+  end
 end
 
 function DynamicGeometry:_mem_ref(data, datasize)
@@ -409,23 +444,65 @@ function DynamicGeometry:_mem_ref(data, datasize)
 end
 
 function DynamicGeometry:_create_bgfx_buffers(flags)
-  if self.vert_data_size > m.MAX_DYNAMIC_VB_SIZE then
-    truss.error("Exceeded BGFX maximum dynamic vertex buffer size ("
-                .. m.MAX_DYNAMIC_VB_SIZE .. "): requested " 
-                .. self.vert_data_size)
+  if self.vert_data_size > 0 then
+    if self.vert_data_size > m.MAX_DYNAMIC_VB_SIZE then
+      truss.error("Exceeded BGFX maximum dynamic vertex buffer size ("
+                  .. m.MAX_DYNAMIC_VB_SIZE .. "): requested " 
+                  .. self.vert_data_size)
+    end
+    self._vbh = bgfx.create_dynamic_vertex_buffer_mem(
+        self:_mem_ref(self.verts, self.vert_data_size),
+        self.vertinfo.vdecl, flags )
   end
-  self._vbh = bgfx.create_dynamic_vertex_buffer_mem(
-      self:_mem_ref(self.verts, self.vert_data_size),
-      self.vertinfo.vdecl, flags )
 
-  if self.index_data_size > m.MAX_DYNAMIC_IB_SIZE then
-    truss.error("Exceeded BGFX maximum dynamic index buffer size ("
-                .. m.MAX_DYNAMIC_IB_SIZE .. "): requested " 
-                .. self.index_data_size)
+  if self.index_data_size > 0 then
+    if self.index_data_size > m.MAX_DYNAMIC_IB_SIZE then
+      truss.error("Exceeded BGFX maximum dynamic index buffer size ("
+                  .. m.MAX_DYNAMIC_IB_SIZE .. "): requested " 
+                  .. self.index_data_size)
+    end
+    self._ibh = bgfx.create_dynamic_index_buffer_mem(
+        self:_mem_ref(self.indices, self.index_data_size), flags )
   end
-  self._ibh = bgfx.create_dynamic_index_buffer_mem(
-      self:_mem_ref(self.indices, self.index_data_size), flags )
 end
+
+local _compute_access = {
+  read = assert(bgfx.BUFFER_COMPUTE_READ),
+  write = assert(bgfx.BUFFER_COMPUTE_WRITE),
+  readwrite = assert(bgfx.BUFFER_COMPUTE_READ_WRITE)
+}
+_compute_access.r = _compute_access.read
+_compute_access.w = _compute_access.write
+_compute_access.rw = _compute_access.readwrite
+
+function StaticGeometry:set_compute_access(access, format_flags)
+  if self.committed then
+    truss.error("Cannot change compute access after commit!")
+  end
+  if not format_flags then
+    if not self.vertinfo then
+      truss.error("Need to know vertex type to infer compute format!")
+    end
+    if not self.vertinfo.compute_flags then
+      truss.error("Vertex type incompatible with compute access!")
+    end
+    format_flags = self.vertinfo.compute_flags
+  end
+  self.compute_flags = math.ullor(assert(_compute_access[access]), format_flags)
+  return self
+end
+DynamicGeometry.set_compute_access = StaticGeometry.set_compute_access
+
+function StaticGeometry:assert_compatible_access(access)
+  if not self.compute_flags then
+    truss.error("Geometry has no compute access!")
+  end
+  local req = assert(_compute_access[access])
+  if math.ulland(self.compute_flags, req) == 0 then
+    truss.error("Geometry lacks compute access: " .. access)
+  end
+end
+DynamicGeometry.assert_compatible_access = StaticGeometry.assert_compatible_access
 
 function StaticGeometry:commit()
   if not self.allocated then
@@ -437,16 +514,16 @@ function StaticGeometry:commit()
     return self
   end
 
-  local flags = bgfx.BUFFER_NONE
+  local flags = self.compute_flags or bgfx.BUFFER_NONE
   if self.index_type == uint32 then
     log.debug("Building w/ 32 bit index buffer!")
-    flags = bgfx.BUFFER_INDEX32
+    flags = flags + bgfx.BUFFER_INDEX32
   end
 
   self:_create_bgfx_buffers(flags)
 
-  if not bgfx.check_handle(self._vbh) then truss.error("invalid vbh") end
-  if not bgfx.check_handle(self._ibh) then truss.error("invalid ibh") end
+  if self._vbh and (not bgfx.check_handle(self._vbh)) then truss.error("invalid vbh") end
+  if self._ibh and (not bgfx.check_handle(self._ibh)) then truss.error("invalid ibh") end
   self.committed = true
 
   return self
@@ -483,6 +560,11 @@ local function check_committed(geo)
   return false
 end
 
+function StaticGeometry:assert_committed()
+  if not check_committed(self) then truss.error("Geometry is not committed.") end
+end
+DynamicGeometry.assert_committed = StaticGeometry.assert_committed
+
 function StaticGeometry:set_slice(vtx_start, vtx_count, idx_start, idx_count)
   self._vtx_start = vtx_start
   self._idx_start = idx_start
@@ -495,19 +577,51 @@ DynamicGeometry.set_slice = StaticGeometry.set_slice
 function StaticGeometry:bind()
   if not check_committed(self) then return end
 
-  bgfx.set_vertex_buffer(0, self._vbh, 
-    self._vtx_start or 0, self._vtx_count or bgfx.UINT32_MAX)
-  bgfx.set_index_buffer(self._ibh, 
-    self._idx_start or 0, self._idx_count or bgfx.UINT32_MAX)
+  if self._vbh then
+    bgfx.set_vertex_buffer(0, self._vbh, 
+      self._vtx_start or 0, self._vtx_count or bgfx.UINT32_MAX)
+  end
+  if self._ibh then
+    bgfx.set_index_buffer(self._ibh, 
+      self._idx_start or 0, self._idx_count or bgfx.UINT32_MAX)
+  end
 end
 
 function DynamicGeometry:bind()
   if not check_committed(self) then return end
 
-  bgfx.set_dynamic_vertex_buffer(0, self._vbh,
-    self._vtx_start or 0, self._vtx_count or bgfx.UINT32_MAX)
-  bgfx.set_dynamic_index_buffer(self._ibh, 
-    self._idx_start or 0, self._idx_count or bgfx.UINT32_MAX)
+  if self._vbh then
+    bgfx.set_dynamic_vertex_buffer(0, self._vbh,
+      self._vtx_start or 0, self._vtx_count or bgfx.UINT32_MAX)
+  end
+  if self._ibh then
+    bgfx.set_dynamic_index_buffer(self._ibh, 
+      self._idx_start or 0, self._idx_count or bgfx.UINT32_MAX)
+  end
+end
+
+function StaticGeometry:bind_index_compute(stage, access)
+  self:assert_committed()
+  self:assert_compatible_access(access)
+  bgfx.set_compute_index_buffer(stage, self._ibh, gfx_common.resolve_access(access))
+end
+
+function StaticGeometry:bind_vertex_compute(stage, access)
+  self:assert_committed()
+  self:assert_compatible_access(access)
+  bgfx.set_compute_vertex_buffer(stage, self._vbh, gfx_common.resolve_access(access))
+end
+
+function DynamicGeometry:bind_index_compute(stage, access)
+  self:assert_committed()
+  self:assert_compatible_access(access)
+  bgfx.set_compute_dynamic_index_buffer(stage, self._ibh, gfx_common.resolve_access(access))
+end
+
+function DynamicGeometry:bind_vertex_compute(stage, access)
+  self:assert_committed()
+  self:assert_compatible_access(access)
+  bgfx.set_compute_dynamic_vertex_buffer(stage, self._vbh, gfx_common.resolve_access(access))
 end
 
 function DynamicGeometry:update()

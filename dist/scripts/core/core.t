@@ -41,14 +41,23 @@ local TRUSS_ID = TRUSS_INTERPRETER_ID
 truss.TRUSS_ID = TRUSS_ID
 truss.interpreter_id = TRUSS_ID
 
+local function stringify_args(...)
+  local nargs = select('#', ...)
+  local frags = {}
+  for i = 1, nargs do
+    frags[i] = tostring(select(i, ...))
+  end
+  return table.concat(frags, " ")
+end
+
 -- let log be a global because it's inconvenient to have to do truss.log
 log = {}
-log.debug = function(msg) ctruss.truss_log(4, tostring(msg)) end
-log.info = function(msg) ctruss.truss_log(3, tostring(msg)) end
-log.warn = function(msg) ctruss.truss_log(2, tostring(msg)) end
+log.debug = function(...) ctruss.truss_log(4, stringify_args(...)) end
+log.info = function(...) ctruss.truss_log(3, stringify_args(...)) end
+log.warn = function(...) ctruss.truss_log(2, stringify_args(...)) end
 log.warning = log.warn
-log.error = function(msg) ctruss.truss_log(1, tostring(msg)) end
-log.critical = function(msg) ctruss.truss_log(0, tostring(msg)) end
+log.error = function(...) ctruss.truss_log(1, stringify_args(...)) end
+log.critical = function(...) ctruss.truss_log(0, stringify_args(...)) end
 truss.log = log
 
 -- use default lua error handling
@@ -207,7 +216,7 @@ function truss.set_app_directories(orgname, appname)
     truss.error("Must specify both org and app names.")
     return
   end 
-  local sdl = require("addons/sdl.t")
+  local sdl = require("addon/sdl.t")
   local userpath = sdl.create_user_path(orgname, appname)
   log.info("Setting save dir to: " .. userpath)
   truss.C.set_raw_write_dir(userpath)
@@ -265,6 +274,25 @@ end
 
 function truss.save_string(filename, s)
   truss.C.save_data(filename, s, #s)
+end
+
+function truss.save_data(filename, data, datasize)
+  local dtype = terralib.type(data)
+  if dtype == "cdata" then
+    local ttype = terralib.typeof(data)
+    if ttype:isarray() then
+      local dsize = terralib.sizeof(ttype) * ttype.N
+      if not datasize then datasize = dsize end
+      if datasize > dsize then
+        truss.error("Provided datasize is too large! " .. datasize .. " > " .. dsize)
+      end
+    end
+    truss.C.save_data(filename, terralib.cast(&int8, data), datasize)
+  elseif dtype == "string" then
+    truss.save_string(filename, data:sub(1, datasize))
+  else
+    truss.error("Only CDATA and strings can be saved, got [" .. dtype .. "]")
+  end
 end
 
 local function find_path(file_name)
@@ -476,7 +504,7 @@ truss.mainenv._env = truss.mainenv
 extend_table(truss._module_env, _G)
 
 -- use stack trace plus if it's available
-if truss.check_module_exists("lib/StackTracePlus.lua") then
+if false and truss.check_module_exists("lib/StackTracePlus.lua") then
   log.debug("Using StackTracePlus for stacktraces")
   debug.traceback = truss.require("lib/StackTracePlus.lua").stacktrace
 end

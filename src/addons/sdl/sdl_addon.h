@@ -38,6 +38,7 @@ typedef struct SDLAddon SDLAddon;
 #define TRUSS_SDL_EVENT_GP_AXIS       11
 #define TRUSS_SDL_EVENT_GP_BUTTONDOWN 12
 #define TRUSS_SDL_EVENT_GP_BUTTONUP   13
+#define TRUSS_SDL_EVENT_FILEDROP      14
 
 #define TRUSS_SDL_MAX_KEYCODE_LENGTH  15 /* should be enough for anybody */
 #define TRUSS_SDL_KEYCODE_BUFF_SIZE   16 /* extra byte for null terminator */
@@ -66,8 +67,8 @@ TRUSS_C_API void truss_sdl_create_window(SDLAddon* addon, int width, int height,
 TRUSS_C_API void truss_sdl_create_window_ex(SDLAddon* addon, int x, int y, int w, int h, const char* name, int is_borderless);
 TRUSS_C_API void truss_sdl_destroy_window(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_resize_window(SDLAddon* addon, int width, int height, int fullscreen);
-TRUSS_C_API int truss_sdl_window_width(SDLAddon* addon);
-TRUSS_C_API int truss_sdl_window_height(SDLAddon* addon);
+TRUSS_C_API truss_sdl_bounds truss_sdl_window_size(SDLAddon* addon);
+TRUSS_C_API truss_sdl_bounds truss_sdl_window_gl_size(SDLAddon* addon);
 TRUSS_C_API int truss_sdl_num_events(SDLAddon* addon);
 TRUSS_C_API truss_sdl_event truss_sdl_get_event(SDLAddon* addon, int index);
 TRUSS_C_API void truss_sdl_start_textinput(SDLAddon* addon);
@@ -75,6 +76,7 @@ TRUSS_C_API void truss_sdl_stop_textinput(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_set_clipboard(SDLAddon* addon, const char* data);
 TRUSS_C_API const char* truss_sdl_get_clipboard(SDLAddon* addon);
 TRUSS_C_API const char* truss_sdl_get_user_path(SDLAddon* addon, const char* orgname, const char* appname);
+TRUSS_C_API const char* truss_sdl_get_filedrop_path(SDLAddon* addon);
 TRUSS_C_API bgfx_callback_interface_t* truss_sdl_get_bgfx_cb(SDLAddon* addon);
 TRUSS_C_API void truss_sdl_set_relative_mouse_mode(SDLAddon* addon, int mode);
 TRUSS_C_API void truss_sdl_show_cursor(SDLAddon* addon, int visible);
@@ -100,8 +102,8 @@ public:
 
 	void createWindow(int width, int height, const char* name, int is_fullscreen, int display);
 	void createWindow(int x, int y, int w, int h, const char* name, int is_borderless);
-	int windowWidth();
-	int windowHeight();
+	truss_sdl_bounds windowSize();
+	truss_sdl_bounds windowGLSize();
 	void registerBGFX();
 	void destroyWindow();
 	void resizeWindow(int width, int height, int fullscreen);
@@ -111,6 +113,7 @@ public:
 	const char* getControllerName(int controllerIdx);
 
 	const char* getClipboardText();
+	const char* getFiledropText();
 
 	bool createCursor(int cursorSlot, const unsigned char* data, const unsigned char* mask, int w, int h, int hx, int hy);
 	bool setCursor(int slot);
@@ -127,6 +130,7 @@ private:
 	std::string header_;
 
 	std::string clipboard_;
+	std::string filedrop_;
 
 	SDL_Window* window_;
 	SDL_Event event_;

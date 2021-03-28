@@ -38,7 +38,7 @@ end
 m.BasicCompositeMaterial = gfx.define_base_material{
   name = "BasicCompositeMaterial",
   uniforms = {s_srcTex = {kind = 'tex', sampler = 0}},
-  state = {}
+  state = {cull = false, depth_test = false, depth_write = false}
 }
 
 function CompositeStage:create_default_material(shader)
@@ -120,7 +120,11 @@ end
 -- e.g., for postprocessing effects
 function m.FullscreenStage(options)
   options = options or {}
-  options.ops = {fullscreen = {x0 = 0, y0 = 0, x1 = 1, y1 = 1,
+  local y0, y1 = 0.0, 1.0
+  if options.invert_y then
+    y0, y1 = y1, y0
+  end
+  options.ops = {fullscreen = {x0 = 0, y0 = y0, x1 = 1, y1 = y1,
                                source = options.input}}
   return CompositeStage(options)
 end

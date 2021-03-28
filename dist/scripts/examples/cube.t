@@ -4,7 +4,7 @@
 -- just raw bgfx and (almost no) helper libraries
 
 local bgfx = require("gfx/bgfx.t")
-local sdl = require("addons/sdl.t")
+local sdl = require("addon/sdl.t")
 local math = require("math")
 
 struct BGRAColor {

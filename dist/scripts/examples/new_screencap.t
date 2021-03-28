@@ -12,7 +12,7 @@ local geometry = require("geometry")
 local flat = require("material/flat.t")
 
 local app = require("app/app.t")
-local screencap = require("addons/screencap.t")
+local screencap = require("addon/screencap.t")
 local orbitcam = require("graphics/orbitcam.t")
 
 local captex = nil

@@ -4,7 +4,7 @@ local pbr = require("material/pbr.t")
 local graphics = require("graphics")
 local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
-local config = require("utils/config.t")
+local config = require("util/config.t")
 
 local function srand(mag)
   return (math.random() * 2.0 - 1.0) * mag

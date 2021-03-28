@@ -22,16 +22,18 @@ local EVENT_INFO = {
   [10] = {"gamepad_removed", "gamepad_sys"},
   [11] = {"gamepad_axis", "gamepad"},
   [12] = {"gamepad_buttondown", "gamepad"},
-  [13] = {"gamepad_buttonup", "gamepad"}
+  [13] = {"gamepad_buttonup", "gamepad"},
+  [14] = {"filedrop", "filedrop"}
 }
 
 local sdl = nil
 function SDLInputSystem:init(options)
-  sdl = sdl or require("addons/sdl.t")
+  sdl = sdl or require("addon/sdl.t")
   self.mount_name = "input"
   options = options or {}
   self._autoclose = (options.autoclose ~= false)
   self.evt = ecs.EventEmitter()
+  self.keystate = {}
 end
 
 function SDLInputSystem:on(...)
@@ -88,6 +90,12 @@ local function convert_gamepad_event(evt_type, evt)
   return ret
 end
 
+local function convert_filedrop_event(evt_type, evt)
+  return {
+    path = sdl.get_filedrop_path() or ""
+  }
+end
+
 local function convert_event(evt)
   local evt_name, evt_class = unpack(EVENT_INFO[evt.event_type])
   local new_evt
@@ -105,6 +113,8 @@ local function convert_event(evt)
     new_evt = evt
   elseif evt_class == "gamepad" then
     new_evt = convert_gamepad_event(evt_name, evt)
+  elseif evt_class == "filedrop" then
+    new_evt = convert_filedrop_event(evt_name, evt)
   end
   return evt_name, new_evt
 end
@@ -115,6 +125,11 @@ function SDLInputSystem:update()
       truss.quit()
     end
     local evtname, new_evt = convert_event(evt)
+    if evtname == "keydown" then
+      self.keystate[new_evt.keyname] = true
+    elseif evtname == "keyup" then
+      self.keystate[new_evt.keyname] = false
+    end
     self.evt:emit(evtname, new_evt)
   end
 end

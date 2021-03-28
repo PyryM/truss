@@ -17,12 +17,12 @@ function StrongRandom:init(seed)
   self._ctx = terralib.new(chacha.chacha20_ctx)
   self._ctx.available = 0
   self._output_u8 = terralib.cast(&uint8, self._ctx.keystream)
-  chacha.setup(self._ctx, self._key, 32, self._nonce)
+  self._ctx:setup(self._key, 32, self._nonce)
 end
 
 function StrongRandom:rand_uint8()
   if self._ctx.available <= 0 then
-    chacha.block(self._ctx, self._ctx.keystream)
+    self._ctx:block(self._ctx.keystream)
     self._ctx.available = 64
   end
   local ret = self._output_u8[64 - self._ctx.available]

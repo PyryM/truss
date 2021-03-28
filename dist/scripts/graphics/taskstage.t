@@ -6,7 +6,7 @@ local class = require("class")
 local renderer = require("./renderer.t")
 local gfx = require("gfx")
 local bgfx = require("gfx/bgfx.t")
-local ring = require("utils/ring.t")
+local ring = require("util/ring.t")
 local m = {}
 
 local TaskRunnerStage = class("TaskRunnerStage")

@@ -6,7 +6,7 @@ $output v_vpos
  * MIT License
  */
 
-#include "../common/common.sh"
+#include "common.sh"
 
 void main()
 {

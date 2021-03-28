@@ -49,9 +49,11 @@ function m._make_reset_flags(options)
   local reset = 0
   if options.debugtext then
     debug = debug + bgfx.DEBUG_TEXT
+    log.debug("DEBUG FLAG: DEBUG TEXT")
   end
   if options.vsync ~= false then
     reset = reset + bgfx.RESET_VSYNC
+    log.debug("RESET FLAG: VSYNC")
   end
   local msaa = options.msaa
   if msaa then
@@ -61,14 +63,21 @@ function m._make_reset_flags(options)
                   .. "(passed in " .. tostring(msaa) .. ")")
     end
     reset = reset + bgfx['RESET_MSAA_X' .. msaa]
+    log.debug("RESET FLAG: MSAA", msaa)
   end
   if options.srgb then
     reset = reset + bgfx.RESET_SRGB_BACKBUFFER
+    log.debug("RESET FLAG: SRGB BACKBUFFER")
+  end
+  if options.hidpi then
+    reset = reset + bgfx.RESET_HIDPI
+    log.debug("RESET FLAG: HIDPI")
   end
   if options.lowlatency then
     -- extra flags that may help with latency
     reset = reset + bgfx.RESET_FLIP_AFTER_RENDER +
           bgfx.RESET_FLUSH_AFTER_RENDER
+    log.debug("RESET FLAG: LOWLATENCY")
   end
   return reset, debug
 end
@@ -127,7 +136,13 @@ function m.init_gfx(options)
 
   local reset, debug = m._make_reset_flags(options)
 
-  if options.lowlatency then
+  local single_threaded = options.lowlatency
+  if truss.os == "OSX" then
+    log.warn("Forcing single-threaded for OSX because otherwise BGFX crashes!")
+    single_threaded = true
+  end
+
+  if single_threaded then
     log.info("Trying to init bgfx in single-threaded mode...")
     m._safe_wait_frames = 1
     -- secret bgfx feature: call render_frame before init => single-threaded
@@ -138,6 +153,7 @@ function m.init_gfx(options)
   local cb_ptr = nil
   local renderer_type = bgfx.RENDERER_TYPE_COUNT
   if options.backend then
+    log.info("Requested backend: ", options.backend)
     local rname = "RENDERER_TYPE_" .. string.upper(options.backend)
     renderer_type = bgfx[rname]
     if not renderer_type then
@@ -148,14 +164,33 @@ function m.init_gfx(options)
 
   local w, h = options.width, options.height
   if options.window then
-    w, h = options.window.get_window_size()
+    if options.hidpi and renderer_type == bgfx.RENDERER_TYPE_OPENGL then
+      print("Possible HIDPI?")
+      w, h = options.window.get_window_gl_size()
+    else
+      w, h = options.window.get_window_size()
+    end
+    print("Got window size: ", w, h)
     if options.window.get_bgfx_callback then
       cb_ptr = options.window.get_bgfx_callback()
     end
+  elseif options.cb_ptr then
+    cb_ptr = options.cb_ptr
   end
   if not (w and h) then
     truss.error("gfx.init_gfx needs to be supplied with width and height.")
     return false
+  end
+
+  if options.headless then
+    log.info("Attempting headless BGFX")
+    m._headless_pdata = terralib.new(bgfx.platform_data_t)
+    m._headless_pdata.ndt = nil
+    m._headless_pdata.nwh = nil
+    m._headless_pdata.context = nil
+    m._headless_pdata.backBuffer = nil
+    m._headless_pdata.backBufferDS = nil
+    bgfx.set_platform_data(m._headless_pdata)
   end
 
   log.debug("bgfx init ctor")
@@ -183,6 +218,9 @@ function m.init_gfx(options)
 
   log.info("initted bgfx")
   local backend_type = bgfx.get_renderer_type()
+  if options.backend and (backend_type ~= renderer_type) then
+    log.warn("Requested backend", options.backend, "is not available!")
+  end
   local backend_name = ffi.string(bgfx.get_renderer_name(backend_type))
   gfx.backend_name = backend_name
   gfx.backend_type = backend_type
@@ -256,7 +294,8 @@ m.DefaultStateOptions = {
 
 function m.submit(view, program, depth, preserve_state)
   if type(view) == "table" then view = view._viewid end
-  bgfx.submit(view, program, depth or 0, not not preserve_state)
+  local flags = (preserve_state and bgfx.DISCARD_NONE) or bgfx.DISCARD_ALL
+  bgfx.submit(view, program, depth or 0, flags)
 end
 
 function m.create_state(user_options)
@@ -307,6 +346,24 @@ function m.save_screenshot(filename, target)
     fb = m.invalid_handle(bgfx.frame_buffer_handle_t)
   end
   bgfx.request_screen_shot(fb, filename)
+end
+
+local ACCESS = {
+  read = bgfx.ACCESS_READ,
+  write = bgfx.ACCESS_WRITE,
+  readwrite = bgfx.ACCESS_READWRITE,
+  r = bgfx.ACCESS_READ,
+  w = bgfx.ACCESS_WRITE,
+  rw = bgfx.ACCESS_READWRITE
+}
+
+function m.resolve_access(access)
+  if not access then return ACCESS.read end
+  if type(access) == 'string' then
+    access = ACCESS[access]
+    if not access then truss.error("Unknown access specifier " .. access) end
+  end
+  return access
 end
 
 return m

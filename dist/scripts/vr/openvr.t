@@ -313,9 +313,13 @@ function m.mat_to_openvr_mat34(mat, target)
   d[2][0], d[2][1], d[2][2], d[2][3] = s[2], s[6], s[10], s[14]
 end
 
+function m.set_clip_distances(near, far)
+  m.near_clip, m.far_clip = near, far
+end
+
 function m._update_projections()
-  local near = m.nearClip or 0.05
-  local far = m.farClip or 100.0
+  local near = m.near_clip or 0.05
+  local far = m.far_clip or 100.0
   for i, eyeID in ipairs(m.eye_ids) do
     local m44 = openvr_c.GetProjectionMatrix(m.sysptr, eyeID, near, far)
     m.openvr_mat44_to_mat(m44, m.eye_projections[i])

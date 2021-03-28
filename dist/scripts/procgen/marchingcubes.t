@@ -597,7 +597,6 @@ function m.cubify(data, max_tris, limits)
   set_limits(cd, limits)
 
   m._cubify(m._tables, data.cubedata, tris.triangles)
-  --print("Generated " .. tris.triangles.index .. " vertices.")
 
   return tris
 end
@@ -636,10 +635,11 @@ function m.cubify_to_geo(data, max_tris, scale, limits, target)
   local triangles = tris.triangles
   scale = scale or (1.0 / (data.dsize - 1))
   local created_target = (not target)
+  if triangles.index == 0 then return nil end
   if created_target then
     local gfx = require("gfx")
     local vtype = gfx.create_basic_vertex_type{"position"}
-    target = gfx.StaticGeometry("mc"):allocate(
+    target = gfx.StaticGeometry():allocate(
       triangles.index, triangles.index, vtype
     )
   end
