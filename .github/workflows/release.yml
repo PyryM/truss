@@ -42,9 +42,9 @@ jobs:
         msbuild truss.sln
     - name: Prepare Artifacts
       run: |
+        zip -r "truss_${{ matrix.os }}.zip" dist/	
         ls 
         ls build
-        zip -r "truss_${{ matrix.os }}.zip" dist/
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
