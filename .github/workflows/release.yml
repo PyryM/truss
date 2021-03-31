@@ -48,5 +48,29 @@ jobs:
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: code-coverage-report
+        name: truss_release
         path: truss_${{ matrix.os }}.zip
+
+
+  release:
+    name: Create GitHub Release
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+      - name: Tag Version
+        id: set_tag
+        run: |
+          export VER=$(grep VERSION src/trussapi.h  | cut -d'"' -f 2)
+          echo "::set-output name=tag_name::${VER}"
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.set_tag.outputs.tag_name }}
+          release_name: Release ${{ steps.set_tag.outputs.tag_name }}
+          draft: false
+          prerelease: false
