@@ -51,11 +51,11 @@ jobs:
       - name: Tag Version
         id: set_tag
         run: |
-          export VER=$(grep VERSION src/trussapi.h  | cut -d'"' -f 2)
+          export VER=$(grep TRUSS_VERSION_STRING src/trussapi.h  | cut -d'"' -f 2)
           echo "::set-output name=tag_name::${VER}"
       - name: Publish Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "*.zip"
+          artifacts: "*"
           tag: ${{ steps.set_tag.outputs.tag_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
