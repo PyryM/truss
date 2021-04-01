@@ -29,8 +29,7 @@ jobs:
       run: |
         cd build
         make
-    - name: Tag Version
-      id: set_tag
+    - name: Zip Archive
       run: |
         zip -r "truss_${{ matrix.os }}.zip" build/	
     - name: Tag Version
