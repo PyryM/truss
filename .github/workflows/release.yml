@@ -29,16 +29,12 @@ jobs:
       run: |
         cd build
         make
-    - name: Windows Choco
-      if: matrix.os == 'windows-latest'
-      run: |
-        choco install vcpython27 -f -y
-    - name: MSBuild Install Windows
+    - name: MSBuild On Windows
       if: matrix.os == 'windows-latest'
       run: |
         cd build
         dir
-        C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\amd64\MSBuild.exe truss.sln
+        "\"C:\\Program Files (x86)\\Microsoft Visual Studio\x819\\Enterprise\\MSBuild\\Current\\Bin\amd64\\MSBuild.exe truss.sln\""
     - name: Prepare Artifacts
       run: |
         zip -r "truss_${{ matrix.os }}.zip" dist/	
