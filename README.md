@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/PyryM/truss.svg?branch=master)](https://travis-ci.org/PyryM/truss)[![Build status](https://ci.appveyor.com/api/projects/status/805j1wikxyx406ms/branch/master?svg=true)](https://ci.appveyor.com/project/truss/truss/branch/master)
+[![Release Truss](https://github.com/mikedh/truss/actions/workflows/release.yml/badge.svg)](https://github.com/mikedh/truss/actions/workflows/release.yml)
 
 # truss
 Lua/Terra based visualization/rendering framework, somewhat akin to Processing and Threejs, except with a focus on desktop, VR, and modern rendering features.
