@@ -25,37 +25,22 @@ jobs:
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=release
     - name: Build Ubuntu
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os != 'ubuntu-latest'
       run: |
         cd build
         make
     - name: Prepare Artifacts
       run: |
-        zip -r "truss_${{ matrix.os }}.zip" dist/	
-        ls 
-        ls build
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: truss_release
-        path: truss_${{ matrix.os }}.zip
-
-
-  release:
-    name: GitHub Release
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@master
-      - name: Tag Version
+        zip -r "truss_${{ matrix.os }}.zip" build/	
+    - name: Tag Version
         id: set_tag
         run: |
           export VER=$(grep TRUSS_VERSION_STRING src/trussapi.h  | cut -d'"' -f 2)
           echo "::set-output name=tag_name::${VER}"
-      - name: Publish Release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "dist/*.zip"
-          tag: ${{ steps.set_tag.outputs.tag_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Publish Release
+      uses: ncipollo/release-action@v1
+      with:
+        allowUpdates: true
+        artifacts: truss_${{ matrix.os }}.zip
+        tag: ${{ steps.set_tag.outputs.tag_name }}
+        token: ${{ secrets.GITHUB_TOKEN }}
