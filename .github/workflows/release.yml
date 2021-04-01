@@ -25,13 +25,13 @@ jobs:
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=release
     - name: Build Ubuntu
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os != 'ubuntu-latest'
       run: |
         cd build
         make
     - name: Zip Archive
       run: |
-        zip -r "truss_${{ matrix.os }}.zip" build/	
+        zip -r "truss_${{ matrix.os }}.zip" dist/	
     - name: Tag Version
       id: set_tag
       run: |
