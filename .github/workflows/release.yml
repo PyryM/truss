@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
     steps:
     - name: Install APT On Linux
       if: matrix.os == 'ubuntu-latest'
@@ -29,12 +29,6 @@ jobs:
       run: |
         cd build
         make
-    - name: MSBuild On Windows
-      if: matrix.os == 'windows-latest'
-      run: |
-        cd build
-        dir
-        "\"C:\\Program Files (x86)\\Microsoft Visual Studio\x819\\Enterprise\\MSBuild\\Current\\Bin\amd64\\MSBuild.exe truss.sln\""
     - name: Prepare Artifacts
       run: |
         zip -r "truss_${{ matrix.os }}.zip" dist/	
@@ -48,7 +42,7 @@ jobs:
 
 
   release:
-    name: Create GitHub Release
+    name: GitHub Release
     needs: [build]
     runs-on: ubuntu-latest
     steps:
@@ -59,13 +53,9 @@ jobs:
         run: |
           export VER=$(grep VERSION src/trussapi.h  | cut -d'"' -f 2)
           echo "::set-output name=tag_name::${VER}"
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish Release
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ steps.set_tag.outputs.tag_name }}
-          release_name: Release ${{ steps.set_tag.outputs.tag_name }}
-          draft: false
-          prerelease: false
+          artifacts: "*.zip"
+          tag: ${{ steps.set_tag.outputs.tag_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
