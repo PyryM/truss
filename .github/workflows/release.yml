@@ -31,7 +31,8 @@ jobs:
         make
     - name: Zip Archive
       run: |
-        zip -r "truss_${{ matrix.os }}.zip" dist/	
+        cd dist
+        zip -r "../truss_${{ matrix.os }}.zip" *
     - name: Tag Version
       id: set_tag
       run: |
