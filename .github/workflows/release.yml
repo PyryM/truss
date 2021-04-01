@@ -29,14 +29,15 @@ jobs:
       run: |
         cd build
         make
-    - name: Prepare Artifacts
+    - name: Tag Version
+      id: set_tag
       run: |
         zip -r "truss_${{ matrix.os }}.zip" build/	
     - name: Tag Version
-        id: set_tag
-        run: |
-          export VER=$(grep TRUSS_VERSION_STRING src/trussapi.h  | cut -d'"' -f 2)
-          echo "::set-output name=tag_name::${VER}"
+      id: set_tag
+      run: |
+        export VER=$(grep TRUSS_VERSION_STRING src/trussapi.h  | cut -d'"' -f 2)
+        echo "::set-output name=tag_name::${VER}"
     - name: Publish Release
       uses: ncipollo/release-action@v1
       with:
