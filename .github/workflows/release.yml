@@ -24,6 +24,12 @@ jobs:
       if: matrix.os == 'windows-latest'
       uses: ilammy/msvc-dev-cmd@v1
     - uses: actions/checkout@v2
+    - name: Tag Version
+      id: set_tag
+      run: |
+        export VER=$(grep TRUSS_VERSION_STRING src/trussapi.h  | cut -d'"' -f 2)
+        echo "::set-output name=tag_name::${VER}"
+      shell: bash
     - name: Run CMake
       run: |
         mkdir build
@@ -64,11 +70,6 @@ jobs:
         cd dist
         7z a truss.zip bin lib include scripts shaders textures font models
         7z a "../truss_${{ matrix.os }}.zip" truss.exe truss.zip
-    - name: Tag Version
-      id: set_tag
-      run: |
-        export VER=$(grep TRUSS_VERSION_STRING src/trussapi.h  | cut -d'"' -f 2)
-        echo "::set-output name=tag_name::${VER}"
     - name: Publish Release
       uses: ncipollo/release-action@v1
       with:
