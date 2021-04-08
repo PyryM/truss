@@ -1,0 +1,53 @@
+name: Release Truss
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+
+jobs:
+  build:
+    name: Build Truss
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+    - name: Install APT On Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update -qq -y
+        sudo apt-get install -qq -y libsdl2-dev flex bison libtinfo-dev patchelf
+    - uses: actions/checkout@v2
+    - name: Run CMake
+      run: |
+        ls
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=release
+    - name: Build Ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd build
+        make -j 4
+        cd ../dist
+        patchelf --set-rpath "./lib" truss
+    - name: Zip Archive
+      run: |
+        cd dist
+        zip -r truss.zip font scripts shaders textures
+        zip -r "../truss_${{ matrix.os }}.zip" truss lib bin include truss.zip
+    - name: Tag Version
+      id: set_tag
+      run: |
+        export VER=$(grep TRUSS_VERSION_STRING src/trussapi.h  | cut -d'"' -f 2)
+        echo "::set-output name=tag_name::${VER}"
+    - name: Publish Release
+      uses: ncipollo/release-action@v1
+      with:
+        allowUpdates: true
+        artifacts: truss_${{ matrix.os }}.zip
+        tag: ${{ steps.set_tag.outputs.tag_name }}
+        token: ${{ secrets.GITHUB_TOKEN }}

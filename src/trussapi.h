@@ -6,7 +6,7 @@
 #ifndef TRUSSAPI_H_HEADER_GUARD
 #define TRUSSAPI_H_HEADER_GUARD
 
-#define TRUSS_VERSION_STRING "0.0.1"
+#define TRUSS_VERSION_STRING "0.1.0"
 
 #include <cstdint> // Needed for uint64_t etc.
 #include <cstddef> // Needed for size_t etc.
