@@ -19,7 +19,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update -qq -y
-        sudo apt-get install -qq -y libsdl2-dev flex bison libtinfo-dev
+        sudo apt-get install -qq -y libsdl2-dev flex bison libtinfo-dev patchelf
     - uses: actions/checkout@v2
     - name: Run CMake
       run: |
@@ -32,11 +32,13 @@ jobs:
       run: |
         cd build
         make -j 4
+        cd ../dist
+        patchelf --set-rpath "./lib" truss
     - name: Zip Archive
       run: |
         cd dist
-        zip -r truss.zip font include scripts shaders textures lib bin
-        zip -r "../truss_${{ matrix.os }}.zip" truss truss.zip
+        zip -r truss.zip font scripts shaders textures
+        zip -r "../truss_${{ matrix.os }}.zip" truss lib bin include truss.zip
     - name: Tag Version
       id: set_tag
       run: |
