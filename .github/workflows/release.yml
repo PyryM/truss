@@ -32,7 +32,8 @@ jobs:
     - name: Zip Archive
       run: |
         cd dist
-        zip -r "../truss_${{ matrix.os }}.zip" *
+        zip -r truss.zip font include scripts shaders textures lib bin
+        zip -r "../truss_${{ matrix.os }}.zip" truss truss.zip
     - name: Tag Version
       id: set_tag
       run: |
