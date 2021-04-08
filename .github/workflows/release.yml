@@ -51,7 +51,7 @@ jobs:
         mkdir dx11
         mkdir spirv
         cd ..
-        truss.exe dev/buildshaders.moon
+        ./truss.exe dev/buildshaders.moon
     - name: Zip Archive (linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
