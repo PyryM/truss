@@ -96,7 +96,15 @@ set_target_properties(truss PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${DIST_DIR}"
     )
 
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  
+# use, i.e. don't skip the full RPATH for the build tree
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+# when building, don't use the install RPATH already
+# (but later on when installing)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+
+set(CMAKE_BUILD_RPATH "./lib")
+
 
 # If the user attempts to install, politely inform them that it has no effect.
 install(CODE "MESSAGE(WARNING \"\nTruss cannot be installed to the system. Typically, the 'dist' directory is re-distributed as a self-contained application.\")")
