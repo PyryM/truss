@@ -41,11 +41,29 @@ jobs:
       run: |
         cd build
         MSBuild truss.sln /p:Configuration=Release /p:Platform=x64
-    - name: Zip Archive
+    - name: Build shaders (windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd dist
+        cd shaders
+        mkdir glsl
+        mkdir mtl
+        mkdir dx11
+        mkdir spirv
+        cd ..
+        truss.exe dev/buildshaders.moon
+    - name: Zip Archive (linux)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         cd dist
         zip -r truss.zip font scripts shaders textures
         zip -r "../truss_${{ matrix.os }}.zip" truss lib bin include truss.zip
+    - name: Zip Archive (windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd dist
+        7z a truss.zip bin lib include scripts shaders textures font models
+        7z a "../truss_${{ matrix.os }}.zip" truss.exe truss.zip
     - name: Tag Version
       id: set_tag
       run: |
