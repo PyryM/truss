@@ -88,9 +88,12 @@ void Core::initFS(char* argv0, bool mountBaseDir) {
     physFSInitted_ = true;
 }
 
-void Core::addFSPath(const char* pathname, const char* mountname, bool append) {
+void Core::addFSPath(const char* pathname, const char* mountname, bool append, bool relative) {
     std::stringstream ss;
-    ss << PHYSFS_getBaseDir() << PHYSFS_getDirSeparator() << pathname;
+    if(relative){
+        ss << PHYSFS_getBaseDir(); // includes path separator    
+    }
+    ss << pathname;
     logPrint(TRUSS_LOG_DEBUG, "Adding physFS path: %s", ss.str().c_str());
 
     int retval = PHYSFS_mount(ss.str().c_str(), mountname, append);
@@ -131,7 +134,8 @@ void Core::extractLibraries() {
 
 void Core::setWriteDir(const char* writepath) {
     std::stringstream ss;
-    ss << PHYSFS_getBaseDir() << PHYSFS_getDirSeparator() << writepath;
+    // dir separator not needed, included in getBaseDir
+    ss << PHYSFS_getBaseDir() << writepath; 
     logPrint(TRUSS_LOG_DEBUG, "Setting physFS write path: %s", ss.str().c_str());
 
     int retval = PHYSFS_setWriteDir(ss.str().c_str());

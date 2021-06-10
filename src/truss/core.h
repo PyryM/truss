@@ -20,7 +20,7 @@ public:
     // functions for dealing with physfs (you can also make direct physfs
     // calls if you need to, after you've called initFS)
     void initFS(char* argv0, bool mountBaseDir=true);
-    void addFSPath(const char* pathname, const char* mountname, bool append=true);
+    void addFSPath(const char* pathname, const char* mountname, bool append=true, bool relative=true);
     void setWriteDir(const char* writepath);
 	void setRawWriteDir(const char* path, bool mount=true);
     void extractLibraries();

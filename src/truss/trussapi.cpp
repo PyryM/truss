@@ -72,8 +72,8 @@ int truss_save_data(const char* filename, const char* data, unsigned int datalen
 	return 0;
 }
 
-int truss_add_fs_path(const char* path, const char* mountpath, int append) {
-    core().addFSPath(path, mountpath, append);
+int truss_add_fs_path(const char* path, const char* mountpath, int append, int relative) {
+    core().addFSPath(path, mountpath, append > 0, relative > 0);
     return 0;
 }
 
