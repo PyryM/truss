@@ -48,7 +48,7 @@ const char* truss_get_file_real_path(const char* filename);
 truss_message* truss_load_file(const char* filename);
 int truss_save_file(const char* filename, truss_message* data);
 int truss_save_data(const char* filename, const char* data, unsigned int datalength);
-int truss_add_fs_path(const char* path, const char* mountpath, int append);
+int truss_add_fs_path(const char* path, const char* mountpath, int append, int relative);
 int truss_set_fs_savedir(const char* path);
 int truss_set_raw_write_dir(const char* path);
 int truss_list_directory(truss_interpreter_id interpreter, const char* path);

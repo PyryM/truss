@@ -492,7 +492,7 @@ local function add_paths()
       local physicalPath = truss.args[i+1]
       local mountPath = truss.args[i+2]
       log.info(("Adding path %s => %s"):format(physicalPath, mountPath))
-      truss.C.add_fs_path(physicalPath, mountPath, 0)
+      truss.C.add_fs_path(physicalPath, mountPath, 0, 0)
     end
   end
 end

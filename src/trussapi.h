@@ -6,7 +6,7 @@
 #ifndef TRUSSAPI_H_HEADER_GUARD
 #define TRUSSAPI_H_HEADER_GUARD
 
-#define TRUSS_VERSION_STRING "0.1.0"
+#define TRUSS_VERSION_STRING "0.1.1"
 
 #include <cstdint> // Needed for uint64_t etc.
 #include <cstddef> // Needed for size_t etc.
@@ -82,7 +82,7 @@ TRUSS_C_API const char* truss_get_file_real_path(const char* filename);
 TRUSS_C_API truss_message* truss_load_file(const char* filename);
 TRUSS_C_API int truss_save_file(const char* filename, truss_message* data);
 TRUSS_C_API int truss_save_data(const char* filename, const char* data, unsigned int datalength);
-TRUSS_C_API int truss_add_fs_path(const char* path, const char* mountpath, int append);
+TRUSS_C_API int truss_add_fs_path(const char* path, const char* mountpath, int append, int relative);
 TRUSS_C_API int truss_set_fs_savedir(const char* path);
 TRUSS_C_API int truss_set_raw_write_dir(const char* path);
 TRUSS_C_API int truss_list_directory(truss_interpreter_id interpreter, const char* path);
