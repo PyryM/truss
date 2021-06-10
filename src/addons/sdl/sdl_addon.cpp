@@ -138,22 +138,29 @@ const std::string& SDLAddon::getVersion() {
 
 void SDLAddon::init(truss::Interpreter* owner) {
 	owner_ = owner;
+	sdlIsInit_ = false;
+}
 
-	// Init SDL
-	std::cout << "Going to create window; if you get an LLVM crash on linux" <<
-		" at this point, the mostly likely reason is that you are using" <<
-		" the mesa software renderer.\n";
+void SDLAddon::SDLinit() {
+	if (sdlIsInit_) {
+		return;
+	}
+	truss_log(TRUSS_LOG_DEBUG, "SDL Init. Segfaults near this point are likely due to video drivers that use LLVM.");
 	SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 	SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
 	SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0) {
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
+		return;
 	}
+	sdlIsInit_ = true;
 }
 
 void SDLAddon::shutdown() {
-	destroyWindow();
-	SDL_Quit();
+	if (sdlIsInit_) {
+		destroyWindow();
+		SDL_Quit();
+	}
 }
 
 void copyKeyName(truss_sdl_event& newEvent, SDL_Event& event) {
@@ -262,7 +269,7 @@ void SDLAddon::convertAndPushEvent_(SDL_Event& event) {
 }
 
 void SDLAddon::update(double dt) {
-	if (window_ == NULL) {
+	if (!sdlIsInit_ || window_ == NULL) {
 		return;
 	}
 
@@ -276,6 +283,7 @@ void SDLAddon::update(double dt) {
 }
 
 void SDLAddon::createWindow(int width, int height, const char* name, int is_fullscreen, int display) {
+	SDLinit();
 	uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
 	if (is_fullscreen > 0) {
 		flags = flags | SDL_WINDOW_BORDERLESS;
@@ -306,6 +314,7 @@ void SDLAddon::createWindow(int width, int height, const char* name, int is_full
 }
 
 void SDLAddon::createWindow(int x, int y, int w, int h, const char* name, int is_borderless) {
+	SDLinit();
 	uint32_t flags = SDL_WINDOW_SHOWN;
 	if (is_borderless > 0) {
 		flags = flags | SDL_WINDOW_BORDERLESS;
