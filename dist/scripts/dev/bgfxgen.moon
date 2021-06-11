@@ -64,12 +64,21 @@ remove_comment = (s) ->
 fix5p1 = (data) ->
   lines = sutil.split_lines data
   outlines = {}
+  cur_enum = nil
   for linepos = 1, #lines
-    curline = sutil.strip lines[linepos]
+    curline = remove_comment sutil.strip lines[linepos]
+    if (curline\sub 1,4) == "enum"
+      cur_enum = curline\sub 5,-1
+    elseif cur_enum and curline == ""
+      if (outlines[#outlines]\sub -2,-1) != "()"
+        print("Enum missing function call: #{cur_enum}")
+        outlines[#outlines] = outlines[#outlines] .. "()"
+      cur_enum = nil
+    
     if (curline\sub 1,2) == "()"
-      outlines[#outlines] = (remove_comment outlines[#outlines]) .. curline
+      outlines[#outlines] = outlines[#outlines] .. curline
     else
-      outlines[#outlines+1] = lines[linepos]
+      outlines[#outlines+1] = curline
   temp = io.open "bleh.lua", "wt"
   temp\write table.concat outlines, "\n"
   temp\close!
@@ -96,7 +105,8 @@ key_sorted_concat = (t, sep) ->
   ordered_concat t, sorted_keys, sep
 
 exec_in = (env, fn) ->
-  chunk, err = loadstring fix5p1 rawload fn
+  src = fix5p1 rawload fn
+  chunk, err = loadstring src
   if not chunk
     truss.error "Error parsing #{fn}: #{err}"
   setfenv chunk, env
@@ -109,12 +119,18 @@ load_idl = (buildpath) ->
   idl = exec_in env, "#{path}/scripts/idl.lua"
   exec_in idl, "#{path}/scripts/bgfx.idl"
 
+BANNED_TYPES = {"va_list"}
+
 is_api_func = (line) ->
   parts = sutil.split " ", line
   if parts[1] != "BGFX_C_API" then return nil
   api_key = (parts[2] != "const" and parts[3]) or parts[4] or line
   api_key = (sutil.split "%(", api_key)[1]
-  (table.concat [p for p in *parts[2,]], " "), api_key
+  signature = table.concat [p for p in *parts[2,]], " "
+  for bad_type in *BANNED_TYPES
+    if line\find bad_type
+      signature = "//" .. signature
+  signature, api_key
 
 get_functions = (buildpath) ->
   -- generating function signatures from the IDL is too much of a pain
@@ -294,8 +310,8 @@ gen_header = (buildpath) ->
   }
 
 export init = ->
-  bpath = "../build"
-  print "Copying files"
+  bpath = truss.args[3] or "../build"
+  print "Copying files from #{bpath}"
   copy_files bpath
   print "Generating include/bgfx_truss.c99.h"
   truss.save_string "include/bgfx_truss.c99.h", (gen_header bpath)

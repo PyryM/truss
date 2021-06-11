@@ -358,6 +358,7 @@ typedef struct bgfx_init_s {
     bgfx_renderer_type_t type;
     uint16_t vendorId;
     uint16_t deviceId;
+    uint64_t capabilities;
     bool debug;
     bool profile;
     bgfx_platform_data_t platformData;
@@ -501,7 +502,7 @@ typedef struct bgfx_encoder_s bgfx_encoder_t;
 const bgfx_memory_t* bgfx_alloc(uint32_t _size);
 void bgfx_alloc_instance_data_buffer(bgfx_instance_data_buffer_t* _idb, uint32_t _num, uint16_t _stride);
 uint32_t bgfx_alloc_transform(bgfx_transform_t* _transform, uint16_t _num);
-bool bgfx_alloc_transient_buffers(bgfx_transient_vertex_buffer_t* _tvb, const bgfx_vertex_layout_t * _layout, uint32_t _numVertices, bgfx_transient_index_buffer_t* _tib, uint32_t _numIndices);
+bool bgfx_alloc_transient_buffers(bgfx_transient_vertex_buffer_t* _tvb, const bgfx_vertex_layout_t * _layout, uint32_t _numVertices, bgfx_transient_index_buffer_t* _tib, uint32_t _numIndices, bool _index32);
 void bgfx_alloc_transient_index_buffer(bgfx_transient_index_buffer_t* _tib, uint32_t _num, bool _index32);
 void bgfx_alloc_transient_vertex_buffer(bgfx_transient_vertex_buffer_t* _tvb, uint32_t _num, const bgfx_vertex_layout_t * _layout);
 void bgfx_attachment_init(bgfx_attachment_t* _this, bgfx_texture_handle_t _handle, bgfx_access_t _access, uint16_t _layer, uint16_t _numLayers, uint16_t _mip, uint8_t _resolve);
@@ -593,7 +594,7 @@ void bgfx_encoder_submit_occlusion_query(bgfx_encoder_t* _this, bgfx_view_id_t _
 void bgfx_encoder_touch(bgfx_encoder_t* _this, bgfx_view_id_t _id);
 uint32_t bgfx_frame(bool _capture);
 uint32_t bgfx_get_avail_instance_data_buffer(uint32_t _num, uint16_t _stride);
-uint32_t bgfx_get_avail_transient_index_buffer(uint32_t _num);
+uint32_t bgfx_get_avail_transient_index_buffer(uint32_t _num, bool _index32);
 uint32_t bgfx_get_avail_transient_vertex_buffer(uint32_t _num, const bgfx_vertex_layout_t * _layout);
 const bgfx_caps_t* bgfx_get_caps(void);
 void* bgfx_get_direct_access_ptr(bgfx_texture_handle_t _handle);
@@ -609,6 +610,7 @@ bgfx_texture_handle_t bgfx_get_texture(bgfx_frame_buffer_handle_t _handle, uint8
 void bgfx_get_uniform_info(bgfx_uniform_handle_t _handle, bgfx_uniform_info_t * _info);
 bool bgfx_init(const bgfx_init_t * _init);
 void bgfx_init_ctor(bgfx_init_t* _init);
+bool bgfx_is_frame_buffer_valid(uint8_t _num, const bgfx_attachment_t* _attachment);
 bool bgfx_is_texture_valid(uint16_t _depth, bool _cubeMap, uint16_t _numLayers, bgfx_texture_format_t _format, uint64_t _flags);
 const bgfx_memory_t* bgfx_make_ref(const void* _data, uint32_t _size);
 const bgfx_memory_t* bgfx_make_ref_release(const void* _data, uint32_t _size, bgfx_release_fn_t _releaseFn, void* _userData);

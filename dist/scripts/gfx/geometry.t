@@ -54,10 +54,9 @@ function TransientGeometry:allocate(n_verts, n_indices, vertinfo)
     return
   end
 
+  local index_type = uint16
   if n_verts >= 2^16 then
-    truss.error("TransientGeometry [" .. self.name ..
-           "] cannot have more then 2^16 vertices.")
-    return false
+    index_type = uint32
   end
 
   local verts_available = bgfx.get_avail_transient_vertex_buffer(n_verts,
@@ -66,16 +65,17 @@ function TransientGeometry:allocate(n_verts, n_indices, vertinfo)
     log.error("Not enough space to allocate " .. n_verts .. " vertices.")
     return false
   end
-  local indices_available = bgfx.get_avail_transient_index_buffer(n_indices)
+  local indices_available = bgfx.get_avail_transient_index_buffer(n_indices,
+                             index_type == uint32)
   if indices_available < n_indices then
     log.error("Not enough space to allocate " .. n_indices .. " indices.")
     return false
   end
 
   bgfx.alloc_transient_buffers(self._transient_vb, vertinfo.vdecl, n_verts,
-                    self._transient_ib, n_indices)
+                    self._transient_ib, n_indices, index_type == uint32)
 
-  self.indices = terralib.cast(&uint16, self._transient_ib.data)
+  self.indices = terralib.cast(&index_type, self._transient_ib.data)
   self.verts   = terralib.cast(&vertinfo.ttype, self._transient_vb.data)
   self.allocated = true
 

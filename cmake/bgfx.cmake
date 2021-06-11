@@ -3,7 +3,7 @@ include(ExternalProject)
 # Download `bx` and extract source path.
 ExternalProject_Add(bx_EXTERNAL
     GIT_REPOSITORY "https://github.com/bkaradzic/bx.git"
-    GIT_TAG "f939b2c3172b1c19f15659613b2f9f9de1f5e820"
+    GIT_TAG "51f25ba638b9cb35eb2ac078f842a4bed0746d56"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -21,7 +21,7 @@ set(bx_GENIE "${SOURCE_DIR}/tools/bin/${bx_SYSTEM_NAME}/genie")
 # Download `bimg` and extract source path.
 ExternalProject_Add(bimg_EXTERNAL
     GIT_REPOSITORY "https://github.com/bkaradzic/bimg.git"
-    GIT_TAG "7b70810f4bfd2cf81c755c413c66e0e82ea8acc5"
+    GIT_TAG "8355d36befc90c1db82fca8e54f38bfb7eeb3530"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -75,8 +75,8 @@ endif()
 # and build it using `bx`.
 ExternalProject_Add(bgfx_EXTERNAL
     DEPENDS bx_EXTERNAL bimg_EXTERNAL
-    GIT_REPOSITORY "https://github.com/pyrym/bgfx.git"
-    GIT_TAG "e368f78c9562e37c071e56b754e3c712d3601ef1"
+    GIT_REPOSITORY "https://github.com/bkaradzic/bgfx.git"
+    GIT_TAG "e0d26507dc1982b53c7f80364637a9a2098f5055"
     CONFIGURE_COMMAND ${bgfx_CONFIGURE_COMMAND}
     BUILD_COMMAND ${bgfx_BUILD_COMMAND}
     INSTALL_COMMAND ""
