@@ -74,7 +74,8 @@ fix5p1 = (data) ->
         print("Enum missing function call: #{cur_enum}")
         outlines[#outlines] = outlines[#outlines] .. "()"
       cur_enum = nil
-    elseif (curline\sub 1,2) == "()"
+    
+    if (curline\sub 1,2) == "()"
       outlines[#outlines] = outlines[#outlines] .. curline
     else
       outlines[#outlines+1] = curline
