@@ -38,7 +38,7 @@ WIN_SHADER_TYPES = {
 }
 PLATFORMS = {
   windows: "dx11",
-  linux: "glsl",
+  --linux: "glsl",
   osx: "mtl",
   vulkan: "spirv"
 }

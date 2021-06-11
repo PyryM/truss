@@ -1,5 +1,8 @@
 $input a_position, a_normal
-$output v_wpos, v_wnormal, v_viewdir, v_shadowcoord
+$output v_wpos, v_wnormal, v_viewdir
+//, v_shadowcoord
+
+// TODO: get this working or delete
 
 /*
  * Copyright 2015 Pyry Matikainen. All rights reserved.
@@ -25,5 +28,5 @@ void main()
 
 	const float shadowMapOffset = 0.001;
 	vec3 posOffset = a_position + normal.xyz * shadowMapOffset;
-	v_shadowcoord = mul(u_lightMtx, vec4(posOffset, 1.0) );
+	//v_shadowcoord = mul(u_lightMtx, vec4(posOffset, 1.0) );
 }
