@@ -119,12 +119,18 @@ load_idl = (buildpath) ->
   idl = exec_in env, "#{path}/scripts/idl.lua"
   exec_in idl, "#{path}/scripts/bgfx.idl"
 
+BANNED_TYPES = {"va_list"}
+
 is_api_func = (line) ->
   parts = sutil.split " ", line
   if parts[1] != "BGFX_C_API" then return nil
   api_key = (parts[2] != "const" and parts[3]) or parts[4] or line
   api_key = (sutil.split "%(", api_key)[1]
-  (table.concat [p for p in *parts[2,]], " "), api_key
+  signature = table.concat [p for p in *parts[2,]], " "
+  for bad_type in *BANNED_TYPES
+    if line\find bad_type
+      signature = "//" .. signature
+  signature, api_key
 
 get_functions = (buildpath) ->
   -- generating function signatures from the IDL is too much of a pain
