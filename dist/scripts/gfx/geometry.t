@@ -65,7 +65,7 @@ function TransientGeometry:allocate(n_verts, n_indices, vertinfo)
     log.error("Not enough space to allocate " .. n_verts .. " vertices.")
     return false
   end
-  local indices_available = bgfx.get_avail_transient_index_buffer(n_indices
+  local indices_available = bgfx.get_avail_transient_index_buffer(n_indices,
                              index_type == uint32)
   if indices_available < n_indices then
     log.error("Not enough space to allocate " .. n_indices .. " indices.")
