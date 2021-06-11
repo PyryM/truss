@@ -284,7 +284,7 @@ function init()
     async.await_frames(5)
     add_2d_drawable(textbox, {
       x = 390, y = 10, w = 220, h = 120,
-      font_size = 100, text = '0.1.α'
+      font_size = 100, text = truss.C.get_version()
     })
     if gif_mode then return end
     -- spawn caps
