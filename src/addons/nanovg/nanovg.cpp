@@ -45,6 +45,9 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 
 // Need to have stb truetype actually implemented somehwhere
 #define STB_TRUETYPE_IMPLEMENTATION
+// Workaround for: https://github.com/nothings/stb/issues/1171
+// TODO: remove when STB fixes it
+#define STBTT_RASTERIZER_VERSION 1 
 #include <stb_truetype.h>
 
 BX_PRAGMA_DIAGNOSTIC_PUSH();
