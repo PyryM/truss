@@ -20,6 +20,8 @@ jobs:
       run: |
         sudo apt-get update -qq -y
         sudo apt-get install -qq -y libsdl2-dev flex bison libtinfo-dev patchelf
+        curl -LO http://archive.ubuntu.com/ubuntu/pool/main/libf/libffi/libffi6_3.2.1-8_amd64.deb
+        sudo dpkg -i libffi6_3.2.1-8_amd64.deb
     - name: Setup MSVC Paths
       if: matrix.os == 'windows-latest'
       uses: ilammy/msvc-dev-cmd@v1
