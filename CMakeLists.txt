@@ -14,51 +14,20 @@ set(DIST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dist")
 set(truss_HEADERS
     src/truss.h
     src/trussapi.h
-    src/addons/sdl/sdl_addon.h
-    src/addons/nanovg/nanovg.h
-    src/addons/nanovg/nanovg_addon.h
 )
 set(truss_SOURCES
     src/main.cpp
     src/truss/core.cpp
     src/truss/interpreter.cpp
     src/truss/trussapi.cpp
-    src/addons/sdl/sdl_addon.cpp
-    src/addons/nanovg/nanovg.cpp
-    src/addons/nanovg/nanovg_addon.cpp
-    src/addons/nanovg/nanovg_bgfx_c99.cpp
 )
-if(NOT APPLE)
-    set(truss_HEADERS ${truss_HEADERS}
-        src/addons/openvr/openvr_addon.h
-    )
-    set(truss_SOURCES ${truss_SOURCES}
-        src/addons/openvr/openvr_addon.cpp
-        src/addons/openvr/openvr_wrapper.cpp
-    )
-endif()
-if(WIN32)
-    set(truss_HEADERS ${truss_HEADERS}
-        src/addons/screencap/screencap_addon.h
-    )
-    set(truss_SOURCES ${truss_SOURCES}
-        src/addons/screencap/screencap_addon.cpp
-    )
-endif()
 
 add_executable(truss ${truss_SOURCES} ${truss_HEADERS})
 
 # Install and build required dependencies.
-# (BGFX, Terra, PhysFS, STB)
-include(bgfx)
+# (Terra, PhysFS)
 include(physfs)
-include(sdl)
-include(stb)
 include(terra)
-
-if(NOT APPLE)
-    include(openvr)
-endif()
 
 # Configure truss to handle include directories properly.
 target_include_directories(truss
@@ -70,11 +39,8 @@ target_include_directories(truss
 
 # Link against required dependencies.
 target_link_libraries(truss
-    bgfx physfs terra stb sdl
+    physfs terra
 )
-if(NOT APPLE)
-    target_link_libraries(truss openvr)
-endif()
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     # Fix obscure LuaJIT issue on OSX.

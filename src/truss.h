@@ -5,7 +5,6 @@
 
 #include "truss/core.h"
 #include "truss/interpreter.h"
-#include "truss/addon.h"
 
 #include "trussapi.h"
 

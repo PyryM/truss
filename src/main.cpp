@@ -1,14 +1,6 @@
 // Minimal main example (with truss sdl)
 
 #include "truss.h"
-#include "addons/sdl/sdl_addon.h"
-#include "addons/nanovg/nanovg_addon.h"
-#if !defined(__APPLE__)
-#include "addons/openvr/openvr_addon.h"
-#endif
-#if defined(WIN32)
-#include "addons/screencap/screencap_addon.h"
-#endif
 #include <iostream>
 #include <sstream>
 
@@ -60,16 +52,6 @@ int main(int argc, char** argv) {
 
 	truss::Interpreter* interpreter = truss::core().spawnInterpreter();
 	interpreter->setDebug(0); // want most verbose debugging output
-	interpreter->attachAddon(new SDLAddon);
-	interpreter->attachAddon(new NanoVGAddon);
-#if !defined(__APPLE__)
-	// OpenVR supported on Win+Linux
-	interpreter->attachAddon(new OpenVRAddon);
-#endif
-#if defined(WIN32)
-	// Screencap currently uses windows-specific APIs
-	interpreter->attachAddon(new ScreencapAddon);
-#endif
 	truss_log(0, "Starting interpreter!");
 	// start this interpreter without threading so we can manually call it in a loop
 	interpreter->start("scripts/main.t", false);

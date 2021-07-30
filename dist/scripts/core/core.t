@@ -443,23 +443,6 @@ truss.insert_module("jit", jit)
 -- alias core/30log.lua to class so we can just require("class")
 truss.require_as("core/30log.lua", "class")
 
-local numaddons = truss.C.get_addon_count(TRUSS_ID)
-log.info("Found " .. numaddons .. " addons.")
-
-local addons = {}
-
-for addonIdx = 1,numaddons do
-  local header = ffi.string(truss.C.get_addon_header(TRUSS_ID, addonIdx-1))
-  local pointer = truss.C.get_addon(TRUSS_ID, addonIdx-1)
-  local addon_name = ffi.string(truss.C.get_addon_name(TRUSS_ID, addonIdx-1))
-  local addon_version = ffi.string(truss.C.get_addon_version(TRUSS_ID, addonIdx-1))
-  log.info("Loading addon [" .. addon_name .. "]")
-  local addon_table = terralib.includecstring(header)
-  addons[addon_name] = {functions = addon_table, pointer = pointer,
-                        version = addon_version}
-end
-truss.addons = addons
-
 local vstr = ffi.string(truss.C.get_version())
 truss.VERSION = vstr
 
