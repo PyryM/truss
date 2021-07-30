@@ -16,6 +16,8 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+#include "stdint.h"
+
 #define NVG_PI 3.14159265358979323846264338327f
 
 typedef struct NVGcontext NVGcontext;
@@ -593,6 +595,5 @@ void nvgTextMetrics(NVGcontext* ctx, float* ascender, float* descender, float* l
 // Words longer than the max width are slit at nearest character (i.e. no hyphenation).
 int nvgTextBreakLines(NVGcontext* ctx, const char* string, const char* end, float breakRowWidth, NVGtextRow* rows, int maxRows);
 
-NVGcontext* nvgCreate(int edgeaa, unsigned char viewid);
-void nvgViewId(struct NVGcontext* ctx, unsigned char viewid);
-void nvgDelete(struct NVGcontext* ctx);
+NVGcontext* nvgCreateC(int edgeaa, uint16_t viewid);
+void nvgDeleteC(struct NVGcontext* ctx);
