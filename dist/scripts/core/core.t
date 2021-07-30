@@ -77,7 +77,7 @@ ffi = require("ffi")
 bit = require("bit")
 
 truss.os = ffi.os
-local library_extensions = {Windows = "", Linux = ".so", OSX = ".dylib", 
+local library_extensions = {Windows = ".dll", Linux = ".so", OSX = ".dylib", 
                             BSD = ".so", POSIX = ".so", Other = ""}
 truss.library_extension = library_extensions[truss.os] or ""
 
