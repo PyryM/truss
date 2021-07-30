@@ -122,7 +122,7 @@ end
 m.downkeys = {}
 
 function m.handle_inputs()
-  local sdl = require("addon/sdl.t")
+  local sdl = require("input/sdl.t")
   for evt in sdl:events() do
     local etype = evt.event_type
     if etype == sdl.EVENT_WINDOW and evt.flags == 14 then

@@ -6,10 +6,7 @@ local modutils = require("core/module.t")
 local class = require("class")
 local m = {}
 
-local nanovg_c_raw = terralib.includec("nanovg_terra.h")
-
-local nvg_utils = truss.addons.nanovg.functions
-local nvg_utils_pointer = truss.addons.nanovg.pointer
+local nanovg_c_raw = terralib.includec("bgfx/nanovg_terra.h")
 
 local nvg_c_funcs = {}
 local nvg_c = {}
@@ -34,7 +31,7 @@ m.NVGContext = NVGContext
 
 function NVGContext:init(view, edgeaa)
   self._viewid = (view and view._viewid) or 0
-  self._ctx = nvg_c_funcs.Create((edgeaa and 1) or 0, self._viewid)
+  self._ctx = nvg_c_funcs.CreateC((edgeaa and 1) or 0, self._viewid)
   self._fonts = {}
   self._font_aliases = {}
   self._images = {}
@@ -47,7 +44,7 @@ function NVGContext:set_view(view)
   self:assert_valid()
   if (not view) or (view._viewid == self._viewid) then return end
   self._viewid = view._viewid
-  nvg_c_funcs.ViewId(self._ctx, self._viewid)
+  nvg_c_funcs.SetViewIdC(self._ctx, self._viewid)
   view:set_sequential(true)
 end
 
@@ -85,6 +82,8 @@ function NVGContext:load_font(filename, alias)
   return font_id
 end
 
+-- TODO: get image IO working again
+--[[
 function NVGContext:swap_image(image, filename)
   self:assert_valid()
   if image.handle then
@@ -121,6 +120,7 @@ function NVGContext:delete_image(image)
   self._images[image.name] = nil
   nvg_c_funcs.DeleteImage(self._ctx, image.handle)
 end
+]]
 
 -- convenience function to draw an image
 function NVGContext:Image(im, x, y, w, h, alpha)

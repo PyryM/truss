@@ -1,4 +1,4 @@
--- selfhoist/windowing.t
+-- input/windowing.t
 --
 -- functionality for setting up basic windowed SDL applications
 
@@ -10,6 +10,7 @@ local bgfx = require("gfx/bgfx.t")
 local commontypes = require("native/commontypes.t")
 local SizedString = commontypes.SizedString
 local wrap_c_str = commontypes.wrap_c_str
+local Rect32 = commontypes.Rect32
 local ByteBuffer = require("native/buffer.t").ByteBuffer
 
 local m = {}
@@ -139,7 +140,7 @@ terra Windowing:init()
   self.filedrop_path[255] = 0
 end
 
-local terra Windowing:set_bgfx_window_data(): bool
+terra Windowing:set_bgfx_window_data(): bool
   var wmi: SDL.SysWMinfo
   wmi.version.major = SDL.MAJOR_VERSION
   wmi.version.minor = SDL.MINOR_VERSION
@@ -157,6 +158,14 @@ local terra Windowing:set_bgfx_window_data(): bool
   [platform_specific_bgfx_setup(pd, wmi)]
   bgfx.set_platform_data(&pd)
   return true
+end
+
+terra Windowing:get_window_bounds(hidpi: bool): Rect32
+  var ret: Rect32 = Rect32{0, 0, 0, 0}
+  --TODO: hidpi
+  SDL.GetWindowPosition(self.window, &ret.x, &ret.y)
+  SDL.GetWindowSize(self.window, &ret.w, &ret.h)
+  return ret
 end
 
 terra Windowing:_push_event(e: Evt): bool
@@ -303,6 +312,26 @@ terra Windowing:set_clipboard(text: &int8)
   SDL.SetClipboardText(text)
 end
 
+terra Windowing:create_window(w: int32, h: int32, title: &int8, fullscreen: bool, display: int32): bool
+  SDL.SetMainReady() -- is this needed?
+  var res = SDL.Init(SDL.INIT_VIDEO)
+  if res ~= 0 then
+    return false
+  end
+  var flags: uint32 = SDL.WINDOW_SHOWN + SDL.WINDOW_RESIZABLE
+  var xpos: int32 = SDL.WINDOWPOS_CENTERED
+  var ypos: int32 = SDL.WINDOWPOS_CENTERED
+  var window = SDL.CreateWindow(title, xpos, ypos, w, h, flags)
+  self.window = window
+
+  if not self:set_bgfx_window_data() then
+    c.io.printf("Error setting window data")
+    return false
+  end
+
+  return true
+end
+
 terra Windowing:create_window_and_bgfx(backend: bgfx.renderer_type_t, w: int32, h: int32, title: &int8): bool
   SDL.SetMainReady() -- is this needed?
   var res = SDL.Init(SDL.INIT_VIDEO)
@@ -342,6 +371,12 @@ end
 
 function m.build(options)
   return {Windowing = Windowing}
+end
+
+function m.create()
+  local ret = terralib.new(Windowing)
+  ret:init()
+  return ret
 end
 
 local TRUSS_TO_SDL_MAP = {

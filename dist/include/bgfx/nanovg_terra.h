@@ -596,4 +596,5 @@ void nvgTextMetrics(NVGcontext* ctx, float* ascender, float* descender, float* l
 int nvgTextBreakLines(NVGcontext* ctx, const char* string, const char* end, float breakRowWidth, NVGtextRow* rows, int maxRows);
 
 NVGcontext* nvgCreateC(int edgeaa, uint16_t viewid);
-void nvgDeleteC(struct NVGcontext* ctx);
+void nvgDeleteC(NVGcontext* ctx);
+void nvgSetViewIdC(NVGcontext* ctx, uint16_t viewid);
