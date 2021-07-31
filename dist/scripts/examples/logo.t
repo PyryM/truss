@@ -16,6 +16,7 @@ local cmath = require("math/cmath.t")
 local ecs = require("ecs")
 local async = require("async")
 local class = require("class")
+local imgui = require("gfx/imgui.t")
 
 local drawables = {}
 local next_drawable = 1
@@ -265,6 +266,7 @@ function init()
     msaa = true, hidpi = true, stats = false,
     title = "truss | logo.t", clear_color = 0x000000ff,
   }
+  imgui.init(myapp.width, myapp.height)
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
   myapp.camera.orbit_control:set(0, 0, 0.7)
   local logo = myapp.scene:create_child(Logo, "logo", {detail = 7})
@@ -320,8 +322,11 @@ function init()
 end
 
 function update()
+  imgui.begin_frame()
+  imgui.show_demo_window()
   if not gif_mode then
     myapp.camera.orbit_control:move_theta(math.pi * 2.0 / 120.0)
   end
   myapp:update()
+  imgui.end_frame()
 end

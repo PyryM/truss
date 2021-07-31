@@ -1,4 +1,4 @@
--- addons/nanovg.t
+-- gfx/nanovg.t
 --
 -- nanovg
 
