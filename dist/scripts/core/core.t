@@ -79,11 +79,20 @@ bit = require("bit")
 truss.os = ffi.os
 local library_extensions = {Windows = ".dll", Linux = ".so", OSX = ".dylib", 
                             BSD = ".so", POSIX = ".so", Other = ""}
+local libary_prefixes = {Windows = "", Linux = "lib", OSX = "lib",
+                         BSD = "lib", POSIX = "lib", Other = ""}
 truss.library_extension = library_extensions[truss.os] or ""
+truss.library_prefix = libary_prefixes[truss.os] or ""
 
-function truss.link_library(libname)
-  log.info("Linking " .. libname .. truss.library_extension)
-  terralib.linklibrary(libname .. truss.library_extension)
+function truss.link_library(basedir, libname)
+  if not libname then
+    libname, basedir = basedir, ""
+  end
+  if #basedir > 0 then basedir = basedir .. "/" end
+  local fullpath = basedir .. truss.library_prefix .. 
+                   libname .. truss.library_extension
+  log.info("Linking " .. fullpath)
+  terralib.linklibrary(fullpath)
 end
 
 -- timing functions

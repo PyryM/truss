@@ -17,6 +17,6 @@ function bgfx.check_handle(h)
   return h.idx ~= bgfx.INVALID_HANDLE 
 end
 
-truss.link_library("lib/libbgfx-shared-libRelease")
+truss.link_library("lib", "bgfx-shared-libRelease")
 
 return bgfx
