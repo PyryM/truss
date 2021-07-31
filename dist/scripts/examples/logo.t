@@ -259,14 +259,21 @@ function NVGThing:nvg_draw(ctx)
 end
 
 local gif_mode = false
+local imgui_open = terralib.new(bool[1])
+imgui_open[0] = true
 
 function init()
   myapp = app.App{
     width = (gif_mode and 720) or 1280, height = 720, 
-    msaa = true, hidpi = true, stats = false,
+    msaa = true, hidpi = true, stats = false, imgui = true,
     title = "truss | logo.t", clear_color = 0x000000ff,
   }
-  imgui.init(myapp.width, myapp.height)
+  function myapp:imgui_draw()
+    if true or imgui_open[0] then
+      imgui.C.ShowDemoWindow(imgui_open)
+    end
+  end
+
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
   myapp.camera.orbit_control:set(0, 0, 0.7)
   local logo = myapp.scene:create_child(Logo, "logo", {detail = 7})
@@ -322,11 +329,8 @@ function init()
 end
 
 function update()
-  imgui.begin_frame()
-  imgui.show_demo_window()
   if not gif_mode then
     myapp.camera.orbit_control:move_theta(math.pi * 2.0 / 120.0)
   end
   myapp:update()
-  imgui.end_frame()
 end

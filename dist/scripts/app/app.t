@@ -40,6 +40,11 @@ function App:init(options)
   end
   self._init_options = options
 
+  if options.imgui and self.window then
+    local imgui = require("gfx/imgui.t")
+    self.imgui = imgui.create_default_context(self.width, self.height)
+  end
+
   self:init_ecs()
   self:init_pipeline(options)
   self:init_scene()
@@ -78,7 +83,7 @@ function App:init_ecs()
   self.ECS = ECS
   if not self.headless then
     local sdl_input = require("input/sdl_input.t")
-    ECS:add_system(sdl_input.SDLInputSystem{window=self.window})
+    ECS:add_system(sdl_input.SDLInputSystem{window=self.window, imgui=self.imgui})
     ECS.systems.input:on("keydown", self, self.keydown)
   end
   ECS:add_system(ecs.System("update", "update"))
@@ -176,6 +181,12 @@ function App:capture_mouse(capture)
 end
 
 function App:update()
+  -- TODO: move imgui into ECS?
+  if self.imgui then
+    self.imgui:begin_frame()
+    if self.imgui_draw then self:imgui_draw() end
+    self.imgui:end_frame()
+  end
   self.ECS:update()
 end
 

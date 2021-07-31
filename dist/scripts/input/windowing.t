@@ -293,6 +293,14 @@ terra Windowing:get_event(idx: uint32): Evt
   end
 end
 
+terra Windowing:get_event_ref(idx: uint32): &Evt
+  if idx < self.evt_count then
+    return &(self.evt_list[idx])
+  else
+    return nil
+  end
+end
+
 terra Windowing:get_clipboard(): SizedString
   if self.last_clipboard ~= nil then
     SDL.free(self.last_clipboard)
@@ -368,6 +376,8 @@ terra Windowing:create_window_and_bgfx(backend: bgfx.renderer_type_t, w: int32, 
   bgfx.set_debug(bgfx.DEBUG_TEXT)
   return true
 end
+
+m.Windowing = Windowing
 
 function m.build(options)
   return {Windowing = Windowing}

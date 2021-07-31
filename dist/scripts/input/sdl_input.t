@@ -35,6 +35,7 @@ function SDLInputSystem:init(options)
   self.evt = ecs.EventEmitter()
   self.keystate = {}
   self.window = assert(options.window)
+  self.imgui = options.imgui
 end
 
 function SDLInputSystem:on(...)
@@ -122,7 +123,12 @@ local function convert_event(evt)
 end
 
 function SDLInputSystem:update()
-  local still_open = self.window:poll_events()
+  local still_open
+  if self.imgui then
+    still_open = self.imgui:poll_events(self.window)
+  else
+    still_open = self.window:poll_events()
+  end
   if self._autoclose and (not still_open) then
     truss.quit()
     return

@@ -24,7 +24,8 @@ function Stage:init(options)
   self.options = options
   self._always_clear = options.always_clear
   self.view = self:_create_view(options.view, options)
-  self._user_update = options.on_run
+  self._user_update = options.on_run or options.render
+  self._user_post_update = options.post_render
   self.scene = options.scene
 end
 
@@ -59,6 +60,10 @@ function Stage:pre_render()
     self.view:touch()
   end
   if self._user_update then self:_user_update() end
+end
+
+function Stage:post_render()
+  if self._user_post_update then self:_user_post_update() end
 end
 
 function Stage:match(tags, target)
