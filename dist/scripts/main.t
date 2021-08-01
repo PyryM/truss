@@ -4,7 +4,7 @@
 
 -- allow other scripts to be invoked like
 -- truss examples/some_other_script.t
-local scriptname = truss.args[2] or "examples/logo.t"
+local scriptname = truss.args[2] or "examples/logos/alien.t"
 if scriptname:sub(1, #"scripts/") == "scripts/" then
   print("You do not need to and shouldn't prefix with scripts/ anymore!")
   scriptname = scriptname:sub(1 + #"scripts/", -1)

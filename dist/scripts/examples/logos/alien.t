@@ -1,4 +1,4 @@
--- examples/logo.t
+-- examples/logos/alien.t
 -- run if you call truss.exe without any args and without a custom main.t
 
 local app = require("app/app.t")
@@ -17,71 +17,7 @@ local ecs = require("ecs")
 local async = require("async")
 local class = require("class")
 local imgui = require("gfx/imgui.t")
-
-local drawables = {}
-local next_drawable = 1
-local function draw_2d_drawables(ctx)
-  for idx, draw in pairs(drawables) do
-    if draw.dead then
-      drawables[idx] = nil
-    else
-      draw:draw(ctx)
-    end
-  end
-end
-local function add_2d_drawable(f, state)
-  local d = state or {}
-  drawables[next_drawable] = d
-  next_drawable = next_drawable + 1
-  async.run(f, d):next(nil, print)
-  return d
-end
-
-local function _drawbox(state, ctx)
-  ctx:BeginPath()
-  ctx:Rect(state.x, state.y, state.w, state.h)
-  ctx:FillColor(ctx:RGBA(unpack(state.color)))
-  ctx:Fill()
-end
-local function _drawtext(state, ctx)
-  ctx:FontFace(state.font or "sans")
-  ctx:FontSize(state.font_size)
-  ctx:FillColor(ctx:RGBA(unpack(state.color)))
-  ctx:TextAlign(ctx.ALIGN_LEFT + ctx.ALIGN_TOP)
-  if state.clip_w then
-    ctx:Scissor(state.x, state.y, state.clip_w, state.h)
-  end
-  ctx:Text(state.x, state.y, state.text, nil)
-  if state.clip_w then
-    ctx:ResetScissor()
-    ctx:BeginPath()
-    ctx:Rect(state.x + state.clip_w, state.y, state.w - state.clip_w, state.h)
-    ctx:Fill()
-  end
-end
-
-local function out_expo(t)
-  if t == 1 then
-    return 1
-  else
-    return 1.001 * (-(2^(-10 * t)) + 1)
-  end
-end
-local function textbox(state)
-  state.color = state.color or {0xFF, 0x1D, 0x76, 200}
-  state.draw = _drawbox
-  local final_w = state.w
-  for f = 1, 20 do
-    state.w = final_w * out_expo(f/20)
-    async.await_frames(1)
-  end
-  state.draw = _drawtext
-  for f = 1, 30 do
-    state.clip_w = final_w * out_expo(f/30)
-    async.await_frames(1)
-  end
-  state.clip_w = nil
-end
+local common = require("examples/logos/logocommon.t")
 
 function ter_edge_dist_func(p0, p1)
   local x0, y0, z0 = p0:components()
@@ -115,27 +51,6 @@ function ter_edge_dist_func(p0, p1)
   end
 end
 
-function make_column_edges()
-  local edges = {}
-  local prev_tier = nil
-  for tier = 1, 4 do
-    local pts = {}
-    for idx = 0, 2 do
-      local theta = (idx + tier/2) * math.pi * 2 / 3
-      pts[idx] = math.Vector(math.cos(theta)*0.15+0.5, tier/5, math.sin(theta)*0.15+0.5)
-    end
-    for idx = 0, 2 do
-      table.insert(edges, {pts[idx], pts[(idx+1)%3]})
-      if prev_tier then
-        table.insert(edges, {pts[idx], prev_tier[idx]})
-        table.insert(edges, {pts[idx], prev_tier[(idx+1)%3]})
-      end
-    end
-    prev_tier = pts
-  end
-  return edges
-end
-
 local terra zero(oldval: float, x: float, y: float, z: float): float
   return 0.0
 end
@@ -165,7 +80,7 @@ end
 
 local function generate_logo_mesh(parent, material, resolution)
   local edge_funcs = {}
-  for idx, edge in ipairs(make_column_edges()) do
+  for idx, edge in ipairs(common.make_logo_column_edges()) do
     edge_funcs[idx] = ter_edge_dist_func(unpack(edge))
   end
   local ndivs = 4
@@ -174,12 +89,12 @@ local function generate_logo_mesh(parent, material, resolution)
     function() return 0.0 end, 
     resolution+1 -- need 1 voxel padding for reasons
   )
-  local progress = add_2d_drawable(textbox, {
+  local progress = common.add_textbox{
     x = gfx.backbuffer_width/2 - 400/2, y = gfx.backbuffer_height/2, 
     w = 400, h = 30, font_size = 30,
     color = {255,255,255,255},
     text = "Generating mesh", font = 'mono'
-  })
+  }
   local partidx = 0
   for iz = 0, ndivs-1 do
     for iy = 0, ndivs-1 do
@@ -251,13 +166,6 @@ local function Stars(_ecs, name, options)
   return stars
 end
 
-local NVGThing = graphics.NanoVGComponent:extend("NVGThing")
-function NVGThing:nvg_draw(ctx)
-  ctx:load_font("font/FiraSans-Regular.ttf", "sans")
-  ctx:load_font("font/FiraMono-Regular.ttf", "mono")
-  draw_2d_drawables(ctx)
-end
-
 local gif_mode = false
 local imgui_open = terralib.new(bool[1])
 imgui_open[0] = true
@@ -281,51 +189,34 @@ function init()
   logo:update_matrix()
 
   myapp.scene:create_child(Stars, 'sky', {nstars = 30000})
-  myapp.scene:create_child(ecs.Entity3d, "logotext", NVGThing())
-
-  print(myapp.width)
+  myapp.scene:create_child(ecs.Entity3d, "logotext", common.NVGDrawer())
 
   async.run(function()
-    add_2d_drawable(textbox, {
+    common.add_textbox{
       x = 10, y = 10, w = 400, h = 200,
       font_size = 200, text = 'truss'
-    })
+    }
     async.await_frames(5)
-    add_2d_drawable(textbox, {
+    common.add_textbox{
       x = 390, y = 10, w = 220, h = 120,
       font_size = 100, text = truss.C.get_version()
-    })
+    }
     if gif_mode then return end
     -- spawn caps
     local ypos = 5
     local mult = gfx.backbuffer_width / myapp.width
     for capname, supported in pairs(gfx.get_caps().features) do
       local color = (supported and {200,255,200,255}) or {100,100,100,255}
-      add_2d_drawable(textbox, {
+      common.add_textbox{
         x = gfx.backbuffer_width - 280 * mult, y = ypos, w = 250 * mult, h = 23 * mult, 
         font_size = 20 * mult, text = capname, color = color, font = 'mono'
-      })
+      }
       ypos = ypos + 20 * mult
       async.await_frames(5)
     end
   end)
 
-  -- just barf texture caps to console because there is not remotely
-  -- room on screen for them
-  local texcaps = {}
-  for fname, fcaps in pairs(gfx.get_caps().texture_formats) do
-    local scaps = fname .. ": "
-    for capname, present in pairs(fcaps) do
-      if capname:sub(1,1) ~= "_" and present then 
-        scaps = scaps .. capname .. " " 
-      end
-    end
-    table.insert(texcaps, {fname, scaps})
-  end
-  table.sort(texcaps, function(a, b) return a[1] < b[1] end)
-  for _, v in ipairs(texcaps) do
-    print(v[2])
-  end
+  common.dump_text_caps()
 end
 
 function update()
