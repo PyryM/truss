@@ -404,12 +404,24 @@ function truss.require(modname, options)
       return nil
     end
     local modenv = options.env or create_module_env(modname, filename, options)
+    rawset(modenv, "_preregister", function(v)
+      if loaded_libs[modname] then
+        truss.error("Multiple preregs for [" .. modname .. "]")
+      end
+      loaded_libs[modname] = v
+      return v
+    end)
     setfenv(module_def, modenv)
     local evaluated_module = module_def()
+    rawset(modenv, "_preregister", nil)
     if not (evaluated_module or options.allow_globals) then 
       truss.error("Module [" .. modname .. "] did not return a table!")
     end
-    loaded_libs[modname] = evaluated_module or modenv
+    local modtab = evaluated_module or modenv
+    if loaded_libs[modname] and (loaded_libs[modname] ~= modtab) then
+      truss.error("Module [" .. modname .. "] did not return preregistered table!")
+    end
+    loaded_libs[modname] = modtab
     log.info(string.format("Loaded [%s] in %.2f ms",
                           modname, truss.toc(t0) * 1000.0))
   end
