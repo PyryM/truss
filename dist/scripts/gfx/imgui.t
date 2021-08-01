@@ -4,6 +4,7 @@
 
 local modutils = require("core/module.t")
 local class = require("class")
+local clib = require("native/clib.t")
 local m = {}
 
 local imgui_c_raw = terralib.includec("bgfx/cimgui.h")
@@ -23,10 +24,27 @@ function m.build(options)
     viewid: uint16;
     fontsize: float;
     mouse_pressed: bool[3];
+    clipboard_text: &int8;
   }
 
   if options.SDL then
     local SDL = options.SDL
+    
+    local terra get_clipboard_text(_userdata: &opaque): &int8
+      clib.io.printf("Getting clipboard?\n")
+      var userdata = [&ImGuiContext](_userdata)
+      if userdata.clipboard_text ~= nil then
+        SDL.free(userdata.clipboard_text)
+      end
+      userdata.clipboard_text = SDL.GetClipboardText()
+      return userdata.clipboard_text
+    end
+
+    local terra set_clipboard_text(userdata: &opaque, text: &int8)
+      clib.io.printf("Setting clipboard?\n")
+      SDL.SetClipboardText(text)
+    end
+
     terra ImGuiContext:init_bindings()
       -- Keyboard mapping. Dear ImGui will use those indices to peek into the io.KeysDown[] array.
       var io = ig_c.GetIO()
@@ -53,6 +71,9 @@ function m.build(options)
       io.KeyMap[ig_c.Key_Y] = SDL.SCANCODE_Y
       io.KeyMap[ig_c.Key_Z] = SDL.SCANCODE_Z
       --SDL.SetHint(SDL.HINT_MOUSE_FOCUS_CLICKTHROUGH, "1")
+      io.ClipboardUserData = self
+      io.GetClipboardTextFn = get_clipboard_text
+      io.SetClipboardTextFn = set_clipboard_text
     end
 
     terra ImGuiContext:_pre_frame_update()
@@ -74,8 +95,8 @@ function m.build(options)
     terra ImGuiContext:handle_sdl_event(io: &ig_c.IO, event: &SDL.Event): bool
       var etype = event.type
       if etype == SDL.MOUSEWHEEL then
-        if event.wheel.x > 0 then io.MouseWheelH = io.MouseWheelH + 1 end
-        if event.wheel.x < 0 then io.MouseWheelH = io.MouseWheelH - 1 end
+        if event.wheel.x > 0 then io.MouseWheelH = io.MouseWheelH - 1 end
+        if event.wheel.x < 0 then io.MouseWheelH = io.MouseWheelH + 1 end
         if event.wheel.y > 0 then io.MouseWheel = io.MouseWheel + 1 end
         if event.wheel.y < 0 then io.MouseWheel = io.MouseWheel - 1 end
         return true
@@ -98,8 +119,16 @@ function m.build(options)
           io.KeyShift = ((SDL.GetModState() and SDL.KMOD_SHIFT) ~= 0)
           io.KeyCtrl = ((SDL.GetModState() and SDL.KMOD_CTRL) ~= 0)
           io.KeyAlt = ((SDL.GetModState() and SDL.KMOD_ALT) ~= 0)
+          escape
+            if truss.os == 'Windows' then
+              emit quote io.KeySuper = false end
+            else
+              emit quote 
+                io.KeySuper = ((SDL.GetModState() and SDL.KMOD_GUI) ~= 0) 
+              end
+            end
+          end
         end
-        io.KeySuper = false
         return true
       end
       return false
@@ -141,6 +170,7 @@ function m.build(options)
     self.height = height
     self.viewid = viewid
     self.fontsize = fontsize
+    self.clipboard_text = nil
     for i = 0, 3 do self.mouse_pressed[i] = false end
     ig_c.BGFXCreate(self.fontsize)
     self:init_bindings()
