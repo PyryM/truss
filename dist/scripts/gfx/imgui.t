@@ -8,14 +8,22 @@ local clib = require("native/clib.t")
 local m = {}
 
 local imgui_c_raw = terralib.includec("bgfx/cimgui.h")
-
-local ig_c = {}
-local ig_constants = {}
-modutils.reexport_without_prefix(imgui_c_raw, "", ig_c)
-modutils.reexport_without_prefix(imgui_c_raw, "ig", ig_c)
-modutils.reexport_without_prefix(imgui_c_raw, "ImGui", ig_c)
-m.C = ig_c
 m.C_raw = imgui_c_raw
+
+local C = {}
+m.C = C
+local IG = C
+m.IG = IG
+
+-- Renames:
+--  igFunctionName --> FunctionName
+--  ImThing        --> Thing
+--  ImGuiWhatever  --> Whatever
+--  somethingElse  --> somethingElse
+--
+-- Note that nested structs will still have obnoxious names:
+-- ImVector_ImGuiID --> Vector_ImGuiID
+modutils.reexport_renamed(imgui_c_raw, {Im="", ImGui="", ig=""}, true, C)
 
 function m.build(options)
   local struct ImGuiContext {
@@ -31,7 +39,6 @@ function m.build(options)
     local SDL = options.SDL
     
     local terra get_clipboard_text(_userdata: &opaque): &int8
-      clib.io.printf("Getting clipboard?\n")
       var userdata = [&ImGuiContext](_userdata)
       if userdata.clipboard_text ~= nil then
         SDL.free(userdata.clipboard_text)
@@ -41,35 +48,38 @@ function m.build(options)
     end
 
     local terra set_clipboard_text(userdata: &opaque, text: &int8)
-      clib.io.printf("Setting clipboard?\n")
       SDL.SetClipboardText(text)
     end
 
-    terra ImGuiContext:init_bindings()
-      -- Keyboard mapping. Dear ImGui will use those indices to peek into the io.KeysDown[] array.
-      var io = ig_c.GetIO()
-      io.KeyMap[ig_c.Key_Tab] = SDL.SCANCODE_TAB
-      io.KeyMap[ig_c.Key_LeftArrow] = SDL.SCANCODE_LEFT
-      io.KeyMap[ig_c.Key_RightArrow] = SDL.SCANCODE_RIGHT
-      io.KeyMap[ig_c.Key_UpArrow] = SDL.SCANCODE_UP
-      io.KeyMap[ig_c.Key_DownArrow] = SDL.SCANCODE_DOWN
-      io.KeyMap[ig_c.Key_PageUp] = SDL.SCANCODE_PAGEUP
-      io.KeyMap[ig_c.Key_PageDown] = SDL.SCANCODE_PAGEDOWN
-      io.KeyMap[ig_c.Key_Home] = SDL.SCANCODE_HOME
-      io.KeyMap[ig_c.Key_End] = SDL.SCANCODE_END
-      io.KeyMap[ig_c.Key_Insert] = SDL.SCANCODE_INSERT
-      io.KeyMap[ig_c.Key_Delete] = SDL.SCANCODE_DELETE
-      io.KeyMap[ig_c.Key_Backspace] = SDL.SCANCODE_BACKSPACE
-      io.KeyMap[ig_c.Key_Space] = SDL.SCANCODE_SPACE
-      io.KeyMap[ig_c.Key_Enter] = SDL.SCANCODE_RETURN
-      io.KeyMap[ig_c.Key_Escape] = SDL.SCANCODE_ESCAPE
-      io.KeyMap[ig_c.Key_KeyPadEnter] = SDL.SCANCODE_KP_ENTER
-      io.KeyMap[ig_c.Key_A] = SDL.SCANCODE_A
-      io.KeyMap[ig_c.Key_C] = SDL.SCANCODE_C
-      io.KeyMap[ig_c.Key_V] = SDL.SCANCODE_V
-      io.KeyMap[ig_c.Key_X] = SDL.SCANCODE_X
-      io.KeyMap[ig_c.Key_Y] = SDL.SCANCODE_Y
-      io.KeyMap[ig_c.Key_Z] = SDL.SCANCODE_Z
+    -- These functions that interface with SDL are largely ported
+    -- from the imgui C++ SDL backend:
+    -- https://github.com/ocornut/imgui/blob/master/backends/imgui_impl_sdl.cpp
+    terra ImGuiContext:_init_bindings()
+      -- Keyboard mapping. 
+      -- Dear ImGui will use those indices to peek into the io.KeysDown[] array.
+      var io = IG.GetIO()
+      io.KeyMap[IG.Key_Tab] = SDL.SCANCODE_TAB
+      io.KeyMap[IG.Key_LeftArrow] = SDL.SCANCODE_LEFT
+      io.KeyMap[IG.Key_RightArrow] = SDL.SCANCODE_RIGHT
+      io.KeyMap[IG.Key_UpArrow] = SDL.SCANCODE_UP
+      io.KeyMap[IG.Key_DownArrow] = SDL.SCANCODE_DOWN
+      io.KeyMap[IG.Key_PageUp] = SDL.SCANCODE_PAGEUP
+      io.KeyMap[IG.Key_PageDown] = SDL.SCANCODE_PAGEDOWN
+      io.KeyMap[IG.Key_Home] = SDL.SCANCODE_HOME
+      io.KeyMap[IG.Key_End] = SDL.SCANCODE_END
+      io.KeyMap[IG.Key_Insert] = SDL.SCANCODE_INSERT
+      io.KeyMap[IG.Key_Delete] = SDL.SCANCODE_DELETE
+      io.KeyMap[IG.Key_Backspace] = SDL.SCANCODE_BACKSPACE
+      io.KeyMap[IG.Key_Space] = SDL.SCANCODE_SPACE
+      io.KeyMap[IG.Key_Enter] = SDL.SCANCODE_RETURN
+      io.KeyMap[IG.Key_Escape] = SDL.SCANCODE_ESCAPE
+      io.KeyMap[IG.Key_KeyPadEnter] = SDL.SCANCODE_KP_ENTER
+      io.KeyMap[IG.Key_A] = SDL.SCANCODE_A
+      io.KeyMap[IG.Key_C] = SDL.SCANCODE_C
+      io.KeyMap[IG.Key_V] = SDL.SCANCODE_V
+      io.KeyMap[IG.Key_X] = SDL.SCANCODE_X
+      io.KeyMap[IG.Key_Y] = SDL.SCANCODE_Y
+      io.KeyMap[IG.Key_Z] = SDL.SCANCODE_Z
       --SDL.SetHint(SDL.HINT_MOUSE_FOCUS_CLICKTHROUGH, "1")
       io.ClipboardUserData = self
       io.GetClipboardTextFn = get_clipboard_text
@@ -80,7 +90,7 @@ function m.build(options)
       var mx: int32
       var my: int32
       var mouse_buttons = SDL.GetMouseState(&mx, &my)
-      var io = ig_c.GetIO()
+      var io = IG.GetIO()
       -- If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
       io.MouseDown[0] = self.mouse_pressed[0] or (mouse_buttons and SDL.BUTTON_LMASK) ~= 0  
       io.MouseDown[1] = self.mouse_pressed[1] or (mouse_buttons and SDL.BUTTON_RMASK) ~= 0
@@ -92,7 +102,7 @@ function m.build(options)
       io.MousePos.y = my
     end
 
-    terra ImGuiContext:handle_sdl_event(io: &ig_c.IO, event: &SDL.Event): bool
+    terra ImGuiContext:handle_sdl_event(io: &IG.IO, event: &SDL.Event): bool
       var etype = event.type
       if etype == SDL.MOUSEWHEEL then
         if event.wheel.x > 0 then io.MouseWheelH = io.MouseWheelH - 1 end
@@ -110,7 +120,7 @@ function m.build(options)
         end
         return true
       elseif etype == SDL.TEXTINPUT then
-        ig_c.IO_AddInputCharactersUTF8(io, event.text.text)
+        IG.IO_AddInputCharactersUTF8(io, event.text.text)
         return true
       elseif etype == SDL.KEYDOWN or etype == SDL.KEYUP then
         var key = event.key.keysym.scancode
@@ -134,7 +144,7 @@ function m.build(options)
       return false
     end
   else
-    terra ImGuiContext:init_bindings()
+    terra ImGuiContext:_init_bindings()
       -- don't do anything
     end
 
@@ -150,7 +160,7 @@ function m.build(options)
       windowing.evt_count = 0
       var evt: SDL.Event
       var not_closed = true
-      var io = ig_c.GetIO()
+      var io = IG.GetIO()
       var capturing = io.WantCaptureMouse or io.WantCaptureKeyboard
       while SDL.PollEvent(&evt) > 0 do
         if evt.type == SDL.WINDOWEVENT and evt.window.event == SDL.WINDOWEVENT_CLOSE then
@@ -172,17 +182,17 @@ function m.build(options)
     self.fontsize = fontsize
     self.clipboard_text = nil
     for i = 0, 3 do self.mouse_pressed[i] = false end
-    ig_c.BGFXCreate(self.fontsize)
-    self:init_bindings()
+    IG.BGFXCreate(self.fontsize)
+    self:_init_bindings()
   end
 
   terra ImGuiContext:begin_frame()
     self:_pre_frame_update()
-    ig_c.BGFXBeginFrame(self.width, self.height, self.viewid)
+    IG.BGFXBeginFrame(self.width, self.height, self.viewid)
   end
 
   terra ImGuiContext:end_frame()
-    ig_c.BGFXEndFrame()
+    IG.BGFXEndFrame()
   end
 
   return ImGuiContext
