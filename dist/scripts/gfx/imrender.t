@@ -17,6 +17,9 @@ function ImmediateContext:init()
   self._next_view_id = 1
   self._views = {}
   self._identity_matrix = math.Matrix4():identity()
+  self._phase_stack = {}
+  self._phasecount = 0
+  self._stats = {}
 end
 
 function ImmediateContext:await_frame()
@@ -26,6 +29,7 @@ function ImmediateContext:await_frame()
   self._view_promise = async.Promise()
   async.await_immediate(self._view_promise)
   self._view_promise = nil
+  self:_update_stats()
 end
 
 function ImmediateContext:await_frames(n)
@@ -229,6 +233,77 @@ function ImmediateContext:finish_frame()
   self._in_frame = false
 end
 
+function ImmediateContext:clear_stats()
+  self._stats = {}
+end
+
+function ImmediateContext:get_stats()
+  return self._stats
+end
+
+function ImmediateContext:get_memory_usage()
+  return gfx.get_stats().gpu_memory_used or 0
+end
+
+function ImmediateContext:_update_stats()
+  local phase = self._phase_stack[#self._phase_stack]
+  if not phase then return end
+  phase.max_mem = math.max(phase.max_mem, self:get_memory_usage())
+end
+
+function ImmediateContext:register(resource)
+  if #self._phase_stack == 0 then
+    log.warn("Implicitly creating root phase!")
+    self:begin_phase("ROOT")
+  end
+  local phase = self._phase_stack[#self._phase_stack]
+  table.insert(phase.resources, resource)
+  return resource
+end
+
+function ImmediateContext:begin_phase(phasename)
+  self._phasecount = (self._phasecount or 0) + 1
+  local newphase = {
+    name = phasename or ("Phase" .. self._phasecount),
+    resources = {},
+    start_time = truss.tic(),
+    max_mem = self:get_memory_usage()
+  }
+  table.insert(self._phase_stack, newphase)
+  return newphase
+end
+
+function ImmediateContext:end_phase(phasename)
+  local stack_size = #self._phase_stack
+  if stack_size == 0 then
+    truss.error("Cannot end_phase() without being in a phase!")
+  end
+  local curphase = self._phase_stack[stack_size]
+  if phasename and (phasename ~= curphase.name) then
+    truss.error("Mismatched end_phase: opened as " 
+                .. tostring(curphase.name)
+                .. " but closed with " .. phasename)
+  end
+  self._phase_stack[stack_size] = nil
+  for _, resource in pairs(curphase.resources) do
+    if resource.release then
+      resource:release()
+    elseif resource.destroy then
+      resource:destroy()
+    end
+  end
+  curphase.total_time = truss.toc(curphase.start_time)
+  if stack_size >= 2 then
+    local parent = self._phase_stack[stack_size-1]
+    parent.max_mem = math.max(parent.max_mem, curphase.max_mem)
+  end
+  self._stats[curphase.name] = {
+    time = curphase.total_time,
+    mem = curphase.max_mem
+  }
+  return curphase
+end
+
 local ImmediateStage = class("ImmediateStage")
 m.ImmediateStage = ImmediateStage
 
@@ -254,11 +329,11 @@ function ImmediateStage:bind(start_id, num_views)
   end
 end
 
-function ImmediateStage:run(f)
+function ImmediateStage:run(f, next, err)
   async.run(function()
     self.ctx:await_frame()
     f(self.ctx)
-  end):next(print, print)
+  end):next(next or print, err or print)
 end
 
 function ImmediateStage:pre_render()
