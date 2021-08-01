@@ -121,7 +121,7 @@ function make_column_edges()
   for tier = 1, 4 do
     local pts = {}
     for idx = 0, 2 do
-      local theta = math.random()*0.1 + (idx + tier/2) * math.pi * 2 / 3
+      local theta = (idx + tier/2) * math.pi * 2 / 3
       pts[idx] = math.Vector(math.cos(theta)*0.15+0.5, tier/5, math.sin(theta)*0.15+0.5)
     end
     for idx = 0, 2 do
@@ -269,7 +269,7 @@ function init()
     title = "truss | logo.t", clear_color = 0x000000ff,
   }
   function myapp:imgui_draw()
-    if true or imgui_open[0] then
+    if imgui_open[0] then
       imgui.C.ShowDemoWindow(imgui_open)
     end
   end
