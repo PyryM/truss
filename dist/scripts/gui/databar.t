@@ -44,8 +44,9 @@ end
 local function gen_tooltip(finfo)
   local text = assert(finfo.tooltip)
   return quote
-    IG.SameLine(0.0, 0.0)
-    IG.TextDisabled("(?)")
+    IG.SameLine(0.0, -1.0)
+    --IG.TextDisabled("\xEF\x84\xA8") -- FontAwesome icon "FA_QUESTION_CIRCLE"
+    IG.TextDisabled("\xEF\x81\x9A") -- FontAwesome icon "FA_INFO_CIRCLE"
     if IG.IsItemHovered(IG.HoveredFlags_None) then
       IG.BeginTooltip()
       IG.PushTextWrapPos(IG.GetFontSize() * 35.0)
