@@ -7,7 +7,7 @@ local m = {}
 
 local KINDS = {}
 
-local function gen_slider(finfo, field_q, io_q)
+local function gen_slider(finfo, settings, field_q, io_q)
   local label = assert(finfo.label or finfo.name)
   local v_min, v_max = unpack(finfo.limits)
   local format = assert(finfo.format)
@@ -18,35 +18,37 @@ local function gen_slider(finfo, field_q, io_q)
   end
 end
 
-local function gen_checkbox(finfo, field_q, io_q)
+local function gen_checkbox(finfo, settings, field_q, io_q)
   local label = assert(finfo.label or finfo.name)
   return quote IG.Checkbox(label, &field_q) end
 end
 
-local function gen_button(finfo, field_q, io_q)
+local function gen_button(finfo, settings, field_q, io_q)
   local label = assert(finfo.label or finfo.name)
+  local wfrac = finfo.size or 0.97
   return quote
-    if IG.Button(label, IG.Vec2{0.0, 0.0}) then
+    if IG.Button(label, IG.Vec2{IG.GetWindowWidth()*wfrac, 0.0}) then
       field_q = field_q + 1
     end
   end
 end
 
-local function gen_divider(finfo, io_q)
+local function gen_divider(finfo, settings, io_q)
   return quote IG.Separator() end
 end
 
-local function gen_label(finfo, io_q)
+local function gen_label(finfo, settings, io_q)
   local label = assert(finfo.label or finfo.name)
   return quote IG.Text("%s", label) end
 end
 
-local function gen_tooltip(finfo)
+local function gen_tooltip(finfo, settings)
   local text = assert(finfo.tooltip)
+   -- default: FontAwesome icon "FA_INFO_CIRCLE"
+  local icon = settings.info_icon or "\xEF\x81\x9A"
   return quote
     IG.SameLine(0.0, -1.0)
-    --IG.TextDisabled("\xEF\x84\xA8") -- FontAwesome icon "FA_QUESTION_CIRCLE"
-    IG.TextDisabled("\xEF\x81\x9A") -- FontAwesome icon "FA_INFO_CIRCLE"
+    IG.TextDisabled(icon)
     if IG.IsItemHovered(IG.HoveredFlags_None) then
       IG.BeginTooltip()
       IG.PushTextWrapPos(IG.GetFontSize() * 35.0)
@@ -137,6 +139,7 @@ function DatabarBuilder:build_c()
     end
   end
 
+  local settings = self._options
   local title = assert(self._options.title)
   terra DataState:draw()
     if not self._bar_visible then return end
@@ -164,19 +167,21 @@ function DatabarBuilder:build_c()
       IG.End()
       return
     end
+    IG.PushItemWidth(IG.GetWindowWidth() * 0.5)
     escape
       for idx, finfo in ipairs(_self._ordered_fields) do
         if _self._named_fields[finfo.name] then
-          emit(finfo:gen_draw(`self.[finfo.name], `io))
+          emit(finfo:gen_draw(settings, `self.[finfo.name], `io))
         else
           -- a stateless field like a divider or label
-          emit(finfo:gen_draw(`io))
+          emit(finfo:gen_draw(settings, `io))
         end
         if finfo.tooltip then
-          emit(finfo:gen_tooltip())
+          emit(finfo:gen_tooltip(settings))
         end
       end
     end
+    IG.PopItemWidth()
     IG.End()
   end
 
