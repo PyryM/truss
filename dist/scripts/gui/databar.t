@@ -41,6 +41,21 @@ local function gen_label(finfo, io_q)
   return quote IG.Text("%s", label) end
 end
 
+local function gen_tooltip(finfo)
+  local text = assert(finfo.tooltip)
+  return quote
+    IG.SameLine(0.0, 0.0)
+    IG.TextDisabled("(?)")
+    if IG.IsItemHovered(IG.HoveredFlags_None) then
+      IG.BeginTooltip()
+      IG.PushTextWrapPos(IG.GetFontSize() * 35.0)
+      IG.TextUnformatted(text, nil)
+      IG.PopTextWrapPos()
+      IG.EndTooltip()
+    end
+  end
+end
+
 KINDS["int"] = {
   ctype = int32, default = 0, gen_draw = gen_slider,
   limits = {0, 100}, format = "%d", 
@@ -57,6 +72,8 @@ KINDS["bool"] = {ctype = bool, default = false, gen_draw = gen_checkbox}
 KINDS["button"] = {ctype = int32, default = 0, gen_draw = gen_button}
 KINDS["divider"] = {ctype = nil, gen_draw = gen_divider}
 KINDS["label"] = {ctype = nil, gen_draw = gen_label}
+
+for _, kind in pairs(KINDS) do kind.gen_tooltip = gen_tooltip end
 
 local BAR_DEFAULTS = {
   title = "Settings", open = true
@@ -153,6 +170,9 @@ function DatabarBuilder:build_c()
         else
           -- a stateless field like a divider or label
           emit(finfo:gen_draw(`io))
+        end
+        if finfo.tooltip then
+          emit(finfo:gen_tooltip())
         end
       end
     end
