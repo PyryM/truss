@@ -9,12 +9,16 @@ local KINDS = {}
 
 local function gen_slider(finfo, settings, field_q, io_q)
   local label = assert(finfo.label or finfo.name)
+  --local igname = '##' .. finfo.name
   local v_min, v_max = unpack(finfo.limits)
   local format = assert(finfo.format)
   local flags = finfo.flags
   local Slider = finfo.slider_func
   return quote 
     Slider(label, &field_q, v_min, v_max, format, flags)
+    --Slider(igname, &field_q, v_min, v_max, format, flags)
+    --IG.SameLine(0.0, -1.0)
+    --IG.Text(label)
   end
 end
 
@@ -40,6 +44,17 @@ end
 local function gen_label(finfo, settings, io_q)
   local label = assert(finfo.label or finfo.name)
   return quote IG.Text("%s", label) end
+end
+
+local function gen_choice(finfo, settings, field_q, io_q)
+  local label = assert(finfo.label or finfo.name)
+  local choices = assert(finfo.choices)
+  local items = terralib.constant(`arrayof([&int8], [choices]))
+  local nitems = #choices
+  local maxheight = finfo.max_height or 10
+  return quote
+    IG.Combo_Str_arr(label, &field_q, items, nitems, maxheight)
+  end
 end
 
 local function gen_tooltip(finfo, settings)
@@ -71,6 +86,7 @@ KINDS["float"] = {
   slider_func = IG.SliderFloat, flags = IG.SliderFlags_None
 }
 
+KINDS["choice"] = {ctype = int32, default = 0, gen_draw = gen_choice}
 KINDS["bool"] = {ctype = bool, default = false, gen_draw = gen_checkbox}
 KINDS["button"] = {ctype = int32, default = 0, gen_draw = gen_button}
 KINDS["divider"] = {ctype = nil, gen_draw = gen_divider}
@@ -167,7 +183,7 @@ function DatabarBuilder:build_c()
       IG.End()
       return
     end
-    IG.PushItemWidth(IG.GetWindowWidth() * 0.5)
+    IG.PushItemWidth(IG.GetWindowWidth() * 0.66)
     escape
       for idx, finfo in ipairs(_self._ordered_fields) do
         if _self._named_fields[finfo.name] then

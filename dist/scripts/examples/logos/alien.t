@@ -194,6 +194,7 @@ function init()
   db_builder:field{"divider"}
   db_builder:field{"clicky", "button", label="Click me!"}
   db_builder:field{"Jeff Bezos", "label"}
+  db_builder:field{"thingy", "choice", choices={"An Apple", "A Banana"}}
   dbstate = db_builder:build()
 
   function myapp:imgui_draw()
