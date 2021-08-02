@@ -58,12 +58,18 @@ KINDS["button"] = {ctype = int32, default = 0, gen_draw = gen_button}
 KINDS["divider"] = {ctype = nil, gen_draw = gen_divider}
 KINDS["label"] = {ctype = nil, gen_draw = gen_label}
 
+local BAR_DEFAULTS = {
+  title = "Settings", open = true
+}
+
 local DatabarBuilder = class("DatabarBuilder")
 m.DatabarBuilder = DatabarBuilder
 
-function DatabarBuilder:init()
+function DatabarBuilder:init(options)
+  options = truss.extend_table({}, BAR_DEFAULTS, options or {})
   self._ordered_fields = {}
   self._named_fields = {}
+  self._options = options
 end
 
 function DatabarBuilder:field(options)
@@ -96,10 +102,12 @@ function DatabarBuilder:build_c()
     table.insert(DataState.entries, {fname, finfo.ctype})
   end
   table.insert(DataState.entries, {"_bar_open", bool})
+  table.insert(DataState.entries, {"_bar_visible", bool})
 
   local _self = self
   terra DataState:init()
-    self._bar_open = true
+    self._bar_open = [_self._options.open]
+    self._bar_visible = true
     escape
       for fname, finfo in pairs(_self._named_fields) do
         if finfo.gen_init then
@@ -111,9 +119,27 @@ function DatabarBuilder:build_c()
     end
   end
 
+  local title = assert(self._options.title)
   terra DataState:draw()
+    if not self._bar_visible then return end
     var io = IG.GetIO()
-    if not IG.Begin("Databar", &(self._bar_open), IG.WindowFlags_None) then
+    escape
+      local x, y = _self._options.x, _self._options.y
+      local w, h = _self._options.width, _self._options.height
+      if x and y then
+        emit(quote 
+          IG.SetNextWindowPos(IG.Vec2{x, y}, IG.Cond_FirstUseEver, IG.Vec2{0, 0})
+        end)
+      end
+      if w and h then
+        emit(quote
+          IG.SetNextWindowSize(IG.Vec2{w, h}, IG.Cond_FirstUseEver)
+        end)
+      end
+    end
+    IG.SetNextWindowCollapsed(not self._bar_open, IG.Cond_FirstUseEver)
+    -- No closing the databar!
+    if not IG.Begin(title, nil, IG.WindowFlags_None) then
       IG.End()
       return
     end
@@ -128,6 +154,10 @@ function DatabarBuilder:build_c()
       end
     end
     IG.End()
+  end
+
+  terra DataState:set_visible(visible: bool)
+    self._bar_visible = visible
   end
 
   return DataState
