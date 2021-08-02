@@ -138,8 +138,11 @@ function DatabarBuilder:build_c()
       end
     end
     IG.SetNextWindowCollapsed(not self._bar_open, IG.Cond_FirstUseEver)
-    -- No closing the databar!
-    if not IG.Begin(title, nil, IG.WindowFlags_None) then
+    var close_flag: &bool = nil
+    escape if _self._options.allow_close then 
+      emit(quote close_flag = &(self._bar_visible) end)
+    end end
+    if not IG.Begin(title, close_flag, IG.WindowFlags_None) then
       IG.End()
       return
     end
