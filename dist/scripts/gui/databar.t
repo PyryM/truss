@@ -74,6 +74,15 @@ local function gen_tooltip(finfo, settings)
   end
 end
 
+local function gen_progress(finfo, settings, field_q, io_q)
+  local label = assert(finfo.label or finfo.name)
+  return quote
+    IG.ProgressBar(field_q, IG.Vec2{0.0, 0.0}, nil)
+    IG.SameLine(0.0, -1.0)
+    IG.Text(label)
+  end
+end
+
 KINDS["int"] = {
   ctype = int32, default = 0, gen_draw = gen_slider,
   limits = {0, 100}, format = "%d", 
@@ -86,6 +95,7 @@ KINDS["float"] = {
   slider_func = IG.SliderFloat, flags = IG.SliderFlags_None
 }
 
+KINDS["progress"] = {ctype = float, default = 0.0, gen_draw = gen_progress}
 KINDS["choice"] = {ctype = int32, default = 0, gen_draw = gen_choice}
 KINDS["bool"] = {ctype = bool, default = false, gen_draw = gen_checkbox}
 KINDS["button"] = {ctype = int32, default = 0, gen_draw = gen_button}

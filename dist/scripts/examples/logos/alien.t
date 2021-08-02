@@ -80,7 +80,7 @@ local function gen_cell(data, x, y, z, dg, funclist)
   return mc.cubify_to_geo(data, 64000, nil, limits)
 end
 
-local function generate_logo_mesh(parent, material, resolution)
+local function generate_logo_mesh(parent, material, resolution, progress_cb)
   local edge_funcs = {}
   for idx, edge in ipairs(common.make_logo_column_edges()) do
     edge_funcs[idx] = ter_edge_dist_func(unpack(edge))
@@ -108,12 +108,14 @@ local function generate_logo_mesh(parent, material, resolution)
           mesh.position:set(-0.5, -0.5, -0.5)
           mesh:update_matrix()
         end
+        if progress_cb then progress_cb(partidx, ndivs^3 - 1) end
         progress.text = ("Generating mesh [%03d / %03d]"):format(partidx, ndivs^3)
         partidx = partidx + 1
       end
     end
   end
   progress.dead = true
+  if progress_cb then progress_cb(1, 1) end
 end
 
 local function Logo(_ecs, name, options)
@@ -130,7 +132,7 @@ local function Logo(_ecs, name, options)
     tint = {1.0, 0.02, 0.2}, 
     roughness = 0.3
   }
-  async.run(generate_logo_mesh, rotator, mat, 2^(options.detail)):next(nil, print)
+  async.run(generate_logo_mesh, rotator, mat, 2^(options.detail), options.progress_cb):next(nil, print)
 
   return ret
 end
@@ -170,7 +172,7 @@ end
 
 local gif_mode = false
 local imgui_open = terralib.new(bool[1])
-imgui_open[0] = true
+imgui_open[0] = false
 local dbstate = nil
 
 function init()
@@ -184,20 +186,25 @@ function init()
     title = "BoopDoop",
     width = 400, height = 680,
     x = 20, y = 20,
-    open = false, allow_close = true
+    open = true, allow_close = true
   }
+  db_builder:field{"logo_progress", "progress"}
   db_builder:field{"rotate_view", "bool", default = true, tooltip = "Automatically rotate the view\nDo newlines work?"}
   db_builder:field{"rotate_model", "bool", default = true, tooltip = "This doesn't actually work"}
   db_builder:field{"view_speed", "float", limits={0, 10.0}, default=1.0, tooltip = "Multiply rotate speed by this"}
   db_builder:field{"Boozle", "int", limits={-100,100}, default=13}
   db_builder:field{"Moozle", "float", limits={-100,100}, default=13.13}
+  db_builder:field{"thingy", "choice", choices={"An Apple", "A Banana", "A Coconut"}, default=1}
   db_builder:field{"divider"}
-  db_builder:field{"clicky", "button", label="Click me!"}
-  db_builder:field{"Jeff Bezos", "label"}
-  db_builder:field{"thingy", "choice", choices={"An Apple", "A Banana"}}
+  db_builder:field{"show_demo", "button", label="Show IMGUI demo!"}
+  db_builder:field{"A random label!", "label"}
   dbstate = db_builder:build()
 
   function myapp:imgui_draw()
+    if dbstate.show_demo > 0 then
+      imgui_open[0] = true
+      dbstate.show_demo = 0
+    end
     if imgui_open[0] then
       imgui.C.ShowDemoWindow(imgui_open)
     end
@@ -206,7 +213,11 @@ function init()
 
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
   myapp.camera.orbit_control:set(0, 0, 0.7)
-  local logo = myapp.scene:create_child(Logo, "logo", {detail = 7})
+  local logo = myapp.scene:create_child(Logo, "logo", {
+    detail = 7, progress_cb = function(n, d)
+      dbstate.logo_progress = n/d
+    end
+  })
   logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
   logo:update_matrix()
 
