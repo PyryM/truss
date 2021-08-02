@@ -191,8 +191,11 @@ function truss.load_named_string(str, strname, loader)
   return loader(generator_func, '@' .. strname)
 end
 
-local function extend_table(dest, addition)
-  for k,v in pairs(addition) do dest[k] = v end
+local function extend_table(dest, ...)
+  for idx = 1, select("#", ...) do
+    local addition = select(idx, ...)
+    for k,v in pairs(addition) do dest[k] = v end
+  end
   return dest
 end
 truss.extend_table = extend_table

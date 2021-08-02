@@ -19,6 +19,8 @@ local class = require("class")
 local imgui = require("gfx/imgui.t")
 local common = require("examples/logos/logocommon.t")
 
+local dbar = require("gui/databar.t")
+
 function ter_edge_dist_func(p0, p1)
   local x0, y0, z0 = p0:components()
   local x1, y1, z1 = p1:components()
@@ -169,6 +171,7 @@ end
 local gif_mode = false
 local imgui_open = terralib.new(bool[1])
 imgui_open[0] = true
+local dbstate = nil
 
 function init()
   myapp = app.App{
@@ -176,10 +179,28 @@ function init()
     msaa = true, hidpi = true, stats = false, imgui = true,
     title = "truss | logo.t", clear_color = 0x000000ff,
   }
+
+  local db_builder = dbar.DatabarBuilder{
+    title = "BoopDoop",
+    width = 400, height = 680,
+    x = 20, y = 20,
+    open = false, allow_close = true
+  }
+  db_builder:field{"rotate_view", "bool", default = true, tooltip = "Automatically rotate the view\nDo newlines work?"}
+  db_builder:field{"rotate_model", "bool", default = true, tooltip = "This doesn't actually work"}
+  db_builder:field{"view_speed", "float", limits={0, 10.0}, default=1.0, tooltip = "Multiply rotate speed by this"}
+  db_builder:field{"Boozle", "int", limits={-100,100}, default=13}
+  db_builder:field{"Moozle", "float", limits={-100,100}, default=13.13}
+  db_builder:field{"divider"}
+  db_builder:field{"clicky", "button", label="Click me!"}
+  db_builder:field{"Jeff Bezos", "label"}
+  dbstate = db_builder:build()
+
   function myapp:imgui_draw()
     if imgui_open[0] then
       imgui.C.ShowDemoWindow(imgui_open)
     end
+    dbstate:draw()
   end
 
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
@@ -220,8 +241,8 @@ function init()
 end
 
 function update()
-  if not gif_mode then
-    myapp.camera.orbit_control:move_theta(math.pi * 2.0 / 120.0)
+  if dbstate.rotate_view and not gif_mode then
+    myapp.camera.orbit_control:move_theta(dbstate.view_speed * math.pi * 2.0 / 120.0)
   end
   myapp:update()
 end
