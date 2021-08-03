@@ -214,7 +214,7 @@ function init()
     title = "Settings",
     width = 400, height = 680,
     x = 1280 - 420, y = 20,
-    open = false, allow_close = true
+    open = true, allow_close = true
   }
   db_builder:field{"logo_progress", "progress"}
   db_builder:field{"rotate_view", "bool", default = true, tooltip = "Automatically rotate the view\nDo newlines work?"}
@@ -269,7 +269,7 @@ function init()
     async.await_frames(5)
     common.add_textbox{
       x = 390, y = 10, w = 220, h = 120, color = logocolor,
-      font_size = 100, text = truss.BIN_VERSION
+      font_size = 100, text = "0.2.α" -- truss.BIN_VERSION
     }
   end)
 end
