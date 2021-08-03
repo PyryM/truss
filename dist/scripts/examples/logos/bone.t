@@ -49,13 +49,21 @@ local function sphere_diff(x0, y0, z0, rad)
   return diff_sdf
 end
 
---[[
-float opSmoothUnion( float d1, float d2, float k ) {
-  float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
-  return mix( d2, d1, h ) - k*h*(1.0-h); }
-]]
+local terra clamp(v: float, minv: float, maxv: float): float
+  if v < minv then return minv elseif v > maxv then return maxv end
+  return v
+end
 
-local function softmax_capsule(p0, p1, rad)
+local terra mix(x: float, y: float, a: float): float
+  return x + a*(y-x)
+end
+
+local terra soft_union(d1: float, d2: float, k: float): float
+  var h = clamp(0.5 + 0.5*(d2-d1)/k, 0.0, 1.0)
+  return mix(d2, d1, h) - k*h*(1.0-h)
+end
+
+local function softmax_capsule(p0, p1, rad, k)
   local V3 = tmath.Vec3f
   local ax, ay, az = unpack(p0:to_array())
   local bx, by, bz = unpack(p1:to_array())
@@ -71,39 +79,8 @@ local function softmax_capsule(p0, p1, rad)
     if h < 0.0 then h = 0.0 elseif h > 1.0 then h = 1.0 end
     var distvec: V3 = pa - (ba * h)
     var newdist: float = distvec:length() - rad
-    return cmath.fmin(oldval, newdist)
-  end
-end
-
-local function ter_edge_dist_func(p0, p1)
-  local x0, y0, z0 = p0:components()
-  local x1, y1, z1 = p1:components()
-  local d = p1 - p0
-  local tardist = d:length3()
-  local nx, ny, nz = d:normalize3():components()
-  local THRESH = 0.05 * tardist
-  return terra(oldval: float, x: float, y: float, z: float): float
-    var p0: tmath.Vec3f
-    var p1: tmath.Vec3f
-    var n: tmath.Vec3f
-    var p: tmath.Vec3f
-    n:set(nx, ny, nz)
-    p0:set(x0, y0, z0)
-    p1:set(x1, y1, z1)
-    p:set(x, y, z)
-    var dp: tmath.Vec3f = p - p0
-    var parallel_dist = dp:dot(&n)
-    dp = dp - (n * parallel_dist)
-    if parallel_dist < THRESH then
-      parallel_dist = THRESH - parallel_dist
-    elseif parallel_dist > tardist - THRESH then
-      parallel_dist = parallel_dist - (tardist - THRESH)
-    else
-      parallel_dist = 0.0
-    end
-    var v = dp:length_squared()
-    v = cmath.expf(-1000.0*v) * cmath.expf(-parallel_dist*80.0)
-    return oldval + v
+    --return cmath.fmin(oldval, newdist)
+    return soft_union(oldval, newdist, k)
   end
 end
 
@@ -145,7 +122,7 @@ local function generate_logo_3d_tex(resolution, cb)
   local edge_funcs = {}
   for idx, edge in ipairs(common.make_logo_column_edges()) do
     --if idx > 1 then break end
-    edge_funcs[idx] = softmax_capsule(edge[1], edge[2], 0.025, 0.1)
+    edge_funcs[idx] = softmax_capsule(edge[1], edge[2], 0.025, 0.05)
   end
   print(#edge_funcs)
   --[[
@@ -172,7 +149,10 @@ local function generate_logo_3d_tex(resolution, cb)
 end
 
 local function Logo(_ecs, name, options)
-  local should_rotate = options.rotate_cb or (function() return true end)
+  local state = options.state or {
+    rotate_model = true, thresh = 0.5,
+    step = 0.002, normstep = 0.01
+  }
 
   local parent = ecs.Entity3d(_ecs, name)
   local rotator = parent:create_child(ecs.Entity3d, "rotator")
@@ -196,7 +176,7 @@ local function Logo(_ecs, name, options)
 
   rotator:add_component(ecs.UpdateComponent(function(self)
     self.f = (self.f or 0)
-    if should_rotate() then self.f = self.f + 1 end
+    if state.rotate_model then self.f = self.f + 1 end
     self.ent.quaternion:euler{x = 0, y = self.f/120, z = 0}
     self.ent:update_matrix()
   end))
@@ -210,7 +190,11 @@ local function Logo(_ecs, name, options)
     inv_model_mat:invert(self.ent.matrix_world)
     mat.uniforms.u_invModel:set(inv_model_mat)
     --mat.uniforms.u_lightDir:set(lx, 0.0, ly, 0.0)
-    mat.uniforms.u_timeParams:set(self.f % 1001)
+    if state.static_noise then self.f = 0 end
+    mat.uniforms.u_timeParams:set((self.f % 999) / 999999)
+    mat.uniforms.u_marchParams:set(
+      state.step, state.thresh, state.normstep, 0
+    )
   end))
 
   logo.position:set(-0.5, -0.5, -0.5)
@@ -242,13 +226,13 @@ function init()
   db_builder:field{"rotate_view", "bool", default = true, tooltip = "Automatically rotate the view\nDo newlines work?"}
   db_builder:field{"rotate_model", "bool", default = true, tooltip = "This doesn't actually work"}
   db_builder:field{"view_speed", "float", limits={0, 10.0}, default=1.0, tooltip = "Multiply rotate speed by this"}
-  db_builder:field{"Boozle", "int", limits={-100,100}, default=13}
-  db_builder:field{"Moozle", "float", limits={-100,100}, default=13.13}
-  db_builder:field{"thingy", "choice", choices={"An Apple", "A Banana", "A Coconut"}, default=1}
-  db_builder:field{"albedo", "color", default={1,0,1,1}}
+  db_builder:field{"thresh", "float", limits={0.48,0.8}, default=0.5}
+  db_builder:field{"step", "float", limits={0.001, 0.1}, default=0.002}
+  db_builder:field{"normstep", "float", limits={0.001, 0.1}, default=0.01}
+  db_builder:field{"static_noise", "bool", default=false}
+
   db_builder:field{"divider"}
   db_builder:field{"show_demo", "button", label="Show IMGUI demo!"}
-  db_builder:field{"A random label!", "label"}
   dbstate = db_builder:build()
 
   function myapp:imgui_draw()
@@ -271,9 +255,7 @@ function init()
       async.await_frames(1)
     end)
     local logo = myapp.scene:create_child(Logo, "logo", {
-      sdf_tex = tex3d, rotate_cb = function()
-        return dbstate.rotate_model
-      end
+      sdf_tex = tex3d, state = dbstate
     })
     logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
     logo:update_matrix()
