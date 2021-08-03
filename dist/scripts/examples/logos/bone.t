@@ -49,6 +49,32 @@ local function sphere_diff(x0, y0, z0, rad)
   return diff_sdf
 end
 
+--[[
+float opSmoothUnion( float d1, float d2, float k ) {
+  float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
+  return mix( d2, d1, h ) - k*h*(1.0-h); }
+]]
+
+local function softmax_capsule(p0, p1, rad)
+  local V3 = tmath.Vec3f
+  local ax, ay, az = unpack(p0:to_array())
+  local bx, by, bz = unpack(p1:to_array())
+
+  return terra(oldval: float, x: float, y: float, z: float): float
+    --vec3 pa = p - a, ba = b - a;
+    var pa: V3
+    pa:set(x - ax, y - ay, z - az)
+    var ba: V3
+    ba:set(bx - ax, by - ay, bz - az) 
+    --float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+    var h: float = pa:dot(&ba) / ba:dot(&ba)
+    if h < 0.0 then h = 0.0 elseif h > 1.0 then h = 1.0 end
+    var distvec: V3 = pa - (ba * h)
+    var newdist: float = distvec:length() - rad
+    return cmath.fmin(oldval, newdist)
+  end
+end
+
 local function ter_edge_dist_func(p0, p1)
   local x0, y0, z0 = p0:components()
   local x1, y1, z1 = p1:components()
@@ -89,10 +115,10 @@ local function gen_sdf(funclist, databuff, res, mult, offset, cb)
     var dpos: uint32 = RES*RES*z
     for y = 0, RES do
       for x = 0, RES do
-        var fx = 2.0 * [float](x) / RES - 1.0
-        var fy = 2.0 * [float](y) / RES - 1.0
-        var fz = 2.0 * [float](z) / RES - 1.0
-        var val: float = 0.0
+        var fx = [float](x) / RES
+        var fy = [float](y) / RES
+        var fz = [float](z) / RES
+        var val: float = 10000.0
         escape
           for _, f in ipairs(funclist) do
             emit(quote
@@ -100,7 +126,7 @@ local function gen_sdf(funclist, databuff, res, mult, offset, cb)
             end)
           end
         end
-        val = val * 0.5
+        --val = val * 0.5
         var ival: int32 = (val + OFFSET) * MULT
         if ival < 0 then ival = 0 end
         if ival > 255 then ival = 255 end
@@ -116,12 +142,13 @@ local function gen_sdf(funclist, databuff, res, mult, offset, cb)
 end
 
 local function generate_logo_3d_tex(resolution, cb)
-  --[[
   local edge_funcs = {}
   for idx, edge in ipairs(common.make_logo_column_edges()) do
-    edge_funcs[idx] = ter_edge_dist_func(unpack(edge))
+    --if idx > 1 then break end
+    edge_funcs[idx] = softmax_capsule(edge[1], edge[2], 0.025, 0.1)
   end
-  ]]
+  print(#edge_funcs)
+  --[[
   local edge_funcs = {sphere_sdf}
   for i = 1, 10 do
     local cx = 2*math.random()-1
@@ -130,6 +157,7 @@ local function generate_logo_3d_tex(resolution, cb)
     local rad = math.random()*0.5 + 0.1
     table.insert(edge_funcs, sphere_diff(cx, cy, cz, rad))
   end
+  ]]
 
   local sdftex = gfx.Texture3d{
     width = resolution, height = resolution, depth = resolution, 
@@ -234,8 +262,8 @@ function init()
     dbstate:draw()
   end
 
-  myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 1.2, max_rad = 3.0})
-  myapp.camera.orbit_control:set(0, 0, 1.2)
+  myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.8, max_rad = 3.0})
+  myapp.camera.orbit_control:set(0, 0, 0.8)
 
   async.run(function()
     local tex3d = generate_logo_3d_tex(128, function(z, zmax)
@@ -249,7 +277,7 @@ function init()
     })
     logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
     logo:update_matrix()
-  end)
+  end):next(nil, print)
 
   myapp.scene:create_child(ecs.Entity3d, "logotext", common.NVGDrawer())
 
@@ -262,7 +290,7 @@ function init()
     async.await_frames(5)
     common.add_textbox{
       x = 390, y = 10, w = 220, h = 120, color = logocolor,
-      font_size = 100, text = truss.C.get_version()
+      font_size = 100, text = truss.BIN_VERSION
     }
   end)
 end

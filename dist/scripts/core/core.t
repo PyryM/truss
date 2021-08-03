@@ -468,7 +468,9 @@ truss.insert_module("jit", jit)
 truss.require_as("core/30log.lua", "class")
 
 local vstr = ffi.string(truss.C.get_version())
-truss.VERSION = vstr
+truss.BIN_VERSION = vstr
+truss.LIB_VERSION = "0.2.0"
+truss.VERSION = truss.BIN_VERSION
 
 local modutils = truss.require("core/module.t")
 modutils.reexport(truss.require("core/memory.t"), truss)
