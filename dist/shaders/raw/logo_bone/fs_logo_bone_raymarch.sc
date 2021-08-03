@@ -4,7 +4,7 @@ $input v_wpos, v_vdir, v_lightdir
 
 SAMPLER3D(s_volume, 0);
 
-uniform vec4 u_marchParams; // (step, thresh, ?, ?)
+uniform vec4 u_marchParams; // (step, thresh, normstep, ?)
 uniform vec4 u_scaleParams; // (xyz: scale, w: ?)
 uniform vec4 u_timeParams; // (xyz: scale, w: ?)
 
@@ -26,7 +26,7 @@ void main()
     discard;
   }
 
-  vec3 normal = estimateNormalSdf(collision.xyz, stepsize*1.0);
+  vec3 normal = estimateNormalSdf(collision.xyz, u_marchParams.z);
   //vec3 normal = estimateNormalAlt(collision.xyz - viewDir*stepsize*5, scale, stepsize, thresh);
   float lighting = 0.0;
   vec3 collisionSeed = collision.xyz + (u_timeParams.x*NUM_RAYS);

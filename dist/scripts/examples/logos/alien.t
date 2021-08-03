@@ -16,7 +16,6 @@ local cmath = require("math/cmath.t")
 local ecs = require("ecs")
 local async = require("async")
 local class = require("class")
-local imgui = require("imgui")
 local common = require("examples/logos/logocommon.t")
 
 function ter_edge_dist_func(p0, p1)
@@ -169,53 +168,18 @@ local function Stars(_ecs, name, options)
 end
 
 local gif_mode = false
-local imgui_open = terralib.new(bool[1])
-imgui_open[0] = false
-local dbstate = nil
 
 function init()
   myapp = app.App{
     width = (gif_mode and 720) or 1280, height = 720, 
-    msaa = true, hidpi = true, stats = false, imgui = true,
+    msaa = true, hidpi = true, stats = false, imgui = false, use_nvg = true,
     title = "truss | logos/alien.t", clear_color = 0x000000ff,
   }
-
-  local db_builder = imgui.DatabarBuilder{
-    title = "BoopDoop",
-    width = 400, height = 680,
-    x = 20, y = 20,
-    open = true, allow_close = true
-  }
-  db_builder:field{"logo_progress", "progress"}
-  db_builder:field{"rotate_view", "bool", default = true, tooltip = "Automatically rotate the view\nDo newlines work?"}
-  db_builder:field{"rotate_model", "bool", default = true, tooltip = "This doesn't actually work"}
-  db_builder:field{"view_speed", "float", limits={0, 10.0}, default=1.0, tooltip = "Multiply rotate speed by this"}
-  db_builder:field{"Boozle", "int", limits={-100,100}, default=13}
-  db_builder:field{"Moozle", "float", limits={-100,100}, default=13.13}
-  db_builder:field{"thingy", "choice", choices={"An Apple", "A Banana", "A Coconut"}, default=1}
-  db_builder:field{"albedo", "color", default={1,0,1,1}}
-  db_builder:field{"divider"}
-  db_builder:field{"show_demo", "button", label="Show IMGUI demo!"}
-  db_builder:field{"A random label!", "label"}
-  dbstate = db_builder:build()
-
-  function myapp:imgui_draw()
-    if dbstate.show_demo > 0 then
-      imgui_open[0] = true
-      dbstate.show_demo = 0
-    end
-    if imgui_open[0] then
-      imgui.C.ShowDemoWindow(imgui_open)
-    end
-    dbstate:draw()
-  end
 
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
   myapp.camera.orbit_control:set(0, 0, 0.7)
   local logo = myapp.scene:create_child(Logo, "logo", {
-    detail = 7, progress_cb = function(n, d)
-      dbstate.logo_progress = n/d
-    end
+    detail = 7
   })
   logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
   logo:update_matrix()
@@ -252,8 +216,8 @@ function init()
 end
 
 function update()
-  if dbstate.rotate_view and not gif_mode then
-    myapp.camera.orbit_control:move_theta(dbstate.view_speed * math.pi * 2.0 / 120.0)
+  if not gif_mode then
+    myapp.camera.orbit_control:move_theta(math.pi * 2.0 / 120.0)
   end
   myapp:update()
 end

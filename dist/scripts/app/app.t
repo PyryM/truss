@@ -41,7 +41,7 @@ function App:init(options)
   self._init_options = options
 
   if options.imgui and self.window then
-    local imgui = require("imgui/imgui.t")
+    local imgui = require("imgui")
     self.imgui = imgui.create_default_context(self.width, self.height)
   end
 

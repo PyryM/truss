@@ -87,39 +87,40 @@ local function ter_edge_dist_func(p0, p1)
   end
 end
 
-local function gen_sdf(funclist, databuff, res, mult, offset)
+local function gen_sdf(funclist, databuff, res, mult, offset, cb)
   local RES = assert(res)
   local OFFSET = offset or 0.0
   local MULT = mult or 255.0
-  local terra gen(dest: &uint8)
-    var dpos: uint32 = 0
-    for z = 0, RES do
-      for y = 0, RES do
-        for x = 0, RES do
-          var fx = [float](x) / RES
-          var fy = [float](y) / RES
-          var fz = [float](z) / RES
-          var val: float = 0.0
-          escape
-            for _, f in ipairs(funclist) do
-              emit(quote
-                val = f(val, fx, fy, fz) 
-              end)
-            end
+  local terra gen(dest: &uint8, z: uint32)
+    var dpos: uint32 = RES*RES*z
+    for y = 0, RES do
+      for x = 0, RES do
+        var fx = [float](x) / RES
+        var fy = [float](y) / RES
+        var fz = [float](z) / RES
+        var val: float = 0.0
+        escape
+          for _, f in ipairs(funclist) do
+            emit(quote
+              val = f(val, fx, fy, fz) 
+            end)
           end
-          var ival: int32 = (val + OFFSET) * MULT
-          if ival < 0 then ival = 0 end
-          if ival > 255 then ival = 255 end
-          dest[dpos] = ival
-          dpos = dpos + 1
         end
+        var ival: int32 = (val + OFFSET) * MULT
+        if ival < 0 then ival = 0 end
+        if ival > 255 then ival = 255 end
+        dest[dpos] = ival
+        dpos = dpos + 1
       end
     end
   end
-  gen(databuff)
+  for z = 0, RES-1 do
+    gen(databuff, z)
+    if cb then cb(z, RES-1) end
+  end
 end
 
-local function generate_logo_3d_tex(resolution)
+local function generate_logo_3d_tex(resolution, cb)
   --[[
   local edge_funcs = {}
   for idx, edge in ipairs(common.make_logo_column_edges()) do
@@ -140,8 +141,9 @@ local function generate_logo_3d_tex(resolution)
     format = gfx.TEX_R8, allocate = true, dynamic = false
   }
 
-  gen_sdf(edge_funcs, sdftex.cdata, resolution, 255.0, 0.5)
+  gen_sdf(edge_funcs, sdftex.cdata, resolution, 255.0, 0.5, cb)
 
+  log.info("sdftex size: " .. sdftex.cdatasize)
   sdftex:commit()
   return sdftex
 end
@@ -153,12 +155,11 @@ local function Logo(_ecs, name, options)
     sz = 1.0
   }
 
-  local tex3d = generate_logo_3d_tex(options.resolution or 128)
   local inv_model_mat = math.Matrix4():identity()
 
   local mat = MarchMat{
-    s_volume = tex3d,
-    u_marchParams = {0.002, 0.5, 0.0, 0.0},
+    s_volume = assert(options.sdf_tex),
+    u_marchParams = {0.002, 0.5, 0.01, 0.0},
     u_scaleParams = {1.0, 1.0, 1.0, 1.0},
     u_timeParams = {0.0, 0.0, 0.0, 0.0},
     u_lightDir = {1.0, 0.0, 0.0, 0.0},
@@ -174,6 +175,7 @@ local function Logo(_ecs, name, options)
     inv_model_mat:invert(self.ent.matrix_world)
     mat.uniforms.u_invModel:set(inv_model_mat)
     mat.uniforms.u_lightDir:set(lx, 0.0, ly, 0.0)
+    mat.uniforms.u_timeParams:set(self.f % 1001)
   end))
 
   return logo
@@ -187,14 +189,15 @@ local dbstate = nil
 function init()
   myapp = app.App{
     width = (gif_mode and 720) or 1280, height = 720, 
-    msaa = true, hidpi = true, stats = false, imgui = true,
-    title = "truss | logos/bone.t", clear_color = 0x000000ff,
+    msaa = false, hidpi = false, stats = false, imgui = true,
+    title = "truss | logos/bone.t", clear_color = 0xddddddff,
+    backend = "vulkan"
   }
 
   local db_builder = imgui.DatabarBuilder{
     title = "BoopDoop",
     width = 400, height = 680,
-    x = 20, y = 20,
+    x = 1280 - 420, y = 20,
     open = true, allow_close = true
   }
   db_builder:field{"logo_progress", "progress"}
@@ -223,39 +226,34 @@ function init()
 
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 1.2, max_rad = 3.0})
   myapp.camera.orbit_control:set(0, 0, 1.2)
-  local logo = myapp.scene:create_child(Logo, "logo", {resolution = 128})
-  logo.position:set(-0.5, -0.5, -0.5)
-  --logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
-  logo:update_matrix()
+
+  async.run(function()
+    local tex3d = generate_logo_3d_tex(128, function(z, zmax)
+      dbstate.logo_progress = z/zmax
+      async.await_frames(1)
+    end)
+    local logo = myapp.scene:create_child(Logo, "logo", {
+      sdf_tex = tex3d
+    })
+    logo.position:set(-0.5, -0.5, -0.5)
+    --logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
+    logo:update_matrix()
+  end)
 
   myapp.scene:create_child(ecs.Entity3d, "logotext", common.NVGDrawer())
 
   async.run(function()
+    local logocolor = {50, 50, 50, 200}
     common.add_textbox{
       x = 10, y = 10, w = 400, h = 200,
-      font_size = 200, text = 'truss'
+      font_size = 200, text = 'truss', color = logocolor
     }
     async.await_frames(5)
     common.add_textbox{
-      x = 390, y = 10, w = 220, h = 120,
+      x = 390, y = 10, w = 220, h = 120, color = logocolor,
       font_size = 100, text = truss.C.get_version()
     }
-    if gif_mode then return end
-    -- spawn caps
-    local ypos = 5
-    local mult = gfx.backbuffer_width / myapp.width
-    for capname, supported in pairs(gfx.get_caps().features) do
-      local color = (supported and {200,255,200,255}) or {100,100,100,255}
-      common.add_textbox{
-        x = gfx.backbuffer_width - 280 * mult, y = ypos, w = 250 * mult, h = 23 * mult, 
-        font_size = 20 * mult, text = capname, color = color, font = 'mono'
-      }
-      ypos = ypos + 20 * mult
-      async.await_frames(5)
-    end
   end)
-
-  common.dump_text_caps()
 end
 
 function update()
