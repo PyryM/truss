@@ -122,19 +122,9 @@ local function generate_logo_3d_tex(resolution, cb)
   local edge_funcs = {}
   for idx, edge in ipairs(common.make_logo_column_edges()) do
     --if idx > 1 then break end
-    edge_funcs[idx] = softmax_capsule(edge[1], edge[2], 0.025, 0.05)
+    edge_funcs[idx] = softmax_capsule(edge[1], edge[2], 0.025, 0.03)
   end
   print(#edge_funcs)
-  --[[
-  local edge_funcs = {sphere_sdf}
-  for i = 1, 10 do
-    local cx = 2*math.random()-1
-    local cy = 2*math.random()-1
-    local cz = 2*math.random()-1
-    local rad = math.random()*0.5 + 0.1
-    table.insert(edge_funcs, sphere_diff(cx, cy, cz, rad))
-  end
-  ]]
 
   local sdftex = gfx.Texture3d{
     width = resolution, height = resolution, depth = resolution, 
@@ -151,7 +141,8 @@ end
 local function Logo(_ecs, name, options)
   local state = options.state or {
     rotate_model = true, thresh = 0.5,
-    step = 0.002, normstep = 0.01
+    step = 0.002, normstep = 0.01,
+    light_size = 45, light_power = 1.0
   }
 
   local parent = ecs.Entity3d(_ecs, name)
@@ -167,7 +158,7 @@ local function Logo(_ecs, name, options)
 
   local mat = MarchMat{
     s_volume = assert(options.sdf_tex),
-    u_marchParams = {0.002, 0.5, 0.01, 0.0},
+    u_marchParams = {0.002, 0.5, 0.01, -1},
     u_scaleParams = {1.0, 1.0, 1.0, 1.0},
     u_timeParams = {0.0, 0.0, 0.0, 0.0},
     u_lightDir = {1.0, 0.0, 0.0, 0.0},
@@ -185,17 +176,19 @@ local function Logo(_ecs, name, options)
 
   logo:add_component(ecs.UpdateComponent(function(self)
     self.f = (self.f or 0) + 1
-    --local lx = math.cos(self.f / 120)
-    --local ly = math.sin(self.f / 120)
-    inv_model_mat:invert(self.ent.matrix_world)
-    mat.uniforms.u_invModel:set(inv_model_mat)
-    --mat.uniforms.u_lightDir:set(lx, 0.0, ly, 0.0)
     if state.static_noise then self.f = 0 end
+    local lightthresh = math.cos(math.pi * state.light_size/180.0)
     mat.uniforms.u_timeParams:set((self.f % 999) / 999999)
     mat.uniforms.u_marchParams:set(
-      state.step, state.thresh, state.normstep, 0
+      state.step, state.thresh, state.normstep, lightthresh
     )
+    mat.uniforms.u_scaleParams:set(1, 1, 1, state.light_power)
   end))
+
+  logo._post_transform = function(ent, matrix_world)
+    inv_model_mat:invert(matrix_world)
+    mat.uniforms.u_invModel:set(inv_model_mat)
+  end
 
   logo.position:set(-0.5, -0.5, -0.5)
   logo:update_matrix()
@@ -217,18 +210,20 @@ function init()
   }
 
   local db_builder = imgui.DatabarBuilder{
-    title = "BoopDoop",
+    title = "Settings",
     width = 400, height = 680,
     x = 1280 - 420, y = 20,
-    open = true, allow_close = true
+    open = false, allow_close = true
   }
   db_builder:field{"logo_progress", "progress"}
   db_builder:field{"rotate_view", "bool", default = true, tooltip = "Automatically rotate the view\nDo newlines work?"}
   db_builder:field{"rotate_model", "bool", default = true, tooltip = "This doesn't actually work"}
   db_builder:field{"view_speed", "float", limits={0, 10.0}, default=1.0, tooltip = "Multiply rotate speed by this"}
-  db_builder:field{"thresh", "float", limits={0.48,0.8}, default=0.5}
-  db_builder:field{"step", "float", limits={0.001, 0.1}, default=0.002}
-  db_builder:field{"normstep", "float", limits={0.001, 0.1}, default=0.01}
+  db_builder:field{"thresh", "float", limits={0.48,0.8}, default=0.522}
+  db_builder:field{"light_size", "float", limits={0, 180}, format="%.1f deg", default=57}
+  db_builder:field{"light_power", "float", limits={0, 10}, default=1.3}
+  db_builder:field{"step", "float", limits={0.001, 0.1}, default=0.005}
+  db_builder:field{"normstep", "float", limits={0.001, 0.1}, default=0.001}
   db_builder:field{"static_noise", "bool", default=false}
 
   db_builder:field{"divider"}
@@ -247,7 +242,7 @@ function init()
   end
 
   myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.8, max_rad = 3.0})
-  myapp.camera.orbit_control:set(0, 0, 0.8)
+  myapp.camera.orbit_control:set(0, 0, 1.0)
 
   async.run(function()
     local tex3d = generate_logo_3d_tex(128, function(z, zmax)

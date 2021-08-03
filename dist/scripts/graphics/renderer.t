@@ -75,6 +75,9 @@ function RenderSystem:_tree_render(entity, parentmat)
 
   local mw = entity.matrix_world
   mw:multiply(parentmat, entity.matrix)
+  if entity._post_transform then
+    entity:_post_transform(mw)
+  end
 
   local renderable = entity.renderable
   if renderable then

@@ -4,9 +4,9 @@ $input v_wpos, v_vdir, v_lightdir
 
 SAMPLER3D(s_volume, 0);
 
-uniform vec4 u_marchParams; // (step, thresh, normstep, ?)
-uniform vec4 u_scaleParams; // (xyz: scale, w: ?)
-uniform vec4 u_timeParams; // (xyz: scale, w: ?)
+uniform vec4 u_marchParams; // (step, thresh, normstep, lightarea)
+uniform vec4 u_scaleParams; // (xyz: scale, w: lightstrength)
+uniform vec4 u_timeParams; // (x: time, y: ?)
 
 #include "logo_rayutil.sh"
 
@@ -21,6 +21,7 @@ void main()
   vec3 origin = v_wpos;
   float stepsize = u_marchParams.x;
   float thresh = u_marchParams.y;
+  float lightThresh = u_marchParams.w;
   vec4 collision = sdfToCollision(origin, -viewDir, stepsize, thresh);
   if(collision.w < 0.5) {
     discard;
@@ -37,11 +38,12 @@ void main()
 
     vec4 newcol = sdfToCollision(collision.xyz + v*stepsize*3, v, stepsize, thresh);
 
-    float intensity = clamp(dot(v, v_lightdir), 0.0, 1.0);
+    float intensity = dot(v, v_lightdir);
+    intensity = step(lightThresh, intensity);
     //clamp(v.z, 0.0, 1.0); //clamp(v.x*10 - 9, 0.0, 1.0);
     lighting += (1.0 - newcol.w) * dot(normal, v) * intensity;
   }
-  //lighting *= 3.131;
+  lighting *= u_scaleParams.w;
   lighting /= (0.5*NUM_RAYS + 0.001);
   lighting = clamp(lighting, 0.0, 1.0);
 

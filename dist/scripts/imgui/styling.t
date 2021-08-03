@@ -14,7 +14,7 @@ terra m.set_truss_style_defaults()
   style.GrabRounding = 1.0
   style.TabRounding = 1.0
   --ImVec2 WindowPadding;
-  style.WindowMenuButtonPosition = IG.Dir_Right
+  --style.WindowMenuButtonPosition = IG.Dir_Right
 end
 
 return m
