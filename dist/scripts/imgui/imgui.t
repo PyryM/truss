@@ -175,6 +175,17 @@ function m.build(options)
     end
   end
 
+  if options.style == false then
+    terra ImGuiContext:_init_style()
+      -- don't do anything
+    end
+  else
+    local styling = require("./styling.t")
+    terra ImGuiContext:_init_style()
+      styling.set_truss_style_defaults()
+    end
+  end
+
   terra ImGuiContext:init(width: int32, height: int32, fontsize: float, viewid: uint16)
     self.width = width
     self.height = height
@@ -184,6 +195,7 @@ function m.build(options)
     for i = 0, 3 do self.mouse_pressed[i] = false end
     IG.BGFXCreate(self.fontsize)
     self:_init_bindings()
+    self:_init_style()
   end
 
   terra ImGuiContext:begin_frame()
