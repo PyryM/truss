@@ -16,10 +16,10 @@ local cmath = require("math/cmath.t")
 local ecs = require("ecs")
 local async = require("async")
 local class = require("class")
-local imgui = require("gfx/imgui.t")
+local imgui = require("imgui/imgui.t")
 local common = require("examples/logos/logocommon.t")
 
-local dbar = require("gui/databar.t")
+local dbar = require("imgui/databar.t")
 
 function ter_edge_dist_func(p0, p1)
   local x0, y0, z0 = p0:components()
