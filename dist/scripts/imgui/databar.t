@@ -2,7 +2,7 @@
 -- heavily inspired by 'dat.gui'
 
 local class = require("class")
-local IG = require("./imgui.t").C
+local IG = require("imgui").C
 local m = {}
 
 local KINDS = {}

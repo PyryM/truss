@@ -16,10 +16,8 @@ local cmath = require("math/cmath.t")
 local ecs = require("ecs")
 local async = require("async")
 local class = require("class")
-local imgui = require("imgui/imgui.t")
+local imgui = require("imgui")
 local common = require("examples/logos/logocommon.t")
-
-local dbar = require("imgui/databar.t")
 
 function ter_edge_dist_func(p0, p1)
   local x0, y0, z0 = p0:components()
@@ -182,7 +180,7 @@ function init()
     title = "truss | logo.t", clear_color = 0x000000ff,
   }
 
-  local db_builder = dbar.DatabarBuilder{
+  local db_builder = imgui.DatabarBuilder{
     title = "BoopDoop",
     width = 400, height = 680,
     x = 20, y = 20,
