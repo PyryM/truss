@@ -33,18 +33,12 @@ local MarchMat = gfx.define_base_material{
 }
 
 local terra sphere_sdf(oldval: float, x: float, y: float, z: float): float
-  x = x - 0.5
-  y = y - 0.5
-  z = z - 0.5
   var vlength = cmath.sqrt((x*x) + (y*y) + (z*z))
-  return vlength - 0.4
+  return vlength - 0.8
 end
 
 local function sphere_diff(x0, y0, z0, rad)
   local terra diff_sdf(oldval: float, x: float, y: float, z: float): float
-    x = x - 0.5
-    y = y - 0.5
-    z = z - 0.5
     var dx = x - x0
     var dy = y - y0
     var dz = z - z0
@@ -95,9 +89,9 @@ local function gen_sdf(funclist, databuff, res, mult, offset, cb)
     var dpos: uint32 = RES*RES*z
     for y = 0, RES do
       for x = 0, RES do
-        var fx = [float](x) / RES
-        var fy = [float](y) / RES
-        var fz = [float](z) / RES
+        var fx = 2.0 * [float](x) / RES - 1.0
+        var fy = 2.0 * [float](y) / RES - 1.0
+        var fz = 2.0 * [float](z) / RES - 1.0
         var val: float = 0.0
         escape
           for _, f in ipairs(funclist) do
@@ -106,6 +100,7 @@ local function gen_sdf(funclist, databuff, res, mult, offset, cb)
             end)
           end
         end
+        val = val * 0.5
         var ival: int32 = (val + OFFSET) * MULT
         if ival < 0 then ival = 0 end
         if ival > 255 then ival = 255 end
@@ -129,10 +124,10 @@ local function generate_logo_3d_tex(resolution, cb)
   ]]
   local edge_funcs = {sphere_sdf}
   for i = 1, 10 do
-    local cx = math.random()-0.5
-    local cy = math.random()-0.5
-    local cz = math.random()-0.5
-    local rad = math.random()*0.2 + 0.05
+    local cx = 2*math.random()-1
+    local cy = 2*math.random()-1
+    local cz = 2*math.random()-1
+    local rad = math.random()*0.5 + 0.1
     table.insert(edge_funcs, sphere_diff(cx, cy, cz, rad))
   end
 
@@ -149,6 +144,11 @@ local function generate_logo_3d_tex(resolution, cb)
 end
 
 local function Logo(_ecs, name, options)
+  local should_rotate = options.rotate_cb or (function() return true end)
+
+  local parent = ecs.Entity3d(_ecs, name)
+  local rotator = parent:create_child(ecs.Entity3d, "rotator")
+
   local geo = geometry.off_center_cube_geo{
     sx = 1.0, 
     sy = 1.0,
@@ -166,19 +166,29 @@ local function Logo(_ecs, name, options)
     u_invModel = inv_model_mat,
   }
 
-  local logo = graphics.Mesh(_ecs, "cube3", geo, mat)
+  rotator:add_component(ecs.UpdateComponent(function(self)
+    self.f = (self.f or 0)
+    if should_rotate() then self.f = self.f + 1 end
+    self.ent.quaternion:euler{x = 0, y = self.f/120, z = 0}
+    self.ent:update_matrix()
+  end))
+
+  local logo = rotator:create_child(graphics.Mesh, "cube3", geo, mat)
 
   logo:add_component(ecs.UpdateComponent(function(self)
     self.f = (self.f or 0) + 1
-    local lx = math.cos(self.f / 120)
-    local ly = math.sin(self.f / 120)
+    --local lx = math.cos(self.f / 120)
+    --local ly = math.sin(self.f / 120)
     inv_model_mat:invert(self.ent.matrix_world)
     mat.uniforms.u_invModel:set(inv_model_mat)
-    mat.uniforms.u_lightDir:set(lx, 0.0, ly, 0.0)
+    --mat.uniforms.u_lightDir:set(lx, 0.0, ly, 0.0)
     mat.uniforms.u_timeParams:set(self.f % 1001)
   end))
 
-  return logo
+  logo.position:set(-0.5, -0.5, -0.5)
+  logo:update_matrix()
+
+  return parent
 end
 
 local gif_mode = false
@@ -233,10 +243,11 @@ function init()
       async.await_frames(1)
     end)
     local logo = myapp.scene:create_child(Logo, "logo", {
-      sdf_tex = tex3d
+      sdf_tex = tex3d, rotate_cb = function()
+        return dbstate.rotate_model
+      end
     })
-    logo.position:set(-0.5, -0.5, -0.5)
-    --logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
+    logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
     logo:update_matrix()
   end)
 
