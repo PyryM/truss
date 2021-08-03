@@ -142,7 +142,8 @@ local function Logo(_ecs, name, options)
   local state = options.state or {
     rotate_model = true, thresh = 0.5,
     step = 0.002, normstep = 0.01,
-    light_size = 45, light_power = 1.0
+    light_size = 45, light_power = 1.0,
+    num_rays = 8
   }
 
   local parent = ecs.Entity3d(_ecs, name)
@@ -178,7 +179,7 @@ local function Logo(_ecs, name, options)
     self.f = (self.f or 0) + 1
     if state.static_noise then self.f = 0 end
     local lightthresh = math.cos(math.pi * state.light_size/180.0)
-    mat.uniforms.u_timeParams:set((self.f % 999) / 999999)
+    mat.uniforms.u_timeParams:set((self.f % 999) / 999999, state.num_rays)
     mat.uniforms.u_marchParams:set(
       state.step, state.thresh, state.normstep, lightthresh
     )
@@ -222,6 +223,7 @@ function init()
   db_builder:field{"thresh", "float", limits={0.48,0.8}, default=0.522}
   db_builder:field{"light_size", "float", limits={0, 180}, format="%.1f deg", default=57}
   db_builder:field{"light_power", "float", limits={0, 10}, default=1.3}
+  db_builder:field{"num_rays", "int", limits={1, 32}, default=8}
   db_builder:field{"step", "float", limits={0.001, 0.1}, default=0.005}
   db_builder:field{"normstep", "float", limits={0.001, 0.1}, default=0.001}
   db_builder:field{"static_noise", "bool", default=false}

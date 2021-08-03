@@ -10,7 +10,7 @@ uniform vec4 u_timeParams; // (x: time, y: ?)
 
 #include "logo_rayutil.sh"
 
-#define NUM_RAYS 8
+#define NUM_RAYS u_timeParams.y
 
 void main()
 {
@@ -31,7 +31,7 @@ void main()
   //vec3 normal = estimateNormalAlt(collision.xyz - viewDir*stepsize*5, scale, stepsize, thresh);
   float lighting = 0.0;
   vec3 collisionSeed = collision.xyz + (u_timeParams.x*NUM_RAYS);
-  
+
   for(float ii = 0; ii < NUM_RAYS; ++ii) {
     vec3 randseed = collisionSeed + vec3(ii, ii, ii);
     vec3 v = randomHemispherePoint(randseed, normal);
