@@ -83,6 +83,25 @@ local function gen_progress(finfo, settings, field_q, io_q)
   end
 end
 
+local struct Color {
+  r: float;
+  g: float;
+  b: float;
+  a: float;
+}
+local WHITE = `Color{1.0, 1.0, 1.0, 1.0}
+
+local function gen_colorpicker(finfo, settings, field_q, io_q)
+  local label = assert(finfo.label or finfo.name)
+  local flags = IG.ColorEditFlags_AlphaPreview
+  if finfo.mode:find("f") then
+    flags = flags + IG.ColorEditFlags_Float
+  end
+  return quote
+    IG.ColorEdit4(label, &(field_q.r), flags)
+  end
+end
+
 KINDS["int"] = {
   ctype = int32, default = 0, gen_draw = gen_slider,
   limits = {0, 100}, format = "%d", 
@@ -95,6 +114,10 @@ KINDS["float"] = {
   slider_func = IG.SliderFloat, flags = IG.SliderFlags_None
 }
 
+KINDS["color"] = {
+  ctype = Color, default = WHITE, 
+  gen_draw = gen_colorpicker, mode = "f"
+}
 KINDS["progress"] = {ctype = float, default = 0.0, gen_draw = gen_progress}
 KINDS["choice"] = {ctype = int32, default = 0, gen_draw = gen_choice}
 KINDS["bool"] = {ctype = bool, default = false, gen_draw = gen_checkbox}
@@ -132,6 +155,9 @@ function DatabarBuilder:field(options)
       truss.error("Field " .. name .. " added multiple times!")
     end
     self._named_fields[name] = finfo
+  end
+  if terralib.type(finfo.default) == 'table' then
+    finfo.default = `[finfo.ctype]{[finfo.default]}
   end
   table.insert(self._ordered_fields, finfo)
   return self

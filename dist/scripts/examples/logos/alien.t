@@ -195,6 +195,7 @@ function init()
   db_builder:field{"Boozle", "int", limits={-100,100}, default=13}
   db_builder:field{"Moozle", "float", limits={-100,100}, default=13.13}
   db_builder:field{"thingy", "choice", choices={"An Apple", "A Banana", "A Coconut"}, default=1}
+  db_builder:field{"albedo", "color", default={1,0,1,1}}
   db_builder:field{"divider"}
   db_builder:field{"show_demo", "button", label="Show IMGUI demo!"}
   db_builder:field{"A random label!", "label"}
