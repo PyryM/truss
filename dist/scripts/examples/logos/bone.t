@@ -9,7 +9,6 @@ local gfx = require("gfx")
 local graphics = require("graphics")
 local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
-local mc = require("procgen/marchingcubes.t")
 local math = require("math")
 local tmath = require("math/tmath.t")
 local cmath = require("math/cmath.t")
@@ -19,7 +18,44 @@ local class = require("class")
 local imgui = require("imgui")
 local common = require("examples/logos/logocommon.t")
 
-function ter_edge_dist_func(p0, p1)
+local MarchMat = gfx.define_base_material{
+  name = "MarchMat",
+  program = {"vs_logo_bone_raymarch", "fs_logo_bone_raymarch"},
+  uniforms = {
+    u_marchParams = 'vec', 
+    u_scaleParams = 'vec',
+    u_invModel = 'mat4',
+    u_timeParams = 'vec',
+    u_lightDir = 'vec',
+    s_volume = {kind = 'tex', sampler = 0, flags = {u = 'clamp', v = 'clamp', w = 'clamp'}}
+  }, 
+  state = {}
+}
+
+local terra sphere_sdf(oldval: float, x: float, y: float, z: float): float
+  x = x - 0.5
+  y = y - 0.5
+  z = z - 0.5
+  var vlength = cmath.sqrt((x*x) + (y*y) + (z*z))
+  return vlength - 0.4
+end
+
+local function sphere_diff(x0, y0, z0, rad)
+  local terra diff_sdf(oldval: float, x: float, y: float, z: float): float
+    x = x - 0.5
+    y = y - 0.5
+    z = z - 0.5
+    var dx = x - x0
+    var dy = y - y0
+    var dz = z - z0
+    var vlength = cmath.sqrt((dx*dx) + (dy*dy) + (dz*dz))
+    var sdfval: float = vlength - rad
+    return cmath.fmax(oldval, -sdfval)
+  end
+  return diff_sdf
+end
+
+local function ter_edge_dist_func(p0, p1)
   local x0, y0, z0 = p0:components()
   local x1, y1, z1 = p1:components()
   local d = p1 - p0
@@ -51,121 +87,96 @@ function ter_edge_dist_func(p0, p1)
   end
 end
 
-local terra zero(oldval: float, x: float, y: float, z: float): float
-  return 0.0
-end
-
-local terra recenter(oldval: float, x: float, y: float, z: float): float
-  return oldval - 0.8
-end
-
-local function gen_cell(data, x, y, z, dg, funclist)
-  local limits = {
-    x_start = x*dg, x_end = (x+1)*dg + 1,
-    y_start = y*dg, y_end = (y+1)*dg + 1,
-    z_start = z*dg, z_end = (z+1)*dg + 1
-  }
-  mc.mc_data_from_terra(data, zero, limits)
-  local t0 = truss.tic()
-  for _, f in ipairs(funclist) do
-    mc.mc_data_from_terra(data, f, limits)
-    if truss.toc(t0)*1000.0 > 10.0 then
-      async.await_frames(1)
-      t0 = truss.tic()
+local function gen_sdf(funclist, databuff, res, mult, offset)
+  local RES = assert(res)
+  local OFFSET = offset or 0.0
+  local MULT = mult or 255.0
+  local terra gen(dest: &uint8)
+    var dpos: uint32 = 0
+    for z = 0, RES do
+      for y = 0, RES do
+        for x = 0, RES do
+          var fx = [float](x) / RES
+          var fy = [float](y) / RES
+          var fz = [float](z) / RES
+          var val: float = 0.0
+          escape
+            for _, f in ipairs(funclist) do
+              emit(quote
+                val = f(val, fx, fy, fz) 
+              end)
+            end
+          end
+          var ival: int32 = (val + OFFSET) * MULT
+          if ival < 0 then ival = 0 end
+          if ival > 255 then ival = 255 end
+          dest[dpos] = ival
+          dpos = dpos + 1
+        end
+      end
     end
   end
-  mc.mc_data_from_terra(data, recenter, limits)
-  return mc.cubify_to_geo(data, 64000, nil, limits)
+  gen(databuff)
 end
 
-local function generate_logo_mesh(parent, material, resolution, progress_cb)
+local function generate_logo_3d_tex(resolution)
+  --[[
   local edge_funcs = {}
   for idx, edge in ipairs(common.make_logo_column_edges()) do
     edge_funcs[idx] = ter_edge_dist_func(unpack(edge))
   end
-  local ndivs = 4
-  local dg = resolution / ndivs -- just assume no remainder
-  local data = mc.mc_data_from_function(
-    function() return 0.0 end, 
-    resolution+1 -- need 1 voxel padding for reasons
-  )
-  local progress = common.add_textbox{
-    x = gfx.backbuffer_width/2 - 400/2, y = gfx.backbuffer_height/2, 
-    w = 400, h = 30, font_size = 30,
-    color = {255,255,255,255},
-    text = "Generating mesh", font = 'mono'
-  }
-  local partidx = 0
-  for iz = 0, ndivs-1 do
-    for iy = 0, ndivs-1 do
-      for ix = 0, ndivs-1 do
-        local geo = gen_cell(data, ix, iy, iz, dg, edge_funcs)
-        if geo then
-          local mesh = parent:create_child(graphics.Mesh, "_logo_" .. partidx,
-                                          geo, material)
-          mesh.position:set(-0.5, -0.5, -0.5)
-          mesh:update_matrix()
-        end
-        if progress_cb then progress_cb(partidx, ndivs^3 - 1) end
-        progress.text = ("Generating mesh [%03d / %03d]"):format(partidx, ndivs^3)
-        partidx = partidx + 1
-      end
-    end
+  ]]
+  local edge_funcs = {sphere_sdf}
+  for i = 1, 10 do
+    local cx = math.random()-0.5
+    local cy = math.random()-0.5
+    local cz = math.random()-0.5
+    local rad = math.random()*0.2 + 0.05
+    table.insert(edge_funcs, sphere_diff(cx, cy, cz, rad))
   end
-  progress.dead = true
-  if progress_cb then progress_cb(1, 1) end
+
+  local sdftex = gfx.Texture3d{
+    width = resolution, height = resolution, depth = resolution, 
+    format = gfx.TEX_R8, allocate = true, dynamic = false
+  }
+
+  gen_sdf(edge_funcs, sdftex.cdata, resolution, 255.0, 0.5)
+
+  sdftex:commit()
+  return sdftex
 end
 
 local function Logo(_ecs, name, options)
-  local ret = ecs.Entity3d(_ecs, name)
-  local rotator = ret:create_child(ecs.Entity3d, "_rotator")
-  rotator:add_component(ecs.UpdateComponent(function(self)
+  local geo = geometry.off_center_cube_geo{
+    sx = 1.0, 
+    sy = 1.0,
+    sz = 1.0
+  }
+
+  local tex3d = generate_logo_3d_tex(options.resolution or 128)
+  local inv_model_mat = math.Matrix4():identity()
+
+  local mat = MarchMat{
+    s_volume = tex3d,
+    u_marchParams = {0.002, 0.5, 0.0, 0.0},
+    u_scaleParams = {1.0, 1.0, 1.0, 1.0},
+    u_timeParams = {0.0, 0.0, 0.0, 0.0},
+    u_lightDir = {1.0, 0.0, 0.0, 0.0},
+    u_invModel = inv_model_mat,
+  }
+
+  local logo = graphics.Mesh(_ecs, "cube3", geo, mat)
+
+  logo:add_component(ecs.UpdateComponent(function(self)
     self.f = (self.f or 0) + 1
-    self.ent.quaternion:euler{x = 0, y = self.f/120, z = 0}
-    self.ent:update_matrix()
+    local lx = math.cos(self.f / 120)
+    local ly = math.sin(self.f / 120)
+    inv_model_mat:invert(self.ent.matrix_world)
+    mat.uniforms.u_invModel:set(inv_model_mat)
+    mat.uniforms.u_lightDir:set(lx, 0.0, ly, 0.0)
   end))
 
-  local mat = pbr.FacetedPBRMaterial{
-    diffuse = {0.001,0.001,0.001,1.0},
-    tint = {1.0, 0.02, 0.2}, 
-    roughness = 0.3
-  }
-  async.run(generate_logo_mesh, rotator, mat, 2^(options.detail), options.progress_cb):next(nil, print)
-
-  return ret
-end
-
-local function Stars(_ecs, name, options)
-  options = options or {}
-  local nstars = options.nstars or 10000
-  local vinfo = gfx.create_basic_vertex_type({"position"})
-  local data = {indices = {}, attributes={position={}}}
-  local p = math.Vector()
-  local v = math.Vector()
-  local x = math.Vector()
-  local y = math.Vector()
-  for star_idx = 1, nstars do
-    math.rand_spherical(p)
-    p:normalize3()
-    math.rand_spherical(x):normalize3()
-    y:cross(x, p):normalize3()
-    x:cross(y, p):normalize3()
-    local start_index = #(data.indices)
-    for offset = 0, 2 do
-      local theta = offset * 2.0 * math.pi / 3.0
-      local s = math.random()*0.003 + 0.001
-      v:lincomb(x, y, math.cos(theta)*s, math.sin(theta)*s)
-      v:add(p)
-      table.insert(data.attributes.position, v:to_array())
-      table.insert(data.indices, start_index+offset)
-    end
-  end
-  local geo = gfx.StaticGeometry(name):from_data(data)
-  local mat = flat.FlatMaterial{skybox = true, state={cull=false}, color={0.3,0.3,0.3,1}}
-  local stars = graphics.Mesh(_ecs, name, geo, mat)
-  stars.scale:set(-10, -10, -10)
-  stars:update_matrix()
-  return stars
+  return logo
 end
 
 local gif_mode = false
@@ -177,7 +188,7 @@ function init()
   myapp = app.App{
     width = (gif_mode and 720) or 1280, height = 720, 
     msaa = true, hidpi = true, stats = false, imgui = true,
-    title = "truss | logos/alien.t", clear_color = 0x000000ff,
+    title = "truss | logos/bone.t", clear_color = 0x000000ff,
   }
 
   local db_builder = imgui.DatabarBuilder{
@@ -210,17 +221,13 @@ function init()
     dbstate:draw()
   end
 
-  myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 0.7, max_rad = 1.2})
-  myapp.camera.orbit_control:set(0, 0, 0.7)
-  local logo = myapp.scene:create_child(Logo, "logo", {
-    detail = 7, progress_cb = function(n, d)
-      dbstate.logo_progress = n/d
-    end
-  })
-  logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
+  myapp.camera:add_component(orbitcam.OrbitControl{min_rad = 1.2, max_rad = 3.0})
+  myapp.camera.orbit_control:set(0, 0, 1.2)
+  local logo = myapp.scene:create_child(Logo, "logo", {resolution = 128})
+  logo.position:set(-0.5, -0.5, -0.5)
+  --logo.quaternion:euler({x = -math.pi/4, y = 0.2, z = 0}, 'ZYX')
   logo:update_matrix()
 
-  myapp.scene:create_child(Stars, 'sky', {nstars = 30000})
   myapp.scene:create_child(ecs.Entity3d, "logotext", common.NVGDrawer())
 
   async.run(function()
