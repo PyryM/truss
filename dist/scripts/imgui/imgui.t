@@ -26,6 +26,8 @@ m.IG = IG
 modutils.reexport_renamed(imgui_c_raw, {Im="", ImGui="", ig=""}, true, C)
 
 function m.build(options)
+  local FONTCOUNT = 2
+
   local struct ImGuiContext {
     width: int32;
     height: int32;
@@ -33,6 +35,8 @@ function m.build(options)
     fontsize: float;
     mouse_pressed: bool[3];
     clipboard_text: &int8;
+    fonts: IG.bgfx_imgui_font_info[FONTCOUNT];
+    fontcount: uint32;
   }
 
   if options.SDL then
@@ -186,14 +190,37 @@ function m.build(options)
     end
   end
 
-  terra ImGuiContext:init(width: int32, height: int32, fontsize: float, viewid: uint16)
+  terra ImGuiContext:init()
+    self.clipboard_text = nil
+    for i = 0, 3 do self.mouse_pressed[i] = false end
+    for i = 0, FONTCOUNT do
+      self.fonts[i].data = nil
+      self.fonts[i].datasize = 0
+      self.fonts[i].fontsizemod = 0.0
+      self.fonts[i].fontname = nil
+    end
+    self.fontcount = 0
+  end
+
+  terra ImGuiContext:push_font(data: &uint8, datasize: uint32, sizemod: float)
+    var idx = self.fontcount
+    if idx >= FONTCOUNT then return end
+    self.fonts[idx].data = data
+    self.fonts[idx].datasize = datasize
+    self.fonts[idx].fontsizemod = sizemod
+    self.fontcount = self.fontcount + 1
+  end
+
+  terra ImGuiContext:create(width: int32, height: int32, fontsize: float, viewid: uint16)
     self.width = width
     self.height = height
     self.viewid = viewid
     self.fontsize = fontsize
-    self.clipboard_text = nil
-    for i = 0, 3 do self.mouse_pressed[i] = false end
-    IG.BGFXCreate(self.fontsize)
+    if self.fontcount > 0 then
+      IG.BGFXCreateWithFonts(self.fontsize, self.fonts, self.fontcount)
+    else
+      IG.BGFXCreate(self.fontsize)
+    end
     self:_init_bindings()
     self:_init_style()
   end
@@ -216,7 +243,11 @@ function m.create_default_context(w, h, fontsize, viewid)
     SDL = require("input/sdl.t") 
   }
   local ctx = terralib.new(ImGuiContext)
-  ctx:init(w, h, fontsize or 18, viewid or 255)
+  ctx:init()
+  local fira = truss.C.load_file("font/FiraSans-Regular.ttf")
+  ctx:push_font(fira.data, fira.data_length, 0.0)
+  ctx:create(w, h, fontsize or 16, viewid or 255)
+  truss.C.release_message(fira)
   return ctx
 end
 

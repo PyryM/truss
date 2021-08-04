@@ -51,11 +51,21 @@ typedef unsigned __int64 ImU64;
 #define STB_TEXTEDIT_POSITIONTYPE    int
 #endif
 
+typedef struct {
+	uint8_t* data;
+	uint32_t datasize;
+	float fontsizemod;
+	char* fontname;
+} bgfx_imgui_font_info;
+
 CIMGUI_API void igBGFXCreate(float _fontSize);
+CIMGUI_API void igBGFXCreateWithFonts(float _fontSize, bgfx_imgui_font_info* _fonts, uint32_t _fontcount);
 CIMGUI_API void igBGFXDestroy();
 
 CIMGUI_API void igBGFXBeginFrame(uint16_t _width, uint16_t _height, uint16_t _viewId);
 CIMGUI_API void igBGFXEndFrame();
+
+CIMGUI_API void igBGFXPushFont(uint32_t _fontid);
 
 // TODO: figure out the complicated includes for this
 // Note that in practice `ImTextureID` is a void*
