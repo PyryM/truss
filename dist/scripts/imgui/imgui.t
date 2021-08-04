@@ -246,7 +246,7 @@ function m.create_default_context(w, h, fontsize, viewid)
   ctx:init()
   local fira = truss.C.load_file("font/FiraSans-Regular.ttf")
   ctx:push_font(fira.data, fira.data_length, 0.0)
-  ctx:create(w, h, fontsize or 16, viewid or 255)
+  ctx:create(w, h, fontsize or 18, viewid or 255)
   truss.C.release_message(fira)
   return ctx
 end
