@@ -66,4 +66,31 @@ terra m.rgb2lab(rgb: &float, lab: &float, normalized: bool)
   lab[2] = 200.0 * (y - z)
 end
 
+-- turn    {255,255,255,255} \ 
+--      {1.0, 1.0, 1.0, 1.0}  |-> {1,1,1,1}
+--                0xFFFFFFFF /
+function m.parse_color_to_rgbf(c)
+  if type(c) == 'number' then
+    local val = {}
+    for idx = 1, 4 do
+      val[idx] = bit.band(bit.rshift(c, (4-idx)*8), 0xFF)/255.0
+    end
+    return val
+  else -- assume table
+    local minval, maxval = math.huge, 0.0
+    for _, v in ipairs(c) do
+      minval = math.min(minval)
+      maxval = math.max(maxval)
+    end
+    local denom, val = 1, {0,0,0,1}
+    if maxval > 1 then
+      denom = 255.0
+    end
+    for idx, v in ipairs(c) do
+      val[idx] = v / denom
+    end
+    return val
+  end
+end
+
 return m

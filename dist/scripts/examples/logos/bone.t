@@ -203,19 +203,18 @@ imgui_open[0] = false
 local dbstate = nil
 
 function init()
-  -- local IG_COLORS = {
-  --   {1.0, 1.0, 1.0, 1.0},    -- text
-  --   {0.06, 0.06, 0.06, 0.0}, -- bg
-  --   {0.8, 0.3, 0.3, 0.0},    -- accent 1
-  --   {0.8, 0.2, 0.2, 0.0}     -- accent 2
-  -- }
   local IG_COLORS = {
-    {0.06, 0.06, 0.06, 0.0}, -- bg
-    {1.0, 1.0, 1.0, 1.0},    -- text
-    {0.5, 0.5, 0.5, 0.0},    -- accent 1
-    --{0.8, 0.3, 0.3, 0.0},    -- accent 1
-    {0.8, 0.6, 0.6, 0.0}     -- accent 2
+    0x202020ff, -- text
+    0xffffffff, -- bg
+    0x808080ff, -- accent 1
+    0xd08080ff  -- accent 2
   }
+  -- local IG_COLORS = {
+  --   0xffffffff, -- text
+  --   0x072e30ff, -- bg
+  --   0x44e9e6ff, -- accent 1
+  --   0x44e9e6ff  -- accent 2
+  -- }
 
   myapp = app.App{
     width = (gif_mode and 720) or 1280, height = 720, 

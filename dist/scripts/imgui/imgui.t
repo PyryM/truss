@@ -280,11 +280,13 @@ function m.create_default_context(options)
   ctx:push_font(fira.data, fira.data_length, 0.0)
 
   if options.colors then
+    local colorspaces = require("math/colorspaces.t")
     assert(#options.colors == 4, "Need to provide exactly four colors!")
     local ccol = terralib.new(float[4])
     for idx, color in ipairs(options.colors) do
+      local fcolor = colorspaces.parse_color_to_rgbf(color)
       for chan = 0, 3 do
-        ccol[chan] = color[chan+1] or 0.0
+        ccol[chan] = fcolor[chan+1] or 0.0
       end
       ctx:push_color(ccol)
     end
