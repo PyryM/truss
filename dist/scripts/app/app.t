@@ -42,7 +42,12 @@ function App:init(options)
 
   if options.imgui and self.window then
     local imgui = require("imgui")
-    self.imgui = imgui.create_default_context(self.width, self.height)
+    local imgui_opts = options.imgui
+    if type(imgui_opts) ~= 'table' then imgui_opts = {} end
+    if not (imgui_opts.width and imgui_opts.height) then
+      imgui_opts.width, imgui_opts.height = self.width, self.height
+    end
+    self.imgui = imgui.create_default_context(imgui_opts)
   end
 
   self:init_ecs()

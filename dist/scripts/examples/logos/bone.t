@@ -203,9 +203,16 @@ imgui_open[0] = false
 local dbstate = nil
 
 function init()
+  local IG_COLORS = {
+    {1.0, 1.0, 1.0, 1.0},    -- text
+    {0.06, 0.06, 0.06, 0.0}, -- bg
+    {0.8, 0.3, 0.3, 0.0},    -- accent 1
+    {0.8, 0.2, 0.2, 0.0}     -- accent 2
+  }
+
   myapp = app.App{
     width = (gif_mode and 720) or 1280, height = 720, 
-    msaa = false, hidpi = false, stats = false, imgui = true,
+    msaa = false, hidpi = false, stats = false, imgui = {colors = IG_COLORS},
     title = "truss | logos/bone.t", clear_color = 0xddddddff,
     backend = "vulkan"
   }

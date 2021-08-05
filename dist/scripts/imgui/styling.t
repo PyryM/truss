@@ -17,86 +17,109 @@ terra m.set_truss_style_defaults()
   --style.WindowMenuButtonPosition = IG.Dir_Right
 end
 
-local EH = {
-Text                   = {1.00, 1.00, 1.00, 1.00},
-TextDisabled           = {0.50, 0.50, 0.50, 1.00},
-
-ChildBg                = {0.00, 0.00, 0.00, 0.00},
-
-FrameBgActive          = {0.26, 0.59, 0.98, 0.67},
-FrameBgHovered         = {0.26, 0.59, 0.98, 0.40},
-TextSelectedBg         = {0.26, 0.59, 0.98, 0.35},
-TitleBgActive          = {0.16, 0.29, 0.48, 1.00},
-FrameBg                = {0.16, 0.29, 0.48, 0.54},
-
-
-MenuBarBg              = {0.14, 0.14, 0.14, 1.00},
-TitleBg                = {0.04, 0.04, 0.04, 1.00},
-PopupBg                = {0.08, 0.08, 0.08, 0.94},
-WindowBg               = {0.06, 0.06, 0.06, 0.94},
-
-
-ModalWindowDimBg       = {0.80, 0.80, 0.80, 0.35},
-NavWindowingDimBg      = {0.80, 0.80, 0.80, 0.20},
-
-
-ScrollbarBg            = {0.02, 0.02, 0.02, 0.53},
-TitleBgCollapsed       = {0.00, 0.00, 0.00, 0.51},
-
-
-Border                 = {0.43, 0.43, 0.50, 0.50},
-BorderShadow           = {0.00, 0.00, 0.00, 0.00},
-
-
-ScrollbarGrab          = {0.31, 0.31, 0.31, 1.00},
-ScrollbarGrabHovered   = {0.41, 0.41, 0.41, 1.00},
-ScrollbarGrabActive    = {0.51, 0.51, 0.51, 1.00},
-
-CheckMark              = {0.26, 0.59, 0.98, 1.00},
-SliderGrab             = {0.24, 0.52, 0.88, 1.00},
-SliderGrabActive       = {0.26, 0.59, 0.98, 1.00},
-
-Button                 = {0.26, 0.59, 0.98, 0.40},
-ButtonHovered          = {0.26, 0.59, 0.98, 1.00},
-ButtonActive           = {0.06, 0.53, 0.98, 1.00},
-
-Header                 = {0.26, 0.59, 0.98, 0.31},
-HeaderHovered          = {0.26, 0.59, 0.98, 0.80},
-HeaderActive           = {0.26, 0.59, 0.98, 1.00},
-
-Separator              = {0.43, 0.43, 0.50, 0.50},
-SeparatorHovered       = {0.10, 0.40, 0.75, 0.78},
-SeparatorActive        = {0.10, 0.40, 0.75, 1.00},
-
-ResizeGrip             = {0.26, 0.59, 0.98, 0.20},
-ResizeGripHovered      = {0.26, 0.59, 0.98, 0.67},
-ResizeGripActive       = {0.26, 0.59, 0.98, 0.95},
-
-Tab                    = {0.18, 0.35, 0.58, 0.86},
-TabHovered             = {0.26, 0.59, 0.98, 0.80},
-TabActive              = {0.20, 0.41, 0.68, 1.00},
-
-TabUnfocused           = {0.07, 0.10, 0.15, 0.97},
-TabUnfocusedActive     = {0.14, 0.26, 0.42, 1.00},
-
-PlotLines              = {0.61, 0.61, 0.61, 1.00},
-PlotLinesHovered       = {1.00, 0.43, 0.35, 1.00},
-PlotHistogram          = {0.90, 0.70, 0.00, 1.00},
-PlotHistogramHovered   = {1.00, 0.60, 0.00, 1.00},
-
-TableHeaderBg          = {0.19, 0.19, 0.20, 1.00},
-TableBorderStrong      = {0.31, 0.31, 0.35, 1.00},
-TableBorderLight       = {0.23, 0.23, 0.25, 1.00},
-
-TableRowBg             = {0.00, 0.00, 0.00, 0.00},
-TableRowBgAlt          = {1.00, 1.00, 1.00, 0.06},
-
-DragDropTarget         = {1.00, 1.00, 0.00, 0.90},
-NavHighlight           = {0.26, 0.59, 0.98, 1.00},
-
-NavWindowingHighlight  = {1.00, 1.00, 1.00, 0.70},
+m.DEFAULT_STYLE_WEIGHTS = {
+  Text={weights={0.9999922372148591,0.00015817557337007314,6.482077671639267e-07,4.875913816423635e-07}, alpha=1.0},
+  TextDisabled={weights={0.5328170001455121,0.02354678868568586,3.215862072758499e-05,1.511980403697755e-05}, alpha=1.0},
+  ChildBg={weights={0.0,0.0,0.0,0.0}, alpha=0.0},
+  FrameBgActive={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=0.67},
+  FrameBgHovered={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=0.4},
+  TextSelectedBg={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=0.35},
+  TitleBgActive={weights={8.050407680288764e-21,8.052903762410628e-21,0.5268316958262358,6.7622725934548925e-21}, alpha=1.0},
+  FrameBg={weights={8.050407680288764e-21,8.052903762410628e-21,0.5268316958262358,6.7622725934548925e-21}, alpha=0.54},
+  MenuBarBg={weights={0.14019425949417152,0.006195609045938374,6.0638803021236635e-05,2.8510120431106446e-05}, alpha=1.0},
+  TitleBg={weights={0.027889118688700063,0.0012325051141440922,2.273009068264368e-05,1.0686497765952421e-05}, alpha=1.0},
+  PopupBg={weights={0.06480857228035523,0.0028640882369753325,5.282005291564345e-05,2.4833221536904114e-05}, alpha=0.94},
+  WindowBg={weights={0.04410686867999737,0.0019492168907798643,3.594782380905074e-05,1.690078337961154e-05}, alpha=0.94},
+  ModalWindowDimBg={weights={0.8188462488150792,0.036187281357237144,1.1410548092632497e-05,5.364836380775272e-06}, alpha=0.35},
+  NavWindowingDimBg={weights={0.8188462488150792,0.036187281357237144,1.1410548092632497e-05,5.364836380775272e-06}, alpha=0.2},
+  ScrollbarBg={weights={0.013944559344349352,0.0006162525570720149,1.136504534190926e-05,5.34324888340542e-06}, alpha=0.53},
+  TitleBgCollapsed={weights={0.0,0.0,0.0,0.0}, alpha=0.51},
+  Border={weights={0.10377693928742628,0.0046031418662082985,0.39400897736058665,0.16151570837809368}, alpha=0.5},
+  BorderShadow={weights={0.0,0.0,0.0,0.0}, alpha=0.0},
+  ScrollbarGrab={weights={0.3355373935637416,0.01482840959388803,4.646894607912395e-05,2.1847983730422065e-05}, alpha=1.0},
+  ScrollbarGrabHovered={weights={0.44140723836809886,0.019507116417097372,3.878932855100412e-05,1.8237314828811165e-05}, alpha=1.0},
+  ScrollbarGrabActive={weights={0.5427823438939456,0.02398718719460576,3.143575173215198e-05,1.4779938074871925e-05}, alpha=1.0},
+  CheckMark={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=1.0},
+  SliderGrab={weights={1.0070332988984231e-17,6.050441515991166e-18,0.9145482678370641,8.436955319765903e-18}, alpha=1.0},
+  SliderGrabActive={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=1.0},
+  Button={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=0.4},
+  ButtonHovered={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=1.0},
+  ButtonActive={weights={6.456322395561109e-22,1.153632207279125e-22,0.9999999999999999,1.977140388328423e-23}, alpha=1.0},
+  Header={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=0.31},
+  HeaderHovered={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=0.8},
+  HeaderActive={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=1.0},
+  Separator={weights={0.10377693928742628,0.0046031418662082985,0.39400897736058665,0.16151570837809368}, alpha=0.5},
+  SeparatorHovered={weights={4.907543949959828e-15,8.581408885209371e-16,0.8150563859322894,2.4521103626895584e-15}, alpha=0.78},
+  SeparatorActive={weights={4.907543949959828e-15,8.581408885209371e-16,0.8150563859322894,2.4521103626895584e-15}, alpha=1.0},
+  ResizeGrip={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=0.2},
+  ResizeGripHovered={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=0.67},
+  ResizeGripActive={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=0.95},
+  Tab={weights={3.153558127301218e-18,3.154344078130114e-18,0.6268847833426565,2.586230669013801e-18}, alpha=0.86},
+  TabHovered={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=0.8},
+  TabActive={weights={4.927916843482651e-15,4.9289290892136504e-15,0.7237734819648874,3.983189487618856e-15}, alpha=1.0},
+  TabUnfocused={weights={1.6944377287375555e-16,1.6943191668724068e-16,0.15689816469685006,1.0265061944789843e-16}, alpha=0.97},
+  TabUnfocusedActive={weights={9.106922253930801e-16,9.105416437800097e-16,0.4619684199287474,5.117996472250321e-16}, alpha=1.0},
+  PlotLines={weights={0.6406115566151411,0.028310554305549348,2.4339387918066984e-05,1.144349325540114e-05}, alpha=1.0},
+  PlotLinesHovered={weights={3.4032177761037604e-34,2.1570415377137042e-32,0.2770516173450051,0.6900003070651429}, alpha=1.0},
+  PlotHistogram={weights={4.768772550246907e-08,4.7687725290435016e-08,4.7688143986831314e-08,0.9999999523076533}, alpha=1.0},
+  PlotHistogramHovered={weights={1.784688387494048e-36,4.531287754213158e-37,0.0043534004837887715,0.9884145506617944}, alpha=1.0},
+  TableHeaderBg={weights={0.14442060093888925,0.0063850388741707505,0.06222051649430041,0.02460659132345773}, alpha=1.0},
+  TableBorderStrong={weights={0.1222480612177316,0.005412608110237252,0.23549870453802446,0.09543404123653436}, alpha=1.0},
+  TableBorderLight={weights={0.13661095109822347,0.006042469524306907,0.1220080438319706,0.048768835574652426}, alpha=1.0},
+  TableRowBg={weights={0.0,0.0,0.0,0.0}, alpha=0.0},
+  TableRowBgAlt={weights={0.9999922372148591,0.00015817557337007314,6.482077671639267e-07,4.875913816423635e-07}, alpha=0.06},
+  DragDropTarget={weights={0.2182049132599961,1.6513823055217685e-14,9.240682161071043e-20,0.9999999999999999}, alpha=0.9},
+  NavHighlight={weights={4.769727488136369e-08,4.7697274294583105e-08,0.9999999522942364,4.7696709218868486e-08}, alpha=1.0},
+  NavWindowingHighlight={weights={0.9999922372148591,0.00015817557337007314,6.482077671639267e-07,4.875913816423635e-07}, alpha=0.7}
 }
 
+function m.build_color_setter(options)
+  local colorspaces = require("math/colorspaces.t")
 
+  options = options or {}
+  local weights = options.style_weights or m.DEFAULT_STYLE_WEIGHTS
+
+  local terra add_weighted(dest: &float, src: &float, weight: float)
+    for idx = 0, 3 do
+      dest[idx] = dest[idx] + src[idx]*weight
+    end
+  end
+
+  local terra color_comb(dest: &float, refs: &float, weights: &float)
+    for chan = 0, 4 do dest[chan] = 0.0 end
+    for idx = 0, 4 do
+      add_weighted(dest, refs + idx*4, weights[idx])
+    end
+    dest[3] = weights[4]
+  end
+
+  local l_color_indices, l_weights = {}, {}, {}
+  local NUM_COLORS = 0
+  for colorname, colorinfo in pairs(weights) do
+    NUM_COLORS = NUM_COLORS + 1
+    table.insert(l_color_indices, IG["Col_" .. colorname])
+    for ii = 1, 4 do
+      table.insert(l_weights, colorinfo.weights[ii])
+    end
+    table.insert(l_weights, colorinfo.alpha)
+  end
+  assert(#l_color_indices == NUM_COLORS)
+  assert(#l_weights == NUM_COLORS*5)
+
+  local c_color_indices = terralib.constant(`arrayof([uint32], [l_color_indices]))
+  local c_weights = terralib.constant(`arrayof([float], [l_weights]))
+
+  local terra set_colors(ref_lab_colors: &float)
+    var style = IG.GetStyle()
+    var cur_color: float[4]
+    for i = 0, NUM_COLORS do
+      color_comb(cur_color, ref_lab_colors, c_weights + i*5)
+      colorspaces.lab2rgb(cur_color, cur_color, true)
+      style.Colors[c_color_indices[i]] = IG.Vec4{cur_color[0], cur_color[1], cur_color[2], cur_color[3]} 
+    end
+  end
+
+  return set_colors
+end
 
 return m

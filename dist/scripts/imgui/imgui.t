@@ -37,6 +37,8 @@ function m.build(options)
     clipboard_text: &int8;
     fonts: IG.bgfx_imgui_font_info[FONTCOUNT];
     fontcount: uint32;
+    reference_colors: float[16]; -- TODO: dehardcode?
+    n_reference_colors: uint32;
   }
 
   if options.SDL then
@@ -183,10 +185,29 @@ function m.build(options)
     terra ImGuiContext:_init_style()
       -- don't do anything
     end
+    terra ImGuiContext:_init_colors()
+      -- also don't do anything
+    end
   else
     local styling = require("./styling.t")
     terra ImGuiContext:_init_style()
       styling.set_truss_style_defaults()
+    end
+    local color_setter = styling.build_color_setter()
+    local colorspaces = require("math/colorspaces.t")
+    terra ImGuiContext:_init_colors()
+      if self.n_reference_colors == 0 then return end
+      color_setter(self.reference_colors)
+    end
+    terra ImGuiContext:push_color(color: &float)
+      if self.n_reference_colors >= 4 then return end
+      var startidx = self.n_reference_colors*4
+      for offset = 0, 4 do
+        self.reference_colors[startidx + offset] = color[offset]
+      end
+      colorspaces.rgb2lab(self.reference_colors + startidx, 
+                          self.reference_colors + startidx, true)
+      self.n_reference_colors = self.n_reference_colors + 1
     end
   end
 
@@ -200,6 +221,8 @@ function m.build(options)
       self.fonts[i].fontname = nil
     end
     self.fontcount = 0
+    self.n_reference_colors = 0
+    for i = 0, 16 do self.reference_colors[i] = 0.0 end
   end
 
   terra ImGuiContext:push_font(data: &uint8, datasize: uint32, sizemod: float)
@@ -223,6 +246,7 @@ function m.build(options)
     end
     self:_init_bindings()
     self:_init_style()
+    self:_init_colors()
   end
 
   terra ImGuiContext:begin_frame()
@@ -237,7 +261,15 @@ function m.build(options)
   return ImGuiContext
 end
 
-function m.create_default_context(w, h, fontsize, viewid)
+function m.create_default_context(options)
+  options = options or {}
+  local w, h = options.width, options.height
+  if not (w and h) then
+    local gfx = require("gfx")
+    w, h = gfx.backbuffer_width, gfx.backbuffer_height
+  end
+  local fontsize = options.fontsize or 18
+  local viewid = options.viewid or 255
   local ImGuiContext = m.build{
     Windowing = require("input/windowing.t").Windowing,
     SDL = require("input/sdl.t") 
@@ -246,7 +278,19 @@ function m.create_default_context(w, h, fontsize, viewid)
   ctx:init()
   local fira = truss.C.load_file("font/FiraSans-Regular.ttf")
   ctx:push_font(fira.data, fira.data_length, 0.0)
-  ctx:create(w, h, fontsize or 18, viewid or 255)
+
+  if options.colors then
+    assert(#options.colors == 4, "Need to provide exactly four colors!")
+    local ccol = terralib.new(float[4])
+    for idx, color in ipairs(options.colors) do
+      for chan = 0, 3 do
+        ccol[chan] = color[chan+1] or 0.0
+      end
+      ctx:push_color(ccol)
+    end
+  end
+
+  ctx:create(w, h, fontsize, viewid)
   truss.C.release_message(fira)
   return ctx
 end
