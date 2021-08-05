@@ -209,12 +209,6 @@ function init()
     0x808080ff, -- accent 1
     0xd08080ff  -- accent 2
   }
-  -- local IG_COLORS = {
-  --   0xffffffff, -- text
-  --   0x072e30ff, -- bg
-  --   0x44e9e6ff, -- accent 1
-  --   0x44e9e6ff  -- accent 2
-  -- }
 
   myapp = app.App{
     width = (gif_mode and 720) or 1280, height = 720, 
