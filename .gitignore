@@ -21,6 +21,7 @@ old_scripts/
 *.cap
 *.bin
 *.ilk
+*.DS_Store
 trusslog.txt
 shader_errors.txt
 console_log.txt
