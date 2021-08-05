@@ -217,15 +217,21 @@ function init()
     open = true, allow_close = true
   }
   db_builder:field{"logo_progress", "progress"}
-  db_builder:field{"rotate_view", "bool", default = true, tooltip = "Automatically rotate the view\nDo newlines work?"}
-  db_builder:field{"rotate_model", "bool", default = true, tooltip = "This doesn't actually work"}
-  db_builder:field{"view_speed", "float", limits={0, 10.0}, default=1.0, tooltip = "Multiply rotate speed by this"}
-  db_builder:field{"thresh", "float", limits={0.48,0.8}, default=0.522}
-  db_builder:field{"light_size", "float", limits={0, 180}, format="%.1f deg", default=57}
-  db_builder:field{"light_power", "float", limits={0, 10}, default=1.3}
-  db_builder:field{"num_rays", "int", limits={1, 32}, default=8}
-  db_builder:field{"step", "float", limits={0.001, 0.1}, default=0.005}
-  db_builder:field{"normstep", "float", limits={0.001, 0.1}, default=0.001}
+  db_builder:field{"rotate_view", "bool", default = true}
+  db_builder:field{"rotate_model", "bool", default = true}
+  db_builder:field{"view_speed", "float", limits={0, 10.0}, default=1.0}
+  db_builder:field{"thresh", "float", limits={0.48,0.8}, default=0.522,
+    tooltip="SDF surface level"}
+  db_builder:field{"light_size", "float", limits={0, 180}, format="%.1f deg",
+    default=57, tooltip="area light size (cone half-angle)"}
+  db_builder:field{"light_power", "float", limits={0, 10}, default=1.3,
+    tooltip="multiply light strength"}
+  db_builder:field{"num_rays", "int", limits={1, 32}, default=8,
+    tooltip="how many rays to cast for ambient occlusiion"}
+  db_builder:field{"step", "float", limits={0.001, 0.1}, default=0.005,
+    tooltip="raymarch minimum step size"}
+  db_builder:field{"normstep", "float", limits={0.001, 0.1}, default=0.001,
+    tooltip="how far to step in SDF to estimate normals"}
   db_builder:field{"static_noise", "bool", default=false}
 
   db_builder:field{"divider"}
