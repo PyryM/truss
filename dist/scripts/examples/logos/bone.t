@@ -203,11 +203,18 @@ imgui_open[0] = false
 local dbstate = nil
 
 function init()
+  -- local IG_COLORS = {
+  --   {1.0, 1.0, 1.0, 1.0},    -- text
+  --   {0.06, 0.06, 0.06, 0.0}, -- bg
+  --   {0.8, 0.3, 0.3, 0.0},    -- accent 1
+  --   {0.8, 0.2, 0.2, 0.0}     -- accent 2
+  -- }
   local IG_COLORS = {
-    {1.0, 1.0, 1.0, 1.0},    -- text
     {0.06, 0.06, 0.06, 0.0}, -- bg
-    {0.8, 0.3, 0.3, 0.0},    -- accent 1
-    {0.8, 0.2, 0.2, 0.0}     -- accent 2
+    {1.0, 1.0, 1.0, 1.0},    -- text
+    {0.5, 0.5, 0.5, 0.0},    -- accent 1
+    --{0.8, 0.3, 0.3, 0.0},    -- accent 1
+    {0.8, 0.6, 0.6, 0.0}     -- accent 2
   }
 
   myapp = app.App{
