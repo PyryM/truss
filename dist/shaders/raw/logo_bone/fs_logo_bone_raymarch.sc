@@ -16,7 +16,7 @@ void main()
 {
   vec3 scale = u_scaleParams.xyz;
   vec3 invScale = 1.0 / scale;
-  vec3 viewDir = normalize(v_vdir);
+  vec3 viewDir = normalize(v_vdir.xyz);
 
   vec3 origin = v_wpos;
   float stepsize = u_marchParams.x;
