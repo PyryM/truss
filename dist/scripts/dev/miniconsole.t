@@ -122,14 +122,18 @@ end
 m.downkeys = {}
 
 function m.handle_inputs()
-  local sdl = require("input/sdl.t")
-  for evt in sdl:events() do
-    local etype = evt.event_type
-    if etype == sdl.EVENT_WINDOW and evt.flags == 14 then
+  local SDL = require("input/sdl.t")
+  if not m._raw_evt then
+    m._raw_evt = terralib.new(SDL.Event)
+  end
+  local evt = m._raw_evt
+  while SDL.PollEvent(evt) > 0 do
+    local etype = evt.type
+    if etype == SDL.WINDOWEVENT and evt.window.event == 14 then
       truss.quit()
-    elseif etype == sdl.EVENT_KEYDOWN or etype == sdl.EVENT_KEYUP then
-      local keyname = ffi.string(evt.keycode)
-      if etype == sdl.EVENT_KEYDOWN then
+    elseif etype == SDL.KEYDOWN or etype == SDL.KEYUP then
+      local keyname = ffi.string(SDL.GetKeyName(evt.key.keysym.sym))
+      if etype == SDL.KEYDOWN then
         if not m.downkeys[keyname] then
           m.downkeys[keyname] = true
           m._keydown(keyname, evt.flags)
@@ -137,8 +141,8 @@ function m.handle_inputs()
       else -- keyup
         m.downkeys[keyname] = false
       end
-    elseif etype == sdl.EVENT_TEXTINPUT then
-      local input = ffi.string(evt.keycode)
+    elseif etype == SDL.TEXTINPUT then
+      local input = ffi.string(evt.text.text) -- length limit?
       m._textinput(input)
     end
   end
@@ -424,8 +428,8 @@ function m.init(width, height)
     padding = padding .. " "
   end
   m.create_env()
-  local sdl = require("addon/sdl.t")
-  sdl.start_text_input()
+  local SDL = require("input/sdl.t")
+  SDL.StartTextInput()
 end
 
 function m.install()
@@ -463,13 +467,16 @@ m.ConsoleApp = ConsoleApp
 
 function ConsoleApp:init(options)
   options = options or {}
-  local sdl = require("addon/sdl.t")
+  self.window = require("input/windowing.t").create()
+  self.window:create_window(
+    options.width or 1280,
+    options.height or 720,
+    options.title or "Console",
+    false, -- fullscreen
+    0      -- display
+  )
   local gfx = require("gfx")
-
-  sdl.create_window(options.width or 1280,
-                    options.height or 720,
-                    options.title or "Console")
-  gfx.init_gfx({msaa = true, debugtext = true, window = sdl})
+  gfx.init_gfx({debugtext = true, window = self.window})
   m.hijack_bgfx()
   m.init(math.floor(m.width / 8), math.floor(m.height / 16))
   m.set_header(options.title or "Console", options.header_color or 0x83)
