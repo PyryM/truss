@@ -224,11 +224,12 @@ local disallow_globals_mt = {
 }
 
 function truss.set_app_directories(orgname, appname)
+  truss.error("Not updated yet")
   if (not orgname) or (not appname) then
     truss.error("Must specify both org and app names.")
     return
   end 
-  local sdl = require("addon/sdl.t")
+  local sdl = require("input/sdl.t")
   local userpath = sdl.create_user_path(orgname, appname)
   log.info("Setting save dir to: " .. userpath)
   truss.C.set_raw_write_dir(userpath)

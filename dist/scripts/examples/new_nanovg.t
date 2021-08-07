@@ -5,7 +5,6 @@ local graphics = require("graphics")
 local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
 local ecs = require("ecs")
-local sdl = require("addon/sdl.t")
 
 local FONT_SIZE = 20
 local FONT_X_MARGIN = 5
@@ -38,7 +37,7 @@ local NVGThing = graphics.NanoVGComponent:extend("NVGThing")
 function NVGThing:nvg_setup(ctx)
   ctx.bg_color = ctx:RGBAf(0.0, 0.0, 0.0, 0.5) -- semi-transparent black
   ctx.font_color = ctx:RGBf(1.0, 1.0, 1.0)     -- white
-  ctx:load_font("font/VeraMono.ttf", "sans")
+  ctx:load_font("font/FiraMono-Regular.ttf", "sans")
 
   ctx.test_image = ctx:load_image("textures/bad_green_cursor.png")
   print("Test image size: ", ctx.test_image.w, ctx.test_image.h)
@@ -76,30 +75,10 @@ function NVGThing:nvg_draw(ctx)
 end
 
 function init()
-  local displays = sdl.get_displays()
-  for idx, d in ipairs(displays) do
-    print("Display", idx-1)
-    print(d.x, d.y, d.w, d.h)
-  end
-
   myapp = app.App{title = "nanovg example", width = 640, height = 480,
                   msaa = true, stats = false, clear_color = 0x404080ff,
                   fullscreen = false, display = 0,
                   lowlatency = lowlatency, single_threaded = single_threaded}
-
-  --sdl.show_cursor(false)
-  local cursor = {
-    {0, 0, 2, 0, 0, 0, 0, 0},
-    {0, 2, 1, 2, 0, 0, 0, 0},
-    {2, 1, 1, 1, 2, 0, 0, 0},
-    {0, 2, 1, 2, 0, 0, 0, 0},
-    {0, 0, 2, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0}
-  }
-  sdl.create_cursor_aoa(1, cursor, 2, 2)
-  sdl.set_cursor(1)
 
   myapp.ECS.systems.input:on("mousemove", mouse_state, on_mouse)
   myapp.ECS.systems.input:on("filedrop", function(_, evtname, evt)
