@@ -343,18 +343,16 @@ local function texture_from_handle(handle, info, flags, sampler_flags)
 end
 
 local function load_texture_image(filename, flags, sampler_flags)
-  local w = terralib.new(int32[2])
-  local h = terralib.new(int32[2])
-  local n = terralib.new(int32[2])
-  local img = require("addon/imageio.t").load_image_from_file(filename)
+  local imageload = require("./imageload.t")
+  local img = imageload.load_image_from_file(filename)
   if img == nil then truss.error("Texture load error: " .. filename) end
-  local bmem = bgfx.copy(img.data, img.data_length)
-  local ret = Texture2d{width = img.w, height = img.h, format = fmt.TEX_RGBA8,
+  local bmem = bgfx.copy(img.data, img.datasize)
+  local ret = Texture2d{width = img.width, height = img.height, format = fmt.TEX_RGBA8,
                         flags = flags, sampler_flags = sampler_flags,
                         allocate = false, commit = false}
   ret._bmem = bmem
   ret:commit()
-  img:release()
+  imageload.release_image(img)
   return ret
 end
 
