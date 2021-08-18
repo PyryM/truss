@@ -282,7 +282,7 @@ function init()
     async.await_frames(5)
     common.add_textbox{
       x = 390, y = 10, w = 220, h = 120, color = logocolor,
-      font_size = 100, text = "0.2.α" -- truss.BIN_VERSION
+      font_size = 100, text = truss.BIN_VERSION
     }
   end)
 end
