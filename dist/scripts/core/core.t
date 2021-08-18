@@ -552,6 +552,12 @@ function _core_init()
   call_on_main("init", truss.mainobj)
   local delta = truss.toc(t0) * 1000.0
   log.info(string.format("Time to init: %.2f ms", delta))
+  if not truss.mainobj.update then
+    log.info("No 'update' function provided; simply quitting.")
+    _core_update = function()
+      truss.quit()
+    end
+  end
 end
 
 function _core_update()
