@@ -20,7 +20,7 @@ end
 function init()
   local libs_url = LIB_URL_PATH .. assert(ZIP_NAMES[truss.os], "No prebuilt libs for current OS!")
   exec_cmd(('curl -o libs.zip -L "%s"'):format(libs_url))
-  exec_cmd('unzip libs.zip')
+  exec_cmd('unzip -o libs.zip') -- -o in unzip is 'overwrite'
   if truss.os == "Windows" then
     exec_cmd('del libs.zip')
   else
