@@ -6,10 +6,16 @@ local bgfx = require("./bgfx.t")
 local m = {}
 
 local bitformats = {
-  [uint8] = {suffix = "8"},
-  [uint16] = {suffix = "16"},
-  [float] = {suffix = "32F"},
-  ["halffloat"] = {bytes = 2, suffix = "16F", proxy_type = uint16}
+  ["u8"] = {suffix = "8U", ctype = uint8},
+  ["u16"] = {suffix = "16U", ctype = uint16},
+  ["u32"] = {suffix = "32U", ctype = uint32},
+  ["i8"] = {suffix = "8I", ctype = int8},
+  ["i16"] = {suffix = "16I", ctype = int16},
+  ["i32"] = {suffix = "32I", ctype = int32},
+  ["n8"] = {suffix = "8", ctype = uint8},
+  ["n16"] = {suffix = "16", ctype = uint16},
+  ["f32"] = {suffix = "32F", ctype = float},
+  ["f16"] = {suffix = "16F", ctype = uint16}
 }
 
 local all_formats = {}
@@ -17,7 +23,7 @@ m.texture_formats = all_formats
 
 local function export_tex_format(channels, n_channels, bitformat, has_color, has_depth, has_stencil)
   local bitinfo = bitformats[bitformat]
-  local byte_size = bitinfo.bytes or terralib.sizeof(bitformat)
+  local byte_size = terralib.sizeof(bitinfo.ctype)
   local fname = string.upper(channels) .. bitinfo.suffix
   local bgfx_enum = bgfx["TEXTURE_FORMAT_" .. fname]
   if not bgfx_enum then 
@@ -31,7 +37,7 @@ local function export_tex_format(channels, n_channels, bitformat, has_color, has
     n_channels = n_channels,
     channel_size = byte_size,
     pixel_size = byte_size * n_channels,
-    channel_type = bitinfo.proxy_type or bitformat,
+    channel_type = bitinfo.ctype,
     has_color = has_color,
     has_depth = has_depth,
     has_stencil = has_stencil
