@@ -328,9 +328,6 @@ function m.print_tex_flags(flags)
   return table.concat(frags, ",")
 end
 
-local nvg_utils = truss.addons.nanovg.functions
-local nvg_pointer = truss.addons.nanovg.pointer
-
 local function texture_from_handle(handle, info, flags, sampler_flags)
   local ret = nil
   if info.cubeMap then
@@ -346,18 +343,16 @@ local function texture_from_handle(handle, info, flags, sampler_flags)
 end
 
 local function load_texture_image(filename, flags, sampler_flags)
-  local w = terralib.new(int32[2])
-  local h = terralib.new(int32[2])
-  local n = terralib.new(int32[2])
-  local msg = nvg_utils.truss_nanovg_load_image(nvg_pointer, filename, w, h, n)
-  if msg == nil then truss.error("Texture load error: " .. filename) end
-  local bmem = bgfx.copy(msg.data, msg.data_length)
-  truss.C.release_message(msg)
-  local ret = Texture2d{width = w[0], height = h[0], format = fmt.TEX_RGBA8,
+  local imageload = require("./imageload.t")
+  local img = imageload.load_image_from_file(filename)
+  if img == nil then truss.error("Texture load error: " .. filename) end
+  local bmem = bgfx.copy(img.data, img.datasize)
+  local ret = Texture2d{width = img.width, height = img.height, format = fmt.TEX_RGBA8,
                         flags = flags, sampler_flags = sampler_flags,
                         allocate = false, commit = false}
   ret._bmem = bmem
   ret:commit()
+  imageload.release_image(img)
   return ret
 end
 
@@ -406,26 +401,6 @@ function m.ReadbackTexture(src, layer)
   }
   tex.read_source = {rt = src, layer = layer}
   return tex:commit()
-end
-
--- load just the raw pixel data of a texture
-function m.load_texture_data(fn)
-  local w = terralib.new(int32[2])
-  local h = terralib.new(int32[2])
-  local n = terralib.new(int32[2])
-  local msg = nvg_utils.truss_nanovg_load_image(nvg_pointer, fn, w, h, n)
-  if w[0] <= 0 or h[0] <= 0 or n[0] <= 0 then
-    log.error("tex load error: " .. w[0] .. " " .. h[0] .. " " .. n[0])
-    truss.C.release_message(msg)
-    return nil
-  end
-  local dsize = w[0]*h[0]*n[0]
-  local ndata = terralib.new(uint8[w[0]*h[0]*n[0]])
-  for i = 0, dsize - 1 do
-    ndata[i] = msg.data[i]
-  end
-  truss.C.release_message(msg)
-  return {w = w[0], h = h[0], n = n[0], data = ndata}
 end
 
 return m

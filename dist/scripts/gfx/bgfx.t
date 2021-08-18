@@ -4,7 +4,7 @@
 
 local modutils = require("core/module.t")
 
-local bgfx_c = terralib.includec("bgfx_truss.c99.h")
+local bgfx_c = terralib.includec("bgfx/bgfx_truss.c99.h")
 local bgfx_const = require("./bgfx_constants.t")
 
 local bgfx = {}
@@ -16,5 +16,7 @@ bgfx.raw_constants = bgfx_const
 function bgfx.check_handle(h) 
   return h.idx ~= bgfx.INVALID_HANDLE 
 end
+
+truss.link_library("lib", "bgfx-shared-libRelease")
 
 return bgfx

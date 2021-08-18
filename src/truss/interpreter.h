@@ -1,8 +1,6 @@
 #ifndef TRUSS_INTERPRETER_H_
 #define TRUSS_INTERPRETER_H_
 
-#include "addon.h"
-
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -22,13 +20,6 @@ public:
 
     // Get the interpreter's ID
     int getID() const;
-
-    // the attached addon is considered to be owned by
-    // the interpreter and will be deleted by it when the
-    // interpreter shuts down
-    void attachAddon(Addon* addon);
-    int numAddons();
-    Addon* getAddon(int idx);
 
     // Set debug mode on/off (default: off)
     // Must be called before starting
@@ -62,9 +53,6 @@ private:
 
     // Call into the actual lua/terra interpreter
     bool call(const char* funcname, const char* argstr = NULL);
-
-    // List of addons
-    std::vector<Addon*> addons_;
 
     // Actual thread
     std::thread* thread_;

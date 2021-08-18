@@ -77,13 +77,22 @@ ffi = require("ffi")
 bit = require("bit")
 
 truss.os = ffi.os
-local library_extensions = {Windows = "", Linux = ".so", OSX = ".dylib", 
+local library_extensions = {Windows = ".dll", Linux = ".so", OSX = ".dylib", 
                             BSD = ".so", POSIX = ".so", Other = ""}
+local libary_prefixes = {Windows = "", Linux = "lib", OSX = "lib",
+                         BSD = "lib", POSIX = "lib", Other = ""}
 truss.library_extension = library_extensions[truss.os] or ""
+truss.library_prefix = libary_prefixes[truss.os] or ""
 
-function truss.link_library(libname)
-  log.info("Linking " .. libname .. truss.library_extension)
-  terralib.linklibrary(libname .. truss.library_extension)
+function truss.link_library(basedir, libname)
+  if not libname then
+    libname, basedir = basedir, ""
+  end
+  if #basedir > 0 then basedir = basedir .. "/" end
+  local fullpath = basedir .. truss.library_prefix .. 
+                   libname .. truss.library_extension
+  log.info("Linking " .. fullpath)
+  terralib.linklibrary(fullpath)
 end
 
 -- timing functions
@@ -182,8 +191,11 @@ function truss.load_named_string(str, strname, loader)
   return loader(generator_func, '@' .. strname)
 end
 
-local function extend_table(dest, addition)
-  for k,v in pairs(addition) do dest[k] = v end
+local function extend_table(dest, ...)
+  for idx = 1, select("#", ...) do
+    local addition = select(idx, ...)
+    for k,v in pairs(addition) do dest[k] = v end
+  end
   return dest
 end
 truss.extend_table = extend_table
@@ -212,11 +224,12 @@ local disallow_globals_mt = {
 }
 
 function truss.set_app_directories(orgname, appname)
+  truss.error("Not updated yet")
   if (not orgname) or (not appname) then
     truss.error("Must specify both org and app names.")
     return
   end 
-  local sdl = require("addon/sdl.t")
+  local sdl = require("input/sdl.t")
   local userpath = sdl.create_user_path(orgname, appname)
   log.info("Setting save dir to: " .. userpath)
   truss.C.set_raw_write_dir(userpath)
@@ -395,12 +408,24 @@ function truss.require(modname, options)
       return nil
     end
     local modenv = options.env or create_module_env(modname, filename, options)
+    rawset(modenv, "_preregister", function(v)
+      if loaded_libs[modname] then
+        truss.error("Multiple preregs for [" .. modname .. "]")
+      end
+      loaded_libs[modname] = v
+      return v
+    end)
     setfenv(module_def, modenv)
     local evaluated_module = module_def()
+    rawset(modenv, "_preregister", nil)
     if not (evaluated_module or options.allow_globals) then 
       truss.error("Module [" .. modname .. "] did not return a table!")
     end
-    loaded_libs[modname] = evaluated_module or modenv
+    local modtab = evaluated_module or modenv
+    if loaded_libs[modname] and (loaded_libs[modname] ~= modtab) then
+      truss.error("Module [" .. modname .. "] did not return preregistered table!")
+    end
+    loaded_libs[modname] = modtab
     log.info(string.format("Loaded [%s] in %.2f ms",
                           modname, truss.toc(t0) * 1000.0))
   end
@@ -443,25 +468,10 @@ truss.insert_module("jit", jit)
 -- alias core/30log.lua to class so we can just require("class")
 truss.require_as("core/30log.lua", "class")
 
-local numaddons = truss.C.get_addon_count(TRUSS_ID)
-log.info("Found " .. numaddons .. " addons.")
-
-local addons = {}
-
-for addonIdx = 1,numaddons do
-  local header = ffi.string(truss.C.get_addon_header(TRUSS_ID, addonIdx-1))
-  local pointer = truss.C.get_addon(TRUSS_ID, addonIdx-1)
-  local addon_name = ffi.string(truss.C.get_addon_name(TRUSS_ID, addonIdx-1))
-  local addon_version = ffi.string(truss.C.get_addon_version(TRUSS_ID, addonIdx-1))
-  log.info("Loading addon [" .. addon_name .. "]")
-  local addon_table = terralib.includecstring(header)
-  addons[addon_name] = {functions = addon_table, pointer = pointer,
-                        version = addon_version}
-end
-truss.addons = addons
-
 local vstr = ffi.string(truss.C.get_version())
-truss.VERSION = vstr
+truss.BIN_VERSION = vstr
+truss.LIB_VERSION = "0.2.0"
+truss.VERSION = truss.BIN_VERSION
 
 local modutils = truss.require("core/module.t")
 modutils.reexport(truss.require("core/memory.t"), truss)
@@ -542,6 +552,12 @@ function _core_init()
   call_on_main("init", truss.mainobj)
   local delta = truss.toc(t0) * 1000.0
   log.info(string.format("Time to init: %.2f ms", delta))
+  if not truss.mainobj.update then
+    log.info("No 'update' function provided; simply quitting.")
+    _core_update = function()
+      truss.quit()
+    end
+  end
 end
 
 function _core_update()

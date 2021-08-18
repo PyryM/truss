@@ -4,6 +4,7 @@ build2017/
 build2/
 build3/
 build2021/
+build_skeleton/
 data/
 dump/
 models/
@@ -20,6 +21,7 @@ old_scripts/
 *.cap
 *.bin
 *.ilk
+*.DS_Store
 trusslog.txt
 shader_errors.txt
 console_log.txt

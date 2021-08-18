@@ -1,6 +1,6 @@
 -- tmath.t
 -- terra math
-local C = require("./cmath.t")
+local C = require("native/clib.t").math
 local m = {}
 
 local vectors = {}

@@ -4,36 +4,38 @@
 
 local class = require("class")
 local ecs = require("ecs")
+local SDL = require("./sdl.t")
 local m = {}
 
 local SDLInputSystem = class("SDLInputSystem")
 
 local EVENT_INFO = {
-  [0] = {"outofbounds", "bounds"},
-  [1] = {"keydown", "key"},
-  [2] = {"keyup", "key"},
-  [3] = {"mousedown", "mouse"},
-  [4] = {"mouseup", "mouse"},
-  [5] = {"mousemove", "mouse"},
-  [6] = {"mousewheel", "mouse"},
-  [7] = {"window", "window"},
-  [8] = {"textinput", "key"},
+  [SDL.KEYDOWN] = {"keydown", "key"},
+  [SDL.KEYUP] = {"keyup", "key"},
+  [SDL.MOUSEBUTTONDOWN] = {"mousedown", "mouse"},
+  [SDL.MOUSEBUTTONUP] = {"mouseup", "mouse"},
+  [SDL.MOUSEMOTION] = {"mousemove", "mouse"},
+  [SDL.MOUSEWHEEL] = {"mousewheel", "mouse"},
+  [SDL.WINDOWEVENT] = {"window", "window"},
+  [SDL.TEXTINPUT] = {"textinput", "key"},
+  --[[
   [9] = {"gamepad_added", "gamepad_sys"},
   [10] = {"gamepad_removed", "gamepad_sys"},
   [11] = {"gamepad_axis", "gamepad"},
   [12] = {"gamepad_buttondown", "gamepad"},
   [13] = {"gamepad_buttonup", "gamepad"},
-  [14] = {"filedrop", "filedrop"}
+  ]]
+  [SDL.DROPFILE] = {"filedrop", "filedrop"}
 }
 
-local sdl = nil
 function SDLInputSystem:init(options)
-  sdl = sdl or require("addon/sdl.t")
   self.mount_name = "input"
   options = options or {}
   self._autoclose = (options.autoclose ~= false)
   self.evt = ecs.EventEmitter()
   self.keystate = {}
+  self.window = assert(options.window)
+  self.imgui = options.imgui
 end
 
 function SDLInputSystem:on(...)
@@ -91,8 +93,9 @@ local function convert_gamepad_event(evt_type, evt)
 end
 
 local function convert_filedrop_event(evt_type, evt)
+  local path = self.window:get_filedrop_path()
   return {
-    path = sdl.get_filedrop_path() or ""
+    path = ffi.string(path.str, path.len)
   }
 end
 
@@ -101,7 +104,7 @@ local function convert_event(evt)
   local new_evt
   if evt_class == "key" then
     new_evt = {}
-    new_evt.keyname = ffi.string(evt.keycode)
+    new_evt.keyname = ffi.string(SDL.GetKeyName(evt.keycode))
     new_evt.flags = translate_key_flags(evt.flags)
   elseif evt_class == "mouse" then
     -- TODO
@@ -120,10 +123,18 @@ local function convert_event(evt)
 end
 
 function SDLInputSystem:update()
-  for evt in sdl.events() do
-    if self._autoclose and evt.event_type == sdl.EVENT_WINDOW and evt.flags == 14 then
-      truss.quit()
-    end
+  local still_open
+  if self.imgui then
+    still_open = self.imgui:poll_events(self.window)
+  else
+    still_open = self.window:poll_events()
+  end
+  if self._autoclose and (not still_open) then
+    truss.quit()
+    return
+  end
+  for idx = 1, self.window:get_event_count() do
+    local evt = self.window:get_event(idx-1)
     local evtname, new_evt = convert_event(evt)
     if evtname == "keydown" then
       self.keystate[new_evt.keyname] = true

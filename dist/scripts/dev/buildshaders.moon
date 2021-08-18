@@ -31,19 +31,37 @@ extend = (a, b) ->
   a
 
 SHADER_DIR = "shaders"
-WIN_SHADER_TYPES = {
+DX_SHADER_TYPES = {
   f: "ps_4_0"
   v: "vs_4_0"
   c: "cs_5_0"
 }
-PLATFORMS = {
-  windows: "dx11",
-  --linux: "glsl",
-  osx: "mtl",
+
+BACKEND_SHORTNAMES = {
+  directx: "dx11",
+  dx11: "dx11",
+  dx12: "dx11",
+  opengl: "glsl",
+  metal: "mtl",
   vulkan: "spirv"
 }
-PLATFORM_ALIASES = {
-  vulkan: "linux"
+
+BACKEND_TO_BGFX_PLATFORM = {
+  directx: "windows",
+  dx11: "windows",
+  dx12: "windows",
+  opengl: "linux",
+  vulkan: "linux",
+  metal: "osx"
+}
+
+BACKEND_SETS = {
+  windows: {"directx", "vulkan"},
+  windows_all: {"directx", "vulkan", "metal", "opengl"},
+  osx: {"metal"},
+  osx_all: {"metal", "vulkan", "opengl"},
+  linux: {"vulkan"},
+  linux_all: {"vulkan", "opengl"}
 }
 
 CHARS = if truss.os == "OSX"
@@ -51,8 +69,8 @@ CHARS = if truss.os == "OSX"
 else
   {vert: "\179", term: "\192"}
 
-make_cmd = (shader_type, platform, input_fn, output_fn) ->
-  args = if platform == "linux" or platform == "osx"
+make_cmd = (shader_type, backend, input_fn, output_fn) ->
+  args = if truss.os == "Linux" or truss.os == "OSX"
     {"./bin/shadercRelease"}
   else
     {"bin/shadercRelease"}
@@ -61,15 +79,15 @@ make_cmd = (shader_type, platform, input_fn, output_fn) ->
     "-o", output_fn,
     "--type", shader_type,
     "-i", "#{SHADER_DIR}/raw/common/",
-    "--platform", PLATFORM_ALIASES[platform] or platform
+    "--platform", BACKEND_TO_BGFX_PLATFORM[backend]
   }
-  extend args, switch platform 
-    when "linux"
-      {"-p", "120"}
-    when "windows"
-      {"-p", WIN_SHADER_TYPES[shader_type], 
+  extend args, switch backend 
+    when "opengl"
+      {"-p", "140"}
+    when "directx" or "dx11" or "dx12"
+      {"-p", DX_SHADER_TYPES[shader_type], 
        "-O", "3"}
-    when "osx"
+    when "metal"
       {"-p", "metal"}
     when "vulkan"
       {"-p", "spirv"}
@@ -87,12 +105,14 @@ header = (s, n = 80, char = "=") ->
   pre = math.floor n / 2
   "#{string.rep(char, pre)} #{s} #{string.rep(char, n - pre)}"
 
-do_file = (fn, path, platforms) ->
+do_file = (fn, path, backends) ->
   prefix = fn\sub(1,1)
   errors = ""
   errlangs = ""
-  for platform, lang in pairs platforms
-    cmd = make_cmd prefix, platform, path, "#{SHADER_DIR}/#{lang}/#{fn\sub(1,-4)}.bin"
+  for backend in *backends
+    lang = BACKEND_SHORTNAMES[backend]
+    outfn = "#{SHADER_DIR}/#{lang}/#{fn\sub(1,-4)}.bin"
+    cmd = make_cmd prefix, backend, path, outfn
     res = do_cmd cmd
     if #res > 2
       errors ..= (header lang, 80, '-') .. "\n" .. res
@@ -117,24 +137,15 @@ export init = ->
   else
     {print: stdout_print, update: ->, clear: ->, finish: truss.quit}
 
-  platforms = if args['--platform']
-    p = args['--platform']\lower()
-    {[p]: PLATFORMS[p]}
+  backends = if args['--backend']
+    p = args['--backend']\lower()
+    BACKEND_SETS[p] or {p}
   else
-    PLATFORMS
-
-  if #[k for k,v in pairs platforms] == 0
-    app\print "Invalid platform #{args['--platform']}"
-    finish!
-    return
-
-  platlist = [v for k,v in pairs platforms]
-  table.sort platlist
-  platlist = table.concat platlist, " "
+    BACKEND_SETS[truss.os\lower()]
 
   async.run ->
     app\clear!
-    app\print "Compiling shaders (#{platlist}):"
+    app\print "Compiling shaders (#{table.concat backends, " "}):"
     errors = {}
     total_errors = 0
     shader_dirs = if args['-i']
@@ -147,7 +158,7 @@ export init = ->
       app\print dir
       nerrs, nshaders = 0, 0
       for {fn, path} in *loose_shaders
-        errors[fn], errlangs = do_file fn, path, platforms
+        errors[fn], errlangs = do_file fn, path, backends
         if errors[fn]
           app\print "#{CHARS.vert}!#{fn} -> #{errlangs}"
           nerrs += 1

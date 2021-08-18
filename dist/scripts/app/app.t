@@ -6,8 +6,6 @@ local class = require('class')
 local math = require("math")
 local gfx = require("gfx")
 local ecs = require("ecs")
-local sdl = require("addon/sdl.t")
-local sdl_input = require("input/sdl_input.t")
 local graphics = require("graphics")
 
 local App = class('App')
@@ -17,13 +15,18 @@ function App:init(options)
   options = options or {}
   self.headless = not not options.headless
   if not self.headless then
-    sdl.create_window(options.width or 1280, options.height or 720,
-                      options.title or 'truss',
-                      options.fullscreen and 1,
-                      options.display or 0)
-    self.width, self.height = sdl.get_window_size()
+    self.window = require("input/windowing.t").create()
+    self.window:create_window(
+      options.width or 1280, 
+      options.height or 720,
+      options.title or 'truss',
+      not not options.fullscreen,
+      options.display or 0
+    )
+    local bounds = self.window:get_window_bounds(false)
+    self.width, self.height = bounds.w, bounds.h
     self.stats = options.stats
-    options.window = sdl
+    options.window = self.window
   else
     self.width, self.height = options.width or 256, options.height or 256
     self.stats = false
@@ -36,6 +39,16 @@ function App:init(options)
     self:install_console()
   end
   self._init_options = options
+
+  if options.imgui and self.window then
+    local imgui = require("imgui")
+    local imgui_opts = options.imgui
+    if type(imgui_opts) ~= 'table' then imgui_opts = {} end
+    if not (imgui_opts.width and imgui_opts.height) then
+      imgui_opts.width, imgui_opts.height = self.width, self.height
+    end
+    self.imgui = imgui.create_default_context(imgui_opts)
+  end
 
   self:init_ecs()
   self:init_pipeline(options)
@@ -51,9 +64,10 @@ function App:reset_graphics(newoptions)
   for k,v in pairs(newoptions) do
     options[k] = v
   end
-  sdl.resize_window(options.width or 1280, options.height or 720,
-                    options.fullscreen and 1)
-  self.width, self.height = sdl.get_window_size()
+  self.window:resize_window(options.width or 1280, options.height or 720,
+                            options.fullscreen and 1)
+  local bounds = self.window:get_window_bounds(false)
+  self.width, self.height = bounds.w, bounds.h
   gfx.reset_gfx(options)
   if self.camera then
     self.camera.camera:make_projection(65, self.width / self.height, 
@@ -73,7 +87,8 @@ function App:init_ecs()
   local ECS = ecs.ECS()
   self.ECS = ECS
   if not self.headless then
-    ECS:add_system(sdl_input.SDLInputSystem())
+    local sdl_input = require("input/sdl_input.t")
+    ECS:add_system(sdl_input.SDLInputSystem{window=self.window, imgui=self.imgui})
     ECS.systems.input:on("keydown", self, self.keydown)
   end
   ECS:add_system(ecs.System("update", "update"))
@@ -167,10 +182,16 @@ function App:keydown(evtname, evt)
 end
 
 function App:capture_mouse(capture)
-  sdl.set_relative_mouse_mode(capture)
+  self.window:set_fps_mouse_mode(capture)
 end
 
 function App:update()
+  -- TODO: move imgui into ECS?
+  if self.imgui then
+    self.imgui:begin_frame()
+    if self.imgui_draw then self:imgui_draw() end
+    self.imgui:end_frame()
+  end
   self.ECS:update()
 end
 

@@ -28,7 +28,6 @@ typedef struct {
   unsigned char* data;
   unsigned int refcount;
 } truss_message;
-typedef struct Addon Addon;
 
 typedef int truss_interpreter_id;
 
@@ -63,12 +62,6 @@ int truss_spawn_interpreter(int debug_level, const char* init_script_name);
 void truss_stop_interpreter(truss_interpreter_id target_id);
 int truss_step_interpreter(truss_interpreter_id target_id);
 truss_interpreter_state truss_get_interpreter_state(truss_interpreter_id target_id);
-
-int truss_get_addon_count(truss_interpreter_id target_id);
-Addon* truss_get_addon(truss_interpreter_id target_id, int addon_idx);
-const char* truss_get_addon_name(truss_interpreter_id target_id, int addon_idx);
-const char* truss_get_addon_header(truss_interpreter_id target_id, int addon_idx);
-const char* truss_get_addon_version(truss_interpreter_id target_id, int addon_idx);
 
 void truss_send_message(truss_interpreter_id dest, truss_message* message);
 int truss_fetch_messages(truss_interpreter_id interpreter);

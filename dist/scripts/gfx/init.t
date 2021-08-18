@@ -4,7 +4,9 @@
 
 local moduleutils = require("core/module.t")
 
-local gfx = {}
+-- this allows submodules to require("gfx") without
+-- causing an infinite recursion
+local gfx = _preregister{}
 
 moduleutils.include_submodules({
   "gfx/common.t",
@@ -19,7 +21,8 @@ moduleutils.include_submodules({
   "gfx/tagset.t",
   "gfx/rendertarget.t",
   "gfx/texture.t",
-  "gfx/resource.t"
+  "gfx/resource.t",
+  "gfx/imrender.t"
 }, gfx)
 
 return gfx

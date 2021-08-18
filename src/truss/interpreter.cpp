@@ -45,22 +45,6 @@ int Interpreter::getID() const {
     return id_;
 }
 
-void Interpreter::attachAddon(Addon* addon) {
-	addons_.push_back(addon);
-}
-
-int Interpreter::numAddons() {
-    return (int)(addons_.size());
-}
-
-Addon* Interpreter::getAddon(int idx) {
-    if(idx >= 0 && idx < addons_.size()) {
-        return addons_[idx];
-    } else {
-        return NULL;
-    }
-}
-
 void Interpreter::setDebug(int debugLevel) {
     if (debugLevel > 0) {
         verboseLevel_ = debugLevel;
@@ -125,11 +109,6 @@ void Interpreter::start(const char* arg, bool multithreaded) {
         return;
     }
 
-    // Init all the addons
-    for(size_t i = 0; i < addons_.size(); ++i) {
-        addons_[i]->init(this);
-    }
-
     // Call init
     if (!call("_core_init", arg)) {
         core().logPrint(TRUSS_LOG_ERROR, "Error in core_init, stopping interpreter [%d].", id_);
@@ -171,9 +150,6 @@ bool Interpreter::step() {
 }
 
 void Interpreter::step_() {
-	for (unsigned int i = 0; i < addons_.size(); ++i) {
-		addons_[i]->update(1.0 / 60.0);
-	}
 	call("_core_update");
 }
 

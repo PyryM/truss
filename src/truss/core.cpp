@@ -1,5 +1,4 @@
 #include "core.h"
-#include "addon.h"
 
 // TODO: switch to a better logging framework
 #include <array>

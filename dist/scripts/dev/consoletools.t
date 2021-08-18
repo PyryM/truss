@@ -41,9 +41,6 @@ function ConsoleTools:_update_blacklist()
   for k,v in pairs(truss._loaded_libs) do
     self.blacklist[v] = "module [" .. k .. "]"
   end
-  for k,v in pairs(truss.addons) do
-    self.blacklist[v] = "addon [" .. k .. "]"
-  end
 end
 
 function ConsoleTools:vtype(val)

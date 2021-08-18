@@ -164,16 +164,19 @@ function m.init_gfx(options)
 
   local w, h = options.width, options.height
   if options.window then
+    local rect
     if options.hidpi and renderer_type == bgfx.RENDERER_TYPE_OPENGL then
       print("Possible HIDPI?")
-      w, h = options.window.get_window_gl_size()
+      rect = options.window:get_window_bounds(true)
     else
-      w, h = options.window.get_window_size()
+      rect = options.window:get_window_bounds(false)
     end
+    w, h = rect.w, rect.h
     print("Got window size: ", w, h)
-    if options.window.get_bgfx_callback then
-      cb_ptr = options.window.get_bgfx_callback()
-    end
+    -- TODO: callbacks
+    -- if options.window.get_bgfx_callback then
+    --   cb_ptr = options.window.get_bgfx_callback()
+    -- end
   elseif options.cb_ptr then
     cb_ptr = options.cb_ptr
   end

@@ -6,7 +6,7 @@
 #ifndef TRUSSAPI_H_HEADER_GUARD
 #define TRUSSAPI_H_HEADER_GUARD
 
-#define TRUSS_VERSION_STRING "0.1.3"
+#define TRUSS_VERSION_STRING "0.2.0"
 
 #include <cstdint> // Needed for uint64_t etc.
 #include <cstddef> // Needed for size_t etc.
@@ -19,12 +19,8 @@
 #else
 #	define TRUSS_C_API extern "C"
 #endif
-namespace truss {
-	class Addon;
-}
 #else
 #   define TRUSS_C_API
-typedef struct Addon Addon;
 #endif
 
 /* Message types */
@@ -99,13 +95,6 @@ TRUSS_C_API int truss_spawn_interpreter(int debug_level, const char* init_script
 TRUSS_C_API void truss_stop_interpreter(truss_interpreter_id target_id);
 TRUSS_C_API int truss_step_interpreter(truss_interpreter_id target_id);
 TRUSS_C_API truss_interpreter_state truss_get_interpreter_state(truss_interpreter_id target_id);
-
-/* Addon management */
-TRUSS_C_API int truss_get_addon_count(truss_interpreter_id target_id);
-TRUSS_C_API truss::Addon* truss_get_addon(truss_interpreter_id target_id, int addon_idx);
-TRUSS_C_API const char* truss_get_addon_name(truss_interpreter_id target_id, int addon_idx);
-TRUSS_C_API const char* truss_get_addon_header(truss_interpreter_id target_id, int addon_idx);
-TRUSS_C_API const char* truss_get_addon_version(truss_interpreter_id target_id, int addon_idx);
 
 /* Message transport */
 TRUSS_C_API void truss_send_message(truss_interpreter_id dest, truss_message* message);

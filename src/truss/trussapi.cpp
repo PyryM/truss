@@ -1,5 +1,4 @@
 #include "core.h"
-#include "addon.h"
 
 // TODO: switch to a better logging framework
 #include <iostream>
@@ -156,51 +155,6 @@ truss_message* truss_get_message(truss_interpreter_id idx, int message_index) {
         return interpreter->getMessage(message_index);
     } else {
         return NULL;
-    }
-}
-
-int truss_get_addon_count(truss_interpreter_id target_id) {
-    Interpreter* interpreter = Core::instance().getInterpreter(target_id);
-    if(interpreter) {
-        return interpreter->numAddons();
-    } else {
-        return -1;
-    }
-}
-
-Addon* truss_get_addon(truss_interpreter_id target_id, int addon_idx) {
-    Interpreter* interpreter = Core::instance().getInterpreter(target_id);
-    if(interpreter) {
-        return interpreter->getAddon(addon_idx);
-    } else {
-        return NULL;
-    }
-}
-
-const char* truss_get_addon_name(truss_interpreter_id target_id, int addon_idx) {
-    Addon* addon = truss_get_addon(target_id, addon_idx);
-    if (addon) {
-        return addon->getName().c_str();
-    } else {
-        return "";
-    }
-}
-
-const char* truss_get_addon_header(truss_interpreter_id target_id, int addon_idx) {
-    Addon* addon = truss_get_addon(target_id, addon_idx);
-    if(addon) {
-        return addon->getHeader().c_str();
-    } else {
-        return "";
-    }
-}
-
-const char* truss_get_addon_version(truss_interpreter_id target_id, int addon_idx) {
-    Addon* addon = truss_get_addon(target_id, addon_idx);
-    if (addon) {
-        return addon->getVersion().c_str();
-    } else {
-        return "";
     }
 }
 

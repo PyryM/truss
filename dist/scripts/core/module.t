@@ -9,14 +9,13 @@ local m = {}
 -- anything prefixed with _ isn't exported
 function m.reexport(srcmodule, desttable)
   desttable = desttable or {}
-  local src = srcmodule.exports or srcmodule
+  local src = rawget(srcmodule, "exports") or srcmodule
   for k,v in pairs(src) do
     if k:sub(1,1) ~= "_" then
-      if not desttable[k] then
-        desttable[k] = v
-      else
-        truss.error("core/module.t: reexport: destination already has " .. k)
+      if desttable[k] then
+        truss.error("module reexport: destination already has " .. k)
       end
+      desttable[k] = v
     else
       log.debug("Skipping " .. k)
     end
@@ -27,7 +26,7 @@ end
 -- copy all public exports from a list of modules into a destination table
 -- ex: include_submodules({"foo/bar.t", "foo/baz.t"}, foo)
 function m.include_submodules(srclist, dest)
-  for _,srcname in ipairs(srclist) do
+  for _, srcname in ipairs(srclist) do
     m.reexport(require(srcname), dest)
   end
 end
@@ -41,7 +40,11 @@ function m.reexport_without_prefix(srctable, prefix, desttable)
   for k,v in pairs(srctable) do
     -- only copy entries that have prefix
     if k:sub(1, prefix:len()) == prefix then
-      desttable[k:sub(prefix:len() + 1)] = v
+      local renamed = k:sub(prefix:len() + 1)
+      if desttable[renamed] then
+        truss.error("module rexport: destination already has " .. renamed)
+      end
+      desttable[renamed] = v
     end
   end
   return desttable
@@ -59,6 +62,9 @@ function m.reexport_renamed(srctable, prefixes, export_unmatched, desttable)
       end
     end
     if export_unmatched and (not found_prefix) then
+      if desttable[k] then
+        truss.error("module rexport: destination already has " .. renamed)
+      end
       desttable[k] = v
     end
   end

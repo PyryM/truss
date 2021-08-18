@@ -33,6 +33,7 @@ local function include_geometry(fn)
 end
 
 include_geometry("cube")
+include_geometry("off_center_cube")
 include_geometry("cylinder")
 include_geometry("icosphere")
 include_geometry("plane")
