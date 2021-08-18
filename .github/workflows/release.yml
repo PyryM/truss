@@ -52,7 +52,7 @@ jobs:
     - name: Download prebuilt libraries
       run: |
         cd dist
-        ./truss.exe dev/downloadlibs.t
+        ./truss dev/downloadlibs.t
     - name: Build shaders (windows)
       if: matrix.os == 'windows-latest'
       run: |
