@@ -6,7 +6,7 @@ $output v_wpos, v_wnormal
  * License: http://www.opensource.org/licenses/BSD-2-Clause
  */
 
-#include "../common/common.sh"
+#include "common.sh"
 
 void main()
 {

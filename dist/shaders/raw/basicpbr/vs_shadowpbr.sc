@@ -9,7 +9,7 @@ $output v_wpos, v_wnormal, v_viewdir
  * License: MIT
  */
 
-#include "../common/common.sh"
+#include "common.sh"
 
 uniform mat4 u_lightMtx;
 

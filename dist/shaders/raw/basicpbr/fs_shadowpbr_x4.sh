@@ -10,7 +10,7 @@
 
  $input v_wpos, v_wnormal, v_viewdir, v_shadowcoord
 
-#include "../common/common.sh"
+#include "common.sh"
 #include "../common/truss_pbr.sh"
 #include "../common/shadowcommon.sh"
 

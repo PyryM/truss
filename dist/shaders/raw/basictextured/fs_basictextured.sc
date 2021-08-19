@@ -5,7 +5,7 @@ $input v_wpos, v_wnormal, v_uv // in...
  * License: http://www.opensource.org/licenses/BSD-2-Clause
  */
 
-#include "../common/common.sh"
+#include "common.sh"
 
 SAMPLER2D(s_texAlbedo, 0);
 uniform vec3 u_lightDir[4];

@@ -5,7 +5,7 @@ $input v_wpos, v_wnormal, v_viewdir
  * License: MIT
  */
 
-#include "../common/common.sh"
+#include "common.sh"
 #include "../common/truss_pbr.sh"
 
 uniform vec4 u_lightDir[4];
