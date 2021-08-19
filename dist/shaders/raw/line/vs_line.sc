@@ -25,7 +25,7 @@ $output v_wpos, v_uv
  * IN THE SOFTWARE.
  */
 
-#include "../common/common.sh"
+#include "common.sh"
 
 uniform vec4 u_thickness;
 

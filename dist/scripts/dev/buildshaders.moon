@@ -78,7 +78,7 @@ make_cmd = (shader_type, backend, input_fn, output_fn) ->
     "-f", input_fn, 
     "-o", output_fn,
     "--type", shader_type,
-    "-i", "#{SHADER_DIR}/raw/common/",
+    "-i", "include/bgfx/shader/",
     "--platform", BACKEND_TO_BGFX_PLATFORM[backend]
   }
   extend args, switch backend 

@@ -1,7 +1,7 @@
 $input a_position, a_normal, a_texcoord0
 $output v_color
 
-#include "../common/common.sh"
+#include "common.sh"
 
 SAMPLER2D(s_texColorDepth, 0);
 uniform vec4 u_pointParams; // x: point size, y: depth scale,

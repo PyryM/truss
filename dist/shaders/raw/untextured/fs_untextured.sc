@@ -5,7 +5,7 @@ $input v_wpos, v_wnormal // in...
  * License: http://www.opensource.org/licenses/BSD-2-Clause
  */
 
-#include "../common/common.sh"
+#include "common.sh"
 
 uniform vec4 u_lightDir[4];
 uniform vec4 u_lightRgb[4];

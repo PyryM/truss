@@ -6,7 +6,7 @@ $output v_wpos, v_wnormal, v_viewdir, v_uv
  * License: MIT
  */
 
-#include "../common/common.sh"
+#include "common.sh"
 
 void main()
 {

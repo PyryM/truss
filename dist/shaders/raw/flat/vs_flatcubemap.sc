@@ -8,7 +8,7 @@ $output v_wpos, v_wnormal, v_uv
  * Also Copyright 2015 Pyry Matikainen
  */
 
-#include "../common/common.sh"
+#include "common.sh"
 
 void main()
 {
