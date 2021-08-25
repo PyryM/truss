@@ -8,51 +8,41 @@ local wrap_c_str = require("./commontypes.t").wrap_c_str
 
 local m = {}
 
-local Cio = terralib.includecstring[[
-#include "stddef.h"
-#include "stdio.h"
-#include "stdlib.h"
+local c = require("./clib.t")
 
-typedef struct FILE FILE;
-size_t fread(void* ptr, size_t size, size_t count, FILE* stream);
-FILE* fopen(const char* filename, const char* mode);
-int fclose(FILE* stream);
-int fseek(FILE* stream, long int offset, int origin);
-long int ftell(FILE* stream);
-#define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
-]]
+local function default_print(fmt, ...)
+  fmt = fmt .. "/n" -- convention is that dbgprint is always on newline
+  local args = {...} -- can't do this inline in quote below for reasons
+  return quote 
+    c.io.printf(fmt, [args])
+  end
+end
 
 local function build_file(opts)
-  local errformat = opts.default_pw
+  opts = opts or {}
+  local errformat = opts.error_format or "Error reading [%s]"
   local VERBOSE = opts.verbose
-  local DBGPRINT = opts.DBGPRINT
+  local DBGPRINT = opts.DBGPRINT or default_print
 
   local struct CFile {
-    file: &Cio.FILE;
+    file: &c.io.FILE;
     length: uint64;
   }
 
   terra CFile:open(fn: &int8): bool
-    self.file = Cio.fopen(fn, "rb")
+    self.file = c.io.fopen(fn, "rb")
     if self.file == nil then 
-      -- Oh this is ridiculous, the default password is actually 
-      -- "Error reading [%s]\n", so that if you decompile the .exe
-      -- the default password string constant has a 'legit' use
-      -- as well
-      Cio.printf(errformat, fn)
+      c.io.printf(errformat, fn)
       return false
     end
-    Cio.fseek(self.file, 0, Cio.SEEK_END)
-    self.length = Cio.ftell(self.file)
-    --[DBGPRINT("Seeked %d bytes", fsize)]
-    Cio.fseek(self.file, 0, Cio.SEEK_SET)
+    c.io.fseek(self.file, 0, c.io.SEEK_END)
+    self.length = c.io.ftell(self.file)
+    c.io.fseek(self.file, 0, c.io.SEEK_SET)
     return true
   end
 
   terra CFile:close()
-    Cio.fclose(self.file)
+    c.io.fclose(self.file)
     self.file = nil
   end
 
@@ -69,8 +59,8 @@ local function build_file(opts)
       [DBGPRINT("Buffer too small: %d < %d", `target.datasize, len)]
       return false
     end
-    Cio.fseek(self.file, pos, Cio.SEEK_SET)
-    Cio.fread(target.data, 1, len, self.file)
+    c.io.fseek(self.file, pos, c.io.SEEK_SET)
+    c.io.fread(target.data, 1, len, self.file)
     return true
   end
 
