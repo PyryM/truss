@@ -1,5 +1,8 @@
 local class = require("class")
-local ImmediateContext = require("gfx").ImmediateContext
+local async = require("async")
+local gfx = require("gfx")
+
+local m = {}
 
 local ImmediateStage = class("ImmediateStage")
 m.ImmediateStage = ImmediateStage
@@ -7,7 +10,7 @@ m.ImmediateStage = ImmediateStage
 function ImmediateStage:init(options)
   self._num_views = assert(options.num_views)
   self._views = {}
-  self.ctx = options.ctx or ImmediateContext()
+  self.ctx = options.ctx or gfx.ImmediateContext()
   if options.func then
     self:run(options.func)
   end

@@ -7,7 +7,7 @@ local math = require("math")
 local gfx = require("gfx")
 local ecs = require("ecs")
 local graphics = require("graphics")
-local imrender = require("graphics/imrender.t")
+local imrender = require("gfx/imrender.t")
 
 local ImmediateApp = class('ImmediateApp')
 

@@ -29,15 +29,22 @@ local function build_file(opts)
     length: uint64;
   }
 
-  terra CFile:open(fn: &int8): bool
-    self.file = c.io.fopen(fn, "rb")
+  terra CFile:open(fn: &int8, write: bool): bool
+    if write then
+      self.file = c.io.fopen(fn, "wb")
+    else
+      self.file = c.io.fopen(fn, "rb")
+    end
     if self.file == nil then 
       c.io.printf(errformat, fn)
       return false
     end
-    c.io.fseek(self.file, 0, c.io.SEEK_END)
-    self.length = c.io.ftell(self.file)
-    c.io.fseek(self.file, 0, c.io.SEEK_SET)
+    self.length = 0
+    if not write then
+      c.io.fseek(self.file, 0, c.io.SEEK_END)
+      self.length = c.io.ftell(self.file)
+      c.io.fseek(self.file, 0, c.io.SEEK_SET)
+    end
     return true
   end
 
@@ -79,9 +86,14 @@ local function build_file(opts)
     return buff
   end
 
+  terra CFile:write(data: &uint8, datasize: uint32)
+    if self.file == nil then return end
+    c.io.fwrite(data, 1, datasize, self.file)
+  end
+
   local terra open_file(fn: &int8): CFile
     var ret: CFile
-    ret:open(fn)
+    ret:open(fn, false)
     return ret
   end
 
@@ -94,3 +106,7 @@ local function build_file(opts)
 
   return {CFile = CFile, open_file = open_file, read_file = read_file}
 end
+
+local m = build_file()
+m.build_file = build_file
+return m
