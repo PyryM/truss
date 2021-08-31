@@ -40,7 +40,7 @@ function m.flip_rgba_vertical(width, height, data)
   local ipos = 0
   local mid = math.floor(height / 2)
   local rowsize = width*4
-  for r = 0,mid do
+  for r = 0, mid-1 do
     local r_mirrored = (height - 1) - r
     local p0 = r*width*4
     local p1 = r_mirrored*width*4
