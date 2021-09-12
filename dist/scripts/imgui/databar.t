@@ -83,6 +83,37 @@ local function gen_progress(finfo, settings, field_q, io_q)
   end
 end
 
+local function gen_list(finfo, settings, field_q, io_q)
+  local label = assert(finfo.label or finfo.name)
+  local choices = assert(finfo.choices)
+  local items = terralib.constant(`arrayof([&int8], [choices]))
+  local nitems = #choices
+  local maxheight = math.min(nitems, finfo.max_height or 10)
+  return quote
+    IG.ListBox_Str_arr(label, &field_q, items, nitems, maxheight)
+  end
+end
+
+local function gen_cumulative_list(finfo, settings, field_q, io_q)
+  local label = assert(finfo.label or finfo.name)
+  local choices = assert(finfo.choices)
+  local items = terralib.constant(`arrayof([&int8], [choices]))
+  local nitems = #choices
+  local maxheight = math.min(nitems, finfo.max_height or 10)
+  return quote
+    --IG.Combo_Str_arr(label, &field_q, items, nitems, maxheight)
+    var height = IG.GetTextLineHeightWithSpacing() * maxheight
+    if not IG.BeginListBox(label, IG.Vec2{0.0, height}) then return end
+    for idx = 0, nitems do
+      var selected = field_q >= idx
+      if IG.Selectable_Bool(items[idx], selected, 0, IG.Vec2{0.0, 0.0}) then
+        field_q = idx
+      end
+    end
+    IG.EndListBox()
+  end
+end
+
 local struct Color {
   r: float;
   g: float;
@@ -120,6 +151,8 @@ KINDS["color"] = {
 }
 KINDS["progress"] = {ctype = float, default = 0.0, gen_draw = gen_progress}
 KINDS["choice"] = {ctype = int32, default = 0, gen_draw = gen_choice}
+KINDS["list"] = {ctype = int32, default = 0, gen_draw = gen_list}
+KINDS["cumulative_list"] = {ctype = int32, default = 0, gen_draw = gen_cumulative_list}
 KINDS["bool"] = {ctype = bool, default = false, gen_draw = gen_checkbox}
 KINDS["button"] = {ctype = int32, default = 0, gen_draw = gen_button}
 KINDS["divider"] = {ctype = nil, gen_draw = gen_divider}
@@ -144,7 +177,12 @@ end
 function DatabarBuilder:field(options)
   local name = options[1] or options.name
   local kind = options[2] or options.kind or name -- to avoid {"divider", "divider"}
-  local kind_info = KINDS[kind]
+  local kind_info
+  if type(kind) == 'string' then
+    kind_info = KINDS[kind]
+  elseif type(kind) == 'table' then
+    kind_info = kind
+  end
   if not kind_info then
     truss.error("Unknown Databar field kind: " .. kind)
   end
