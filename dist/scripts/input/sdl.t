@@ -10,7 +10,7 @@ elseif truss.os == "OSX" then
   -- HMM not sure why I need to do it this way
   terralib.linklibrary("lib/libSDL2-2.0.dylib")
 else
-  terralib.linklibrary("libSDL2")
+  terralib.linklibrary("libSDL2-2.0")
 end
 
 return sdl_c
