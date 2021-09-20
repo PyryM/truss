@@ -98,10 +98,13 @@ local function platform_specific_bgfx_setup(pd, wmi)
     end
   elseif truss.os == "OSX" then
     return quote 
-      -- hack: the cocoa pointer is unioned to the same spot
-      -- and we're casting to void pointer anyway
-      pd.nwh = wmi.info.win.window
-      --wmi.info.cocoa.window
+      pd.nwh = wmi.info.cocoa.window
+    end
+  elseif truss.os == "Linux" then
+    -- do we need to care about Wayland?
+    return quote
+      pd.nwh = wim.info.x11.window
+      pd.ndt = wmi.info.x11.display
     end
   else
     truss.error("Windowing not yet implemented for " .. truss.os)
