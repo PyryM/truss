@@ -1748,6 +1748,14 @@ typedef struct SDL_SysWMinfo
         } x11;
         struct
         {
+            struct wl_display* display;             /**< Wayland display */
+            struct wl_surface* surface;             /**< Wayland surface */
+            void* shell_surface;                    /**< DEPRECATED Wayland shell_surface (window manager handle) */
+            struct wl_egl_window* egl_window;       /**< Wayland EGL window (native window) */
+            struct xdg_surface* xdg_surface;        /**< Wayland xdg surface (window manager handle) */
+        } wl;
+        struct
+        {
             void* window;           /**< The cocoa display */
         } cocoa;
         /* Can't have an empty union */
