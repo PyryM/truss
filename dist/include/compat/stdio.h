@@ -22,7 +22,7 @@ int sscanf(const char *, const char *, ...);
 
 typedef struct FILE FILE;
 size_t fread(void* ptr, size_t size, size_t count, FILE* stream);
-size_t fwrite(void *ptr, size_t size, size_t count, FILE *stream);
+size_t fwrite(const void* ptr, size_t size, size_t count, FILE* stream);
 FILE* fopen(const char* filename, const char* mode);
 int fclose(FILE* stream);
 int fseek(FILE* stream, long int offset, int origin);
