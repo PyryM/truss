@@ -66,7 +66,7 @@ function init()
     backend = "vulkan",
     width = 1280, height = 720, -- doesn't matter in headless
     num_views = 32,
-    immediate_func = render,
+    func = render,
   }
 end
 

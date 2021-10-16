@@ -147,7 +147,7 @@ end
 function Texture:async_read_rt(view, mip)
   local rt = self.read_source.rt
   local layer = self.read_source.layer
-  self:raw_blit_copy(rt:get_layer_handle(layer), view or 0)
+  self:raw_blit_copy(rt:get_layer_handle(layer), view or 255)
   return self:async_read_back(mip or 0)
 end
 
