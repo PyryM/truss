@@ -92,6 +92,7 @@
 #	define COMP_rg8         float2
 #	define COMP_r8          float
 #endif // BGFX_SHADER_LANGUAGE_HLSL
+#define COMP_rg32f    float2
 #define COMP_rgba32f  float4
 
 #define IMAGE2D_RO( _name, _format, _reg)                                       \
