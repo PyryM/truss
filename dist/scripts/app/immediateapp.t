@@ -3,7 +3,7 @@
 -- a convenience class for immediate-mode only rendering
 
 local graphics = require("graphics")
-local imrender = require("gfx/imrender.t")
+--local immediate = require("graphics/imrender.t")
 
 local app = require("app/app.t")
 local m = {}
@@ -26,7 +26,7 @@ end
 -- this creates a pipeline with nothing but an immediate state
 function ImmediateApp:init_pipeline(options)
   local p = graphics.Pipeline({verbose = true})
-  self.imstage = p:add_stage(imrender.ImmediateStage{
+  self.imstage = p:add_stage(graphics.ImmediateStage{
     num_views = options.num_views or 32
   })
   self.pipeline = p
