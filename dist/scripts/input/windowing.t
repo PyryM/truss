@@ -103,12 +103,12 @@ local function platform_specific_bgfx_setup(pd, wmi)
   elseif truss.os == "Linux" then
     -- do we need to care about Wayland?
     return quote
-      if wmi.subsystem == SDL.SYSWM_WAYLAND then
+      if false and wmi.subsystem == SDL.SYSWM_WAYLAND then
         -- this may not actually work, the bgfx entry example
         -- really wants to actually create an egl window itself
         -- for some reason
-        pd.nwh = wmi.info.wl.wl_egl_window
-        pd.ndt = wmi.info.wl.wl_display
+        pd.nwh = wmi.info.wl.egl_window
+        pd.ndt = wmi.info.wl.display
       else
         pd.nwh = wmi.info.x11.window
         pd.ndt = wmi.info.x11.display
