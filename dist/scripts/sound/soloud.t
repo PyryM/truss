@@ -8,7 +8,7 @@ local modutils = require("core/module.t")
 
 -- link the dynamic library (should only happen once ideally)
 terralib.linklibrary("soloud_x64")
-local C_raw = terralib.includec("soloud_c.h")
+local C_raw = terralib.includec("soloud/soloud_c.h")
 local C = modutils.reexport_without_prefix(C_raw, "Soloud_")
 
 m.C = C
