@@ -35,7 +35,7 @@ local disallow_globals_mt = {
 function m.create_root(options)
   options = options or {}
   local root = options.root or {}
-  root._module_env = options.module_env or extend_table({}, _G)
+  root._module_env = options.module_env or truss.extend_table({}, _G)
   root._loaders = options.loaders or {
     [".t"] = terralib.load,
     [".lua"] = load,
@@ -53,7 +53,7 @@ function m.create_root(options)
   end
 
   local function create_module_env(module_name, file_name, options)
-    local modenv = extend_table({}, root._module_env)
+    local modenv = truss.extend_table({}, root._module_env)
     modenv._module_name = module_name
     local path = find_path(file_name)
     modenv._path = path
