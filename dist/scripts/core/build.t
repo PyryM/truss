@@ -39,8 +39,8 @@ function m.linklibrary(fn)
 end
 
 function m.create_cross_compilation_root(options)
-  local libcache = require("core/libcache.t")
-  local root = libcache.create_root{
+  local resolve = require("core/resolve.t")
+  local root = resolve.create_root{
     module_env = truss.clean_subenv
   }
   root.cross_args = options.include_args
