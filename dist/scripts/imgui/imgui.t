@@ -2,12 +2,13 @@
 --
 -- imgui
 
+local build = require("core/build.t")
 local modutils = require("core/module.t")
 local class = require("class")
 local clib = require("native/clib.t")
 local m = {}
 
-local imgui_c_raw = terralib.includec("bgfx/cimgui_terra.h")
+local imgui_c_raw = build.includec("bgfx/cimgui_terra.h")
 m.C_raw = imgui_c_raw
 
 local C = {}

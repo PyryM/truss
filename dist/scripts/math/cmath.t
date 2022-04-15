@@ -2,4 +2,5 @@
 --
 -- just a stub to include the c "math.h"
 
-return terralib.includec("math.h")
+local build = require("core/build.t")
+return build.includec("math.h")

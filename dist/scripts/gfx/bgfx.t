@@ -3,8 +3,9 @@
 -- bgfx C api
 
 local modutils = require("core/module.t")
+local build = require("core/build.t")
 
-local bgfx_c = terralib.includec("bgfx/bgfx_truss.c99.h")
+local bgfx_c = build.includec("bgfx/bgfx_truss.c99.h")
 local bgfx_const = require("./bgfx_constants.t")
 
 local bgfx = {}
@@ -17,6 +18,6 @@ function bgfx.check_handle(h)
   return h.idx ~= bgfx.INVALID_HANDLE 
 end
 
-truss.link_library("lib", "bgfx-shared-libRelease")
+build.truss_link_library("lib", "bgfx-shared-libRelease")
 
 return bgfx

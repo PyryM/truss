@@ -19,6 +19,7 @@ function m.includec(filename, args, target)
     args = _modroot.cross_args
     target = _modroot.cross_target
   end
+  print("including c [native? ", m.is_native(), "]: ", filename)
   return terralib.includec(filename, args, target)
 end
 
@@ -28,14 +29,18 @@ function m.includecstring(str, args, target)
     args = _modroot.cross_args
     target = _modroot.cross_target
   end
+  print("including cstr [native? ", m.is_native(), "]: ", str:sub(1, 80))
   return terralib.includecstring(str, args, target)
 end
 
 function m.linklibrary(fn)
-  if not m.is_native() then
-    return
-  end
+  if not m.is_native() then return end
   return terralib.linklibrary(fn)
+end
+
+function m.truss_link_library(...)
+  if not m.is_native() then return end
+  return truss.link_library(...)
 end
 
 function m.create_cross_compilation_root(options)
