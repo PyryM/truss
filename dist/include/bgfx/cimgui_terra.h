@@ -67,10 +67,6 @@ CIMGUI_API void igBGFXEndFrame();
 
 CIMGUI_API void igBGFXPushFont(uint32_t _fontid);
 
-// TODO: figure out the complicated includes for this
-// Note that in practice `ImTextureID` is a void*
-// CIMGUI_API ImTextureID igBGFXTexToId(bgfx_texture_handle_t _handle, uint8_t _flags, uint8_t _mip);
-
 typedef struct
 {
    // private data
@@ -3465,6 +3461,9 @@ CIMGUI_API void igImFontAtlasBuildRender32bppRectFromString(ImFontAtlas* atlas,i
 CIMGUI_API void igImFontAtlasBuildMultiplyCalcLookupTable(unsigned char out_table[256],float in_multiply_factor);
 CIMGUI_API void igImFontAtlasBuildMultiplyRectAlpha8(const unsigned char table[256],unsigned char* pixels,int x,int y,int w,int h,int stride);
 
+// Just manually define a bgfx texture handle here
+typedef struct bgfx_texture_handle { uint16_t idx; } bgfx_texture_handle_t;
+CIMGUI_API ImTextureID igBGFXTexToId(bgfx_texture_handle_t _handle, uint8_t _flags, uint8_t _mip);
 
 /////////////////////////hand written functions
 //no LogTextV
