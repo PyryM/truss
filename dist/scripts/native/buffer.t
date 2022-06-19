@@ -102,6 +102,15 @@ local Buffer = terralib.memoize(function(T)
     return self.data[self.used_count]
   end
 
+  terra _Buffer:push_new(): &T
+    if self.used_count >= self.count then 
+      return nil
+    end
+    var ret: &T = &(self.data[self.used_count])
+    self.used_count = self.used_count + 1
+    return ret
+  end
+
   terra _Buffer:push_single(val: T): bool
     if self.used_count >= self.count then 
       return false 

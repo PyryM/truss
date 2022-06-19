@@ -24,12 +24,20 @@ local function build_file(opts)
   local VERBOSE = opts.verbose
   local DBGPRINT = opts.DBGPRINT or default_print
 
+  local size_t = c.io.size_t
+
   local struct CFile {
     file: &c.io.FILE;
-    length: uint64;
+    length: size_t;
   }
 
+  terra CFile:init()
+    self.file = nil
+    self.length = 0
+  end
+
   terra CFile:open(fn: &int8, write: bool): bool
+    self.length = 0
     if write then
       self.file = c.io.fopen(fn, "wb")
     else
@@ -39,7 +47,6 @@ local function build_file(opts)
       c.io.printf(errformat, fn)
       return false
     end
-    self.length = 0
     if not write then
       c.io.fseek(self.file, 0, c.io.SEEK_END)
       self.length = c.io.ftell(self.file)
@@ -48,12 +55,35 @@ local function build_file(opts)
     return true
   end
 
+  terra CFile:seek_end(): size_t
+    if self.file == nil then return 0 end
+    c.io.fseek(self.file, 0, c.io.SEEK_END)
+    return c.io.ftell(self.file)
+  end
+
   terra CFile:close()
     c.io.fclose(self.file)
     self.file = nil
   end
 
-  terra CFile:read_into(target: &ByteBuffer, pos: uint64, len: uint64): bool
+  terra CFile:read_raw(target: &uint8, targetsize: size_t, nread: size_t): size_t
+    if self.file == nil then
+      [DBGPRINT("Tried to read from nil file")]
+      return 0
+    end
+    if nread > self.length then
+      [DBGPRINT("Out of bounds read: %d > %d", nread, `self.length)]
+      return 0 
+    end
+    if nread > targetsize then
+      [DBGPRINT("Buffer too small: %d < %d", `targetsize, nread)]
+      return 0
+    end
+    c.io.fread(target, 1, nread, self.file)
+    return nread
+  end
+
+  terra CFile:read_into(target: &ByteBuffer, pos: size_t, len: size_t): bool
     if self.file == nil then
       [DBGPRINT("Tried to read from nil file")]
       return false
@@ -68,6 +98,7 @@ local function build_file(opts)
     end
     c.io.fseek(self.file, pos, c.io.SEEK_SET)
     c.io.fread(target.data, 1, len, self.file)
+    target.used_count = len
     return true
   end
 
@@ -86,7 +117,20 @@ local function build_file(opts)
     return buff
   end
 
-  terra CFile:write(data: &uint8, datasize: uint32)
+  terra CFile:seek(pos: size_t)
+    if self.file == nil then return end
+    c.io.fseek(self.file, pos, c.io.SEEK_SET)
+  end
+
+  terra CFile:write_append(data: &uint8, datasize: size_t)
+    if self.file == nil then return end
+    c.io.fseek(self.file, 0, c.io.SEEK_END)
+    self.length = c.io.ftell(self.file)
+    c.io.fwrite(data, 1, datasize, self.file)
+    self.length = self.length + datasize
+  end
+
+  terra CFile:write(data: &uint8, datasize: size_t)
     if self.file == nil then return end
     c.io.fwrite(data, 1, datasize, self.file)
   end
