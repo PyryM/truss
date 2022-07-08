@@ -1,15 +1,5 @@
 docs/_build/
-build/
-build2017/
-build2/
-build3/
-build2021/
-build_skeleton/
-data/
-dump/
 models/
-temp/
-old_scripts/
 *.log
 *.exe
 *.pdb
@@ -27,5 +17,3 @@ trusslog.txt
 shader_errors.txt
 console_log.txt
 error.txt
-dist/shaders/raw/shadercRelease
-frames/
