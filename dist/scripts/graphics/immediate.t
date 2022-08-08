@@ -30,7 +30,7 @@ function ImmediateStage:bind(start_id, num_views)
 end
 
 function ImmediateStage:run(f, next, err)
-  async.run(function()
+  return async.run(function()
     self.ctx:await_frame()
     f(self.ctx)
   end):next(next or print, err or print)

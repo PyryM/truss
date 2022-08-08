@@ -18,17 +18,17 @@ terra m.lab2rgb(lab: &float, rgb: &float, normalize: bool)
   var x: double = lab[1] / 500.0 + y
   var z: double = y - lab[2] / 200.0
 
-  x = 0.95047 * terralib.select(x * x * x > 0.008856, x * x * x, (x - 16/116) / 7.787)
-  y = 1.00000 * terralib.select(y * y * y > 0.008856, y * y * y, (y - 16/116) / 7.787)
-  z = 1.08883 * terralib.select(z * z * z > 0.008856, z * z * z, (z - 16/116) / 7.787)
+  x = 0.95047 * terralib.select(x * x * x > 0.008856, x * x * x, (x - 16.0/116.0) / 7.787)
+  y = 1.00000 * terralib.select(y * y * y > 0.008856, y * y * y, (y - 16.0/116.0) / 7.787)
+  z = 1.08883 * terralib.select(z * z * z > 0.008856, z * z * z, (z - 16.0/116.0) / 7.787)
 
   var r = x *  3.2406 + y * -1.5372 + z * -0.4986
   var g = x * -0.9689 + y *  1.8758 + z *  0.0415
   var b = x *  0.0557 + y * -0.2040 + z *  1.0570
 
-  r = terralib.select(r > 0.0031308, 1.055 * cmath.pow(r, 1/2.4) - 0.055, 12.92 * r)
-  g = terralib.select(g > 0.0031308, 1.055 * cmath.pow(g, 1/2.4) - 0.055, 12.92 * g)
-  b = terralib.select(b > 0.0031308, 1.055 * cmath.pow(b, 1/2.4) - 0.055, 12.92 * b)
+  r = terralib.select(r > 0.0031308, 1.055 * cmath.pow(r, 1.0/2.4) - 0.055, 12.92 * r)
+  g = terralib.select(g > 0.0031308, 1.055 * cmath.pow(g, 1.0/2.4) - 0.055, 12.92 * g)
+  b = terralib.select(b > 0.0031308, 1.055 * cmath.pow(b, 1.0/2.4) - 0.055, 12.92 * b)
 
   rgb[0] = clamp(r, 0.0, 1.0)
   rgb[1] = clamp(g, 0.0, 1.0)

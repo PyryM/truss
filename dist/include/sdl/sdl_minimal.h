@@ -1728,10 +1728,8 @@ typedef enum
     SDL_SYSWM_ANDROID
 } SDL_SYSWM_TYPE;
 
-// eh just hack these in for now
-typedef void* HWND;
-typedef void* HDC;
-
+// Define all of these with void pointers because that's what
+// we're casting to anyway
 typedef struct SDL_SysWMinfo
 {
     SDL_version version;
@@ -1740,9 +1738,26 @@ typedef struct SDL_SysWMinfo
     {
         struct
         {
-            HWND window;                /**< The window handle */
-            HDC hdc;                    /**< The window device context */
+            void* window;                /**< The window handle */
+            void* hdc;                    /**< The window device context */
         } win;
+        struct
+        {
+            void* display;           /**< The X11 display */
+            void* window;              /**< The X11 window */
+        } x11;
+        struct
+        {
+            struct wl_display* display;             /**< Wayland display */
+            struct wl_surface* surface;             /**< Wayland surface */
+            void* shell_surface;                    /**< DEPRECATED Wayland shell_surface (window manager handle) */
+            struct wl_egl_window* egl_window;       /**< Wayland EGL window (native window) */
+            struct xdg_surface* xdg_surface;        /**< Wayland xdg surface (window manager handle) */
+        } wl;
+        struct
+        {
+            void* window;           /**< The cocoa display */
+        } cocoa;
         /* Can't have an empty union */
         int dummy;
     } info;

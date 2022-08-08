@@ -18,7 +18,8 @@ moduleutils.include_submodules({
   "graphics/line.t",
   "graphics/nanovg.t",
   "graphics/taskstage.t",
-  "graphics/canvas.t"
+  "graphics/canvas.t",
+  "graphics/immediate.t"
 }, graphics)
 
 return graphics

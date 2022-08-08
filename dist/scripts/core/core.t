@@ -341,6 +341,7 @@ local function create_module_env(module_name, file_name, options)
   modenv._module_name = module_name
   local path = find_path(file_name)
   modenv._path = path
+  modenv._modroot = false
   modenv.require = create_module_require(path)
   modenv._env = modenv
   if not options.allow_globals then

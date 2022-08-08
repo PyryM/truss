@@ -1,29 +1,32 @@
 include(ExternalProject)
 
 # Use this version of terra.
-set(terra_RELEASE_DATE "1.0.0-beta3")
-set(terra_RELEASE_HASH "e4ec5d1")
+set(terra_RELEASE_DATE "1.0.0-beta4")
+set(terra_RELEASE_HASH "868748e")
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
     set(terra_SYSTEM_NAME "Windows")
     set(terra_SHARED_LIBS_DIR "bin")
     set(terra_LIBRARY_NAME "terra.dll")
     set(terra_IMPLIB_NAME "terra.lib")
+    set(terra_RELEASE_EXT ".7z")
 elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
     set(terra_SYSTEM_NAME "OSX")
     set(terra_SHARED_LIBS_DIR "lib")
     set(terra_LIBRARY_NAME "terra.dylib")
+    set(terra_RELEASE_EXT ".tar.xz")
 elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
     set(terra_SYSTEM_NAME "Linux")
     set(terra_SHARED_LIBS_DIR "lib")
     set(terra_LIBRARY_NAME "libterra.so")
+    set(terra_RELEASE_EXT ".tar.xz")
 else()
     message(FATAL_ERROR "Terra does not have precompiled binaries for '${CMAKE_SYSTEM_NAME}'.")
 endif()
 
 # Download `terra` and unzip its binaries.
 ExternalProject_Add(terra_EXTERNAL
-    URL "https://github.com/zdevito/terra/releases/download/release-${terra_RELEASE_DATE}/terra-${terra_SYSTEM_NAME}-x86_64-${terra_RELEASE_HASH}.zip"
+    URL "https://github.com/zdevito/terra/releases/download/release-${terra_RELEASE_DATE}/terra-${terra_SYSTEM_NAME}-x86_64-${terra_RELEASE_HASH}${terra_RELEASE_EXT}"
     URL_MD5 "${terra_MD5}"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""

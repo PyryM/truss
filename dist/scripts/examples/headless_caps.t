@@ -6,7 +6,7 @@ function init()
     backend = truss.args[3],
     lowlatency = true,
     width = 256, height = 256,
-    cb_ptr = require("addon/sdl.t").get_bgfx_callback() -- for callback traces?
+    --cb_ptr = require("addon/sdl.t").get_bgfx_callback() -- for callback traces?
   }
   for capname, supported in pairs(gfx.get_caps().features) do
     log.info(capname, supported)

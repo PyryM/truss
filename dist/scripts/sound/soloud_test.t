@@ -10,12 +10,10 @@ local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
 local config = require("util/config.t")
 local soloud = require('sound/soloud.t')
-
-local stdlib = terralib.includec("stdlib.h")
-local stdio = terralib.includec("stdio.h")
+local clib = require("native/clib.t")
 
 local terra test_alloc(): &float
-  var x = [&float](stdlib.malloc(sizeof(float)))
+  var x = [&float](clib.std.malloc(sizeof(float)))
   return x
 end
 

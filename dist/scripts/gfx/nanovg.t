@@ -2,11 +2,12 @@
 --
 -- nanovg
 
+local build = require("core/build.t")
 local modutils = require("core/module.t")
 local class = require("class")
 local m = {}
 
-local nanovg_c_raw = terralib.includec("bgfx/nanovg_terra.h")
+local nanovg_c_raw = build.includec("bgfx/nanovg_terra.h")
 
 local nvg_c_funcs = {}
 local nvg_c = {}

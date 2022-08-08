@@ -108,9 +108,13 @@ function ImmediateContext:_assert_view()
   end
 end
 
+function ImmediateContext:set_globals(globals)
+  self._globals = globals
+end
+
 function ImmediateContext:draw_dc(dc, tf)
   self:_assert_view()
-  dc:static_submit(self._current_view._viewid, {}, tf or self._identity_matrix)
+  dc:static_submit(self._current_view._viewid, self._globals or {}, tf or self._identity_matrix)
 end
 
 function ImmediateContext:draw_mesh(geo, mat, tf)

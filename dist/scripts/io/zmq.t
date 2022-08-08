@@ -2,6 +2,7 @@
 --
 -- zeromq bindings
 
+local build = require("core/build.t")
 local modutils = require("core/module.t")
 local class = require("class")
 local m = {}
@@ -196,8 +197,8 @@ else
 end
 
 -- link the dynamic library (should only happen once ideally)
-truss.link_library("libzmq")
-local zmq_c = terralib.includecstring(header)
+build.truss_link_library("libzmq")
+local zmq_c = build.includecstring(header)
 m.C_raw = zmq_c
 local C = {}
 modutils.reexport_without_prefix(zmq_c, "zmq_", C)

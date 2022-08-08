@@ -2,10 +2,13 @@
 --
 -- high-performance timing junk
 
+local build = require("core/build.t")
 local m = {}
 
-if truss.os == "Windows" then
-  local C = terralib.includecstring[[
+local target = build.target_name()
+
+if target == "Windows" then
+  local C = build.includecstring[[
   #include "stdint.h"
   typedef int BOOL;
   BOOL QueryPerformanceFrequency(int64_t* lpFrequency);
@@ -24,8 +27,8 @@ if truss.os == "Windows" then
     return ret
   end
 --elseif truss.os == "OSX" then
-else -- hope this works on linux
-  local C = terralib.includecstring[[
+else -- hope this works on linux/osx/wasm
+  local C = build.includecstring[[
   #include "stdint.h"
   typedef enum {
     CLOCK_REALTIME = 0,

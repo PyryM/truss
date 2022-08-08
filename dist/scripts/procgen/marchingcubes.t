@@ -6,9 +6,9 @@ local m = {}
 
 local math = require("math")
 local vec4 = require("math/types.t").vec4_
-local cmath = require("math/cmath.t")
-
-local C = terralib.includec("stdio.h")
+local clib = require("native/clib.t")
+local cmath = clib.math
+local cio = clib.io
 
 local struct index_list {
   n_indices: uint8;
