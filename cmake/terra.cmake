@@ -1,8 +1,9 @@
 include(ExternalProject)
 
-# Use this version of terra.
-set(terra_RELEASE_DATE "1.0.0-beta4")
-set(terra_RELEASE_HASH "868748e")
+# Use this version of xreterra.
+set(terra_URL_BASE "https://github.com/terralang/terra/releases/download/release")
+set(terra_RELEASE_VERSION "1.0.4")
+set(terra_RELEASE_HASH "ab21125")
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
     set(terra_SYSTEM_NAME "Windows")
@@ -26,7 +27,7 @@ endif()
 
 # Download `terra` and unzip its binaries.
 ExternalProject_Add(terra_EXTERNAL
-    URL "https://github.com/zdevito/terra/releases/download/release-${terra_RELEASE_DATE}/terra-${terra_SYSTEM_NAME}-x86_64-${terra_RELEASE_HASH}${terra_RELEASE_EXT}"
+    URL "${terra_URL_BASE}-${terra_RELEASE_VERSION}/terra-${terra_SYSTEM_NAME}-x86_64-${terra_RELEASE_HASH}${terra_RELEASE_EXT}"
     URL_MD5 "${terra_MD5}"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
@@ -36,16 +37,6 @@ ExternalProject_Add(terra_EXTERNAL
 
 # Recover project paths for additional settings.
 ExternalProject_Get_Property(terra_EXTERNAL SOURCE_DIR)
-
-# On Linux systems, fix terra's naming convention.
-if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-    add_custom_command(TARGET terra_EXTERNAL
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-                "${SOURCE_DIR}/${terra_SHARED_LIBS_DIR}/terra.so"
-                "${SOURCE_DIR}/${terra_SHARED_LIBS_DIR}/${terra_LIBRARY_NAME}"
-    )
-endif()
 
 set(terra_INCLUDE_DIR "${SOURCE_DIR}/include")
 set(terra_LIBRARY "${SOURCE_DIR}/${terra_SHARED_LIBS_DIR}/${terra_LIBRARY_NAME}")
@@ -76,4 +67,14 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
     set_target_properties(terra PROPERTIES
         INTERFACE_LINK_LIBRARIES "${lua51_IMPLIB}")
     truss_copy_libraries(terra_EXTERNAL "${lua51_LIBRARY}")
+endif()
+
+# On Linux systems, fix terra's naming convention.
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+    add_custom_command(TARGET terra_EXTERNAL
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+                "${SOURCE_DIR}/${terra_SHARED_LIBS_DIR}/libterra.so"
+                "${SOURCE_DIR}/${terra_SHARED_LIBS_DIR}/${terra_LIBRARY_NAME}"
+    )
 endif()

@@ -50,13 +50,24 @@ function m.reexport_without_prefix(srctable, prefix, desttable)
   return desttable
 end
 
+local function length_sorted_keys(t)
+  local ret = {}
+  for k, _ in pairs(t) do
+    table.insert(ret, k)
+  end
+  table.sort(ret, function(x, y) return #x > #y end)
+  return ret
+end
+
 function m.reexport_renamed(srctable, prefixes, export_unmatched, desttable)
   desttable = desttable or {}
   for k,v in pairs(srctable) do
     local found_prefix = false
-    for prefix, replacement in pairs(prefixes) do
+    for _, prefix in ipairs(length_sorted_keys(prefixes)) do
+      local replacement = prefixes[prefix]
       if k:sub(1, prefix:len()) == prefix then
-        desttable[replacement .. k:sub(prefix:len() + 1)] = v
+        local newname = replacement .. k:sub(prefix:len() + 1)
+        desttable[newname] = v
         found_prefix = true
         break
       end
