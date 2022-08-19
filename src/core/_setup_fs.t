@@ -102,19 +102,3 @@ function truss.get_script_line(path, linenumber)
   end
   return line
 end
-
--- terralib.loadstring does not take a name parameter (which is needed
--- to get reasonable error messages), so we have to perform this workaround
--- to use the lower-level terralib.load which does take a name
-function truss.load_named_string(str, strname, loader)
-  -- create a function which returns str on the first call
-  -- and nil on the second (to let terralib.load know it is done)
-  local s = str
-  local generator_func = function()
-    local s2 = s
-    s = nil
-    return s2
-  end
-  loader = loader or terralib.load
-  return loader(generator_func, '@' .. strname)
-end

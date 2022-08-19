@@ -22,3 +22,5 @@ function log.fatal(...) truss.log("fatal", stringify_args(...)) end
 
 -- use default lua error handling
 truss.error = error
+
+log.info("Truss " .. truss.version, "on Terra", terralib.version, "/", jit.version)

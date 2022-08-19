@@ -1,3 +1,6 @@
+log.info("TODO: better path setup?")
+
+local ffi = require("ffi")
 terralib.includepath = "include;include/compat"
 
 local use_ryzen_hack = false

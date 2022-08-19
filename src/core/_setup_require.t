@@ -103,7 +103,7 @@ function truss.require(modname, options)
     if not loader then
       error("No loader for " .. fullpath)
     end
-    local module_def, loaderror = truss.load_named_string(funcsource, filename, loader)
+    local module_def, loaderror = truss.loadstring(funcsource, filename, loader)
     if not module_def then
       error("require('" .. modname .. "'): syntax error: " .. loaderror)
       return nil
@@ -148,12 +148,13 @@ end
 
 -- just directly inserts a module
 function truss.insert_module(libname, libtable)
-  loaded_libs[libname] = libtable
+  loaded_libs[libname] = assert(libtable, "Missing library " .. libname)
 end
 
 -- alias standard lua/luajit libraries so they can be 'required'
-truss.insert_module("ffi", ffi)
-truss.insert_module("bit", bit)
+truss.insert_module("ffi", require("ffi"))
+truss.insert_module("bit", require("bit"))
+truss.insert_module("jit", jit)
 truss.insert_module("string", string)
 truss.insert_module("io", io)
 truss.insert_module("os", os)
@@ -163,7 +164,6 @@ truss.insert_module("luamath", math)
 truss.insert_module("package", package)
 truss.insert_module("debug", debug)
 truss.insert_module("coroutine", coroutine)
-truss.insert_module("jit", jit)
 
 -- alias core/30log.lua to class so we can just require("class")
 truss.require_as("core/30log.lua", "class")
