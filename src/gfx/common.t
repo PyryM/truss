@@ -220,6 +220,7 @@ function m.init_gfx(options)
   bgfx.set_debug(debug)
 
   log.info("initted bgfx")
+  truss.on_quit(bgfx.shutdown)
   local backend_type = bgfx.get_renderer_type()
   if options.backend and (backend_type ~= renderer_type) then
     log.warn("Requested backend", options.backend, "is not available!")
