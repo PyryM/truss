@@ -44,9 +44,9 @@ function m.truss_link_library(...)
 end
 
 function m.create_cross_compilation_root(options)
-  local resolve = require("core/resolve.t")
+  local resolve = require("./resolve.t")
   local root = resolve.create_root{
-    module_env = truss.clean_subenv
+    module_env = truss.extend_table({}, truss._module_env)
   }
   root.cross_args = options.include_args
   root.cross_target = options.target

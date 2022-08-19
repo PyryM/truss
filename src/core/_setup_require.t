@@ -7,7 +7,11 @@ local disallow_globals_mt = {
     error("Module " .. t._module_name .. " tried to access nil global '" .. k .. "'")
   end
 }
+function truss.disallow_implicit_globals(t)
+  setmetatable(t, disallow_globals_mt)
+end
 
+-- TODO: get this from FS instead
 local function find_path(file_name)
   local spos = 0
   for i = #file_name, 1, -1 do
@@ -29,23 +33,23 @@ local function expand_name(name, path)
   end
 end
 
-local function create_module_require(path)
+function truss.create_module_require(path)
   return function(_modname, options)
     local expanded_name = expand_name(_modname, path)
     return truss.require(expanded_name, options)
   end
 end
 
-local function create_module_env(module_name, file_name, options)
+function truss.create_module_env(module_name, file_name, options)
   local modenv = truss.extend_table({}, truss._module_env)
   modenv._module_name = module_name
   local path = find_path(file_name)
   modenv._path = path
   modenv._modroot = false
-  modenv.require = create_module_require(path)
+  modenv.require = truss.create_module_require(path)
   modenv._env = modenv
   if not options.allow_globals then
-    setmetatable(modenv, disallow_globals_mt)
+    truss.disallow_implicit_globals(modenv)
   end
   return modenv
 end
@@ -108,7 +112,7 @@ function truss.require(modname, options)
       error("require('" .. modname .. "'): syntax error: " .. loaderror)
       return nil
     end
-    local modenv = options.env or create_module_env(modname, filename, options)
+    local modenv = options.env or truss.create_module_env(modname, filename, options)
     rawset(modenv, "_preregister", function(v)
       if loaded_libs[modname] then
         error("Multiple preregs for [" .. modname .. "]")

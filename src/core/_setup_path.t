@@ -1,8 +1,18 @@
 log.info("TODO: better path setup?")
 
 local ffi = require("ffi")
-terralib.includepath = "include;include/compat"
+if #terralib.includepath <= 1 then
+  -- assume include path is empty and add compat includes
+  log.info("No system headers on include path: using bundled compat headers")
+  terralib.includepath = terralib.includepath .. ";include;include/compat"
+else
+  terralib.includepath = terralib.includepath .. ";include"
+end
+log.info("Include path:", terralib.includepath)
 
+truss.os = ffi.os
+
+--[[
 local use_ryzen_hack = false
 if use_ryzen_hack then
   print("Using Ryzen hack. Unclear on performance implications.")
@@ -15,8 +25,8 @@ if use_ryzen_hack then
   -- native target or else linking structures will break things for some reason
   terralib.jitcompilationunit = terralib.newcompilationunit(terralib.nativetarget, true)
 end
+]]
 
-truss.os = ffi.os
 local library_extensions = {Windows = ".dll", Linux = ".so", OSX = ".dylib", 
                             BSD = ".so", POSIX = ".so", Other = ""}
 local libary_prefixes = {Windows = "", Linux = "lib", OSX = "lib",

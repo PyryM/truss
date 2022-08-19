@@ -1,5 +1,68 @@
 -- sets up a minimal FS to allow reading of loose files
 
+local ffi = require("ffi")
+
+-- embed the header file so that we don't have to have the include dir
+-- available?
+truss.link_library("lib", "trussfs")
+local fs_c = terralib.includecstring[[
+#include <stdint.h>
+#include <stdbool.h>
+
+typedef struct trussfs_ctx trussfs_ctx;
+
+trussfs_ctx* trussfs_init();
+void trussfs_shutdown(trussfs_ctx* ctx);
+
+uint64_t trussfs_archive_mount(trussfs_ctx* ctx, const char* path);
+void trussfs_archive_free(trussfs_ctx* ctx, uint64_t archive_handle);
+uint64_t trussfs_archive_list(trussfs_ctx* ctx, uint64_t archive_handle);
+uint64_t trussfs_archive_filesize_name(trussfs_ctx* ctx, uint64_t archive_handle, const char* name);
+uint64_t trussfs_archive_filesize_index(trussfs_ctx* ctx, uint64_t archive_handle, uint64_t index);
+int64_t trussfs_archive_read_name(trussfs_ctx* ctx, uint64_t archive_handle, const char* name, uint8_t* dest, uint64_t dest_size);
+int64_t trussfs_archive_read_index(trussfs_ctx* ctx, uint64_t archive_handle, uint64_t index, uint8_t* dest, uint64_t dest_size);
+
+uint64_t trussfs_list_dir(trussfs_ctx* ctx, const char* path, bool files_only, bool include_metadata);
+
+void trussfs_list_free(trussfs_ctx* ctx, uint64_t list_handle);
+uint64_t trussfs_list_length(trussfs_ctx* ctx, uint64_t list_handle);
+const char* trussfs_list_get(trussfs_ctx* ctx, uint64_t list_handle, uint64_t index);
+]]
+
+local fs = {ctx = fs_c.trussfs_init(), archives = {}}
+
+function fs:_list_and_free(list)
+  assert(self.ctx, "No FS context!")
+  local entries = {}
+  local nentries = tonumber(fs_c.trussfs_list_length(self.ctx, list))
+  for idx = 1, nentries do
+    entries[idx] = ffi.string(fs_c.trussfs_list_get(self.ctx, list, idx-1))
+  end
+  fs_c.trussfs_list_free(self.ctx, list)
+  return entries
+end
+
+function fs:list_dir(dirname, include_subdirs)
+  assert(dirname, "No directory provided!")
+  local list = fs_c.trussfs_list_dir(self.ctx, dirname, not include_subdirs, false)
+  return self:_list_and_free(list)
+end
+
+function fs:mount_archive(fn)
+  if not self.archives[fn] then
+    self.archives[fn] = fs_c.trussfs_archive_mount(self.ctx, fn)
+  end
+  return self.archives[fn]
+end
+
+function fs:list_archive(fn)
+  local handle = self:mount_archive(fn)
+  local list = fs_c.trussfs_archive_list(self.ctx, handle)
+  return self:_list_and_free(list)
+end
+
+truss.fs = fs
+
 local function pathstr(path)
   if type(path) == 'table' then
     return table.concat(path, '/')
@@ -8,7 +71,7 @@ local function pathstr(path)
 end
 
 function truss.list_directory(path)
-  error("Minimal FS cannot list a directory! Build trussfs!")
+  return truss.fs:list_dir(pathstr(path))
 end
 
 function truss.file_extension(path)
