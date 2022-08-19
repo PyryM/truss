@@ -21,15 +21,17 @@ function truss.loadstring(str, strname, loader)
   return (loader or terralib.load)(generator_func, '@' .. strname)
 end
 
-local COREPATH = _COREPATH or "src/core/"
+truss._COREPATH = _COREPATH or "src/core/"
+truss._COREFILES = {}
 local function _docore(fn, optional)
   local interned = _INTERNAL and _INTERNAL[fn]
   local func
   if interned then
     func = truss.loadstring(interned, fn)
   else
-    func = terralib.loadfile(COREPATH .. fn)
+    func = terralib.loadfile(truss._COREPATH .. fn)
   end
+  table.insert(truss._COREFILES, fn)
   assert(func, "Core load failure: " .. fn)
   func()
 end
