@@ -1,3 +1,5 @@
+-- sets up a minimal FS to allow reading of loose files
+
 local function pathstr(path)
   if type(path) == 'table' then
     return table.concat(path, '/')
@@ -6,48 +8,49 @@ local function pathstr(path)
 end
 
 function truss.list_directory(path)
-  TODO()
+  error("Minimal FS cannot list a directory! Build trussfs!")
 end
 
-function truss.extract_from_archive(src_path, dest_path)
-  TODO()
+function truss.file_extension(path)
+  if type(path) == "table" then
+    path = path[#path]
+  end
+  return path:match("^.*%.(.*)$")
 end
 
 function truss.is_file(path)
-  TODO()
+  return not not truss.file_extension(path)
 end
 
 function truss.is_dir(path)
-  TODO()
-end
-
-function truss.read_string(path)
-  TODO()
+  return not truss.file_extension(path)
 end
 
 function truss.joinpath(...)
+  local args = {...}
+  local path
+  if #args == 1 then
+    path = args[1]
+  else
+    path = args
+  end
+  if type(path) == 'table' then
+    path = table.concat(path, "/")
+  end
   -- Not sure if this replacement works!
-  return table.concat({...}, "/").gsub("//+", "/")
+  return path:gsub("//+", "/")
 end
 
--- returns true if the file exists and is inside an archive
-function truss.is_archived(path)
-  TODO()
-  local rawpath = truss.get_file_real_path(path)
-  if not rawpath then return false end
-  local pathstr = ffi.string(rawpath)
-  local ext = string.sub(pathstr, -4)
-  return ext == ".zip" 
+function truss.read_string(path)
+  local rawpath = truss.joinpath(path)
+  local f = assert(io.open(rawpath), "Couldn't open [" .. rawpath .. "]")
+  local s = f:read("*a")
+  f:close()
+  return s
 end
 
-function truss.save_data(filename, data, datalen)
-  TODO()
-end
-
-function truss.save_string(filename, s)
-  TODO()
-end
-
+-- TODO: move this somewhere else
+--[[
 function truss.save(filename, data, datasize)
   local dtype = terralib.type(data)
   if dtype == "cdata" then
@@ -66,12 +69,12 @@ function truss.save(filename, data, datasize)
     error("Only CDATA and strings can be saved, got [" .. dtype .. "]")
   end
 end
+]]
 
 -- terra has issues with line numbering with dos line endings (\r\n), so
 -- this function loads a string and then gets rid of carriage returns (\r)
 function truss.read_script(path)
-  local s = truss.read_string(path)
-  if s then return s:gsub("\r", "") else return nil end
+  return truss.read_string(path):gsub("\r", "")
 end
 
 -- for debugging, get a specific line out of a script;

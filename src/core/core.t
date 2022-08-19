@@ -1,6 +1,9 @@
 -- core.t
 -- defines truss library functions, sets up require system
 
+-- remove strict mode if running in terra
+setmetatable(_G, nil)
+
 truss = {}
 
 -- from luajit

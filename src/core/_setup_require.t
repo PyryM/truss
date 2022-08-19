@@ -67,6 +67,9 @@ function truss.select_loader(fn)
   return truss.loaders.default
 end
 
+truss.tic = truss.tic or function() return 0 end
+truss.toc = truss.toc or function() return 0 end
+
 local loaded_libs = {}
 truss._loaded_libs = loaded_libs
 truss.script_path = _SCRIPT_PATH or "src/"
