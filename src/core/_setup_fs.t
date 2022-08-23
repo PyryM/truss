@@ -2,8 +2,7 @@
 
 local ffi = require("ffi")
 
--- embed the header file so that we don't have to have the include dir
--- available?
+-- embed the header file so works w/o include dir
 truss.link_library("lib", "trussfs")
 local fs_c = terralib.includecstring[[
 #include <stdint.h>
@@ -11,8 +10,12 @@ local fs_c = terralib.includecstring[[
 
 typedef struct trussfs_ctx trussfs_ctx;
 
+uint64_t trussfs_version();
 trussfs_ctx* trussfs_init();
 void trussfs_shutdown(trussfs_ctx* ctx);
+
+const char* trussfs_working_dir(trussfs_ctx* ctx);
+const char* trussfs_binary_dir(trussfs_ctx* ctx);
 
 uint64_t trussfs_archive_mount(trussfs_ctx* ctx, const char* path);
 void trussfs_archive_free(trussfs_ctx* ctx, uint64_t archive_handle);
@@ -29,39 +32,56 @@ uint64_t trussfs_list_length(trussfs_ctx* ctx, uint64_t list_handle);
 const char* trussfs_list_get(trussfs_ctx* ctx, uint64_t list_handle, uint64_t index);
 ]]
 
-local fs = {ctx = fs_c.trussfs_init(), archives = {}}
+local function split_version(v)
+  local patch = v % 100
+  local minor = math.floor(v / 100) % 100
+  local major = math.floor(v / 10000)
+  return {major, minor, patch}
+end
+
+local fs_version = split_version(tonumber(fs_c.trussfs_version()))
+-- TODO: check version later here
+
+local fs_ctx = fs_c.trussfs_init()
+local fs = {archives = {}}
 
 function fs:_list_and_free(list)
-  assert(self.ctx, "No FS context!")
+  assert(fs_ctx, "No FS context!")
   local entries = {}
-  local nentries = tonumber(fs_c.trussfs_list_length(self.ctx, list))
+  local nentries = tonumber(fs_c.trussfs_list_length(fs_ctx, list))
   for idx = 1, nentries do
-    entries[idx] = ffi.string(fs_c.trussfs_list_get(self.ctx, list, idx-1))
+    entries[idx] = ffi.string(fs_c.trussfs_list_get(fs_ctx, list, idx-1))
   end
-  fs_c.trussfs_list_free(self.ctx, list)
+  fs_c.trussfs_list_free(fs_ctx, list)
   return entries
 end
 
 function fs:list_dir(dirname, include_subdirs)
   assert(dirname, "No directory provided!")
-  local list = fs_c.trussfs_list_dir(self.ctx, dirname, not include_subdirs, false)
+  local list = fs_c.trussfs_list_dir(fs_ctx, dirname, not include_subdirs, false)
   return self:_list_and_free(list)
 end
 
 function fs:mount_archive(fn)
   if not self.archives[fn] then
-    self.archives[fn] = fs_c.trussfs_archive_mount(self.ctx, fn)
+    self.archives[fn] = fs_c.trussfs_archive_mount(fs_ctx, fn)
   end
   return self.archives[fn]
 end
 
 function fs:list_archive(fn)
   local handle = self:mount_archive(fn)
-  local list = fs_c.trussfs_archive_list(self.ctx, handle)
+  local list = fs_c.trussfs_archive_list(fs_ctx, handle)
   return self:_list_and_free(list)
 end
 
 truss.fs = fs
+truss.working_dir = ffi.string(fs_c.trussfs_working_dir(fs_ctx))
+truss.binary_path = ffi.string(fs_c.trussfs_binary_dir(fs_ctx))
+
+log.info("trussfs version:", table.concat(fs_version, "."))
+log.info("Working dir:", truss.working_dir)
+log.info("Binary:", truss.binary_path)
 
 local function pathstr(path)
   if type(path) == 'table' then

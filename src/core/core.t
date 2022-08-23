@@ -41,9 +41,11 @@ _docore("_setup_path.t")
 --_docore("_setup_api.t")
 _docore("_setup_fs.t")
 
+--[[
 for _, fn in ipairs(truss.fs:list_archive("test.zip")) do
   print(fn)
 end
+]]
 
 _docore("_setup_utils.t")
 _docore("_setup_require.t")
