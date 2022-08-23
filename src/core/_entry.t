@@ -3,7 +3,8 @@ if _MAIN_MODULE then
 end
 
 if not truss.main then 
-  log.info("No main module to run.")
+  log.info("No main module to run, stopping.")
+  _TRUSS_RUNNING = false
   return 
 end
 
@@ -20,11 +21,10 @@ local function _truss_quit()
   for _, f in pairs(truss._cleanup_functions) do f() end
   if _quit_code and type(_quit_code) == "number" then
     log.info("Error code: [" .. tostring(_quit_code) .. "]")
+    _TRUSS_RETURN_CODE = _quit_code
   end
-  os.exit(_quit_code)
+  _TRUSS_RUNNING = false
 end
-
-local _core_init, _core_update
 
 -- gracefully quit truss with an optional error code
 function truss.quit(code)
@@ -34,10 +34,13 @@ function truss.quit(code)
   _fallback_update = _truss_quit
 end
 
-_core_init = function()
-  truss.main.init()
+if truss.main.update then
+  _core_update = function()
+    truss.main.update()
+  end
+else
+  log.info("Main has no 'update', just stopping.")
+  _TRUSS_RUNNING = false
 end
 
-_core_update = function()
-  truss.main.update()
-end
+truss.main.init()

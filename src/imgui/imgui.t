@@ -2,7 +2,7 @@
 --
 -- imgui
 
-local build = require("core/build.t")
+local build = require("build/build.t")
 local modutils = require("core/module.t")
 local class = require("class")
 local clib = require("native/clib.t")

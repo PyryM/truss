@@ -1,4 +1,4 @@
-local build = require("core/build.t")
+local build = require("build/build.t")
 local modutils = require("core/module.t")
 local sdl_c_raw = build.includec("sdl/sdl_minimal.h")
 

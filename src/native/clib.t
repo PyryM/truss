@@ -1,6 +1,6 @@
 -- wrapper around common C includes
 
-local build = require("core/build.t")
+local build = require("build/build.t")
 
 return {
   std = build.includec("stdlib.h"),

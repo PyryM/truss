@@ -2,5 +2,5 @@
 --
 -- just a stub to include the c "math.h"
 
-local build = require("core/build.t")
+local build = require("build/build.t")
 return build.includec("math.h")

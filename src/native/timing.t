@@ -2,7 +2,7 @@
 --
 -- high-performance timing junk
 
-local build = require("core/build.t")
+local build = require("build/build.t")
 local m = {}
 
 local target = build.target_name()

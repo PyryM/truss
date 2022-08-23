@@ -3,7 +3,7 @@
 -- bgfx C api
 
 local modutils = require("core/module.t")
-local build = require("core/build.t")
+local build = require("build/build.t")
 
 local bgfx_c = build.includec("bgfx/bgfx_truss.c99.h")
 local bgfx_const = require("./bgfx_constants.t")
