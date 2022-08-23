@@ -4,7 +4,11 @@
 -- remove strict mode if running in terra
 setmetatable(_G, nil)
 
+local bare_env = {}
+for k, v in pairs(_G) do bare_env[k] = v end
+
 truss = {}
+truss.bare_env = bare_env
 truss.version = _TRUSS_VERSION or "0.0.3"
 
 function TODO()
@@ -36,10 +40,12 @@ local function _docore(fn, optional)
   func()
 end
 
+_docore("_setup_utils.t")
 _docore("_setup_log.t")
 _docore("_setup_path.t")
 --_docore("_setup_api.t")
 _docore("_setup_fs.t")
+_docore("_setup_user_config.t")
 
 --[[
 for _, fn in ipairs(truss.fs:list_archive("test.zip")) do
@@ -47,6 +53,5 @@ for _, fn in ipairs(truss.fs:list_archive("test.zip")) do
 end
 ]]
 
-_docore("_setup_utils.t")
 _docore("_setup_require.t")
 _docore("_entry.t")
