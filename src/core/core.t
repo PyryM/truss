@@ -24,7 +24,7 @@ end
 truss._COREPATH = _COREPATH or "src/core/"
 truss._COREFILES = {}
 local function _docore(fn, optional)
-  local interned = _INTERNAL and _INTERNAL[fn]
+  local interned = _TRUSS_EMBEDDED and _TRUSS_EMBEDDED[fn]
   local func
   if interned then
     func = truss.loadstring(interned, fn)
