@@ -7,12 +7,35 @@ local default_config = {
   cpu_features = "",
   cpu_opt_profile = {},
   script_paths = {"src/"},
+  WORKDIR = truss.working_dir,
+  BINDIR = truss.binary_dir,
+  BINARY = truss.binary_name,
 }
 
-local config
+local function list_config_options()
+  local config_options = {}
+  for k, _ in pairs(default_config) do
+    if k:upper() ~= k then table.insert(config_options, k) end
+  end
+  table.sort(config_options)
+  log.error("Valid config options:")
+  log.error(table.concat(config_options, "\n"))
+end
+
+local config = truss.extend_table({}, default_config)
+
 if configfile then
-  config = truss.extend_table({}, default_config)
-  setmetatable(config, {__index = _G})
+  setmetatable(config, {
+    __index = function(t, k)
+      if _G[k] then return _G[k] end
+      error('Config file referenced "' .. k .. '" which does not exist.')
+    end,
+    __newindex = function(t, k, v)
+      log.error('Tried to set invalid config option "' .. k .. '"')
+      list_config_options()
+      error('Invalid config option "' .. k .. '"')
+    end
+  })
   configsrc = configfile:read("*a")
   configfile:close()
   local configfunc, configerr = loadstring(configsrc)
@@ -24,13 +47,7 @@ if configfile then
   if not happy then
     error("Error running config file:", err)
   end
-  for k, v in pairs(config) do
-    if not default_config[k] then
-      error('Unexpected config key: "' .. k .. '"')
-    end
-  end
-else
-  config = default_config
+  setmetatable(config, nil)
 end
 
 if config.cpu_triple ~= "native" or config.cpu_features ~= "" then

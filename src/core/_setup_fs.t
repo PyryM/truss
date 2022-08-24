@@ -14,6 +14,8 @@ uint64_t trussfs_version();
 trussfs_ctx* trussfs_init();
 void trussfs_shutdown(trussfs_ctx* ctx);
 
+uint64_t trussfs_recursive_makedir(trussfs_ctx* ctx, const char* path);
+
 const char* trussfs_working_dir(trussfs_ctx* ctx);
 const char* trussfs_binary_dir(trussfs_ctx* ctx);
 
@@ -27,6 +29,8 @@ int64_t trussfs_archive_read_index(trussfs_ctx* ctx, uint64_t archive_handle, ui
 
 uint64_t trussfs_list_dir(trussfs_ctx* ctx, const char* path, bool files_only, bool include_metadata);
 
+uint64_t trussfs_split_path(trussfs_ctx* ctx, const char* path);
+
 void trussfs_list_free(trussfs_ctx* ctx, uint64_t list_handle);
 uint64_t trussfs_list_length(trussfs_ctx* ctx, uint64_t list_handle);
 const char* trussfs_list_get(trussfs_ctx* ctx, uint64_t list_handle, uint64_t index);
@@ -39,7 +43,19 @@ local function split_version(v)
   return {major, minor, patch}
 end
 
+local function assert_compatible_version(actual, target)
+  if actual[1] ~= target[1] or actual[2] ~= target[2] or actual[3] < target[3] then
+    error(
+      "Incompatible trussfs version: got", 
+      table.concat(actual, "."),
+      "needed",
+      table.concat(target, ".")
+    )
+  end
+end
+
 local fs_version = split_version(tonumber(fs_c.trussfs_version()))
+assert_compatible_version(fs_version, {0, 0, 3})
 -- TODO: check version later here
 
 local fs_ctx = fs_c.trussfs_init()
@@ -75,13 +91,19 @@ function fs:list_archive(fn)
   return self:_list_and_free(list)
 end
 
+local function split_base_and_file(p)
+  return p:match("^(.*[/\\])([^/\\]*)$")
+end
+
 truss.fs = fs
 truss.working_dir = ffi.string(fs_c.trussfs_working_dir(fs_ctx))
 truss.binary_path = ffi.string(fs_c.trussfs_binary_dir(fs_ctx))
+truss.binary_dir, truss.binary_name = split_base_and_file(truss.binary_path)
 
 log.info("trussfs version:", table.concat(fs_version, "."))
 log.info("Working dir:", truss.working_dir)
-log.info("Binary:", truss.binary_path)
+log.info("Binary dir:", truss.binary_dir)
+log.info("Binary:", truss.binary_name)
 
 local function pathstr(path)
   if type(path) == 'table' then
