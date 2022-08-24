@@ -95,25 +95,48 @@ local function split_base_and_file(p)
   return p:match("^(.*[/\\])([^/\\]*)$")
 end
 
+local PATHSEP
+if jit.os == "Windows" then
+  PATHSEP = "\\"
+else
+  PATHSEP = "/"
+end
+
+local function normpath(pathstr, os_paths)
+  local in_sep, out_sep
+  if os_paths then
+    if jit.os == "Windows" then
+      in_sep, out_sep = "[\\/]+", "\\"
+    else
+      in_sep, out_sep = "[/]+", "/"
+    end
+  else
+    in_sep, out_sep = "[\\/]+", "/"
+  end
+  return (pathstr:gsub(in_sep, out_sep))
+end
+
 truss.fs = fs
-truss.working_dir = ffi.string(fs_c.trussfs_working_dir(fs_ctx))
+truss.working_dir = normpath(ffi.string(fs_c.trussfs_working_dir(fs_ctx)) .. PATHSEP, true)
 truss.binary_path = ffi.string(fs_c.trussfs_binary_dir(fs_ctx))
 truss.binary_dir, truss.binary_name = split_base_and_file(truss.binary_path)
+truss.binary_dir = normpath(truss.binary_dir .. PATHSEP, true)
 
 log.info("trussfs version:", table.concat(fs_version, "."))
 log.info("Working dir:", truss.working_dir)
 log.info("Binary dir:", truss.binary_dir)
 log.info("Binary:", truss.binary_name)
 
-local function pathstr(path)
+local function joinpath(path, os_paths)
+  local sep = (os_paths and PATHSEP) or "/"
   if type(path) == 'table' then
-    return table.concat(path, '/')
+    path = table.concat(path, sep)
   end 
-  return path
+  return normpath(path, os_paths)
 end
 
 function truss.list_directory(path)
-  return truss.fs:list_dir(pathstr(path))
+  return truss.fs:list_dir(joinpath(path))
 end
 
 function truss.file_extension(path)
@@ -139,11 +162,7 @@ function truss.joinpath(...)
   else
     path = args
   end
-  if type(path) == 'table' then
-    path = table.concat(path, "/")
-  end
-  -- Not sure if this replacement works!
-  return path:gsub("//+", "/")
+  return joinpath(path, true)
 end
 
 function truss.read_string(path)
@@ -187,7 +206,7 @@ end
 -- an error
 function truss.get_script_line(path, linenumber)
   local source = truss.read_script(path)
-  if not source then error("file does not exist:" .. pathstr(path)) end
+  if not source then error("file does not exist:" .. joinpath(path)) end
 
   -- this is basically stringutils.split but we don't want to require
   -- extra modules in the middle of an error handler

@@ -1,7 +1,5 @@
 -- runs the user config file
 
-local configfile = io.open("trussconfig.lua")
-
 local default_config = {
   cpu_triple = "native",
   cpu_features = "",
@@ -24,7 +22,11 @@ end
 
 local config = truss.extend_table({}, default_config)
 
+local configfn = truss.joinpath(truss.working_dir, "trussconfig.lua")
+local configfile = io.open(configfn)
+
 if configfile then
+  log.info("Using configfile [" .. configfn .. "]")
   setmetatable(config, {
     __index = function(t, k)
       if _G[k] then return _G[k] end
@@ -48,6 +50,8 @@ if configfile then
     error("Error running config file:", err)
   end
   setmetatable(config, nil)
+else
+  log.info("No config file at [" .. configfn .. "]; using defaults.")
 end
 
 if config.cpu_triple ~= "native" or config.cpu_features ~= "" then
