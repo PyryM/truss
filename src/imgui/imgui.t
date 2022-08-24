@@ -277,8 +277,8 @@ function m.create_default_context(options)
   }
   local ctx = terralib.new(ImGuiContext)
   ctx:init()
-  local fira = truss.C.load_file("font/FiraSans-Regular.ttf")
-  ctx:push_font(fira.data, fira.data_length, 0.0)
+  local fira = truss.read_file_buffer("font/FiraSans-Regular.ttf")
+  ctx:push_font(fira.data, fira.size, 0.0)
 
   if options.colors then
     local colorspaces = require("math/colorspaces.t")
@@ -294,7 +294,6 @@ function m.create_default_context(options)
   end
 
   ctx:create(w, h, fontsize, viewid)
-  truss.C.release_message(fira)
   return ctx
 end
 

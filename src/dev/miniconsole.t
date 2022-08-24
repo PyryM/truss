@@ -385,13 +385,12 @@ end
 
 function m.save_console_buffer(filename)
   filename = filename or "console_log.txt"
-  truss.C.set_fs_savedir("/")
   local lines = {}
   for i,line in ipairs(m._linebuffer) do
     lines[i] = line[1]
   end
   local str = table.concat(lines, "\n")
-  truss.C.save_data(filename, str, str:len())
+  truss.write_string(filename, str)
 end
 
 function m._execute()

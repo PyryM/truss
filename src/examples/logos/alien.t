@@ -195,7 +195,7 @@ function init()
     async.await_frames(5)
     common.add_textbox{
       x = 390, y = 10, w = 220, h = 120,
-      font_size = 100, text = truss.C.get_version()
+      font_size = 100, text = truss.version
     }
     if gif_mode then return end
     -- spawn caps

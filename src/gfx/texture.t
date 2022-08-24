@@ -357,10 +357,9 @@ local function load_texture_image(filename, flags, sampler_flags)
 end
 
 local function load_texture_bgfx(filename, flags, sampler_flags)
-  local msg = truss.C.load_file(filename)
-  if msg == nil then truss.error("Texture load error: " .. filename) end
-  local bmem = bgfx.copy(msg.data, msg.data_length)
-  truss.C.release_message(msg)
+  local msg = truss.read_file_buffer(filename)
+  if not msg then error("Texture load error: " .. filename) end
+  local bmem = bgfx.copy(msg.data, msg.size)
   local info = terralib.new(bgfx.texture_info_t)
   local cflags, flags = m.combine_tex_flags(flags or {}, "TEXTURE_")
   local scflags, sflags = m.combine_tex_flags(sampler_flags or {}, "SAMPLER_")

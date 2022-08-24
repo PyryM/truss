@@ -91,7 +91,7 @@ function m.create_root(options)
       -- if the filename is actually a directory, try to load init.t
       local filename = modname
       local fullpath = root._script_path .. filename
-      if truss.C.check_file(fullpath) == 2 then
+      if truss.is_dir(fullpath) then
         fullpath = fullpath .. "/init.t"
         filename = filename .. "/init.t"
         log.info("Required directory; trying to load [" .. fullpath .. "]")
@@ -137,12 +137,6 @@ function m.create_root(options)
     return loaded_libs[modname]
   end
   root._module_env.require = root.require
-
-  function root.check_module_exists(filename)
-    if loaded_libs[filename] then return true end
-    local fullpath = root._script_path .. filename
-    return truss.C.check_file(fullpath) ~= 0
-  end
 
   function root.require_as(filename, libname, options)
     log.info("Loading [" .. filename .. "] as [" .. libname .. "]")

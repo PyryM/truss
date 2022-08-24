@@ -13,13 +13,9 @@ m._safe_wait_frames = 3
 m._bgfx_initted = false
 
 function m.load_file_to_bgfx(filename)
-  local msg = truss.C.load_file(filename)
-  if msg == nil then
-    return nil
-  end
-  local ret = bgfx.copy(msg.data, msg.data_length)
-  truss.C.release_message(msg)
-  return ret
+  local data = truss.read_file(filename)
+  if not data then return nil end
+  return bgfx.copy(data, #data)
 end
 
 function m.reset_gfx(options)

@@ -137,12 +137,6 @@ function truss.require(modname, options)
 end
 truss._module_env.require = truss.require
 
-function truss.check_module_exists(filename)
-  if loaded_libs[filename] then return true end
-  local fullpath = truss.joinpath(truss._script_path, filename)
-  return truss.check_file(fullpath) ~= 0
-end
-
 function truss.require_as(filename, libname, options)
   log.info("Loading [" .. filename .. "] as [" .. libname .. "]")
   local temp = truss.require(filename, options)

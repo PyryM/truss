@@ -14,15 +14,15 @@ m.MAXFACES = 21845 -- each face needs 3 vertices, to fit into 16 bit index
 local tic, toc = truss.tic, truss.toc
 
 function m.load_stl(filename, invert)
+  error("Not ported to truss 0.3+ yet!")
   local starttime = tic()
-  local src_message = truss.C.load_file(filename)
-  if src_message == nil then
+  local srcdata = truss.read_file(filename)
+  if not srcdata then
     log.error("Error: unable to open file " .. filename)
     return nil
   end
 
   local ret = m.parse_binary_stl(src_message.data, src_message.data_length, invert)
-  truss.C.release_message(src_message)
   local dtime = toc(starttime)
   log.info("Loaded " .. filename .. " in " .. (dtime*1000.0) .. " ms")
   return ret
@@ -266,7 +266,7 @@ end
 
 function m.save_geo(filename, geo)
   local bytes, bytecount = m.dump_geo(geo, true)
-  truss.C.save_data(filename, bytes, bytecount)
+  truss.write_buffer(filename, bytes, bytecount)
 end
 
 return m

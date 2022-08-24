@@ -246,16 +246,15 @@ function Bus:get_fft()
 end
 
 local function _load_wav(filename, ptr, loader)
-  local data = truss.C.load_file(filename)
-  if data == nil then
-    truss.error("Unable to load wavefile " .. filename 
+  local data = truss.read_file_buffer(filename)
+  if not data then
+    error("Unable to load wavefile " .. filename 
                 .. ": low-level error (file doesn't exist?)")
   end
 
   -- the 1,0 args are copy = true, takeOwnership = false
   -- (so that it copies the data and doesn't take ownership of our pointer)
-  local result = loader(ptr, data.data, data.data_length, 1, 0)
-  truss.C.release_message(data)
+  local result = loader(ptr, data.data, data.size, 1, 0)
 
   if result == 0 then
     return true

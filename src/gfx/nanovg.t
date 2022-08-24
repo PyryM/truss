@@ -51,7 +51,7 @@ end
 
 function NVGContext:assert_valid()
   if not self._ctx then
-    truss.error("Nil nvg context!")
+    error("Nil nvg context!")
   end
 end
 
@@ -68,15 +68,17 @@ function NVGContext:load_font(filename, alias)
   end
 
   if self._font_aliases[alias] then
-    truss.error("Font with alias [" .. alias .. "] already exists.")
+    error("Font with alias [" .. alias .. "] already exists.")
   end
 
-  local data = truss.C.load_file(filename)
-  if data == nil then truss.error("Font didn't exist.") end
+  local data = truss.read_file_buffer(filename)
+  if not data then error("Font didn't exist.") end
 
   -- final 0 argument indicates that nanovg should not free the data
+  -- FIXME: worry about possible memory issues with this! 
+  -- Check how occultech handles this!
   local font_id = nvg_c_funcs.CreateFontMem(self._ctx, alias,
-                                            data.data, data.data_length, 0)
+                                            data.data, data.size, 0)
   log.debug("Created font with id " .. font_id)
   self._fonts[filename] = {id = font_id, data = data}
   self._font_aliases[alias] = self._fonts[filename]

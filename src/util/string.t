@@ -215,11 +215,6 @@ function ByteBuffer:init(maxsize)
   self._cur_size = 0
 end
 
-terra m.helperFileWrite_(fn: &int8, data: &uint8, datalen: uint32)
-    var temp_ptr: &int8 = [&int8](data)
-    truss.C.save_data(fn, temp_ptr, datalen)
-end
-
 terra m._buff_append(src: &uint8, srclen: uint32,
                           dest: &uint8, destpos: uint32, destsize: uint32) : uint32
   var d: uint32 = destpos
@@ -270,7 +265,7 @@ function ByteBuffer:clear()
 end
 
 function ByteBuffer:write_to_file(filename)
-  truss.C.save_data(filename, self._data, self._cur_size)
+  truss.write_buffer(filename, self._data, self._cur_size)
 end
 
 m.ByteBuffer = ByteBuffer
