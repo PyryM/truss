@@ -1,5 +1,6 @@
 docs/_build/
 models/
+/include/terra/
 *.log
 *.exe
 *.pdb
