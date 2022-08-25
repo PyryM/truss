@@ -109,7 +109,8 @@ end
 function RawMount:read(subpath)
   local realpath = joinpath({self.path, subpath}, true)
   log.debug("Reading from real path:", realpath)
-  local f = io.open(realpath)
+  -- need to explicitly open as binary in windows
+  local f = io.open(realpath, "rb")
   if not f then return nil end
   local data = f:read("*a")
   f:close()
@@ -261,20 +262,34 @@ function truss.is_dir(path)
   return not truss.file_extension(path)
 end
 
-function truss.joinpath(...)
+local function _collectpath(...)
   local args = {...}
-  local path
   if #args == 1 then
-    path = args[1]
+    return args[1]
   else
-    path = args
+    return args
   end
-  return joinpath(path, true)
+end
+
+function truss.joinvpath(...)
+  return joinpath(_collectpath(...), false)  
+end
+
+function truss.joinpath(...)
+  return joinpath(_collectpath(...), true)
 end
 
 function truss.read_string(path)
   local rawpath = joinpath(path, false)
   return truss.fs:read_file(rawpath)
+end
+
+function truss.read_file(path)
+  return truss.fs:read_file(path)
+end
+
+function truss.read_file_buffer(path)
+  return truss.fs:read_file_buffer(path)
 end
 
 -- terra has issues with line numbering with dos line endings (\r\n), so

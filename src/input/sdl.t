@@ -7,7 +7,7 @@ sdl_c.raw = sdl_c_raw
 
 if build.is_native() then
   if truss.os == "Windows" then
-    build.linklibrary("SDL2")
+    build.linklibrary("lib/SDL2")
   elseif truss.os == "OSX" then
     -- HMM not sure why I need to do it this way
     build.linklibrary("lib/libSDL2-2.0.dylib")

@@ -262,6 +262,9 @@ function m.build(options)
   return ImGuiContext
 end
 
+-- imgui expects you to keep fonts resident in memory forever so do that
+m._memory_leaked_fonts = {}
+
 function m.create_default_context(options)
   options = options or {}
   local w, h = options.width, options.height
@@ -278,6 +281,8 @@ function m.create_default_context(options)
   local ctx = terralib.new(ImGuiContext)
   ctx:init()
   local fira = truss.read_file_buffer("font/FiraSans-Regular.ttf")
+  table.insert(m._memory_leaked_fonts, fira)
+  log.debug("font:", fira.data, fira.size)
   ctx:push_font(fira.data, fira.size, 0.0)
 
   if options.colors then

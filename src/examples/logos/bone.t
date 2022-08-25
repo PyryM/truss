@@ -201,8 +201,9 @@ local gif_mode = false
 local imgui_open = terralib.new(bool[1])
 imgui_open[0] = false
 local dbstate = nil
+local myapp = nil
 
-function init()
+local function init()
   local IG_COLORS = {
     0x202020ff, -- text
     0xffffffff, -- bg
@@ -214,7 +215,6 @@ function init()
     width = (gif_mode and 720) or 1280, height = 720, 
     msaa = false, hidpi = false, stats = false, imgui = {colors = IG_COLORS},
     title = "truss | logos/bone.t", clear_color = 0xddddddff,
-    backend = "vulkan"
   }
 
   local db_builder = imgui.DatabarBuilder{
@@ -282,14 +282,16 @@ function init()
     async.await_frames(5)
     common.add_textbox{
       x = 390, y = 10, w = 220, h = 120, color = logocolor,
-      font_size = 100, text = truss.BIN_VERSION
+      font_size = 100, text = truss.version
     }
   end)
 end
 
-function update()
+local function update()
   if dbstate.rotate_view and not gif_mode then
     myapp.camera.orbit_control:move_theta(dbstate.view_speed * math.pi * 2.0 / 120.0)
   end
   myapp:update()
 end
+
+return {init = init, update = update, app = myapp}

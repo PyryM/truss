@@ -54,7 +54,7 @@ local function _drawtext(state, ctx)
   if state.clip_w then
     ctx:Scissor(state.x, state.y, state.clip_w, state.h)
   end
-  ctx:Text(state.x, state.y, state.text, nil)
+  ctx:Text(state.x, state.y, state.text or "NULL TEXT POINTER", nil)
   if state.clip_w then
     ctx:ResetScissor()
     ctx:BeginPath()

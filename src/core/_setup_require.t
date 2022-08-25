@@ -91,8 +91,8 @@ function truss.create_require_root(options)
       local filename = modname
       local fullpath = root._script_path .. filename
       if truss.is_dir(fullpath) then
-        fullpath = truss.joinpath(fullpath, "init.t")
-        filename = truss.joinpath(filename, "init.t")
+        fullpath = truss.joinvpath(fullpath, "init.t")
+        filename = truss.joinvpath(filename, "init.t")
         log.info("Required directory; trying to load [" .. fullpath .. "]")
       end
 
@@ -146,13 +146,13 @@ function truss.create_require_root(options)
 
   -- directly inserts a module
   function root.insert_module(libname, libtable)
-    loaded_libs[libname] = libtable
+    loaded_libs[libname] = assert(libtable, "Missing module: " .. libname)
   end
 
   if not options.no_default_libs then
     -- alias standard lua/luajit libraries so they can be 'required'
-    root.insert_module("ffi", ffi)
-    root.insert_module("bit", bit)
+    root.insert_module("ffi", require("ffi"))
+    root.insert_module("bit", require("bit"))
     root.insert_module("jit", jit)
     root.insert_module("string", string)
     root.insert_module("io", io)

@@ -9,7 +9,7 @@ for k, v in pairs(_G) do bare_env[k] = v end
 
 truss = {}
 truss.bare_env = bare_env
-truss.version = _TRUSS_VERSION or "0.0.3"
+truss.version = _TRUSS_VERSION or "0.3.0"
 
 function TODO()
   error("TODO not implemented!")
@@ -29,14 +29,14 @@ truss._COREPATH = _COREPATH or "src/core/"
 truss._COREFILES = {}
 local function _docore(fn, optional)
   local interned = _TRUSS_EMBEDDED and _TRUSS_EMBEDDED[fn]
-  local func
+  local func, err
   if interned then
-    func = truss.loadstring(interned, fn)
+    func, err = truss.loadstring(interned, fn)
   else
-    func = terralib.loadfile(truss._COREPATH .. fn)
+    func, err = terralib.loadfile(truss._COREPATH .. fn)
   end
   table.insert(truss._COREFILES, fn)
-  assert(func, "Core load failure: " .. fn)
+  assert(func, "Core load failure: " .. fn .. " -> " .. (err or ""))
   func()
 end
 

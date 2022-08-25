@@ -35,6 +35,7 @@ function NVGContext:init(view, edgeaa)
   self._ctx = nvg_c_funcs.CreateC((edgeaa and 1) or 0, self._viewid)
   self._fonts = {}
   self._font_aliases = {}
+  self._font_datas = {}
   self._images = {}
   if view then view:set_sequential(true) end
 
@@ -71,14 +72,16 @@ function NVGContext:load_font(filename, alias)
     error("Font with alias [" .. alias .. "] already exists.")
   end
 
-  local data = truss.read_file_buffer(filename)
+  local data = truss.read_file(filename)
   if not data then error("Font didn't exist.") end
+  log.debug("data size?", #data)
 
   -- final 0 argument indicates that nanovg should not free the data
   -- FIXME: worry about possible memory issues with this! 
   -- Check how occultech handles this!
+  table.insert(self._font_datas, data)
   local font_id = nvg_c_funcs.CreateFontMem(self._ctx, alias,
-                                            data.data, data.size, 0)
+                                            terralib.cast(&uint8, data), #data, 0)
   log.debug("Created font with id " .. font_id)
   self._fonts[filename] = {id = font_id, data = data}
   self._font_aliases[alias] = self._fonts[filename]

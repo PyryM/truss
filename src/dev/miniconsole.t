@@ -319,8 +319,7 @@ function m.create_env()
                                                          width = m.width}
 
   m.env = {}
-  m.env.mainobj = truss.mainobj
-  m.env.mainenv = truss.mainenv
+  m.env.main = truss.main
   m.env.loaded_libs = truss._loaded_libs
   m.env.G = _G
 
@@ -348,8 +347,7 @@ function m.create_env()
   m.env.divider = m.divider
   m.env.trace = m.trace
   m.env.save = m.save_console_buffer
-  m.env.m = truss.mainenv
-  m.env.app = (truss.mainenv or {}).app
+  m.env.m = truss.main
   m.env.minicon = m
 end
 
@@ -432,12 +430,12 @@ function m.init(width, height)
 end
 
 function m.install()
-  if truss.mainenv.fallback_update then
+  if truss.main.fallback_update then
     log.info("miniconsole.install : fallback already present.")
     return
   end
 
-  truss.mainenv.fallback_update = m.fallback_update
+  truss.main.fallback_update = m.fallback_update
 end
 
 function m.fallback_update()
