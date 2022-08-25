@@ -1,6 +1,7 @@
 docs/_build/
 models/
 /include/terra/
+/depsbuild/
 *.log
 *.exe
 *.pdb
@@ -18,3 +19,4 @@ trusslog.txt
 shader_errors.txt
 console_log.txt
 error.txt
+trussconfig.lua
