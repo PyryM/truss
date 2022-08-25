@@ -64,4 +64,9 @@ terra m.toc(start_counter: int64): double
   return delta_ticks / [double](freq)
 end
 
+function m.install(target)
+  target.tic = m.tic
+  target.toc = m.toc
+end
+
 return m

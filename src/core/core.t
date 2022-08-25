@@ -46,12 +46,8 @@ _docore("_setup_path.t")
 --_docore("_setup_api.t")
 _docore("_setup_fs.t")
 _docore("_setup_user_config.t")
-
---[[
-for _, fn in ipairs(truss.fs:list_archive("test.zip")) do
-  print(fn)
-end
-]]
-
 _docore("_setup_require.t")
+if not truss.config.no_auto_libraries then
+  require("native/timing.t").install(truss)
+end
 _docore("_entry.t")

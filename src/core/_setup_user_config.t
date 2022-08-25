@@ -4,7 +4,7 @@ local default_config = {
   cpu_triple = "native",
   cpu_features = "",
   cpu_opt_profile = {},
-  script_paths = {"src/"},
+  paths = {{".", truss.binary_dir}},
   WORKDIR = truss.working_dir,
   BINDIR = truss.binary_dir,
   BINARY = truss.binary_name,
@@ -69,3 +69,10 @@ if config.cpu_triple ~= "native" or config.cpu_features ~= "" then
   terralib.jitcompilationunit = terralib.newcompilationunit(
     terralib.nativetarget, true, opt_profile)
 end
+
+for _, pathpair in ipairs(config.paths) do
+  local vpath, realpath = unpack(pathpair)
+  truss.fs:mount_path(vpath, realpath)
+end
+
+truss.config = config
