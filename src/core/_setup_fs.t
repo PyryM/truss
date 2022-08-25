@@ -81,6 +81,7 @@ local function normpath(pathstr, os_paths)
   end
   return (pathstr:gsub(in_sep, out_sep))
 end
+truss.normpath = normpath
 
 local function joinpath(path, os_paths)
   local sep = (os_paths and PATHSEP) or "/"
@@ -154,6 +155,10 @@ function fs:mount_archive(vpath, archivefn)
   self:_mount(vpath, ArchiveMount:new(self, archivefn))
 end
 
+function fs:recursive_makedir(rawpath)
+  fs_c.trussfs_recursive_makedir(fs_ctx, assert(rawpath))
+end
+
 local function split_prefix(s, prefix)
   local spos, epos = s:find(prefix, 1, true)
   if not spos then return nil end
@@ -194,6 +199,12 @@ end
 function fs:list_dir(dirname, include_subdirs)
   assert(dirname, "No directory provided!")
   local list = fs_c.trussfs_list_dir(fs_ctx, dirname, not include_subdirs, false)
+  return self:_list_and_free(list)
+end
+
+function fs:list_dir_detailed(dirname)
+  assert(dirname, "No directory provided!")
+  local list = fs_c.trussfs_list_dir(fs_ctx, dirname, false, true)
   return self:_list_and_free(list)
 end
 
