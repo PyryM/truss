@@ -18,7 +18,7 @@ local async = require("async")
 local class = require("class")
 local common = require("examples/logos/logocommon.t")
 
-function ter_edge_dist_func(p0, p1)
+local function ter_edge_dist_func(p0, p1)
   local x0, y0, z0 = p0:components()
   local x1, y1, z1 = p1:components()
   local d = p1 - p0
@@ -168,8 +168,9 @@ local function Stars(_ecs, name, options)
 end
 
 local gif_mode = false
+local myapp
 
-function init()
+local function init()
   myapp = app.App{
     width = (gif_mode and 720) or 1280, height = 720, 
     msaa = true, hidpi = true, stats = false, imgui = false, use_nvg = true,
@@ -215,9 +216,11 @@ function init()
   common.dump_text_caps()
 end
 
-function update()
+local function update()
   if not gif_mode then
     myapp.camera.orbit_control:move_theta(math.pi * 2.0 / 120.0)
   end
   myapp:update()
 end
+
+return {init = init, update = update, app = myapp}
