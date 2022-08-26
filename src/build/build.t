@@ -19,7 +19,7 @@ function m.includec(filename, args, target)
     args = _modroot.cross_args
     target = _modroot.cross_target
   end
-  print("including c [native? ", m.is_native(), "]: ", filename)
+  log.build("including c [native? ", m.is_native(), "]: ", filename)
   return terralib.includec(filename, args, target)
 end
 
@@ -29,7 +29,7 @@ function m.includecstring(str, args, target)
     args = _modroot.cross_args
     target = _modroot.cross_target
   end
-  print("including cstr [native? ", m.is_native(), "]: ", str:sub(1, 80))
+  log.build("including cstr [native? ", m.is_native(), "]: ", str:sub(1, 80))
   return terralib.includecstring(str, args, target)
 end
 

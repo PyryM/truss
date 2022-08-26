@@ -1,4 +1,4 @@
-log.info("TODO: better path setup?")
+log.todo("better path setup?")
 
 local ffi = require("ffi")
 if #terralib.includepath <= 1 then
