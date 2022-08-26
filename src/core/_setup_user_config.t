@@ -6,6 +6,7 @@ local default_config = {
   cpu_opt_profile = {},
   paths = {{".", truss.binary_dir}},
   ignored_log_levels = {},
+  entrypoints = {main="main.t"},
   WORKDIR = truss.working_dir,
   BINDIR = truss.binary_dir,
   BINARY = truss.binary_name,

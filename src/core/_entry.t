@@ -1,7 +1,11 @@
 truss.args = _TRUSS_ARGS or {}
 
 if _TRUSS_ARGS then
-  _MAIN_MODULE = _TRUSS_ARGS[2] or "main.t"
+  _MAIN_MODULE = _TRUSS_ARGS[2] or "main"
+  if truss.config and truss.config.entrypoints[_MAIN_MODULE] then
+    _MAIN_MODULE = truss.config.entrypoints[_MAIN_MODULE]
+  end
+  log.info("Main entrypoint:", tostring(_MAIN_MODULE))
 end
 
 if _MAIN_MODULE then
