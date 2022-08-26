@@ -40,6 +40,8 @@ function truss.quit(code)
   _fallback_update = _truss_quit
 end
 
+truss.main.init()
+
 if truss.main.update then
   _core_update = function()
     truss.main.update()
@@ -48,5 +50,3 @@ else
   log.info("Main has no 'update', just stopping.")
   _TRUSS_RUNNING = false
 end
-
-truss.main.init()
