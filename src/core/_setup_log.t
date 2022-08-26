@@ -43,7 +43,7 @@ local function padtag(s)
   return "[" .. s .. "]"
 end
 
-log = {}
+log = {ignored = {}}
 log.colors = {
   warn = term.color(term.YELLOW),
   build = term.color(term.YELLOW),
@@ -69,6 +69,7 @@ local function stringify_args(...)
 end
 
 function truss.log(level, ...)
+  if log.ignored[level] then return end
   if log.logfile then
     log.logfile:write("[" .. level .. "] " .. table.concat({...}, " "))
   end
@@ -83,4 +84,6 @@ end
 -- use default lua error handling
 truss.error = error
 
-log.crit("Truss " .. truss.version, "on Terra", terralib.version, "/", jit.version)
+local fancy_tag = term.color(term.BLACK, term.CYAN) .. 
+  "[ truss " .. truss.version .. " ]" .. term.RESET
+log.crit(fancy_tag, "on Terra", terralib.version, "/", jit.version)

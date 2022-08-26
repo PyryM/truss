@@ -5,6 +5,7 @@ local default_config = {
   cpu_features = "",
   cpu_opt_profile = {},
   paths = {{".", truss.binary_dir}},
+  ignored_log_levels = {},
   WORKDIR = truss.working_dir,
   BINDIR = truss.binary_dir,
   BINARY = truss.binary_name,
@@ -73,6 +74,10 @@ end
 for _, pathpair in ipairs(config.paths) do
   local vpath, realpath = unpack(pathpair)
   truss.fs:mount_path(vpath, realpath)
+end
+
+for _, level in ipairs(config.ignored_log_levels) do
+  log.ignored[level] = true
 end
 
 truss.config = config

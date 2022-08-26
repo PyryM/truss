@@ -41,6 +41,6 @@ function truss.link_library(basedir, libname)
   if #basedir > 0 then basedir = basedir .. "/" end
   local fullpath = basedir .. truss.library_prefix .. 
                    libname .. truss.library_extension
-  log.info("Linking " .. fullpath)
+  log.build("Linking " .. fullpath)
   terralib.linklibrary(fullpath)
 end
