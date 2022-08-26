@@ -139,6 +139,6 @@ local opts = {
   "\\legacy_stdio_definitions.lib"
 }
 
-log.info("Generating truss.exe...")
+log.crit("Generating truss.exe...")
 terralib.saveobj("truss.exe", {main = main}, opts)
-log.info("Success?")
+log.crit("Success.")

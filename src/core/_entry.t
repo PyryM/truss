@@ -38,13 +38,22 @@ function truss.quit(code)
   _quit_code = code
   _core_update = _truss_quit
   _fallback_update = _truss_quit
+  _TRUSS_RUNNING = false
 end
 
-truss.main.init()
+local function guarded_call(f, ...)
+  local happy, err = pcall(f, ...)
+  if not happy then
+    log.fatal(err)
+    truss.quit(-1)
+  end
+end
+
+guarded_call(truss.main.init)
 
 if truss.main.update then
   _core_update = function()
-    truss.main.update()
+    guarded_call(truss.main.update)
   end
 else
   log.info("Main has no 'update', just stopping.")
