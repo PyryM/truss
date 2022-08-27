@@ -18,7 +18,6 @@ int get_lua_globalsindex() {
 ]]
 
 local LUA_GLOBALSINDEX = terra_c.get_lua_globalsindex()
-log.info("LUA_GLOBALSINDEX", LUA_GLOBALSINDEX)
 
 -- create embedded files
 local function find_core_file(fn)

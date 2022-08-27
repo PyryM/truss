@@ -20,6 +20,10 @@ function term.color(fg, bg)
   return term.sgr(30 + fg, bg and (40 + bg))
 end
 
+function term.boldcolor(fg, bg)
+  return term.sgr(1, 30 + fg, bg and (40 + bg))
+end
+
 function term.color_rgb(fg_rgb, bg_rgb)
   local c = term.sgr(38, 2, unpack(fg_rgb))
   if bg_rgb then c = c .. term.sgr(48, 2, unpack(bg_rgb)) end
@@ -45,14 +49,17 @@ end
 
 log = {ignored = {}}
 log.colors = {
+  alert = term.color(term.BLACK, term.WHITE),
   warn = term.color(term.YELLOW),
   build = term.color(term.YELLOW),
   error = term.color(term.RED),
   fatal = term.color(term.BLACK, term.RED),
   todo = term.color(term.BLACK, term.YELLOW),
-  info = term.color(term.CYAN),
+  info = term.boldcolor(term.CYAN),
   crit = term.color(term.BLACK, term.CYAN),
   debug = term.color(term.MAGENTA),
+  path = term.color(term.MAGENTA),
+  perf = term.color(term.CYAN),
 }
 log.colortags = {}
 for name, color in pairs(log.colors) do

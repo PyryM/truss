@@ -93,7 +93,6 @@ function truss.create_require_root(options)
       if truss.is_dir(fullpath) then
         fullpath = truss.joinvpath(fullpath, "init.t")
         filename = truss.joinvpath(filename, "init.t")
-        log.info("Required directory; trying to load [" .. fullpath .. "]")
       end
 
       local t0 = truss.tic()
@@ -130,7 +129,7 @@ function truss.create_require_root(options)
         error("Module [" .. modname .. "] did not return preregistered table!")
       end
       loaded_libs[modname] = modtab
-      log.info(string.format("Loaded [%s] in %.2f ms",
+      log.perf(string.format("Loaded [%s] in %.2f ms",
                             modname, truss.toc(t0) * 1000.0))
     end
     return loaded_libs[modname]
@@ -138,7 +137,7 @@ function truss.create_require_root(options)
   root._module_env.require = root.require
 
   function root.require_as(filename, libname, options)
-    log.info("Loading [" .. filename .. "] as [" .. libname .. "]")
+    log.path("Loading [" .. filename .. "] as [" .. libname .. "]")
     local temp = root.require(filename, options)
     loaded_libs[libname] = temp
     return temp

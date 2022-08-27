@@ -109,7 +109,7 @@ end
 
 function RawMount:read(subpath)
   local realpath = joinpath({self.path, subpath}, true)
-  log.debug("Reading from real path:", realpath)
+  log.path("Reading from real path:", realpath)
   -- need to explicitly open as binary in windows
   local f = io.open(realpath, "rb")
   if not f then return nil end
@@ -172,7 +172,7 @@ function fs:read_file(fn)
     local prefix, mount = vpath[1], vpath[2]
     local subpath = split_prefix(fn, prefix)
     if subpath then
-      log.debug("Matched [" .. fn .. "] ->", prefix, "|", subpath)
+      log.path("Matched [" .. fn .. "] ->", prefix, "|", subpath)
       local fdata = mount:read(subpath)
       if fdata then return fdata end
     end
