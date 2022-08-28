@@ -5,19 +5,9 @@ local function is_shader(fn)
   return (truss.file_extension(fn) == "sc") and (fn ~= "varying.def.sc")
 end
 
--- TODO: migrate this somewhere more central
-local function detailed_listdir(dir)
-  local details = {}
-  for i, entry in ipairs(truss.fs:list_dir_detailed(dir)) do
-    local kind, symlink, path = entry:match("^(%a) ([a-zA-Z_]):(.*)$")
-    details[i] = {is_file = kind == "F", is_symlink = symlink == "S", path = path}
-  end
-  return details
-end
-
 local function find_loose_shaders(dir)
   local shaders = {}
-  for _, entry in ipairs(detailed_listdir(dir)) do
+  for _, entry in ipairs(truss.fs:list_dir_detailed(dir)) do
     if entry.is_file and is_shader(entry.path) then table.insert(shaders, entry.path) end
   end
   return shaders
@@ -25,7 +15,7 @@ end
 
 local function find_shader_dirs(rootdir)
   local dirs = {}
-  for _, entry in ipairs(detailed_listdir(rootdir)) do
+  for _, entry in ipairs(truss.fs:list_dir_detailed(rootdir)) do
     if not entry.is_file then
       table.insert(dirs, entry.path)
     end

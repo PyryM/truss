@@ -5,25 +5,22 @@
 local m = {}
 
 function m.map_files(f, path, dir_filter, file_filter)
-  for _, name in ipairs(truss.list_directory(path)) do
-    local subpath = truss.extend_table({}, path)
-    table.insert(subpath, name)
-    if truss.is_file(subpath) then
-      if file_filter == nil or (file_filter and file_filter(subpath)) then
-        f(subpath)
+  for _, entry in ipairs(truss.fs:list_dir_detailed(path)) do
+    if entry.is_file then
+      if file_filter == nil or (file_filter and file_filter(entry)) then
+        f(entry)
       end
-    elseif truss.is_directory(subpath) then
-      if dir_filter == nil or (dir_filter and dir_filter(subpath)) then
-        m.map_files(f, subpath, dir_filter, file_filter)
+    elseif not entry.is_symlink then
+      if dir_filter == nil or (dir_filter and dir_filter(entry)) then
+        m.map_files(f, entry.path, dir_filter, file_filter)
       end
     end
   end
 end
 
 function m.filter_file_prefix(prefix)
-  return function(path)
-    local fn = path[#path]
-    return fn and fn:sub(1, #prefix) == prefix
+  return function(entry)
+    return entry.file and entry.file:sub(1, #prefix) == prefix
   end
 end
 
@@ -32,7 +29,8 @@ function m.iter_walk_files(path, dir_filter, file_filter)
     m.map_files(coroutine.yield, path, dir_filter, file_filter)
   end)
   return function()
-    local code, path = coroutine.resume(co)
+    local happy, path = coroutine.resume(co)
+    assert(happy, path)
     return path
   end
 end

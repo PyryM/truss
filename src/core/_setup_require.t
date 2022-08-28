@@ -79,6 +79,7 @@ function truss.create_require_root(options)
 
   function root.require(modname, options)
     options = options or {}
+    modname = truss.normpath(modname, false)
     if loaded_libs[modname] == false then
       error("require [" .. modname .. "] : cyclical require")
       return nil
@@ -119,7 +120,10 @@ function truss.create_require_root(options)
         return v
       end)
       setfenv(module_def, modenv)
-      local evaluated_module = module_def()
+      local happy, evaluated_module = pcall(module_def)
+      if not happy then
+        error("Module [" .. modname .. "] error:\n" .. tostring(evaluated_module))
+      end
       rawset(modenv, "_preregister", nil)
       if not (evaluated_module or options.allow_globals) then 
         error("Module [" .. modname .. "] did not return a table!")

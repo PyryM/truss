@@ -58,7 +58,9 @@ local fs_version = split_version(tonumber(fs_c.trussfs_version()))
 assert_compatible_version(fs_version, {0, 0, 3})
 
 local function split_base_and_file(p)
-  return p:match("^(.*[/\\])([^/\\]*)$")
+  local base, file = p:match("^(.*[/\\])([^/\\]*)$")
+  if not base then return "", file end
+  return base, file
 end
 
 local PATHSEP
@@ -89,6 +91,12 @@ local function joinpath(path, os_paths)
     path = table.concat(path, sep)
   end 
   return normpath(path, os_paths)
+end
+
+local function split_prefix(s, prefix)
+  local spos, epos = s:find(prefix, 1, true)
+  if not spos then return nil end
+  return s:sub(epos+1)
 end
 
 local function microclass(t)
@@ -159,12 +167,6 @@ function fs:recursive_makedir(rawpath)
   fs_c.trussfs_recursive_makedir(fs_ctx, assert(rawpath))
 end
 
-local function split_prefix(s, prefix)
-  local spos, epos = s:find(prefix, 1, true)
-  if not spos then return nil end
-  return s:sub(epos+1)
-end
-
 function fs:read_file(fn)
   -- exhaustively try all paths for now
   fn = normpath(fn, false)
@@ -205,7 +207,20 @@ end
 function fs:list_dir_detailed(dirname)
   assert(dirname, "No directory provided!")
   local list = fs_c.trussfs_list_dir(fs_ctx, dirname, false, true)
-  return self:_list_and_free(list)
+  local details = {}
+  for i, entry in ipairs(self:_list_and_free(list)) do
+    local kind, symlink, path = entry:match("^(%a) ([a-zA-Z_]):(.*)$")
+    local is_file = kind == "F"
+    local base, file = split_base_and_file(path)
+    details[i] = {
+      is_file = is_file, 
+      is_symlink = symlink == "S", 
+      path = path,
+      base = base,
+      file = file,
+    }
+  end
+  return details
 end
 
 function fs:_get_scratch(size)

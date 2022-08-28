@@ -229,13 +229,9 @@ end
 
 -- this runs a specific file as tests
 local allow_archived = false
-local function _run_test_file(dirpath)
-  local req_path = table.concat(truss.slice_table(dirpath, 2, -1), "/")
-  local rawfn = table.concat(dirpath, "/")
-  -- "scripts/" .. dirpath .. "/" .. fn
-  if (not allow_archived) and truss.is_archived(rawfn) then
-    return
-  end
+local function _run_test_file(item)
+  if item.archived and (not allow_archived) then return end
+  local req_path = item.path:match("^src/(.*)$")
   print(make_header(req_path))
   local tt = require(req_path)
   tt.run(m.test)
@@ -245,8 +241,8 @@ end
 local function _run_tests(dirpath, force)
   local futils = require("util/file.t")
   local file_filter = futils.filter_file_prefix("_test")
-  for path in futils.iter_walk_files(dirpath, nil, file_filter) do
-    _run_test_file(path)
+  for item in futils.iter_walk_files(dirpath, nil, file_filter) do
+    _run_test_file(item)
   end
 end
 
@@ -259,7 +255,7 @@ function m.run_tests(dirpath, verbose, test_archives)
   test_stats.errors = 0
   test_stats.verbose = verbose
   print("verbose? " .. tostring(verbose))
-  _run_tests({"scripts", dirpath})
+  _run_tests("src/" .. (dirpath or ""))
   print(make_header("TOTAL"))
   print("PASSED: " .. test_stats.total_passed)
   print("FAILED: " .. test_stats.total_failed)
