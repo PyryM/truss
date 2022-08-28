@@ -5,7 +5,7 @@
 local m = {}
 
 function m.map_files(f, path, dir_filter, file_filter)
-  for _, entry in ipairs(truss.fs:list_dir_detailed(path)) do
+  for _, entry in ipairs(truss.list_dir(path)) do
     if entry.is_file then
       if file_filter == nil or (file_filter and file_filter(entry)) then
         f(entry)

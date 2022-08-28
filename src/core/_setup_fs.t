@@ -55,7 +55,10 @@ local function assert_compatible_version(actual, target)
 end
 
 local fs_version = split_version(tonumber(fs_c.trussfs_version()))
-assert_compatible_version(fs_version, {0, 0, 3})
+assert_compatible_version(fs_version, {0, 0, 4})
+
+local fs_ctx = fs_c.trussfs_init()
+local fs = {archives = {}, mounts = {}}
 
 local function split_base_and_file(p)
   local base, file = p:match("^(.*[/\\])([^/\\]*)$")
@@ -115,8 +118,12 @@ function RawMount:init(fs, srcpath)
   self.path = srcpath
 end
 
+function RawMount:realpath(subpath)
+  return joinpath({self.path, subpath}, true)
+end
+
 function RawMount:read(subpath)
-  local realpath = joinpath({self.path, subpath}, true)
+  local realpath = self:realpath(subpath)
   log.path("Reading from real path:", realpath)
   -- need to explicitly open as binary in windows
   local f = io.open(realpath, "rb")
@@ -124,6 +131,45 @@ function RawMount:read(subpath)
   local data = f:read("*a")
   f:close()
   return data
+end
+
+local function _list_and_free(list)
+  assert(fs_ctx, "No FS context!")
+  local entries = {}
+  local nentries = tonumber(fs_c.trussfs_list_length(fs_ctx, list))
+  for idx = 1, nentries do
+    entries[idx] = ffi.string(fs_c.trussfs_list_get(fs_ctx, list, idx-1))
+  end
+  fs_c.trussfs_list_free(fs_ctx, list)
+  return entries
+end
+
+local function list_real_path(target, realroot, subpath, recursive)
+  local realpath = joinpath({realroot, subpath}, true)
+  log.path("Listing real path:", realpath)
+  local list = fs_c.trussfs_list_dir(fs_ctx, realpath, false, true)
+  for i, entry in ipairs(_list_and_free(list)) do
+    local kind, symlink, filename = entry:match("^(%a) ([a-zA-Z_]):(.*)$")
+    local is_file = kind == "F"
+    table.insert(target, {
+      is_file = is_file, 
+      is_symlink = symlink == "S", 
+      is_archived = false,
+      path = joinpath({subpath, filename}, false),
+      ospath = joinpath({realroot, subpath, filename}, true),
+      base = subpath,
+      file = filename,
+    })
+    if kind == "D" and recursive then
+      list_real_path(target, realroot, joinpath{subpath, file_name}, recursive)
+    end
+  end
+end
+
+function RawMount:listdir(subpath, recursive, target)
+  local details = target or {}
+  list_real_path(details, self.path, subpath, recursive)
+  return details
 end
 
 local ArchiveMount = microclass()
@@ -146,8 +192,10 @@ function ArchiveMount:read(subpath)
   return self.fs:_read_archive_index(self.archive, desc.idx)
 end
 
-local fs_ctx = fs_c.trussfs_init()
-local fs = {archives = {}, mounts = {}}
+function ArchiveMount:listdir(subpath, recursive, target)
+  log.todo("ArchiveMount: actually implement listdir")
+  return target or {}
+end
 
 function fs:_mount(vpath, mount)
   vpath = normpath(vpath .. "/", false)
@@ -167,60 +215,41 @@ function fs:recursive_makedir(rawpath)
   fs_c.trussfs_recursive_makedir(fs_ctx, assert(rawpath))
 end
 
-function fs:read_file(fn)
+function fs:_match_path(path, f)
   -- exhaustively try all paths for now
-  fn = normpath(fn, false)
+  path = normpath(path, false)
   for _, vpath in ipairs(self.mounts) do
     local prefix, mount = vpath[1], vpath[2]
-    local subpath = split_prefix(fn, prefix)
+    local subpath = split_prefix(path, prefix)
     if subpath then
-      log.path("Matched [" .. fn .. "] ->", prefix, "|", subpath)
-      local fdata = mount:read(subpath)
-      if fdata then return fdata end
+      log.path("Matched [" .. path .. "] ->", prefix, "|", subpath)
+      local res = f(mount, subpath)
+      if res then return res end
     end
   end
   return nil
 end
 
+local function mount_read(mount, subpath)
+  return mount:read(subpath)
+end
+
+function fs:read_file(fn)
+  return self:_match_path(fn, mount_read)
+end
+
+function fs:listdir(dir, recursive)
+  local details = {}
+  local function mount_list(mount, subpath)
+    mount:listdir(subpath, recursive, details)
+  end
+  self:_match_path(dir, mount_list)
+  return details
+end
+
 function fs:read_file_buffer(fn)
   local str = self:read_file(fn)
   return {data = terralib.cast(&uint8, str), str = str, size = #str}
-end
-
-function fs:_list_and_free(list)
-  assert(fs_ctx, "No FS context!")
-  local entries = {}
-  local nentries = tonumber(fs_c.trussfs_list_length(fs_ctx, list))
-  for idx = 1, nentries do
-    entries[idx] = ffi.string(fs_c.trussfs_list_get(fs_ctx, list, idx-1))
-  end
-  fs_c.trussfs_list_free(fs_ctx, list)
-  return entries
-end
-
-function fs:list_dir(dirname, include_subdirs)
-  assert(dirname, "No directory provided!")
-  local list = fs_c.trussfs_list_dir(fs_ctx, dirname, not include_subdirs, false)
-  return self:_list_and_free(list)
-end
-
-function fs:list_dir_detailed(dirname)
-  assert(dirname, "No directory provided!")
-  local list = fs_c.trussfs_list_dir(fs_ctx, dirname, false, true)
-  local details = {}
-  for i, entry in ipairs(self:_list_and_free(list)) do
-    local kind, symlink, path = entry:match("^(%a) ([a-zA-Z_]):(.*)$")
-    local is_file = kind == "F"
-    local base, file = split_base_and_file(path)
-    details[i] = {
-      is_file = is_file, 
-      is_symlink = symlink == "S", 
-      path = path,
-      base = base,
-      file = file,
-    }
-  end
-  return details
 end
 
 function fs:_get_scratch(size)
@@ -255,7 +284,7 @@ function fs:_list_archive(fn)
   local handle = self.archives[fn]
   if not handle then return nil end
   local list = fs_c.trussfs_archive_list(fs_ctx, handle)
-  return self:_list_and_free(list)
+  return _list_and_free(list)
 end
 
 truss.fs = fs
@@ -268,10 +297,6 @@ log.info("trussfs version:", table.concat(fs_version, "."))
 log.info("Working dir:", truss.working_dir)
 log.info("Binary dir:", truss.binary_dir)
 log.info("Binary:", truss.binary_name)
-
-function truss.list_raw_directory(path)
-  return truss.fs:list_dir(joinpath(path))
-end
 
 function truss.file_extension(path)
   if type(path) == "table" then
@@ -316,6 +341,10 @@ end
 
 function truss.read_file_buffer(path)
   return truss.fs:read_file_buffer(path)
+end
+
+function truss.list_dir(path, recursive)
+  return truss.fs:listdir(path, recursive)
 end
 
 -- terra has issues with line numbering with dos line endings (\r\n), so

@@ -7,17 +7,17 @@ end
 
 local function find_loose_shaders(dir)
   local shaders = {}
-  for _, entry in ipairs(truss.fs:list_dir_detailed(dir)) do
-    if entry.is_file and is_shader(entry.path) then table.insert(shaders, entry.path) end
+  for _, entry in ipairs(truss.list_dir(dir)) do
+    if entry.ospath and entry.is_file and is_shader(entry.path) then table.insert(shaders, entry.ospath) end
   end
   return shaders
 end
 
 local function find_shader_dirs(rootdir)
   local dirs = {}
-  for _, entry in ipairs(truss.fs:list_dir_detailed(rootdir)) do
-    if not entry.is_file then
-      table.insert(dirs, entry.path)
+  for _, entry in ipairs(truss.list_dir(rootdir)) do
+    if entry.ospath and (not entry.is_file) then
+      table.insert(dirs, entry.ospath)
     end
   end
   return dirs
