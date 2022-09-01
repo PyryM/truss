@@ -46,9 +46,9 @@ end
 local function assert_compatible_version(actual, target)
   if actual[1] ~= target[1] or actual[2] ~= target[2] or actual[3] < target[3] then
     error(
-      "Incompatible trussfs version: got", 
-      table.concat(actual, "."),
-      "needed",
+      "Incompatible trussfs version: got " .. 
+      table.concat(actual, ".") ..
+      " needed " ..
       table.concat(target, ".")
     )
   end
@@ -249,6 +249,7 @@ end
 
 function fs:read_file_buffer(fn)
   local str = self:read_file(fn)
+  if not str then return nil end
   return {data = terralib.cast(&uint8, str), str = str, size = #str}
 end
 

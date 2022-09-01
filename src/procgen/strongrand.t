@@ -62,7 +62,7 @@ function StrongRandom:rand_unsigned(nvals)
     local v = self:rand_uint_n(nbytes) % modulus
     if v < nvals then return v end
   end
-  log.warning("Saw 1000 rejections somehow?!")
+  log.warn("Saw 1000 rejections somehow?!")
   return 0
 end
 

@@ -281,7 +281,7 @@ end
 
 function RenderTarget:destroy()
   if self.is_backbuffer then
-    log.warning("Tried to destroy backbuffer.")
+    log.warn("Tried to destroy backbuffer.")
     return 
   end
   -- TODO: maybe this should use gfx.schedule to avoid the

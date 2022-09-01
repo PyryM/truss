@@ -8,7 +8,7 @@ end
 local function find_loose_shaders(dir)
   local shaders = {}
   for _, entry in ipairs(truss.list_dir(dir)) do
-    if entry.ospath and entry.is_file and is_shader(entry.path) then table.insert(shaders, entry.ospath) end
+    if entry.ospath and entry.is_file and is_shader(entry.path) then table.insert(shaders, entry) end
   end
   return shaders
 end
@@ -17,7 +17,7 @@ local function find_shader_dirs(rootdir)
   local dirs = {}
   for _, entry in ipairs(truss.list_dir(rootdir)) do
     if entry.ospath and (not entry.is_file) then
-      table.insert(dirs, entry.ospath)
+      table.insert(dirs, entry.path)
     end
   end
   return dirs
@@ -92,6 +92,7 @@ local function make_cmd(shader_type, backend, input_fn, output_fn)
 end
 
 local function do_cmd(cmd)
+  log.debug("subprocess:", cmd)
   local f = io.popen(cmd, 'r')
   local s = f:read('*a')
   f:close()
@@ -177,8 +178,9 @@ local function init()
     if #loose_shaders > 0 then
       print(dir)
       local nerrs, nshaders = 0, 0
-      for _, path in ipairs(loose_shaders) do
-        local fn = path:sub(#dir+1)
+      for _, entry in ipairs(loose_shaders) do
+        local fn = entry.file
+        local path = entry.ospath
         local errlangs
         errors[path], errlangs = do_file(fn, path, backends)
         if errors[fn] then

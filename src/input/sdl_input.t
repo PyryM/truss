@@ -5,6 +5,7 @@
 local class = require("class")
 local ecs = require("ecs")
 local SDL = require("./sdl.t")
+local ffi = require("ffi")
 local m = {}
 
 local SDLInputSystem = class("SDLInputSystem")

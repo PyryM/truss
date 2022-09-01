@@ -14,7 +14,7 @@ function RenderSystem:init(options)
   self.mount_name = "render" -- allow direct use of a RenderSystem as a system
   self._identity_mat = math.Matrix4():identity()
   if not options.roots then 
-    log.warning("Render system created without any scene roots")
+    log.warn("Render system created without any scene roots")
   end
   self._roots = options.roots or {}
   self._tasks = options.tasks or require("util/queue.t").Queue()
@@ -97,8 +97,8 @@ function RenderSystem:update()
   self.pipeline:pre_render()
   self.ecs:insert_timing_event("render_sg")
   if not self._roots.default then
-    log.warning("Default scene had no root; setting to ecs.scene")
-    log.warning("(This behavior will change in the future, please provide a root)")
+    log.warn("Default scene had no root; setting to ecs.scene")
+    log.warn("(This behavior will change in the future, please provide a root)")
     self._roots.default = self.ecs.scene
   end
   for scene_name, scene_root in pairs(self._roots) do

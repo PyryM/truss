@@ -96,7 +96,7 @@ function m._parse_props()
         m.trackable_props[prop_name] = {prop_id = prop_enum_val,
                                         getter_func = gfunc}
       else
-        log.warning("No getter for " .. prop_name .. ":" .. prop_type)
+        log.warn("No getter for " .. prop_name .. ":" .. prop_type)
       end
     end
   end
@@ -183,7 +183,7 @@ function Trackable:update_pose(src)
 end
 
 function Trackable:on()
-  log.warning("Base Trackable does not emit any events")
+  log.warn("Base Trackable does not emit any events")
 end
 
 Trackable.update = Trackable.update_pose
@@ -253,7 +253,7 @@ function Controller:_parse_axes_and_buttons()
   self._buttons = {}
   local supported_buttons, properr = self:get_prop("SupportedButtons")
   if not supported_buttons then
-    log.warning(self.debug_name .. " does not have SupportedButtons, assuming every button is supported")
+    log.warn(self.debug_name .. " does not have SupportedButtons, assuming every button is supported")
     supported_buttons = 0xffffffffffffffffULL
   end
   for bname, bmask in pairs(m.button_masks) do
