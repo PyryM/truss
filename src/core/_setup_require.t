@@ -167,6 +167,11 @@ function truss.create_require_root(options)
     root.insert_module("debug", debug)
     root.insert_module("coroutine", coroutine)
 
+    -- make 'builtins' requireable
+    for name, builtin in pairs(truss._builtins) do
+      root.insert_module(name, builtin)
+    end
+
     -- alias core/30log.lua to class so we can just require("class")
     root.require_as("core/30log.lua", "class")
   end

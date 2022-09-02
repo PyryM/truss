@@ -10,6 +10,14 @@ for k, v in pairs(_G) do bare_env[k] = v end
 truss = {}
 truss.bare_env = bare_env
 truss.version = _TRUSS_VERSION or "0.3.0"
+truss._builtins = {}
+
+function truss._declare_builtin(name, libtable)
+  libtable = libtable or {}
+  truss._builtins[name] = libtable
+  truss[name] = libtable
+  return libtable
+end
 
 function TODO()
   error("TODO not implemented!")

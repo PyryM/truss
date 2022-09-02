@@ -4,8 +4,7 @@ if jit.os == "Windows" then
 end
 
 -- "Control Sequence Inducer"
-local term = {}
-truss.term = term
+local term = truss._declare_builtin("term")
 
 local CSI = string.char(27) .. "["
 function term.sgr(...)
@@ -38,16 +37,18 @@ for idx, name in ipairs(colornames) do
   term[name] = idx-1
 end
 
-local function padtag(s)
-  if #s < 7 then
+function term.padtag(s, n)
+  n = n or 7
+  if #s < n then
     local pre = 1
-    local post = (7 - #s) - pre
+    local post = (n - #s) - pre
     s = (" "):rep(pre) .. s .. (" "):rep(post)
   end
   return "[" .. s .. "]"
 end
 
-log = {ignored = {}}
+-- log can remain a global for now
+log = truss._declare_builtin("log", {ignored = {}, printing_to_term = true})
 log.colors = {
   alert = term.color(term.BLACK, term.WHITE),
   warn = term.color(term.YELLOW),
@@ -63,7 +64,7 @@ log.colors = {
 }
 log.colortags = {}
 for name, color in pairs(log.colors) do
-  log.colortags[name] = color .. padtag(name) .. term.RESET
+  log.colortags[name] = color .. term.padtag(name) .. term.RESET
 end
 
 local function stringify_args(...)
@@ -75,22 +76,30 @@ local function stringify_args(...)
   return table.concat(frags, " ")
 end
 
-function truss.log(level, ...)
+function log.log(level, ...)
   if log.ignored[level] then return end
   if log.logfile then
     log.logfile:write("[" .. level .. "] " .. table.concat({...}, " "))
   end
+  if not log.printing_to_term then return end
   local tag = log.colortags[level] or ("[" .. level .. "]")
   print(tag, ...)
 end
 
 for level, _ in pairs(log.colors) do
-  log[level] = function(...) truss.log(level, stringify_args(...)) end
+  assert(level ~= "log", "A log level cannot be named 'log'!")
+  log[level] = function(...) log.log(level, stringify_args(...)) end
 end
+
+setmetatable(log, {
+  __call = function(_log, ...)
+    return _log.log(...)
+  end
+})
 
 -- use default lua error handling
 truss.error = error
 
 local fancy_tag = term.color(term.BLACK, term.CYAN) .. 
   "[ truss " .. truss.version .. " ]" .. term.RESET
-log.crit(fancy_tag, "on Terra", terralib.version, "/", jit.version)
+log("crit", fancy_tag, "on Terra", terralib.version, "/", jit.version)

@@ -5,35 +5,36 @@
 -- (MIT license)
 
 local m = {}
+local term = assert(require("term"))
 
 local test_stats = {passed = 0, failed = 0, errors = 0,
                     total_passed = 0, total_failed = 0,
                     verbose = false}
 
 local function TERMINAL_HANDLER(e, test, msg)
-  local esc = string.char(27)
-  local grn = esc .. "[32m"
-  local red = esc .. "[31m"
-  local blk = esc .. "[0m"
+  local CHECK = term.color(term.GREEN) .. "✔" .. term.RESET
+  local CROSS = term.color(term.RED) .. "✘" .. term.RESET
+  local DOUBLECROSS = term.color(term.RED) .. "✘✘" .. term.RESET
+
   if e == 'pass' then
     test_stats.passed = test_stats.passed + 1
     if test_stats.verbose then
-      print(grn .. "✔ " .. blk .. test .. ': ' .. msg)
+      print(CHECK, test .. ':', msg)
     end
   elseif e == 'fail' then
     test_stats.failed = test_stats.failed + 1
-    print(red .. "✘ " .. blk .. test .. ': ' .. msg)
+    print(CROSS, test .. ':', msg)
   elseif e == 'except' then
     test_stats.errors = test_stats.errors + 1
-    print(red .. "✖✖ " .. blk .. test .. ': ' .. msg)
+    print(DOUBLECROSS, test .. ':', msg)
   elseif e == 'begin' then
   test_stats.passed = 0
   test_stats.failed = 0
   elseif e == 'end' then
     local p, f = test_stats.passed, test_stats.failed
-    local color = grn
-    if f > 0 then color = red end
-    print(color .. "[" .. p .. " / " .. (p+f) .. "] " .. test .. blk)
+    local color = term.color(term.GREEN)
+    if f > 0 then color = term.color(term.RED) end
+    print(color .. "[" .. p .. " / " .. (p+f) .. "] " .. test .. term.RESET)
     test_stats.total_passed = test_stats.total_passed + test_stats.passed
     test_stats.total_failed = test_stats.total_failed + test_stats.failed
   end

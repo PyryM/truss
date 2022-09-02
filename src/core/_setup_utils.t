@@ -7,7 +7,13 @@ function truss.extend_table(dest, ...)
 end
 truss.copy_table = function(t) return truss.extend_table({}, t) end
 
-function truss.slice_table(src, start_idx, stop_idx)
+function truss.extend_list(dest, addition)
+  for _, v in ipairs(addition) do
+    dest[#dest+1] = v
+  end
+end
+
+function truss.slice_list(src, start_idx, stop_idx)
   local dest = {}
   if stop_idx < 0 then
     stop_idx = #src + 1 + stop_idx

@@ -58,7 +58,7 @@ local fs_version = split_version(tonumber(fs_c.trussfs_version()))
 assert_compatible_version(fs_version, {0, 0, 4})
 
 local fs_ctx = fs_c.trussfs_init()
-local fs = {archives = {}, mounts = {}}
+local fs = truss._declare_builtin("fs", {archives = {}, mounts = {}})
 
 local function split_base_and_file(p)
   local base, file = p:match("^(.*[/\\])([^/\\]*)$")
@@ -114,7 +114,7 @@ local function microclass(t)
 end
 
 local RawMount = microclass()
-function RawMount:init(fs, srcpath)
+function RawMount:init(srcpath)
   self.path = srcpath
 end
 
@@ -125,7 +125,8 @@ end
 function RawMount:read(subpath)
   local realpath = self:realpath(subpath)
   log.path("Reading from real path:", realpath)
-  -- need to explicitly open as binary in windows
+  -- binary/text read mode distinction is critical on Windows where
+  -- opening in text mode will truncate files with interior 0s
   local f = io.open(realpath, "rb")
   if not f then return nil end
   local data = f:read("*a")
@@ -173,12 +174,11 @@ function RawMount:listdir(subpath, recursive, target)
 end
 
 local ArchiveMount = microclass()
-function ArchiveMount:init(fs, srcpath)
+function ArchiveMount:init(srcpath)
   self.archive = srcpath
-  self.fs = fs
-  fs:_mount_archive(srcpath)
+  fs._mount_archive(srcpath)
   self.files = {}
-  for _, filedesc in ipairs(fs:list_archive(srcpath)) do
+  for _, filedesc in ipairs(fs.list_archive(srcpath)) do
     local idx, size, kind, path = filedesc:match("^(%d+) (%d+) (%a+):(.*)$")
     if kind == "F" then
       self.files[path] = {idx = idx, size = size, path = path}
@@ -189,7 +189,7 @@ end
 function ArchiveMount:read(subpath)
   local desc = self.files[normpath(subpath, false)]
   if not desc then return nil end
-  return self.fs:_read_archive_index(self.archive, desc.idx)
+  return fs._read_archive_index(self.archive, desc.idx)
 end
 
 function ArchiveMount:listdir(subpath, recursive, target)
@@ -197,28 +197,28 @@ function ArchiveMount:listdir(subpath, recursive, target)
   return target or {}
 end
 
-function fs:_mount(vpath, mount)
+function fs._mount(vpath, mount)
   vpath = normpath(vpath .. "/", false)
   if vpath == "/" or vpath == "./" then vpath = "" end
-  table.insert(self.mounts, {vpath, mount})
+  table.insert(fs.mounts, {vpath, mount})
 end
 
-function fs:mount_path(vpath, realpath)
-  self:_mount(vpath, RawMount:new(self, realpath))
+function fs.mount_path(vpath, realpath)
+  fs._mount(vpath, RawMount:new(realpath))
 end
 
-function fs:mount_archive(vpath, archivefn)
-  self:_mount(vpath, ArchiveMount:new(self, archivefn))
+function fs.mount_archive(vpath, archivefn)
+  fs._mount(vpath, ArchiveMount:new(archivefn))
 end
 
-function fs:recursive_makedir(rawpath)
+function fs.recursive_makedir(rawpath)
   fs_c.trussfs_recursive_makedir(fs_ctx, assert(rawpath))
 end
 
-function fs:_match_path(path, f)
+function fs._match_path(path, f)
   -- exhaustively try all paths for now
   path = normpath(path, false)
-  for _, vpath in ipairs(self.mounts) do
+  for _, vpath in ipairs(fs.mounts) do
     local prefix, mount = vpath[1], vpath[2]
     local subpath = split_prefix(path, prefix)
     if subpath then
@@ -234,55 +234,55 @@ local function mount_read(mount, subpath)
   return mount:read(subpath)
 end
 
-function fs:read_file(fn)
-  return self:_match_path(fn, mount_read)
+function fs.read_file(fn)
+  return fs._match_path(fn, mount_read)
 end
 
-function fs:listdir(dir, recursive)
+function fs.listdir(dir, recursive)
   local details = {}
   local function mount_list(mount, subpath)
     mount:listdir(subpath, recursive, details)
   end
-  self:_match_path(dir, mount_list)
+  fs._match_path(dir, mount_list)
   return details
 end
 
-function fs:read_file_buffer(fn)
-  local str = self:read_file(fn)
+function fs.read_file_buffer(fn)
+  local str = fs.read_file(fn)
   if not str then return nil end
   return {data = terralib.cast(&uint8, str), str = str, size = #str}
 end
 
-function fs:_get_scratch(size)
-  if not self._scratch or self._scratch.size < size then
+function fs._get_scratch(size)
+  if not fs._scratch or fs._scratch.size < size then
     local next_pow2 = math.ceil(2^math.ceil(math.log(size) / math.log(2)))
-    self._scratch = {
+    fs._scratch = {
       data = terralib.new(uint8[next_pow2]),
       size = next_pow2
     }
   end
-  return self._scratch
+  return fs._scratch
 end
 
-function fs:_read_archive_index(archive_fn, file_idx)
-  if not self.archives[archive_fn] then return nil end
-  local handle = self.archives[archive_fn]
+function fs._read_archive_index(archive_fn, file_idx)
+  if not fs.archives[archive_fn] then return nil end
+  local handle = fs.archives[archive_fn]
   local fsize = tonumber(fs_c.trussfs_archive_filesize_index(fs_ctx, handle, file_idx))
-  local scratch = self:_get_scratch(fsize)
+  local scratch = fs._get_scratch(fsize)
   local outsize = fs_c.trussfs_archive_read_index(fs_ctx, handle, file_idx, scratch.data, scratch.size)
   if outsize <= 0 then return nil end
   return ffi.string(scratch.data, outsize)
 end
 
-function fs:_mount_archive(fn)
-  if not self.archives[fn] then
-    self.archives[fn] = fs_c.trussfs_archive_mount(fs_ctx, fn)
+function fs._mount_archive(fn)
+  if not fs.archives[fn] then
+    fs.archives[fn] = fs_c.trussfs_archive_mount(fs_ctx, fn)
   end
-  return self.archives[fn]
+  return fs.archives[fn]
 end
 
-function fs:_list_archive(fn)
-  local handle = self.archives[fn]
+function fs._list_archive(fn)
+  local handle = fs.archives[fn]
   if not handle then return nil end
   local list = fs_c.trussfs_archive_list(fs_ctx, handle)
   return _list_and_free(list)
@@ -333,19 +333,19 @@ end
 
 function truss.read_string(path)
   local rawpath = joinpath(path, false)
-  return truss.fs:read_file(rawpath)
+  return truss.fs.read_file(rawpath)
 end
 
 function truss.read_file(path)
-  return truss.fs:read_file(path)
+  return truss.fs.read_file(path)
 end
 
 function truss.read_file_buffer(path)
-  return truss.fs:read_file_buffer(path)
+  return truss.fs.read_file_buffer(path)
 end
 
 function truss.list_dir(path, recursive)
-  return truss.fs:listdir(path, recursive)
+  return truss.fs.listdir(path, recursive)
 end
 
 -- terra has issues with line numbering with dos line endings (\r\n), so
