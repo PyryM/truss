@@ -65,6 +65,7 @@ local function split_base_and_file(p)
   if not base then return "", file end
   return base, file
 end
+truss.splitpath = split_base_and_file
 
 local PATHSEP
 if jit.os == "Windows" then
@@ -178,8 +179,10 @@ function ArchiveMount:init(srcpath)
   self.archive = srcpath
   fs._mount_archive(srcpath)
   self.files = {}
-  for _, filedesc in ipairs(fs.list_archive(srcpath)) do
+  for _, filedesc in ipairs(fs._list_archive(srcpath)) do
     local idx, size, kind, path = filedesc:match("^(%d+) (%d+) (%a+):(.*)$")
+    idx = assert(tonumber(idx), "archive index is not a number!")
+    size = assert(tonumber(size), "archive filesize is not a number!")
     if kind == "F" then
       self.files[path] = {idx = idx, size = size, path = path}
     end
@@ -197,6 +200,12 @@ function ArchiveMount:listdir(subpath, recursive, target)
   return target or {}
 end
 
+function ArchiveMount:release()
+  fs._release_archive(self.archive)
+  self.files = nil
+  self.archive = nil
+end
+
 function fs._mount(vpath, mount)
   vpath = normpath(vpath .. "/", false)
   if vpath == "/" or vpath == "./" then vpath = "" end
@@ -209,6 +218,10 @@ end
 
 function fs.mount_archive(vpath, archivefn)
   fs._mount(vpath, ArchiveMount:new(archivefn))
+end
+
+function fs.read_bare_archive(archivefn)
+  return ArchiveMount:new(archivefn)
 end
 
 function fs.recursive_makedir(rawpath)
@@ -281,8 +294,26 @@ function fs._mount_archive(fn)
   return fs.archives[fn]
 end
 
-function fs._list_archive(fn)
-  local handle = fs.archives[fn]
+function fs._release_archive(handle)
+  if type(handle) == 'string' then
+    local fn = handle
+    handle = fs.archives[fn]
+    fs.archives[fn] = nil
+  else
+    for fn, _handle in pairs(fs.archives) do
+      if handle == _handle then
+        fs.archives[fn] = nil
+      end
+    end
+  end
+  if not handle then return end
+  fs_c.trussfs_archive_free(fs_ctx, handle)
+end
+
+function fs._list_archive(handle)
+  if type(handle) == 'string' then
+    handle = fs.archives[handle]
+  end
   if not handle then return nil end
   local list = fs_c.trussfs_archive_list(fs_ctx, handle)
   return _list_and_free(list)

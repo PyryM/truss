@@ -4,10 +4,12 @@
 --  truss itself to run this)
 
 local LIB_URL_PATH = "https://github.com/PyryM/trusslibs/releases/download/v0.0.6-five/"
-local ZIP_NAMES = {
+local ARCHIVE_NAMES = {
   Windows = "trusslibs_windows-2019.zip",
   Linux = "trusslibs_ubuntu-latest.zip"
 }
+
+local futil = require("util/file.t")
 
 local function exec_cmd(cmd)
   print(cmd, "-->")
@@ -18,9 +20,9 @@ local function exec_cmd(cmd)
 end
 
 local function init()
-  local libs_url = LIB_URL_PATH .. assert(ZIP_NAMES[truss.os], "No prebuilt libs for current OS!")
+  local libs_url = LIB_URL_PATH .. assert(ARCHIVE_NAMES[truss.os], "No prebuilt libs for current OS!")
   exec_cmd(('curl -o libs.zip -L "%s"'):format(libs_url))
-  exec_cmd('unzip -o libs.zip') -- -o in unzip is 'overwrite'
+  futil.extract_archive("libs.zip")
   if truss.os == "Windows" then
     exec_cmd('del libs.zip')
   else

@@ -1,6 +1,8 @@
 docs/_build/
 models/
 /include/terra/
+/include/soloud/
+/include/bgfx/
 /depsbuild/
 *.log
 *.exe

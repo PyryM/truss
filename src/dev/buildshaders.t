@@ -1,5 +1,7 @@
 local sutil = require "util/string.t"
 local argparse = require "util/argparse.t"
+local term = require "term"
+local fs = require "fs"
 
 local function is_shader(fn)
   return (truss.file_extension(fn) == "sc") and (fn ~= "varying.def.sc")
@@ -8,7 +10,7 @@ end
 local function find_loose_shaders(dir)
   local shaders = {}
   for _, entry in ipairs(truss.list_dir(dir)) do
-    if entry.ospath and entry.is_file and is_shader(entry.path) then table.insert(shaders, entry) end
+    if entry.ospath and entry.is_file and is_shader(entry.file) then table.insert(shaders, entry) end
   end
   return shaders
 end
@@ -107,6 +109,19 @@ local function header(s, n, char)
   return ("%s %s %s"):format(char:rep(pre), s, char:rep(post))
 end
 
+local function make_outdirs(backends)
+  local made_dirs = {}
+  for _, backend in ipairs(backends) do
+    local lang = BACKEND_SHORTNAMES[backend]
+    local outdir = truss.joinpath(SHADER_DIR, lang)
+    if not made_dirs[outdir] then
+      log.info("Creating directory:", outdir)
+      fs.recursive_makedir(outdir)
+      made_dirs[outdir] = true
+    end
+  end
+end
+
 local function do_file(fn, path, backends)
   local prefix = fn:sub(1,1)
   local errors = ""
@@ -134,18 +149,8 @@ local function concat(t)
   return table.concat(frags, "\n")
 end
 
-local function stdout_print(_, text, fg, bg)
-  print(text)
-end
-
-local green, red
-do
-  local esc = string.char(27)
-  local grn = esc .. "[32m"
-  local red = esc .. "[31m"
-  local blk = esc .. "[0m"
-  green = function(s) return grn .. s .. blk end
-  red = function(s) return red .. s .. blk end
+local function colored(color, text)
+  return term.color(term[color:upper()]) .. text .. term.RESET
 end
 
 local function init()
@@ -163,6 +168,8 @@ local function init()
   else
     backends = BACKEND_SETS[jit.os:lower()]
   end
+
+  make_outdirs(backends)
 
   print("Compiling shaders", table.concat(backends, " "))
   local errors = {}
@@ -183,7 +190,7 @@ local function init()
         local path = entry.ospath
         local errlangs
         errors[path], errlangs = do_file(fn, path, backends)
-        if errors[fn] then
+        if errors[path] then
           print(CHARS.vert .. path ..  " -> " .. errlangs)
           nerrs = nerrs + 1
         elseif args['-v'] then
@@ -193,9 +200,9 @@ local function init()
       end
       local count_str = (nshaders - nerrs) .. " / " .. nshaders
       if nerrs > 0 then 
-        count_str = red(count_str) 
+        count_str = colored('red', count_str)
       else 
-        count_str = green(count_str) 
+        count_str = colored('green', count_str) 
       end
       print(CHARS.term .. " " .. count_str)
       total_errors = total_errors + nerrs
@@ -205,14 +212,14 @@ local function init()
   local errstr = concat(errors, '\n')
   if total_errors > 0 then
     if args['-o'] then
-      print("Errors during compilation; see #{args['-o']}")
+      print(colored("red", "Errors during compilation; see " .. args['-o']))
       --truss.save_string args['-o'], errstr
     else
-      print("Errors during shader compilation: ")
       print(errstr)
+      print(colored("red", "^^^ Errors during shader compilation."))
     end
   else
-    print("All shaders compiled successfully.")
+    print(colored("green", "All shaders compiled successfully."))
   end
 end
 

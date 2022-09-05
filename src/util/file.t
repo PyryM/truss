@@ -35,4 +35,29 @@ function m.iter_walk_files(path, dir_filter, file_filter)
   end
 end
 
+function m.extract_archive(fn, dest)
+  dest = dest or ""
+  local made_dirs = {}
+  local fs = require("fs")
+  local arch = fs.read_bare_archive(fn)
+  for path, f in pairs(arch.files) do
+    local dir, fn = truss.splitpath(f.path)
+    local destdir = truss.joinpath(truss.binary_dir, dest, dir)
+    local destfilename = truss.joinpath(destdir, fn)
+    if not made_dirs[destdir] then
+      log.info("Creating directory:", destdir)
+      fs.recursive_makedir(destdir)
+      made_dirs[destdir] = true
+    end
+    log.info("Extracting:", path, "->", destfilename, ("(%d bytes)"):format(f.size))
+    local data = arch:read(path)
+    if data then
+      local outfile = io.open(destfilename, "wb")
+      outfile:write(data)
+      outfile:close()
+    end
+  end
+  arch:release()
+end
+
 return m
