@@ -4,6 +4,7 @@
 -- for bgfx
 
 local m = {}
+local clib = require("native/clib.t")
 
 local function make_c_func(funcname, defname)
   local ret = ""
@@ -15,7 +16,7 @@ end
 
 local function make_c_file(defpairs)
   local ret =  '#include <stdint.h>\n'
-  ret = ret .. '#include "bgfxdefines.h"\n\n'
+  ret = ret .. '#include "bgfx/defines.h"\n\n'
   for defname, funcname in pairs(defpairs) do
     ret = ret .. make_c_func(funcname, defname)
   end
@@ -23,10 +24,9 @@ local function make_c_file(defpairs)
 end
 
 local tempbuffer = terralib.new(uint8[255])
-local stdio = terralib.includec("stdio.h")
 
 local function format_ull_constant(val)
-  stdio.sprintf(tempbuffer, "0x%llxULL", val)
+  c.io.sprintf(tempbuffer, "0x%llxULL", val)
   return ffi.string(tempbuffer)
 end
 
@@ -37,7 +37,7 @@ function m.get_constant_values(defnames)
   end
 
   local cfile = make_c_file(defpairs)
-  log.info(cfile)
+  log.debug(cfile)
 
   local compiled = terralib.includecstring(cfile)
 

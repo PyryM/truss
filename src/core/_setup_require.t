@@ -90,7 +90,7 @@ function truss.create_require_root(options)
 
       -- if the filename is actually a directory, try to load init.t
       local filename = modname
-      local fullpath = root._script_path .. filename
+      local fullpath = truss.joinvpath(root._script_path, filename)
       if truss.is_dir(fullpath) then
         fullpath = truss.joinvpath(fullpath, "init.t")
         filename = truss.joinvpath(filename, "init.t")

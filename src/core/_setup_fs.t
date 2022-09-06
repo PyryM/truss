@@ -362,11 +362,6 @@ function truss.joinpath(...)
   return joinpath(_collectpath(...), true)
 end
 
-function truss.read_string(path)
-  local rawpath = joinpath(path, false)
-  return truss.fs.read_file(rawpath)
-end
-
 function truss.read_file(path)
   return truss.fs.read_file(path)
 end
@@ -382,7 +377,7 @@ end
 -- terra has issues with line numbering with dos line endings (\r\n), so
 -- this function loads a string and then gets rid of carriage returns (\r)
 function truss.read_script(path)
-  local str = truss.read_string(path)
+  local str = truss.read_file(path)
   if not str then return nil end
   return str:gsub("\r", "")
 end
