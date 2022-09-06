@@ -1,56 +1,59 @@
 # Truss Build Instructions
 
-## Windows
-* Dependencies:
-  * Download and install [`cmake`](https://cmake.org/download/)
-  * Download and install [`Visual Studio 2019`](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx)
+Truss builds itself through Terra, so regardless of platform
+you will need to obtain either a [prebuilt Terra release](https://github.com/terralang/terra/releases/tag/release-1.0.6)
+or compile it yourself from source. The recommended Terra version is 1.0.6, but higher
+versions may work.
 
-* Compilation
-  * Run `cmake-gui`
-    * Specify the source directory as your git checkout
-    * Specify the build directory as your git checkout + `/build`
-    * Click `Configure` and select the compiler `Visual Studio 16 2019`
-    * Click `Generate`
-  * Open the `./build` directory and double-click `truss.sln`
-  * In Visual Studio, build the `ALL_BUILD` project to build everything.
+Place the Terra libraries (`terra.dll|.so|.lib|.a`) into `lib/`, the Terra include
+files into `include/terra/` and the Terra executable (`terra|terra.exe`) into the root folder.
 
-## Linux
-* Dependencies: `cmake`, `build-essential`, `libxext-dev`, `mesa-common-dev`, `flex` (for shaders), `bison` (for shaders)
-  * Get CMake version 3.3+
-    
-    **For Ubuntu 20+:**
-    ```bash
-    sudo apt-get install cmake libsdl2-dev flex bison libtinfo5-dev
-    ```
+## Dependency: trussfs
 
-    **For Ubuntu 16.04+:**
+Truss depends on [trussfs](https://github.com/PyryM/trussfs). This needs to be built through
+Rust in the standard way:
 
-    ```bash
-    sudo apt-get install cmake libxext-dev mesa-common-dev flex bison
-    ```
+```
+mkdir _deps
+cd _deps
+git clone https://github.com/PyryM/trussfs
+cd trussfs
+cargo build --release
+```
 
-    **For Ubuntu <16.04:**
+Then copy `_deps/trussfs/target/release/*.dll|.lib|.so|.a` into `libs/`.
 
-    ```bash
-    sudo apt-get install build-essential libxext-dev mesa-common-dev flex bison
-    wget http://www.cmake.org/files/v3.3/cmake-3.3.2.tar.gz
-    tar xf cmake-3.3.2.tar.gz
-    cd cmake-3.3.2/
-    ./configure --system-curl
-    make
-    sudo checkinstall
-    ```
+## truss.exe self-build on Windows
+```
+terra.exe src\build\selfbuild.t
+```
 
-* Compilation
+## truss self-build on Linux / OSX / Posix
+```
+./terra src/build/selfbuild.t
+```
 
-  ```bash
-  mkdir build
-  cd build
-  cmake ..
-  make
-  ```
 
-Now you can run:
-```bash
-./truss examples/logo.t
+## Obtaining additional prebuilt libraries
+
+Windows:
+```
+truss.exe dev/downloadlibs.t
+```
+
+Posix:
+```
+./truss dev/downloadlibs.t
+```
+
+## Building shaders:
+
+Windows:
+```
+truss.exe dev/buildshaders.t
+```
+
+Posix:
+```
+./truss dev/buildshaders.t
 ```
