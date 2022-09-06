@@ -139,6 +139,6 @@ require("build/binexport.t").export_binary{
   platform = {
     Linux = {rpath = "lib/"},
     OSX = {rpath = "lib/"}
-  }
+  },
   symbols = {main = main}
 }
