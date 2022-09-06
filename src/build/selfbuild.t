@@ -130,7 +130,8 @@ require("build/binexport.t").export_binary{
   name = "truss",
   libpath = "lib",
   libs = {
-    all = {"terra", "lua51"}
+    all = {"terra"},
+    Windows = {"lua51"}
   },
   syslibs = {
     Windows = {"user32"}
