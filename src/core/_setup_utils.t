@@ -11,6 +11,7 @@ function truss.extend_list(dest, addition)
   for _, v in ipairs(addition) do
     dest[#dest+1] = v
   end
+  return dest
 end
 
 function truss.slice_list(src, start_idx, stop_idx)

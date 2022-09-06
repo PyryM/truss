@@ -21,9 +21,6 @@ local LUA_GLOBALSINDEX = terra_c.get_lua_globalsindex()
 
 -- create embedded files
 local function find_core_file(fn)
-  if _TRUSS_EMBEDDED and _TRUSS_EMBEDDED[fn] then
-    return _TRUSS_EMBEDDED[fn]
-  end
   local f = io.open(truss._COREPATH .. fn)
   local data = f:read("*a")
   f:close()
@@ -129,15 +126,14 @@ local terra main(argc: int, argv: &&int8): int
   return update_loop(L)
 end
 
--- just assume windows for now
-local libpath = "lib\\"
-local opts = {
-  libpath .. "terra.lib",
-  libpath .. "lua51.lib",
-  "user32.lib",
-  "\\legacy_stdio_definitions.lib"
+require("build/binexport.t").export_binary{
+  name = "truss",
+  libpath = "lib",
+  libs = {
+    all = {"terra", "lua51"}
+  },
+  syslibs = {
+    Windows = {"user32"}
+  },
+  symbols = {main = main}
 }
-
-log.crit("Generating truss.exe...")
-terralib.saveobj("truss.exe", {main = main}, opts)
-log.crit("Success.")

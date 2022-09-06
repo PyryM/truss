@@ -12,11 +12,11 @@ local ARCHIVE_NAMES = {
 local futil = require("util/file.t")
 
 local function exec_cmd(cmd)
-  print(cmd, "-->")
+  log.debug(cmd, "-->")
   local f = io.popen(cmd, 'r')
   local s = f:read('*a')
   f:close()
-  print(s)
+  log.debug("result", s)
 end
 
 local function init()
