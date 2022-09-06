@@ -136,5 +136,9 @@ require("build/binexport.t").export_binary{
   syslibs = {
     Windows = {"user32"}
   },
+  platform = {
+    Linux = {rpath = "lib/"},
+    OSX = {rpath = "lib/"}
+  }
   symbols = {main = main}
 }
