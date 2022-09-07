@@ -1,10 +1,10 @@
 /*
- * BGFX Copyright 2011-2021 Branimir Karadzic. All rights reserved.
+ * BGFX Copyright 2011-2022 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bgfx/blob/master/LICENSE
  *
  * This header is slightly modified to make it easier for Terra
  * to digest; it is automatically generated from the 'real' BGFX
- * headers and IDL by `dev/bgfxgen.moon`.
+ * headers and IDL by `dev/bgfxgen.t`.
  */
 
 #ifndef BGFX_C99_H_HEADER_GUARD
@@ -108,6 +108,7 @@ typedef enum bgfx_render_frame {
 
 typedef enum bgfx_renderer_type {
     BGFX_RENDERER_TYPE_NOOP,
+    BGFX_RENDERER_TYPE_AGC,
     BGFX_RENDERER_TYPE_DIRECT3D9,
     BGFX_RENDERER_TYPE_DIRECT3D11,
     BGFX_RENDERER_TYPE_DIRECT3D12,
@@ -193,8 +194,11 @@ typedef enum bgfx_texture_format {
     BGFX_TEXTURE_FORMAT_RGBA32I,
     BGFX_TEXTURE_FORMAT_RGBA32U,
     BGFX_TEXTURE_FORMAT_RGBA32F,
+    BGFX_TEXTURE_FORMAT_B5G6R5,
     BGFX_TEXTURE_FORMAT_R5G6B5,
+    BGFX_TEXTURE_FORMAT_BGRA4,
     BGFX_TEXTURE_FORMAT_RGBA4,
+    BGFX_TEXTURE_FORMAT_BGR5A1,
     BGFX_TEXTURE_FORMAT_RGB5A1,
     BGFX_TEXTURE_FORMAT_RGB10A2,
     BGFX_TEXTURE_FORMAT_RG11B10F,
