@@ -6,6 +6,7 @@ local build = require("build/build.t")
 local modutils = require("core/module.t")
 local class = require("class")
 local clib = require("native/clib.t")
+local buffer = require("native/buffer.t")
 local m = {}
 
 local imgui_c_raw = build.includec("bgfx/cimgui_terra.h")
@@ -28,6 +29,7 @@ modutils.reexport_renamed(imgui_c_raw, {Im="", ImGui="", ig=""}, true, C)
 
 function m.build(options)
   local FONTCOUNT = 2
+  local KeyBuffer = buffer.Buffer(int32)
 
   local struct ImGuiContext {
     width: int32;
@@ -40,6 +42,7 @@ function m.build(options)
     fontcount: uint32;
     reference_colors: float[16]; -- TODO: dehardcode?
     n_reference_colors: uint32;
+    key_map: KeyBuffer;
   }
 
   if options.SDL then
@@ -63,31 +66,34 @@ function m.build(options)
     -- https://github.com/ocornut/imgui/blob/master/backends/imgui_impl_sdl.cpp
     terra ImGuiContext:_init_bindings()
       -- Keyboard mapping. 
-      -- Dear ImGui will use those indices to peek into the io.KeysDown[] array.
-      var io = IG.GetIO()
-      io.KeyMap[IG.Key_Tab] = SDL.SCANCODE_TAB
-      io.KeyMap[IG.Key_LeftArrow] = SDL.SCANCODE_LEFT
-      io.KeyMap[IG.Key_RightArrow] = SDL.SCANCODE_RIGHT
-      io.KeyMap[IG.Key_UpArrow] = SDL.SCANCODE_UP
-      io.KeyMap[IG.Key_DownArrow] = SDL.SCANCODE_DOWN
-      io.KeyMap[IG.Key_PageUp] = SDL.SCANCODE_PAGEUP
-      io.KeyMap[IG.Key_PageDown] = SDL.SCANCODE_PAGEDOWN
-      io.KeyMap[IG.Key_Home] = SDL.SCANCODE_HOME
-      io.KeyMap[IG.Key_End] = SDL.SCANCODE_END
-      io.KeyMap[IG.Key_Insert] = SDL.SCANCODE_INSERT
-      io.KeyMap[IG.Key_Delete] = SDL.SCANCODE_DELETE
-      io.KeyMap[IG.Key_Backspace] = SDL.SCANCODE_BACKSPACE
-      io.KeyMap[IG.Key_Space] = SDL.SCANCODE_SPACE
-      io.KeyMap[IG.Key_Enter] = SDL.SCANCODE_RETURN
-      io.KeyMap[IG.Key_Escape] = SDL.SCANCODE_ESCAPE
-      io.KeyMap[IG.Key_KeyPadEnter] = SDL.SCANCODE_KP_ENTER
-      io.KeyMap[IG.Key_A] = SDL.SCANCODE_A
-      io.KeyMap[IG.Key_C] = SDL.SCANCODE_C
-      io.KeyMap[IG.Key_V] = SDL.SCANCODE_V
-      io.KeyMap[IG.Key_X] = SDL.SCANCODE_X
-      io.KeyMap[IG.Key_Y] = SDL.SCANCODE_Y
-      io.KeyMap[IG.Key_Z] = SDL.SCANCODE_Z
+      self.key_map:init()
+      self.key_map:allocate(1024)
+      self.key_map:fill(0)
+      var map = self.key_map.data
+      map[SDL.SCANCODE_TAB] = IG.Key_Tab 
+      map[SDL.SCANCODE_LEFT] = IG.Key_LeftArrow 
+      map[SDL.SCANCODE_RIGHT] = IG.Key_RightArrow 
+      map[SDL.SCANCODE_UP] = IG.Key_UpArrow 
+      map[SDL.SCANCODE_DOWN] = IG.Key_DownArrow 
+      map[SDL.SCANCODE_PAGEUP] = IG.Key_PageUp 
+      map[SDL.SCANCODE_PAGEDOWN] = IG.Key_PageDown 
+      map[SDL.SCANCODE_HOME] = IG.Key_Home 
+      map[SDL.SCANCODE_END] = IG.Key_End 
+      map[SDL.SCANCODE_INSERT] = IG.Key_Insert 
+      map[SDL.SCANCODE_DELETE] = IG.Key_Delete 
+      map[SDL.SCANCODE_BACKSPACE] = IG.Key_Backspace 
+      map[SDL.SCANCODE_SPACE] = IG.Key_Space 
+      map[SDL.SCANCODE_RETURN] = IG.Key_Enter 
+      map[SDL.SCANCODE_ESCAPE] = IG.Key_Escape 
+      --map[SDL.SCANCODE_KP_ENTER] = IG.Key_KeyPadEnter 
+      map[SDL.SCANCODE_A] = IG.Key_A 
+      map[SDL.SCANCODE_C] = IG.Key_C 
+      map[SDL.SCANCODE_V] = IG.Key_V 
+      map[SDL.SCANCODE_X] = IG.Key_X 
+      map[SDL.SCANCODE_Y] = IG.Key_Y 
+      map[SDL.SCANCODE_Z] = IG.Key_Z 
       --SDL.SetHint(SDL.HINT_MOUSE_FOCUS_CLICKTHROUGH, "1")
+      var io = IG.GetIO()
       io.ClipboardUserData = self
       io.GetClipboardTextFn = get_clipboard_text
       io.SetClipboardTextFn = set_clipboard_text
@@ -132,16 +138,20 @@ function m.build(options)
       elseif etype == SDL.KEYDOWN or etype == SDL.KEYUP then
         var key = event.key.keysym.scancode
         if key >= 0 and key < 512 then
-          io.KeysDown[key] = (event.type == SDL.KEYDOWN)
-          io.KeyShift = ((SDL.GetModState() and SDL.KMOD_SHIFT) ~= 0)
-          io.KeyCtrl = ((SDL.GetModState() and SDL.KMOD_CTRL) ~= 0)
-          io.KeyAlt = ((SDL.GetModState() and SDL.KMOD_ALT) ~= 0)
+          -- assume legacy SDL keys "just work" (handle mapping later)
+
+          var mapped = self.key_map.data[key]
+          if mapped == 0 then mapped = key end
+          IG.IO_AddKeyEvent(io, mapped, (event.type == SDL.KEYDOWN))
+
+          var modstate = SDL.GetModState()
+          IG.IO_AddKeyEvent(io, IG.Key_ModCtrl, (modstate and SDL.KMOD_CTRL) ~= 0)
+          IG.IO_AddKeyEvent(io, IG.Key_ModShift, (modstate and SDL.KMOD_SHIFT) ~= 0)
+          IG.IO_AddKeyEvent(io, IG.Key_ModAlt, (modstate and SDL.KMOD_ALT) ~= 0)
           escape
-            if truss.os == 'Windows' then
-              emit quote io.KeySuper = false end
-            else
+            if truss.os ~= 'Windows' then
               emit quote 
-                io.KeySuper = ((SDL.GetModState() and SDL.KMOD_GUI) ~= 0) 
+                IG.IO_AddKeyEvent(io, IG.Key_ModSuper, (modstate and SDL.KMOD_GUI) ~= 0)
               end
             end
           end
