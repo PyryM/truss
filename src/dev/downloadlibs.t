@@ -3,9 +3,9 @@
 -- (mainly useful for CI situations, since you can use
 --  truss itself to run this)
 
-local LIB_URL_PATH = "https://github.com/PyryM/trusslibs/releases/download/v0.0.6-five/"
+local LIB_URL_PATH = "https://github.com/PyryM/trusslibs/releases/download/v0.0.7-pre3/"
 local ARCHIVE_NAMES = {
-  Windows = "trusslibs_windows-2019.zip",
+  Windows = "trusslibs_windows-latest.zip",
   Linux = "trusslibs_ubuntu-latest.zip"
 }
 
