@@ -5,6 +5,7 @@
 
 local m = {}
 local clib = require("native/clib.t")
+local ffi = require("ffi")
 
 local function make_c_func(funcname, defname)
   local ret = ""
@@ -26,7 +27,7 @@ end
 local tempbuffer = terralib.new(uint8[255])
 
 local function format_ull_constant(val)
-  c.io.sprintf(tempbuffer, "0x%llxULL", val)
+  clib.io.sprintf(tempbuffer, "0x%llxULL", val)
   return ffi.string(tempbuffer)
 end
 

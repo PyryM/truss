@@ -173,7 +173,7 @@ end
 local function get_functions()
   -- generating function signatures from the IDL is too much of a pain
   -- instead just read them from the C-api header
-  local path = truss.joinvpath(BGFX_PATH, "c99/bgfx.h")
+  local path = truss.joinvpath(BGFX_PATH, "bgfx.h")
   local api_funcs = {}
   for _, line in ipairs(sutil.split_lines(truss.read_script(path))) do
     local api_line, api_order_key = is_api_func(line)
@@ -217,7 +217,7 @@ end
 
 local function gen_handle(handle)
   local name = "bgfx_" .. lower_snake(handle.name)
-  return "typedef struct " .. name .. "{ uint16_t idx; } " .. name .. "_t;"
+  return "typedef struct " .. name .. " { uint16_t idx; } " .. name .. "_t;"
 end
 
 local function gen_handles(idl)
@@ -259,7 +259,7 @@ local FIXED_TYPES = {
   char = "char",
   bool = "bool",
   CallbackI = "bgfx_callback_interface_t",
-  bAllocatorI = "bgfx_allocator_interface_t",
+  ["bx::AllocatorI"] = "bgfx_allocator_interface_t",
   void = "void",
 }
 
@@ -325,46 +325,46 @@ local function format_field(f, parent)
   return "    " .. argtype .. " " .. name .. ";"
 end
 
-local function gen_struct(struct)
-  local name = lower_snake(struct.name)
-  if struct.namespace then
-    name = lower_snake(struct.namespace) .. "_" .. name
+local function gen_struct(decl)
+  local name = lower_snake(decl.name)
+  if decl.namespace then
+    name = lower_snake(decl.namespace) .. "_" .. name
     namespaced_structs[name] = true
   end
-  if #struct.struct == 0 then
+  if #decl['struct'] == 0 then
     local td = "typedef struct bgfx_" .. name .. "_s bgfx_" .. name .. "_t;"
     return name, td
   end
   local body = {}
-  for _, f in ipairs(struct.struct) do
+  for _, f in ipairs(decl['struct']) do
     table.insert(body, format_field(f, name))
   end
   return name, conflatten({
     "typedef struct bgfx_" .. name .. "_s {",
     body,
-    "} bgfx_#{name}_t;"
+    "} bgfx_" .. name .. "_t;"
   })
 end
 
 local function gen_structs(idl)
-  local structs = {}
+  local defs = {}
   for _, t in ipairs(idl.types) do
-    if t.struct then
-      local name, struct = gen_struct(t)
-      table.insert(structs, struct)
+    if t['struct'] then
+      local __, def = gen_struct(t)
+      table.insert(defs, def)
     end
   end
-  return table.concat(structs, "\n\n")
+  return table.concat(defs, "\n\n")
 end
 
 local PREAMBLE = [[
 /*
- * BGFX Copyright 2011-2021 Branimir Karadzic. All rights reserved.
+ * BGFX Copyright 2011-2022 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bgfx/blob/master/LICENSE
  *
  * This header is slightly modified to make it easier for Terra
  * to digest; it is automatically generated from the 'real' BGFX
- * headers and IDL by `dev/bgfxgen.moon`.
+ * headers and IDL by `dev/bgfxgen.t`.
  */
 
 #ifndef BGFX_C99_H_HEADER_GUARD
@@ -417,7 +417,7 @@ end
 
 local function init()
   log.info("Generating include/bgfx/bgfx_truss.c99.h")
-  save_string("include/bgfx/bgfx_truss.c99.h", gen_header(bpath))
+  save_string("include/bgfx/bgfx_truss.c99.h", gen_header())
   log.info("Generating src/gfx/bgfx_constants.t")
   save_string("src/gfx/bgfx_constants.t", get_constants())
   log.info("Done.")
