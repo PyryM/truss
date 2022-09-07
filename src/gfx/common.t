@@ -121,6 +121,10 @@ function m.get_stats(include_views)
 end
 
 function m.init_gfx(options)
+  if not (options.headless or options.window) then
+    error("init_gfx: not headless and no window provided!")
+  end
+
   local gfx = require("gfx") -- so we can set module level values
 
   local t0 = truss.tic()
@@ -182,24 +186,33 @@ function m.init_gfx(options)
     return false
   end
 
-  if options.headless then
-    log.info("Attempting headless BGFX")
-    m._headless_pdata = terralib.new(bgfx.platform_data_t)
-    m._headless_pdata.ndt = nil
-    m._headless_pdata.nwh = nil
-    m._headless_pdata.context = nil
-    m._headless_pdata.backBuffer = nil
-    m._headless_pdata.backBufferDS = nil
-    bgfx.set_platform_data(m._headless_pdata)
-  end
-
   log.debug("bgfx init ctor")
   m._init_struct = terralib.new(bgfx.init_t)
+  m._init_struct.type = 0
+  m._init_struct.vendorId = 0
+  m._init_struct.deviceId = 0
+  m._init_struct.capabilities = 0
+  m._init_struct.debug = false
+  m._init_struct.profile = false
   bgfx.init_ctor(m._init_struct)
+
+  if options.headless then 
+    log.debug("Setting platform data to nil")
+    m._init_struct.platformData.ndt = nil
+    m._init_struct.platformData.nwh = nil
+    m._init_struct.platformData.context = nil
+    m._init_struct.platformData.backBuffer = nil
+    m._init_struct.platformData.backBufferDS = nil
+    bgfx.set_platform_data(m._init_struct.platformData)
+  elseif options.window then
+    log.debug("Setting platform data from provided window")
+    options.window:get_bgfx_platform_data(m._init_struct.platformData)
+  end
+
   m._init_struct['type']  = renderer_type
   m._init_struct.callback = cb_ptr
   m._init_struct.debug    = false -- TODO/FEATURE: allow these to be set?
-  m._init_struct.profile  = false 
+  m._init_struct.profile  = false
   --m._init_struct.resolution.format = require("./formats.t").TEX_RGBA8.bgfx_enum
 
   m._init_struct.resolution.width = w

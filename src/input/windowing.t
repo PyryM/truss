@@ -93,14 +93,17 @@ local CursorPtr = &SDL.Cursor
 
 local function platform_specific_bgfx_setup(pd, wmi)
   if truss.os == "Windows" then
+    log.debug("Windows platform bgfx setup")
     return quote
       pd.nwh = wmi.info.win.window
     end
   elseif truss.os == "OSX" then
+    log.debug("OSX platform bgfx setup")
     return quote 
       pd.nwh = wmi.info.cocoa.window
     end
   elseif truss.os == "Linux" then
+    log.debug("Linux platform bgfx setup")
     -- do we need to care about Wayland?
     return quote
       if false and wmi.subsystem == SDL.SYSWM_WAYLAND then
@@ -151,7 +154,7 @@ terra Windowing:init()
   self.filedrop_path[255] = 0
 end
 
-terra Windowing:set_bgfx_window_data(): bool
+terra Windowing:get_bgfx_platform_data(pd: &bgfx.platform_data_t): bool
   var wmi: SDL.SysWMinfo
   wmi.version.major = SDL.MAJOR_VERSION
   wmi.version.minor = SDL.MINOR_VERSION
@@ -160,13 +163,18 @@ terra Windowing:set_bgfx_window_data(): bool
     c.io.printf("Error getting window info?\n")
     return false
   end
-  var pd: bgfx.platform_data_t
   pd.ndt = nil
   pd.nwh = nil
   pd.context = nil
   pd.backBuffer = nil
   pd.backBufferDS = nil
   [platform_specific_bgfx_setup(pd, wmi)]
+  return true
+end
+
+terra Windowing:set_bgfx_window_data(): bool
+  var pd: bgfx.platform_data_t
+  if not self:get_bgfx_platform_data(&pd) then return false end
   bgfx.set_platform_data(&pd)
   return true
 end
