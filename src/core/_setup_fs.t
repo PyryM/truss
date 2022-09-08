@@ -350,7 +350,7 @@ function truss.file_extension(path)
   if type(path) == "table" then
     path = path[#path]
   end
-  return path:match("^.*%.(.*)$")
+  return path:match("^.*%.([^/\\]*)$")
 end
 
 function truss.is_file(path)
