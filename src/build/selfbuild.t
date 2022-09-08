@@ -142,3 +142,5 @@ require("build/binexport.t").export_binary{
   },
   symbols = {main = main}
 }
+
+return {init = function() truss.quit() end}
