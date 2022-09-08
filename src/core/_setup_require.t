@@ -42,8 +42,9 @@ function truss.create_require_root(options)
     [".t"] = terralib.load,
     [".lua"] = load,
   }
-  local loaded_libs = {}
+  local loaded_libs, load_stack, load_tree = {}, {}, {}
   root._loaded_libs = loaded_libs
+  root._load_tree = load_tree
   root._script_path = options.script_path or "src/"
   local error = options.error or error
 
@@ -96,19 +97,28 @@ function truss.create_require_root(options)
         filename = truss.joinvpath(filename, "init.t")
       end
 
-      local t0 = truss.tic()
+      local loadmeta = {name = modname, t0 = truss.tic(), children = {}}
+      load_tree[modname] = loadmeta
+      if #load_stack > 0 then
+        table.insert(load_stack[#load_stack].children, loadmeta)
+      end
+      
       local funcsource = truss.read_script(fullpath)
       if not funcsource then
         error("require('" .. filename .. "'): file does not exist.")
+        loadmeta.error = "missing"
         return nil
       end
       local loader = select_loader(fullpath)
       if not loader then
         error("No loader for " .. fullpath)
+        loadmeta.error = "no_loader"
+        return nil
       end
       local module_def, loaderror = truss.loadstring(funcsource, filename, loader)
       if not module_def then
         error("require('" .. modname .. "'): syntax error: " .. loaderror)
+        loadmeta.error = "syntax"
         return nil
       end
       local modenv = options.env or create_module_env(modname, filename, options)
@@ -120,7 +130,10 @@ function truss.create_require_root(options)
         return v
       end)
       setfenv(module_def, modenv)
+      load_stack[#load_stack + 1] = loadmeta
       local happy, evaluated_module = pcall(module_def)
+      load_stack[#load_stack] = nil
+      loadmeta.dt = truss.toc(loadmeta.t0)
       if not happy then
         error("Module [" .. modname .. "] error:\n" .. tostring(evaluated_module))
       end
@@ -133,12 +146,31 @@ function truss.create_require_root(options)
         error("Module [" .. modname .. "] did not return preregistered table!")
       end
       loaded_libs[modname] = modtab
-      log.perf(string.format("Loaded [%s] in %.2f ms",
-                            modname, truss.toc(t0) * 1000.0))
+      if #load_stack == 0 then
+        root.dump_load_perf(modname)
+      end
     end
     return loaded_libs[modname]
   end
   root._module_env.require = root.require
+
+  function root.dump_load_perf(modname, indent)
+    indent = indent or 0
+    local indentstr = ("  "):rep(indent)
+    local meta = load_tree[modname]
+    if not meta then
+      log.warn("no load metadata for", modname)
+      return
+    end
+    local timestr = ("%0.1fms"):format(meta.dt*1000.0)
+    if #timestr < 6 then 
+      timestr = (" "):rep(6 - #timestr) .. timestr
+    end
+    log.perf(indentstr, timestr, meta.name)
+    for _, child in ipairs(meta.children) do
+      root.dump_load_perf(child.name, indent+1)
+    end
+  end
 
   function root.require_as(filename, libname, options)
     log.path("Loading [" .. filename .. "] as [" .. libname .. "]")

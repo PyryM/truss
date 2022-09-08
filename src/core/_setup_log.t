@@ -37,14 +37,18 @@ for idx, name in ipairs(colornames) do
   term[name] = idx-1
 end
 
-function term.padtag(s, n)
-  n = n or 7
+function term.pad(s, n, fill)
+  fill = fill or " "
   if #s < n then
     local pre = 1
     local post = (n - #s) - pre
-    s = (" "):rep(pre) .. s .. (" "):rep(post)
+    s = fill:rep(pre) .. s .. fill:rep(post)
   end
-  return "[" .. s .. "]"
+  return s
+end
+
+function term.padtag(s, n)
+  return "[" .. term.pad(s, n or 7) .. "]"
 end
 
 -- log can remain a global for now
