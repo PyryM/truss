@@ -68,7 +68,7 @@ local terra update_loop(L: &terra_c.lua_State): int
     terra_c.lua_settop(L, -2)
     if running == 0 then break end
     if not call_global_func(L, "_core_update") then
-      return -1
+      return 1
     end
   end
 
@@ -114,13 +114,13 @@ local terra main(argc: int, argv: &&int8): int
   var loadres = terra_c.terra_loadbuffer(L, coresrc, [#coresrc], "core.t")
   if loadres ~= 0 then
     clib.io.printf("Error parsing core: %s\n", terra_c.lua_tolstring(L, -1, nil))
-    return -1
+    return 1
   end
 
   var runres = terra_c.lua_pcall(L, 0, 0, 0)
   if runres ~= 0 then
     clib.io.printf("Error running core: %s\n", terra_c.lua_tolstring(L, -1, nil))
-    return -1
+    return 1
   end
 
   return update_loop(L)
