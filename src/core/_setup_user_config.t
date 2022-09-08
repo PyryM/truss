@@ -74,7 +74,11 @@ end
 
 for _, pathpair in ipairs(config.paths) do
   local vpath, realpath = unpack(pathpair)
-  truss.fs.mount_path(vpath, realpath)
+  if truss.file_extension(realpath) then 
+    truss.fs.mount_archive(vpath, realpath)
+  else
+    truss.fs.mount_path(vpath, realpath)
+  end
 end
 
 for _, level in ipairs(config.ignored_log_levels) do

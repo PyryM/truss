@@ -98,9 +98,8 @@ local function joinpath(path, os_paths)
 end
 
 local function split_prefix(s, prefix)
-  local spos, epos = s:find(prefix, 1, true)
-  if not spos then return nil end
-  return s:sub(epos+1)
+  if s:sub(1, #prefix) ~= prefix then return nil end
+  return s:sub(#prefix+1)
 end
 
 local function microclass(t)
@@ -196,8 +195,23 @@ function ArchiveMount:read(subpath)
 end
 
 function ArchiveMount:listdir(subpath, recursive, target)
-  log.todo("ArchiveMount: actually implement listdir")
-  return target or {}
+  target = target or {}
+  for path, entry in pairs(self.files) do
+    local base, file = split_base_and_file(path)
+    local dirpath = split_prefix(base, subpath)
+    if dirpath and (recursive or dirpath == "" or dirpath == "/") then
+      table.insert(target, {
+        is_file = true, 
+        is_symlink = false, 
+        is_archived = true,
+        path = path,
+        base = base,
+        file = file,
+        ospath = nil,
+      })
+    end
+  end
+  return target
 end
 
 function ArchiveMount:release()
@@ -213,10 +227,12 @@ function fs._mount(vpath, mount)
 end
 
 function fs.mount_path(vpath, realpath)
+  log.info("Mounting path:", vpath, "->", realpath)
   fs._mount(vpath, RawMount:new(realpath))
 end
 
 function fs.mount_archive(vpath, archivefn)
+  log.info("Mounting archive:", vpath, "->", archivefn)
   fs._mount(vpath, ArchiveMount:new(archivefn))
 end
 
