@@ -52,7 +52,10 @@ function term.padtag(s, n)
 end
 
 -- log can remain a global for now
-log = truss._declare_builtin("log", {ignored = {}, printing_to_term = true})
+log = truss._declare_builtin("log", {
+  enabled = {all = true, debug = false, path = false, perf = false}, 
+  printing_to_term = true
+})
 log.colors = {
   alert = term.color(term.BLACK, term.WHITE),
   warn = term.color(term.YELLOW),
@@ -81,7 +84,9 @@ local function stringify_args(...)
 end
 
 function log.log(level, ...)
-  if log.ignored[level] then return end
+  local enabled = log.enabled[level]
+  if enabled == nil then enabled = log.enabled['all'] end
+  if not enabled then return end
   if log.logfile then
     log.logfile:write("[" .. level .. "] " .. table.concat({...}, " "))
   end

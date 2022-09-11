@@ -4,13 +4,16 @@ local default_config = {
   cpu_triple = "native",
   cpu_features = "",
   cpu_opt_profile = {},
-  paths = {{".", truss.binary_dir}},
-  ignored_log_levels = {"path"},
+  paths = {{".", truss.working_dir}},
+  log_enabled = {"all", "~path", "~debug"},
   entrypoints = {main="main.t"},
   WORKDIR = truss.working_dir,
   BINDIR = truss.binary_dir,
   BINARY = truss.binary_name,
 }
+if truss.working_dir ~= truss.binary_dir then
+  table.insert(default_config.paths, {".", truss.binary_dir})
+end
 
 local function list_config_options()
   local config_options = {}
@@ -49,11 +52,28 @@ if configfile then
   setfenv(configfunc, config)
   local happy, err = pcall(configfunc)
   if not happy then
-    error("Error running config file:", err)
+    error("Error running config file: " .. err)
   end
   setmetatable(config, nil)
 else
   log.info("No config file at [" .. configfn .. "]; using defaults.")
+end
+
+local log_enabled = config.log_enabled
+if type(log_enabled) == 'string' then 
+  log_enabled = {log_enabled}
+elseif log_enabled == true then
+  log_enabled = {"all"}
+elseif log_enabled == false then
+  log_enabled = {"~all"}
+end
+log.enabled = {}
+for _, level in ipairs(log_enabled) do
+  if level:sub(1,1) == "~" then
+    log.enabled[level:sub(2,-1)] = false
+  else
+    log.enabled[level] = true
+  end
 end
 
 if config.cpu_triple ~= "native" or config.cpu_features ~= "" then
@@ -79,10 +99,6 @@ for _, pathpair in ipairs(config.paths) do
   else
     truss.fs.mount_path(vpath, realpath)
   end
-end
-
-for _, level in ipairs(config.ignored_log_levels) do
-  log.ignored[level] = true
 end
 
 truss.config = config
