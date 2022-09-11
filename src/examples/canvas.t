@@ -7,6 +7,8 @@ local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
 local gfx = require("gfx")
 
+local myapp
+
 local function context_setup(ctx)
   if ctx.setup_complete then return end
   ctx.bg_color = ctx:RGBf(0.5, 0.5, 0.5)   -- gray
@@ -44,7 +46,7 @@ local function Label(_ecs, name, options)
                                           height = options.height or 64}
   local mat = flat.FlatMaterial{
     texture = canvas:get_tex(), 
-    color = {0.5, 0.2, 0.2, 1.0},
+    color = {1.0, 1.0, 1.0, 1.0},
     state = gfx.State{cull = false}
   }
   local ret = graphics.Mesh(_ecs, name, label_geo, mat)
@@ -54,7 +56,7 @@ local function Label(_ecs, name, options)
   return ret
 end
 
-function init()
+local function init()
   myapp = app.App{title = "canvas example", width = 1280, height = 720,
                   msaa = true, stats = false, clear_color = 0x404080ff,
                   num_workers = 3}
@@ -67,13 +69,15 @@ function init()
     label:update_matrix()
   end
   
-  mygrid = myapp.scene:create_child(grid.Grid, "grid", {thickness = 0.02, 
+  local mygrid = myapp.scene:create_child(grid.Grid, "grid", {thickness = 0.02, 
                                                 color = {0.5, 0.5, 0.5}})
   mygrid.position:set(0.0, -1.0, 0.0)
   mygrid.quaternion:euler{x = math.pi / 2.0, y = 0.0, z = 0.0}
   mygrid:update_matrix()
 end
 
-function update()
+local function update()
   myapp:update()
 end
+
+return {init = init, update = update}
