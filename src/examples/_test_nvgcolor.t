@@ -3,7 +3,25 @@
 local m = {}
 
 function m.run(test)
-  test("struct_passing", m.test_struct_passing)
+  test("struct passing", m.test_struct_passing)
+  test("minimal struct passing", m.minimal_struct_pass)
+end
+
+function m.minimal_struct_pass(t)
+  local cdefs = terralib.includecstring[[
+  typedef struct Color {
+    float rgba[4];
+  } Color;
+  ]]
+
+  local terra new_color(): cdefs.Color
+    var ret: cdefs.Color
+    for idx = 0, 4 do ret.rgba[idx] = [float](idx) end
+    return ret
+  end
+
+  local val = new_color()
+  t.expect(val.rgba[2], 2.0, "Color.b is as expected")
 end
 
 function m.test_struct_passing(t)
