@@ -6,11 +6,27 @@ local orbitcam = require("graphics/orbitcam.t")
 local grid = require("graphics/grid.t")
 local ecs = require("ecs")
 
+local nanovg = require("gfx/nanovg.t")
+local clib = require("native/clib.t")
+local nvgc = nanovg.C_raw
+
 local FONT_SIZE = 20
 local FONT_X_MARGIN = 5
 local FONT_Y_MARGIN = 8
 
 local myapp
+
+local terra fillcolor(ctx: &nvgc.NVGcontext, r: float, g: float, b: float, a: float)
+  var color = nvgc.nvgRGBAf(r, g, b, a)
+  -- clib.io.printf("color.r: %f\n", color.rgba[0])
+  nvgc.nvgFillColor(ctx, color)
+end
+
+local terra strokecolor(ctx: &nvgc.NVGcontext, r: float, g: float, b: float, a: float)
+  var color = nvgc.nvgRGBAf(r, g, b, a)
+  -- clib.io.printf("color.r: %f\n", color.rgba[0])
+  nvgc.nvgStrokeColor(ctx, color)
+end
 
 -- Draw text with a rounded-rectangle background
 local function rounded_text(ctx, x, y, text)
@@ -18,12 +34,14 @@ local function rounded_text(ctx, x, y, text)
   local th = FONT_SIZE
   ctx:BeginPath()
   ctx:RoundedRect(x, y, tw, th, 3)
-  ctx:FillColor(ctx.bg_color)
+  --ctx:FillColor(ctx.bg_color)
+  fillcolor(assert(ctx._ctx), 0, 0, 0, 0.5)
   ctx:Fill()
 
   ctx:FontFace("sans")
   ctx:FontSize(FONT_SIZE)
-  ctx:FillColor(ctx.font_color)
+  --ctx:FillColor(ctx.font_color)
+  fillcolor(assert(ctx._ctx), 1, 1, 1, 1)
   ctx:TextAlign(ctx.ALIGN_MIDDLE)
   ctx:Text(x, y + th/2, text, nil)
 end
@@ -67,11 +85,13 @@ function NVGThing:nvg_draw(ctx)
   ctx:Image(ctx.test_image, mouse_state.x, mouse_state.y, 60, 60)
   ctx:BeginPath()
   ctx:Circle(mouse_state.x, mouse_state.y, 3)
-  ctx:FillColor(ctx:RGB(255, 255, 255))
+  --ctx:FillColor(ctx:RGB(255, 255, 255))
+  fillcolor(assert(ctx._ctx), 1, 1, 1, 1)
   ctx:Fill()
   ctx:BeginPath()
   ctx:Circle(mouse_state.x, mouse_state.y, 10)
-  ctx:StrokeColor(ctx:RGB(255, 255, 255))
+  --ctx:StrokeColor(ctx:RGB(255, 255, 255))
+  strokecolor(assert(ctx._ctx), 1, 1, 1, 1)
   ctx:StrokeWidth(2)
   ctx:Stroke()
 end
