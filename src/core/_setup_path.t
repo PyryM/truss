@@ -1,8 +1,8 @@
 log.todo("better path setup?")
 
 local ffi = require("ffi")
-if jit.os ~= "Linux" and #terralib.includepath <= 1 then
-  -- assume Linux will have header files available
+if jit.os == "Windows" and #terralib.includepath <= 1 then
+  -- assume Linux/OSX will have header files available
   -- assume include path is empty and add compat includes
   log.info("No system headers on include path: using bundled compat headers")
   terralib.includepath = terralib.includepath .. ";include;include/compat"
