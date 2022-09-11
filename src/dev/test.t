@@ -162,6 +162,7 @@ function m.test(name, f, async)
     local handler = gambiarrahandler
 
     local funcs = {}
+    funcs.verbose = test_stats.verbose
     funcs.eq = deepeq
     funcs.approx_eq = approx_eq
     funcs.spy = spy

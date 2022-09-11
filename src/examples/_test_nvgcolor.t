@@ -22,7 +22,9 @@ function m.test_struct_passing(t)
   } Color2;
   ]]
 
-  print(cdefs.Color2:layoutstring())
+  if t.verbose then
+    print(cdefs.Color2:layoutstring())
+  end
 
   local function run_tests(name, ctype, rgba_get)
     local terra create_ctype(): ctype
@@ -55,6 +57,10 @@ function m.test_struct_passing(t)
         ret[idx+1] = get_elem(s, idx)
       end
       return ret
+    end
+
+    if t.verbose then
+      copy_ctype:disas()
     end
 
     local val = create_ctype()
