@@ -10,6 +10,8 @@ local FONT_SIZE = 20
 local FONT_X_MARGIN = 5
 local FONT_Y_MARGIN = 8
 
+local myapp
+
 -- Draw text with a rounded-rectangle background
 local function rounded_text(ctx, x, y, text)
   local tw = #text * FONT_SIZE * 0.55
@@ -29,7 +31,7 @@ end
 local lowlatency = true
 local single_threaded = false
 local mouse_state = {x = 0, y = 0}
-function on_mouse(mstate, evtname, evt)
+local function on_mouse(mstate, evtname, evt)
   mstate.x, mstate.y = evt.x, evt.y
 end
 
@@ -74,7 +76,7 @@ function NVGThing:nvg_draw(ctx)
   ctx:Stroke()
 end
 
-function init()
+local function init()
   myapp = app.App{title = "nanovg example", width = 640, height = 480,
                   msaa = true, stats = false, clear_color = 0x404080ff,
                   fullscreen = false, display = 0,
@@ -91,8 +93,8 @@ function init()
   local mat = pbr.FacetedPBRMaterial{diffuse = {0.2, 0.03, 0.01, 1.0}, 
                                      tint = {0.001, 0.001, 0.001}, 
                                      roughness = 0.7}
-  mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
-  mygrid = myapp.scene:create_child(grid.Grid, "grid", {thickness = 0.02, 
+  local mymesh = myapp.scene:create_child(graphics.Mesh, "mymesh", geo, mat)
+  local mygrid = myapp.scene:create_child(grid.Grid, "grid", {thickness = 0.02, 
                                                 color = {0.5, 0.5, 0.5}})
   mygrid.position:set(0.0, -1.0, 0.0)
   mygrid.quaternion:euler({x = math.pi / 2.0, y = 0.0, z = 0.0})
@@ -101,7 +103,9 @@ function init()
   myapp.scene:create_child(ecs.Entity3d, "nvg_draw_thing", NVGThing())
 end
 
-function update()
+local function update()
   myapp:update()
   --truss.sleep(14)
 end
+
+return {init = init, update = update}

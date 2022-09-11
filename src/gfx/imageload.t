@@ -1,5 +1,6 @@
 local bgfx = require("./bgfx.t") -- make sure bgfx is loaded
 local build = require("build/build.t")
+local ffi = require("ffi")
 
 local m = {}
 
