@@ -163,4 +163,9 @@ function m.add_dump(T)
   end
 end
 
+function m.add_method(T, methodname, method)
+  method:setname(methodname)
+  T.methods[methodname] = method
+end
+
 return m
