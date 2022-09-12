@@ -10,6 +10,7 @@ for k, v in pairs(_G) do bare_env[k] = v end
 truss = {}
 truss.bare_env = bare_env
 truss.version = _TRUSS_VERSION or "0.3.0"
+truss.version_emoji = _TRUSS_VERSION_EMOJI or "🦴"
 truss._builtins = {}
 
 function truss._declare_builtin(name, libtable)

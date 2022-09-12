@@ -121,6 +121,6 @@ setmetatable(log, {
 truss.error = error
 
 local fancy_tag = term.color(term.BLACK, term.CYAN) .. 
-  "[ truss " .. truss.version .. " ]" .. term.RESET
+  "[ truss " .. truss.version .. " " .. truss.version_emoji .. " ]" .. term.RESET
 log("crit", fancy_tag .. " on Terra " .. terralib.version .. " / " .. jit.version)
-log.info("os: " .. (jit.os or "?") .. "; arch: " .. (jit.arch or "?"))
+log.info("OS: " .. (jit.os or "?") .. "; ARCH: " .. (jit.arch or "?"))
