@@ -1,5 +1,3 @@
-log.todo("better path setup?")
-
 local ffi = require("ffi")
 if jit.os == "Windows" and #terralib.includepath <= 1 then
   -- assume Linux/OSX will have header files available

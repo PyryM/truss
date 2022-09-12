@@ -1,6 +1,17 @@
 if jit.os == "Windows" then
-  -- change to unicode codepage so that unicode prints work!
-  os.execute("chcp 65001")
+  -- Make sure the Windows console is set to use the Unicode codepage
+  -- (so that we can print emojis)
+  --
+  -- This is equivalent to `os.execute("chcp 65001")` except it doesn't
+  -- leave an annoying message in the terminal.
+  local UNICODE_CODEPAGE = 65001
+  local winapi = terralib.includecstring[[
+  #include <stdint.h>
+  typedef uint32_t UINT;
+  typedef int BOOL;
+  BOOL SetConsoleOutputCP(UINT wCodePageID);
+  ]]
+  winapi.SetConsoleOutputCP(UNICODE_CODEPAGE)
 end
 
 -- "Control Sequence Inducer"
@@ -111,4 +122,5 @@ truss.error = error
 
 local fancy_tag = term.color(term.BLACK, term.CYAN) .. 
   "[ truss " .. truss.version .. " ]" .. term.RESET
-log("crit", fancy_tag, "on Terra", terralib.version, "/", jit.version)
+log("crit", fancy_tag .. " on Terra " .. terralib.version .. " / " .. jit.version)
+log.info("os: " .. (jit.os or "?") .. "; arch: " .. (jit.arch or "?"))

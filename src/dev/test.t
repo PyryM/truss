@@ -12,7 +12,7 @@ local test_stats = {passed = 0, failed = 0, errors = 0,
                     verbose = false}
 
 local function TERMINAL_HANDLER(e, test, msg)
-  local CHECK = term.color(term.GREEN) .. "✔" .. term.RESET
+  local CHECK = term.color(term.GREEN) .. "✓" .. term.RESET
   local CROSS = term.color(term.RED) .. "✘" .. term.RESET
   local DOUBLECROSS = term.color(term.RED) .. "✘✘" .. term.RESET
 
