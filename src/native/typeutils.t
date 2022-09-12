@@ -3,6 +3,7 @@
 -- misc utilities for dealing w/ terra types
 
 local m = {}
+local clib = require("./clib.t")
 
 function m.has_method(T, name)
   return T.methods[name] ~= nil
@@ -98,12 +99,68 @@ function m.init_default(val, fname, ftype, defaults)
   end
 end
 
+m.FORMATS = {
+  [int8] = "%hhd", [int16] = "%hd", [int32] = "%d", [int64] = "%lld",
+  [uint8] = "%hhu", [uint16] = "%hu", [uint32] = "%u", [uint64] = "%llu",
+  [float] = "%g", [double] = "%g", [&int8] = "%s"
+}
+
+function m.dump_value(val, fname, ftype) 
+  if ftype == bool then
+    return quote 
+      if val.[fname] then
+        clib.io.printf("%s: true\n", fname)
+      else
+        clib.io.printf("%s: false\n", fname)
+      end
+    end
+  end
+
+  local fmt = m.FORMATS[ftype]
+  if (not fmt) and ftype:ispointer() then
+    fmt = "%p"
+  end
+
+  if fmt then
+    local pstr = fname .. ": " .. fmt .. "\n"
+    return quote clib.io.printf(pstr, val.[fname]) end
+  else
+    local pstr = fname .. ": ?\n"
+    return quote clib.io.printf(pstr) end
+  end
+end
+
 function m.clear_fields(val)
   return m.call_on_fields(val, "clear", m.init_default)
 end
 
 function m.init_fields(val)
   return m.call_on_fields(val, "init", m.init_default)
+end
+
+function m.dump_fields(val)
+  return m.call_on_fields(val, "dump", m.dump_value)
+end
+
+function m.add_init(T)
+  assert(not T.methods.init, tostring(T) .. " already has :init!")
+  terra T.methods.init(self: &T)
+    [m.init_fields(self)]
+  end
+end
+
+function m.add_clear(T)
+  assert(not T.methods.clear, tostring(T) .. " already has :clear!")
+  terra T.methods.clear(self: &T)
+    [m.clear_fields(self)]
+  end
+end
+
+function m.add_dump(T)
+  assert(not T.methods.dump, tostring(T) .. " already has :dump!")
+  terra T.methods.dump(self: &T)
+    [m.dump_fields(self)]
+  end
 end
 
 return m
