@@ -2,6 +2,7 @@
 --
 -- functionality for setting up basic windowed SDL applications
 
+local build = require("build/build.t")
 local SDL = require("./sdl.t")
 local c = require("native/clib.t")
 
@@ -93,17 +94,14 @@ local CursorPtr = &SDL.Cursor
 
 local function platform_specific_bgfx_setup(pd, wmi)
   if truss.os == "Windows" then
-    log.debug("Windows platform bgfx setup")
     return quote
       pd.nwh = wmi.info.win.window
     end
   elseif truss.os == "OSX" then
-    log.debug("OSX platform bgfx setup")
     return quote 
       pd.nwh = wmi.info.cocoa.window
     end
   elseif truss.os == "Linux" then
-    log.debug("Linux platform bgfx setup")
     -- do we need to care about Wayland?
     return quote
       if false and wmi.subsystem == SDL.SYSWM_WAYLAND then
@@ -123,6 +121,109 @@ local function platform_specific_bgfx_setup(pd, wmi)
   end
 end
 
+local MAX_CONTROLLERS = 4
+
+local struct ControllerState {
+  connected: uint32;
+  buttons: uint32;
+  lx: float;
+  ly: float;
+  rx: float;
+  ry: float;
+  lt: float;
+  rt: float;
+}
+
+terra ControllerState:clear()
+  self.connected = 0
+  self.buttons = 0
+  self.lx = 0.0
+  self.ly = 0.0
+  self.rx = 0.0
+  self.ry = 0.0
+  self.lt = 0.0
+  self.rt = 0.0
+end
+
+terra ControllerState:update_buttons(evt: &SDL.Event)
+  var mask_bit: uint32 = 1 << evt.cbutton.button
+  if evt.cbutton.state > 0 then
+    self.buttons = self.buttons or mask_bit
+  else
+    self.buttons = self.buttons and (not mask_bit)
+  end
+end
+
+terra ControllerState:update_axis(evt: &SDL.Event)
+  var val = [float](evt.caxis.value) / 32768.0
+  var axis: int32 = evt.caxis.axis
+  switch axis do
+    case SDL.CONTROLLER_AXIS_LEFTX then
+      self.lx = val
+    case SDL.CONTROLLER_AXIS_LEFTY then
+      self.ly = val
+    case SDL.CONTROLLER_AXIS_RIGHTX then
+      self.rx = val
+    case SDL.CONTROLLER_AXIS_RIGHTY then
+      self.ry = val
+    case SDL.CONTROLLER_AXIS_TRIGGERLEFT then
+      self.lt = val
+    case SDL.CONTROLLER_AXIS_TRIGGERRIGHT then
+      self.rt = val
+    end
+  end
+end
+
+terra ControllerState:init()
+  self:clear()
+end
+
+local struct Controller {
+  handle: &SDL.GameController;
+  instance_id: int32;
+  linear_id: uint32;
+  state: ControllerState;
+} 
+
+terra Controller:init()
+  self.handle = nil
+  self.instance_id = -1
+  self.linear_id = 0
+  self.state:init()
+end
+
+terra Controller:open(id: uint32): bool
+  self:close()
+  if SDL.IsGameController(id) == 0 then return false end
+  self.handle = SDL.GameControllerOpen(id)
+  if self.handle == nil then return false end
+  var joy = SDL.GameControllerGetJoystick(self.handle)
+  self.instance_id = SDL.JoystickInstanceID(joy)
+  self.state:clear()
+  self.state.connected = 1
+  return true
+end
+
+terra Controller:is_connected(): bool
+  if self.handle == nil then return false end
+  if SDL.GameControllerGetAttached(self.handle) == 0 then
+    self:close()
+    return false
+  else
+    return true
+  end
+end
+
+terra Controller:close()
+  if self.handle == nil then return end
+  SDL.GameControllerClose(self.handle)
+  self.handle = nil
+  self.instance_id = -1
+  self.state:clear()
+end
+
+local VERSION_STR_LEN = 32
+
 local struct Windowing {
   evt_list: Evt[MAX_EVENTS];
   evt_count: uint32;
@@ -131,17 +232,24 @@ local struct Windowing {
   window: &SDL.Window;
   cursors: Cursor[MAX_CURSORS];
   sys_cursors: CursorPtr[SDL.NUM_SYSTEM_CURSORS];
+  push_controller_events: bool;
+  controllers: Controller[MAX_CONTROLLERS];
   last_clipboard: &int8;
   filedrop_path: int8[256];
+  version_str: int8[VERSION_STR_LEN];
 }
 
-terra Windowing:init()
+terra Windowing:init(): bool
   self.evt_count = 0
   for i = 0, MAX_EVENTS do
     self.evt_list[i]:init()
   end
   for i = 0, MAX_CURSORS do
     self.cursors[i]:init()
+  end
+  for i = 0, MAX_CONTROLLERS do
+    self.controllers[i]:init()
+    self.controllers[i].linear_id = i
   end
   for i = 0, SDL.NUM_SYSTEM_CURSORS do
     self.sys_cursors[i] = nil
@@ -152,24 +260,50 @@ terra Windowing:init()
   self.last_clipboard = nil
   self.filedrop_path[0] = 0
   self.filedrop_path[255] = 0
+  self.push_controller_events = false
+  return true
 end
 
-terra Windowing:get_bgfx_platform_data(pd: &bgfx.platform_data_t): bool
-  var wmi: SDL.SysWMinfo
-  wmi.version.major = SDL.MAJOR_VERSION
-  wmi.version.minor = SDL.MINOR_VERSION
-  wmi.version.patch = SDL.PATCHLEVEL
-  if SDL.GetWindowWMInfo(self.window, &wmi) ~= SDL.TRUE then
-    c.io.printf("Error getting window info?\n")
-    return false
+terra Windowing:_find_controller(instance_id: uint32): &Controller
+  for i = 0, MAX_CONTROLLERS do
+    var controller: &Controller = &(self.controllers[i])
+    if controller.instance_id == instance_id and controller.handle ~= nil then
+      return controller
+    end
   end
-  pd.ndt = nil
-  pd.nwh = nil
-  pd.context = nil
-  pd.backBuffer = nil
-  pd.backBufferDS = nil
-  [platform_specific_bgfx_setup(pd, wmi)]
-  return true
+  return nil
+end
+
+if build.target_name() == "wasm" then
+  local CANVAS_ELEM = "#canvas" -- HARDCODED!
+  log.warn("Warning! Hardcoding in", CANVAS_ELEM, "as target canvas!")
+  terra Windowing:get_bgfx_platform_data(pd: &bgfx.platform_data_t): bool
+    pd.ndt = nil
+    pd.nwh = CANVAS_ELEM
+    pd.context = nil
+    pd.backBuffer = nil
+    pd.backBufferDS = nil
+    return true
+  end
+else
+  terra Windowing:get_bgfx_platform_data(pd: &bgfx.platform_data_t): bool
+    var wmi: SDL.SysWMinfo
+    wmi.version.major = SDL.MAJOR_VERSION
+    wmi.version.minor = SDL.MINOR_VERSION
+    wmi.version.patch = SDL.PATCHLEVEL
+    if SDL.GetWindowWMInfo(self.window, &wmi) ~= SDL.TRUE then
+      c.io.printf("Error getting window info?\n")
+      c.io.printf("SDLERROR: %s\n", SDL.GetError())
+      return false
+    end
+    pd.ndt = nil
+    pd.nwh = nil
+    pd.context = nil
+    pd.backBuffer = nil
+    pd.backBufferDS = nil
+    [platform_specific_bgfx_setup(pd, wmi)]
+    return true
+  end
 end
 
 terra Windowing:set_bgfx_window_data(): bool
@@ -201,42 +335,95 @@ local terra limited_string_copy(dest: &int8, src: &int8, count: uint32)
   end
 end
 
+local terra translate_key_event(new_event: &Evt, evt: &SDL.Event)
+  new_event.flags = evt.key.keysym.mod
+  new_event.scancode = evt.key.keysym.scancode
+  new_event.keycode = evt.key.keysym.sym
+end
+
+local terra translate_mouse_event(new_event: &Evt, evt: &SDL.Event)
+  new_event.x = evt.button.x
+  new_event.y = evt.button.y
+  new_event.flags = evt.button.button
+end
+
 terra Windowing:_convert_and_push(evt: &SDL.Event)
   var new_event: Evt
   new_event:init()
   var is_valid: bool = true
   new_event.event_type = evt.type
-  var etype = evt.type
-  if etype == SDL.KEYDOWN or etype == SDL.KEYUP then
-    new_event.flags = evt.key.keysym.mod
-    new_event.scancode = evt.key.keysym.scancode
-    new_event.keycode = evt.key.keysym.sym
-  elseif etype == SDL.MOUSEMOTION then
-    new_event.x = evt.motion.x
-    new_event.y = evt.motion.y
-    new_event.dx = evt.motion.xrel
-    new_event.dy = evt.motion.yrel
-    new_event.flags = evt.motion.state
-  elseif etype == SDL.MOUSEBUTTONDOWN or etype == SDL.MOUSEBUTTONUP then
-    new_event.x = evt.button.x
-    new_event.y = evt.button.y
-    new_event.flags = evt.button.button
-  elseif etype == SDL.MOUSEWHEEL then
-    new_event.x = evt.wheel.x
-    new_event.y = evt.wheel.y
-    new_event.flags = evt.wheel.which
-  elseif etype == SDL.WINDOWEVENT then
-    new_event.flags = evt.window.event
-  elseif etype == SDL.TEXTINPUT then
-    limited_string_copy(new_event.keyname, evt.text.text, 4)
-    -- IMPORTANT: scancode comes immediately after keyname in the struct,
-    --            so setting it to zero also null-terminates keyname
-    new_event.scancode = 0
-  elseif etype == SDL.DROPFILE then
-    limited_string_copy(self.filedrop_path, evt.drop.file, 256)
+  var etype: int32 = evt.type
+  switch etype do
+    case SDL.KEYDOWN then
+      translate_key_event(&new_event, evt)
+    case SDL.KEYUP then
+      translate_key_event(&new_event, evt)
+    case SDL.MOUSEMOTION then
+      new_event.x = evt.motion.x
+      new_event.y = evt.motion.y
+      new_event.dx = evt.motion.xrel
+      new_event.dy = evt.motion.yrel
+      new_event.flags = evt.motion.state
+    case SDL.MOUSEBUTTONDOWN then
+      translate_mouse_event(&new_event, evt)
+    case SDL.MOUSEBUTTONUP then
+      translate_mouse_event(&new_event, evt)
+    case SDL.MOUSEWHEEL then
+      new_event.x = evt.wheel.x
+      new_event.y = evt.wheel.y
+      new_event.flags = evt.wheel.which
+    case SDL.WINDOWEVENT then
+      new_event.flags = evt.window.event
+    case SDL.TEXTINPUT then
+      limited_string_copy(new_event.keyname, evt.text.text, 4)
+      -- IMPORTANT: scancode comes immediately after keyname in the struct,
+      --            so setting it to zero also null-terminates keyname
+      new_event.scancode = 0
+    case SDL.DROPFILE then
+      limited_string_copy(self.filedrop_path, evt.drop.file, 256)
+    case SDL.CONTROLLERDEVICEADDED then
+      var id = evt.cdevice.which
+      new_event.flags = evt.cdevice.which
+      new_event.scancode = 0
+      c.io.printf("Controller connected [%d]\n", evt.cdevice.which)
+      if id >= 0 and id < MAX_CONTROLLERS then
+        if not self.controllers[id]:open(id) then return end
+        new_event.scancode = self.controllers[id].instance_id
+        c.io.printf("== instance_id [%d]\n", self.controllers[id].instance_id)
+        c.io.printf("== name [%s]\n", SDL.GameControllerName(self.controllers[id].handle))
+      end
+    case SDL.CONTROLLERDEVICEREMOVED then
+      new_event.scancode = evt.cdevice.which
+      new_event.flags = 0
+      var controller = self:_find_controller(evt.cdevice.which)
+      if controller ~= nil then
+        new_event.flags = controller.linear_id
+        controller:close()
+      end
+    case SDL.CONTROLLERAXISMOTION then
+      var controller = self:_find_controller(evt.caxis.which)
+      if controller ~= nil then controller.state:update_axis(evt) end
+      if not self.push_controller_events then return end
+      new_event.flags = evt.caxis.which
+      new_event.scancode = evt.caxis.axis
+      new_event.x = [float](evt.caxis.value) / 32768.0
+    case SDL.CONTROLLERBUTTONDOWN then
+      var controller = self:_find_controller(evt.cbutton.which)
+      if controller ~= nil then controller.state:update_buttons(evt) end
+      if not self.push_controller_events then return end
+      new_event.flags = evt.cbutton.which
+      new_event.scancode = evt.cbutton.button
+    case SDL.CONTROLLERBUTTONUP then
+      var controller = self:_find_controller(evt.cbutton.which)
+      if controller ~= nil then controller.state:update_buttons(evt) end
+      if not self.push_controller_events then return end
+      new_event.flags = evt.cbutton.which
+      new_event.scancode = evt.cbutton.button
+    end
   else
     return
   end
+
   self:_push_event(new_event)
 end
 
@@ -312,6 +499,75 @@ terra Windowing:get_event(idx: uint32): Evt
   end
 end
 
+terra Windowing:controller_get_state(idx: uint32): ControllerState
+  if idx >= MAX_CONTROLLERS then idx = 0 end
+  return self.controllers[idx].state
+end
+
+terra Windowing:controller_is_connected(idx: uint32): bool
+  if idx >= MAX_CONTROLLERS then return false end
+  return self.controllers[idx]:is_connected()
+end
+
+terra Windowing:controller_get_name(idx: uint32): SizedString
+  if idx >= MAX_CONTROLLERS then return wrap_c_str("InvalidIndex") end
+  if self.controllers[idx]:is_connected() then
+    return wrap_c_str(SDL.GameControllerName(self.controllers[idx].handle))
+  else
+    return wrap_c_str("None")
+  end
+end
+
+if SDL.GameControllerHasRumble and SDL.GameControllerHasLED then
+  log.build("SDL supports controller rumble/led")
+  -- SDL 2.0.20+
+  terra Windowing:controller_has_rumble(idx: uint32): bool
+    if idx >= MAX_CONTROLLERS then return false end
+    var controller = &(self.controllers[idx])
+    if controller.handle == nil then return false end
+    return SDL.GameControllerHasRumble(controller.handle) ~= 0
+  end
+
+  terra Windowing:controller_rumble(idx: uint32, low_freq: uint16, high_freq: uint16, duration_ms: uint32)
+    if idx >= MAX_CONTROLLERS then return end
+    var controller = &(self.controllers[idx])
+    if controller.handle == nil then return end
+    SDL.GameControllerRumble(controller.handle, low_freq, high_freq, duration_ms)
+  end
+
+  terra Windowing:controller_has_led(idx: uint32): bool
+    if idx >= MAX_CONTROLLERS then return false end
+    var controller = &(self.controllers[idx])
+    if controller.handle == nil then return false end
+    return SDL.GameControllerHasLED(controller.handle) ~= 0
+  end
+
+  terra Windowing:controller_set_led(idx: uint32, r: uint8, g: uint8, b: uint8)
+    if idx >= MAX_CONTROLLERS then return end
+    var controller = &(self.controllers[idx])
+    if controller.handle == nil then return end
+    SDL.GameControllerSetLED(controller.handle, r, g, b)
+  end
+else
+  -- older SDL2
+  log.build("SDL does NOT support controller rumble/led")
+  terra Windowing:controller_has_rumble(idx: uint32): bool
+    return false
+  end
+
+  terra Windowing:controller_rumble(idx: uint32, low_freq: uint16, high_freq: uint16, duration_ms: uint32)
+    -- nop
+  end
+
+  terra Windowing:controller_has_led(idx: uint32): bool
+    return false
+  end
+
+  terra Windowing:controller_set_led(idx: uint32, r: uint8, g: uint8, b: uint8)
+    -- nop
+  end
+end
+
 terra Windowing:get_event_ref(idx: uint32): &Evt
   if idx < self.evt_count then
     return &(self.evt_list[idx])
@@ -339,9 +595,17 @@ terra Windowing:set_clipboard(text: &int8)
   SDL.SetClipboardText(text)
 end
 
+terra Windowing:get_sdl_version(): SizedString
+  var version: SDL.version
+  SDL.GetVersion(&version)
+  c.io.snprintf(self.version_str, VERSION_STR_LEN, 
+    "%d.%d.%d", version.major, version.minor, version.patch)
+  return wrap_c_str(self.version_str)
+end
+
 terra Windowing:create_window(w: int32, h: int32, title: &int8, fullscreen: bool, display: int32): bool
   SDL.SetMainReady() -- is this needed?
-  var res = SDL.Init(SDL.INIT_VIDEO)
+  var res = SDL.Init(SDL.INIT_VIDEO or SDL.INIT_GAMECONTROLLER)
   if res ~= 0 then
     return false
   end
@@ -361,7 +625,7 @@ end
 
 terra Windowing:create_window_and_bgfx(backend: bgfx.renderer_type_t, w: int32, h: int32, title: &int8): bool
   SDL.SetMainReady() -- is this needed?
-  var res = SDL.Init(SDL.INIT_VIDEO)
+  var res = SDL.Init(SDL.INIT_VIDEO or SDL.INIT_GAMECONTROLLER)
   if res ~= 0 then
     return false
   end
@@ -396,10 +660,26 @@ terra Windowing:create_window_and_bgfx(backend: bgfx.renderer_type_t, w: int32, 
   return true
 end
 
+terra Windowing:set_bgfx_debug(show_text: bool, show_stats: bool)
+  var flags: uint32 = 0
+  if show_text then
+    flags = flags or bgfx.DEBUG_TEXT
+  end
+  if show_stats then
+    flags = flags or bgfx.DEBUG_STATS
+  end
+  bgfx.set_debug(flags)
+end
+
+terra Windowing:reset_bgfx(w: int32, h: int32)
+  var flags = bgfx.RESET_VSYNC
+  bgfx.reset(w, h, flags, bgfx.TEXTURE_FORMAT_COUNT)
+end
+
 m.Windowing = Windowing
 
 function m.build(options)
-  return {Windowing = Windowing}
+  return {Windowing = Windowing, ctype = Windowing}
 end
 
 function m.create()
@@ -407,23 +687,6 @@ function m.create()
   ret:init()
   return ret
 end
-
-local TRUSS_TO_SDL_MAP = {
-  [1] = SDL.KEYDOWN,
-  [2] = SDL.KEYUP,
-  [3] = SDL.MOUSEBUTTONDOWN,
-  [4] = SDL.MOUSEBUTTONUP,
-  [5] = SDL.MOUSEMOTION,
-  [6] = SDL.MOUSEWHEEL,
-  [7] = SDL.WINDOWEVENT,
-  [8] = SDL.TEXTINPUT,
-  [9] = SDL.JOYDEVICEADDED,    
-  [10] = SDL.JOYDEVICEREMOVED,    
-  [11] = SDL.JOYAXISMOTION,   
-  [12] = SDL.JOYBUTTONDOWN, 
-  [13] = SDL.JOYBUTTONUP,
-  [14] = SDL.DROPFILE      
-}
 
 local EXTRA_KEYS = {
   ["return"] = string.byte("\r", 1),
@@ -456,84 +719,6 @@ function m.push_text_event(target, text)
     new_event.keyname[bytepos] = text:byte(bytepos+1) or 0
   end
   return true
-end
-
-function m.create_sdl_demo()
-  local terra sdlmain(): int
-    c.io.printf("Entering main?\n")
-    SDL.SetMainReady() -- is this needed?
-    var res = SDL.Init(SDL.INIT_VIDEO)
-    if res ~= 0 then
-      c.io.printf("Some kind of SDL init error?\n")
-      return -1
-    end
-    var flags: uint32 = SDL.WINDOW_SHOWN
-    var xpos: int32 = SDL.WINDOWPOS_CENTERED
-    var ypos: int32 = SDL.WINDOWPOS_CENTERED
-    var window = SDL.CreateWindow(
-      "Self-compiled application", xpos, ypos, 720, 720, flags
-    )
-    if not set_bgfx_window_data(window) then
-      c.io.printf("Error setting window data?\n")
-      return -1
-    end
-
-    var renderer_type = bgfx.RENDERER_TYPE_COUNT
-    var init_data: bgfx.init_t
-
-    bgfx.init_ctor(&init_data)
-    init_data.debug = false
-    init_data.profile = false
-    init_data.resolution.width = 720
-    init_data.resolution.height = 720
-    init_data.resolution.reset = bgfx.RESET_VSYNC
-
-    c.io.printf("Initializing BGFX?\n")
-    if not bgfx.init(&init_data) then
-      c.io.printf("BGFX init error????\n")
-      return -1
-    end
-    bgfx.set_debug(bgfx.DEBUG_TEXT)
-
-    c.io.printf("Initialized fine?\n")
-    
-    var frame: uint32 = 0
-    c.io.printf("Entering render loop?\n")
-
-    while handle_minimal_window_events() do
-      -- while SDL.PollEvent(&evt) > 0 do
-      --   if evt.type == SDL.WINDOWEVENT and evt.window.event == SDL.WINDOWEVENT_CLOSE then
-      --     c.io.printf("Closing?\n")
-      --     closing = true
-      --     break
-      --   end
-      -- end
-      -- if closing then break end
-
-      -- draw bgfx
-      bgfx.set_view_rect(0, 0, 0, 1280, 720)
-      bgfx.set_view_clear(
-        0, 
-        bgfx.CLEAR_COLOR or bgfx.CLEAR_DEPTH or bgfx.CLEAR_STENCIL,
-        0xff0000ff, 1.0, 0
-      )
-      bgfx.touch(0)
-
-      bgfx.dbg_text_clear(0, false)
-      bgfx.dbg_text_printf(0, 1, 0x4f, "We did it")
-      bgfx.dbg_text_printf(0, 2, 0x6f, "frame: %d", frame)
-
-      bgfx.frame(false)
-      frame = frame + 1
-    end
-
-    bgfx.shutdown()
-    SDL.Quit()
-
-    return 0
-  end
-
-  return sdlmain
 end
 
 return m
