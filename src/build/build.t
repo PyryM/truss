@@ -45,11 +45,12 @@ end
 
 function m.create_cross_compilation_root(options)
   local root = truss.create_require_root{
-    module_env = truss.extend_table({}, truss._module_env)
+    root = {
+      cross_args = options.include_args,
+      cross_target = options.target,
+      cross_target_name = options.target_name,
+    },
   }
-  root.cross_args = options.include_args
-  root.cross_target = options.target
-  root.cross_target_name = options.target_name
   return root
 end
 
