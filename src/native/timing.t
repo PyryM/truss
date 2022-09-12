@@ -27,28 +27,35 @@ if target == "Windows" then
     return ret
   end
 --elseif truss.os == "OSX" then
-else -- hope this works on linux/osx/wasm
-  local C = build.includecstring[[
-  #include "stdint.h"
-  typedef enum {
-    CLOCK_REALTIME = 0,
-    CLOCK_MONOTONIC = 6
-  } clockid_t;
+else
+  local C, timespec_t
+  if build.is_native() then -- 64 bit native system
+    C = build.includecstring[[
+    #include "stdint.h"
+    typedef enum {
+      CLOCK_REALTIME = 0,
+      CLOCK_MONOTONIC = 6
+    } clockid_t;
 
-  typedef struct {
-    int64_t tv_sec;
-    long tv_nsec;
-  } timespec_t;
+    typedef struct {
+      int64_t tv_sec;
+      long tv_nsec;
+    } timespec_t;
 
-  int clock_gettime(clockid_t id, timespec_t *tp);
-  ]]
+    int clock_gettime(clockid_t id, timespec_t *tp);
+    ]]
+    timespec_t = C.timespec_t
+  else -- hopefully we can include it!
+    C = build.includec("time.h")
+    timespec_t = C.timespec
+  end
 
   terra m.get_freq(): int64
     return 1000000000
   end
 
   terra m.get_counter(): int64
-    var now: C.timespec_t
+    var now: timespec_t
     C.clock_gettime(C.CLOCK_MONOTONIC, &now)
     var ret: int64 = now.tv_sec*1000000000LL + now.tv_nsec
     return ret
