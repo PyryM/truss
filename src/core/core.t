@@ -51,7 +51,6 @@ end
 
 _docore("_setup_utils.t")
 _docore("_setup_log.t")
-_docore("_setup_path.t")
 --_docore("_setup_api.t")
 _docore("_setup_fs.t")
 _docore("_setup_user_config.t")

@@ -7,6 +7,7 @@ local default_config = {
   paths = {{".", truss.working_dir}},
   log_enabled = {"all", "~path", "~debug"},
   entrypoints = {main="main.t"},
+  include_paths = {terralib.includepath, "include"},
   WORKDIR = truss.working_dir,
   BINDIR = truss.binary_dir,
   BINARY = truss.binary_name,
@@ -14,6 +15,7 @@ local default_config = {
 }
 if truss.working_dir ~= truss.binary_dir then
   table.insert(default_config.paths, {".", truss.binary_dir})
+  table.insert(default_config.include_paths, truss.joinpath(truss.binary_dir, "include"))
 end
 
 local function list_config_options()
@@ -97,6 +99,12 @@ if config.cpu_triple ~= "native" or config.cpu_features ~= "" then
   terralib.jitcompilationunit = terralib.newcompilationunit(
     terralib.nativetarget, true, opt_profile)
 end
+
+truss.original_include_path = terralib.includepath
+terralib.includepath = table.concat(config.include_paths, ";")
+log.info("Include path:", terralib.includepath)
+
+truss.using_system_headers = true -- assume this is true?
 
 for _, pathpair in ipairs(config.paths) do
   local vpath, realpath = unpack(pathpair)
