@@ -2,11 +2,6 @@ local terra rotl64(x: uint64, r: int8): uint64
   return (x << r) or (x >> (64 - r))
 end
 
--- hmm, not sure about aliasing concerns here
-local terra getblock64(p: &uint64, i: int32): uint64
-  return p[i]
-end
-
 local terra fmix64(k: uint64): uint64
   k = k ^ (k >> 33)
   k = k * 0xff51afd7ed558ccdULL
@@ -37,8 +32,8 @@ local terra MurmurHash3_128(data: &uint8, len: uint64, seed: uint64): hash128_t
   var blocks: &uint64 = [&uint64](data)
 
   for i = 0, nblocks do
-    var k1: uint64 = getblock64(blocks, i*2+0)
-    var k2: uint64 = getblock64(blocks, i*2+1)
+    var k1: uint64 = blocks[i*2+0] --getblock64(blocks, i*2+0)
+    var k2: uint64 = blocks[i*2+1]--getblock64(blocks, i*2+1)
 
     k1 = k1 * c1 
     k1 = rotl64(k1, 31) 

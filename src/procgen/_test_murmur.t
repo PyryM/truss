@@ -29,16 +29,13 @@ local function test_murmur(t)
 
   t.print("hash1: ", hash_to_string(h1))
   t.print("hash2: ", hash_to_string(h2))
-  t.ok(h1.u64[0] > 0, "Produced non-zero value")
-  t.ok(h1.u64[1] > 0, "Produced non-zero value")
-  t.ok(h1.u64[0] ~= h2.u64[0], "Hashes are different")
-  t.ok(h1.u64[1] ~= h2.u64[1], "Hashes are different")
+
+  t.expect(hash_to_string(h1), "eac1b5103440c20c03da6d8bb919abfe", "hash1 is as expected")
+  t.expect(hash_to_string(h2), "8c5ef325ff9bd97fe869e4797cf3dcf2", "hash2 is as expected")
 
   local s3, l3 = conv_str("") -- try empty string for laughs
   h1 = murmur.murmur_128(s3, l3, 1) -- note non-zero seed
-  t.print("Empty string hash: ", hash_to_string(h1))
-  t.ok(h1.u64[0] > 0, "Empty string produced non-zero value")
-  t.ok(h1.u64[1] > 0, "Empty string produced non-zero value")
+  t.expect(hash_to_string(h1), "6eff5cb54610abe578f8358351622daa", "Empty string hash is as expected.")
 end
 
 function m.run(test)
