@@ -340,6 +340,7 @@ truss.working_dir = normpath(ffi.string(fs_c.trussfs_working_dir(fs_ctx)) .. PAT
 truss.binary_path = ffi.string(fs_c.trussfs_binary_dir(fs_ctx))
 truss.binary_dir, truss.binary_name = split_base_and_file(truss.binary_path)
 truss.binary_dir = normpath(truss.binary_dir .. PATHSEP, true)
+truss.root_dir = truss.binary_dir
 
 log.info("trussfs version:", table.concat(fs_version, "."))
 log.info("Working dir:", truss.working_dir)

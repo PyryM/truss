@@ -44,6 +44,7 @@ local BACKEND_SHORTNAMES = {
   opengl = "glsl",
   metal = "mtl",
   vulkan = "spirv",
+  opengles = "essl",
 }
 
 local BACKEND_TO_BGFX_PLATFORM = {
@@ -53,6 +54,7 @@ local BACKEND_TO_BGFX_PLATFORM = {
   opengl = "linux",
   vulkan = "linux",
   metal = "osx",
+  opengles = "asm.js", -- yes, really
 }
 
 local BACKEND_SETS = {
@@ -62,25 +64,35 @@ local BACKEND_SETS = {
   osx_all = {"metal", "vulkan", "opengl"},
   linux = {"vulkan"},
   linux_all = {"vulkan", "opengl"},
+  web = {"opengles", "vulkan"},
 }
 
 -- assume everyone has unicode these days
 local CHARS = {vert = "│", term = "└"}
 
+local BINPATH = truss.joinpath(truss.rootdir, "/bin/shadercRelease")
+local INCLUDEPATH = truss.joinpath(truss.rootdir, "/include/bgfx/shader/")
+
+log.info("shaderc path:", BINPATH)
+log.info("shader include path:", INCLUDEPATH)
+
 local function make_cmd(shader_type, backend, input_fn, output_fn)
-  local args = {"./bin/shadercRelease"}
-  if jit.os == "Windows" then
-    args = {"bin/shadercRelease"}
+  local binname = BINPATH
+  if jit.os ~= "Windows" then
+    binname = "./" .. BINPATH
   end
+  local args = { binname }
   extend_list(args, {
     "-f", input_fn, 
     "-o", output_fn,
     "--type", shader_type,
-    "-i", "include/bgfx/shader/",
+    "-i", INCLUDEPATH,
     "--platform", BACKEND_TO_BGFX_PLATFORM[backend]
   })
   if backend == "opengl" then
     extend_list(args, {"-p", "140"})
+  elseif backend == "opengles" then
+    extend_list(args, {"-p", "100_es"})
   elseif backend == "directx" or backend == "dx11" or  backend == "dx12" then
     extend_list(args, {"-p", DX_SHADER_TYPES[shader_type], 
        "-O", "3"})
@@ -157,11 +169,6 @@ local function init()
   local args = argparse.parse()
   local backends
 
-  if jit.os == "Windows" then
-    -- change to unicode codepage so that our prints work!
-    os.execute("chcp 65001")
-  end
-
   if args['--backend'] then
     local p = args['--backend']:lower()
     backends = BACKEND_SETS[p] or {p}
@@ -191,7 +198,7 @@ local function init()
         local errlangs
         errors[path], errlangs = do_file(fn, path, backends)
         if errors[path] then
-          print(CHARS.vert .. path ..  " -> " .. errlangs)
+          print(CHARS.vert .. path ..  " -> " .. colored("red", errlangs))
           nerrs = nerrs + 1
         elseif args['-v'] then
           print(CHARS.vert .. " " .. fn)

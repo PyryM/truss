@@ -32,11 +32,11 @@ void main()
   float lighting = 0.0;
   vec3 collisionSeed = collision.xyz + (u_timeParams.x*NUM_RAYS);
 
-  for(float ii = 0; ii < NUM_RAYS; ++ii) {
+  for(float ii = 0.0; ii < NUM_RAYS; ++ii) {
     vec3 randseed = collisionSeed + vec3(ii, ii, ii);
     vec3 v = randomHemispherePoint(randseed, normal);
 
-    vec4 newcol = sdfToCollision(collision.xyz + v*stepsize*3, v, stepsize, thresh);
+    vec4 newcol = sdfToCollision(collision.xyz + v*stepsize*3.0, v, stepsize, thresh);
 
     float intensity = dot(v, v_lightdir);
     intensity = step(lightThresh, intensity);

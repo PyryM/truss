@@ -10,6 +10,7 @@ local default_config = {
   WORKDIR = truss.working_dir,
   BINDIR = truss.binary_dir,
   BINARY = truss.binary_name,
+  rootdir = truss.binary_dir,
 }
 if truss.working_dir ~= truss.binary_dir then
   table.insert(default_config.paths, {".", truss.binary_dir})
@@ -59,6 +60,9 @@ else
   log.info("No config file at [" .. configfn .. "]; using defaults.")
 end
 
+truss.rootdir = config.rootdir
+truss.config = config
+
 local log_enabled = config.log_enabled
 if type(log_enabled) == 'string' then 
   log_enabled = {log_enabled}
@@ -75,6 +79,8 @@ for _, level in ipairs(log_enabled) do
     log.enabled[level] = true
   end
 end
+
+log.info("Rootdir:", truss.rootdir)
 
 if config.cpu_triple ~= "native" or config.cpu_features ~= "" then
   local triple = config.cpu_triple
@@ -100,5 +106,3 @@ for _, pathpair in ipairs(config.paths) do
     truss.fs.mount_path(vpath, realpath)
   end
 end
-
-truss.config = config

@@ -19,7 +19,7 @@
 //           metallic material tint = (any color)
 vec3 fresnelSchlick(float cosT, vec3 tint)
 {
-  return tint + (1-tint) * pow( 1 - cosT, 5);
+  return tint + (1.0 - tint) * pow( 1.0 - cosT, 5);
 }
 
 float chiGGX(float v)
@@ -34,7 +34,7 @@ float distributionGGX(vec3 n, vec3 h, float alpha)
     float NoH = dot(n,h);
     float alpha2 = alpha * alpha;
     float NoH2 = NoH * NoH;
-    float den = NoH2 * alpha2 + (1 - NoH2);
+    float den = NoH2 * alpha2 + (1.0 - NoH2);
     return (chiGGX(NoH) * alpha2) / ( PI * den * den + 0.000001);
 }
 
