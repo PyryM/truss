@@ -179,6 +179,17 @@ function truss.create_require_root(options)
     return temp
   end
 
+  -- call a function within this root
+  function root.pcall(f, ...)
+    if type(f) == 'string' then
+      local loaded, err = truss.loadstring(f, "[string]")
+      if not loaded then return false, err end
+      f = loaded
+    end
+    setfenv(f, create_module_env("[anonymous_module]", "[anon]", {}))
+    return pcall(f, ...)
+  end
+
   -- directly inserts a module
   function root.insert_module(libname, libtable)
     loaded_libs[libname] = assert(libtable, "Missing module: " .. libname)

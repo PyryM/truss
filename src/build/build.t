@@ -44,11 +44,25 @@ function m.truss_link_library(...)
 end
 
 function m.create_cross_compilation_root(options)
+  local target = options.target
+  local target_name = options.name
+  if not target then
+    if not options.triple then
+      log.fatal("Either .target or .triple is required for a cross-compilation root!")
+      error("Invalid options for create_cross_compilation_root")
+    end
+    target = terralib.newtarget{
+      Triple = options.triple,
+      Features = options.features 
+    }
+    target_name = target_name or options.triple
+  end
+
   local root = truss.create_require_root{
     root = {
       cross_args = options.include_args,
-      cross_target = options.target,
-      cross_target_name = options.target_name,
+      cross_target = target,
+      cross_target_name = target_name or "cross",
     },
   }
   return root
