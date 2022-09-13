@@ -1,3 +1,5 @@
+-- would forcing these to inline make any difference?
+-- (presumably LLVM is smart enough to already inline)
 local terra rotl64(x: uint64, r: int8): uint64
   return (x << r) or (x >> (64 - r))
 end
@@ -32,8 +34,8 @@ local terra MurmurHash3_128(data: &uint8, len: uint64, seed: uint64): hash128_t
   var blocks: &uint64 = [&uint64](data)
 
   for i = 0, nblocks do
-    var k1: uint64 = blocks[i*2+0] --getblock64(blocks, i*2+0)
-    var k2: uint64 = blocks[i*2+1]--getblock64(blocks, i*2+1)
+    var k1: uint64 = blocks[i*2+0]
+    var k2: uint64 = blocks[i*2+1]
 
     k1 = k1 * c1 
     k1 = rotl64(k1, 31) 
@@ -110,4 +112,8 @@ local function hash_to_string(h)
   return s
 end
 
-return {hash128_t = hash128_t, murmur_128 = MurmurHash3_128, hash_to_string = hash_to_string}
+return {
+  hash128_t = hash128_t, 
+  murmur_128 = MurmurHash3_128, 
+  hash_to_string = hash_to_string
+}
