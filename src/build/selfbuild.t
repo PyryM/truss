@@ -5,6 +5,21 @@ if not _truss then
   terralib.loadfile("src/core/core.t")()
 end
 
+if not truss.using_system_headers then
+  log.fatal("self-build cannot use bundled compat headers")
+  if truss.os == "Windows" then
+    log.fatal("Try running through 'Developer Command Prompt for VS 2022'")
+  end
+  error("C headers not available")
+end
+
+local binname = truss.binary_name:lower()
+if binname == "truss" or binname == "truss.exe" then
+  log.fatal("truss[.exe] cannot overwrite itself while running!")
+  log.fatal("to build truss with truss, first rename the old truss binary.")
+  error("Cannot overwrite own binary while running")
+end
+
 local clib = require("native/clib.t")
 
 local terra_c = terralib.includecstring[[

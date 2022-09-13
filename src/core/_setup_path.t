@@ -4,8 +4,10 @@ if jit.os == "Windows" and #terralib.includepath <= 1 then
   -- assume include path is empty and add compat includes
   log.info("No system headers on include path: using bundled compat headers")
   terralib.includepath = terralib.includepath .. ";include;include/compat"
+  truss.using_system_headers = false
 else
   terralib.includepath = terralib.includepath .. ";include"
+  truss.using_system_headers = true
 end
 log.info("Include path:", terralib.includepath)
 
