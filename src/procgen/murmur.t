@@ -112,8 +112,43 @@ local function hash_to_string(h)
   return s
 end
 
+local terra put_hex_digit(val: uint8, dest: &int8, pos: uint32)
+  -- 48: 0, 97: a
+  if val < 10 then
+    dest[pos] = 48+val
+  else
+    dest[pos] = 97+(val-10)
+  end
+end
+
+-- this is unfortunately named because the
+-- lua version is used all over the place and
+-- I don't want to rename it
+-- Note: dest must be 32 bytes long at least
+local terra print_hash(hash: &hash128_t, dest: &int8, nchars: uint8): uint32
+  var dpos = 0
+  for spos = 0, nchars/2 do
+    var b = hash.bytes[spos]
+    var lower = b and 0xf
+    var upper = (b >> 4) and 0xf
+    put_hex_digit(upper, dest, dpos+0)
+    put_hex_digit(lower, dest, dpos+1)
+    dpos = dpos + 2
+  end
+  return dpos
+end
+
+local function hash_to_string(h)
+  local s = ""
+  for i = 0, 3 do
+    s = s .. ("%08x"):format(h.u32[i])
+  end
+  return s
+end
+
 return {
   hash128_t = hash128_t, 
   murmur_128 = MurmurHash3_128, 
-  hash_to_string = hash_to_string
+  hash_to_string = hash_to_string,
+  print_hash = print_hash
 }

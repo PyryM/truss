@@ -64,7 +64,7 @@ function m.parse_header_string(s)
 end
 
 function m.parse_header_file(fn)
-  local s = truss.load_string_from_file("include/" .. fn)
+  local s = truss.read_file(truss.joinvpath("include", fn))
   return m.parse_header_string(s)
 end
 
