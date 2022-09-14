@@ -3,16 +3,26 @@ local argparse = require "util/argparse.t"
 local term = require "term"
 local fs = require "fs"
 
-local function is_shader(fn)
+local function is_loose_shader(entry)
+  if not entry.ospath then return false end -- archived
+  if not entry.is_file then return false end
+  local fn = entry.file
   return (truss.file_extension(fn) == "sc") and (fn ~= "varying.def.sc")
 end
 
-local function find_loose_shaders(dir)
+local function find_loose_shaders(dir, workdir_only)
   local shaders = {}
+  local skipped = 0
   for _, entry in ipairs(truss.list_dir(dir)) do
-    if entry.ospath and entry.is_file and is_shader(entry.file) then table.insert(shaders, entry) end
+    if is_loose_shader(entry) then 
+      if (not workdir_only) or entry.mountroot:find(truss.working_dir) then
+        table.insert(shaders, entry) 
+      else
+        skipped = skipped + 1
+      end
+    end
   end
-  return shaders
+  return shaders, skipped
 end
 
 local function find_shader_dirs(rootdir)
@@ -187,8 +197,9 @@ local function init()
   else
     shader_dirs = find_shader_dirs(truss.joinpath(SHADER_DIR, "raw"))
   end
+  local skipped_dirs = 0
   for _, dir in ipairs(shader_dirs) do
-    local loose_shaders = find_loose_shaders(dir)
+    local loose_shaders, nskipped = find_loose_shaders(dir, true)
     if #loose_shaders > 0 then
       print(dir)
       local nerrs, nshaders = 0, 0
@@ -211,9 +222,18 @@ local function init()
       else 
         count_str = colored('green', count_str) 
       end
+      if nskipped > 0 then
+        local skipstr = ("(%d skipped)"):format(nskipped)
+        count_str = count_str .. " " .. colored('cyan', skipstr)
+      end
       print(CHARS.term .. " " .. count_str)
       total_errors = total_errors + nerrs
+    elseif nskipped > 0 then
+      skipped_dirs = skipped_dirs + 1
     end
+  end
+  if skipped_dirs > 0 then
+    print(colored('cyan', skipped_dirs .. " skipped dirs."))
   end
   print("Done.")
   local errstr = concat(errors, '\n')

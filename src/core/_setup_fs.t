@@ -2,12 +2,9 @@
 
 local ffi = require("ffi")
 
--- embed the header file so works w/o include dir
-truss.link_library("lib", "trussfs")
-local fs_c = terralib.includecstring[[
-#include <stdint.h>
-#include <stdbool.h>
-
+-- link trussfs through luajit ffi instead of terra to 
+-- put off dealing with header inlclude paths until later
+ffi.cdef[[
 typedef struct trussfs_ctx trussfs_ctx;
 
 uint64_t trussfs_version();
@@ -35,6 +32,10 @@ void trussfs_list_free(trussfs_ctx* ctx, uint64_t list_handle);
 uint64_t trussfs_list_length(trussfs_ctx* ctx, uint64_t list_handle);
 const char* trussfs_list_get(trussfs_ctx* ctx, uint64_t list_handle, uint64_t index);
 ]]
+local fs_c = ffi.load("lib/trussfs")
+local INVALID_HANDLE = 0xFFFFFFFFFFFFFFFFull;
+
+log.info("Invalid handle:", INVALID_HANDLE)
 
 local function split_version(v)
   local patch = v % 100
@@ -149,6 +150,7 @@ local function list_real_path(target, realroot, subpath, recursive)
   local realpath = joinpath({realroot, subpath}, true)
   log.path("Listing real path:", realpath)
   local list = fs_c.trussfs_list_dir(fs_ctx, realpath, false, true)
+  if list == INVALID_HANDLE then return end
   for i, entry in ipairs(_list_and_free(list)) do
     local kind, symlink, filename = entry:match("^(%a) ([a-zA-Z_]):(.*)$")
     local is_file = kind == "F"
@@ -156,6 +158,7 @@ local function list_real_path(target, realroot, subpath, recursive)
       is_file = is_file, 
       is_symlink = symlink == "S", 
       is_archived = false,
+      mountroot = realroot,
       path = joinpath({subpath, filename}, false),
       ospath = joinpath({realroot, subpath, filename}, true),
       base = subpath,
