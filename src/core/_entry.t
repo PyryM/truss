@@ -45,9 +45,18 @@ function truss.quit(code)
 end
 
 local function guarded_call(f, ...)
-  local happy, err = pcall(f, ...)
+  local args = {...}
+  local happy, err = xpcall(
+    function()
+      f(unpack(args))
+    end,
+    function(err)
+      log.fatal(err)
+      log.fatal(debug.traceback())
+    end
+  )
   if not happy then
-    log.fatal(err)
+    log.fatal("Uncaught exception at top level; stopping.")
     truss.quit(-1)
   end
 end
