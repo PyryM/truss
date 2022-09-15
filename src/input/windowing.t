@@ -651,6 +651,7 @@ terra Windowing:create_window_and_bgfx(backend: bgfx.renderer_type_t, w: int32, 
   init_data.resolution.width = w
   init_data.resolution.height = h
   init_data.resolution.reset = bgfx.RESET_VSYNC
+  self:get_bgfx_platform_data(&(init_data.platformData))
 
   if not bgfx.init(&init_data) then
     c.io.printf("BGFX init error?\n")
