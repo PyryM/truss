@@ -142,6 +142,39 @@ function m.dump_fields(val)
   return m.call_on_fields(val, "dump", m.dump_value)
 end
 
+function m.copy_fields(dest, src)
+  local statements = {}
+  local T = dest.type or dest:gettype()
+  if T:ispointer() then T = T.type end
+  for fname, ftype in m.ifields(T) do
+    if ftype.methods then
+      assert(ftype.methods["copy"], tostring(ftype) .. " missing :copy!")
+      table.insert(statements, quote 
+        dest.[fname]:copy(&(src.[fname]))
+      end)
+    else
+      -- assume primitive
+      assert(not ftype:ispointer(), "Tried to shallow copy a pointer in " .. tostring(T) .. "." .. fname)
+      table.insert(statements, quote
+        dest.[fname] = src.[fname]
+      end)
+    end
+  end
+  return statements
+end
+
+function m.copy(dest, src)
+  local T = dest.type or dest:gettype()
+  assert(T:ispointer(), "copy expects dest and src as pointers!")
+  T = T.type
+  if T:isprimitive() or m.is_trivially_serializable(T) then
+    return quote @dest = @src end
+  else
+    assert(T.methods and T.methods["copy"], tostring(T) .. " missing :copy!")
+    return quote dest:copy(src) end
+  end
+end
+
 function m.add_init(T)
   assert(not T.methods.init, tostring(T) .. " already has :init!")
   terra T.methods.init(self: &T)
@@ -160,6 +193,13 @@ function m.add_dump(T)
   assert(not T.methods.dump, tostring(T) .. " already has :dump!")
   terra T.methods.dump(self: &T)
     [m.dump_fields(self)]
+  end
+end
+
+function m.add_copy(T)
+  assert(not T.methods.copy, tostring(T) .. " already has :copy!")
+  terra T.methods.copy(self: &T, rhs: &T)
+    [m.copy_fields(self, rhs)]
   end
 end
 

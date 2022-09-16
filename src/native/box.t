@@ -4,6 +4,7 @@
 
 local m = {}
 local c = require("native/clib.t")
+local tutil = require("native/typeutils.t")
 
 function m.box(T, options)
   options = options or {}
@@ -45,6 +46,15 @@ function m.box(T, options)
     end
     [free(`self.val)]
     self.val = nil
+  end
+
+  terra Box:copy(rhs: &Box)
+    if not rhs:is_filled() then 
+      self:clear()
+      return 
+    end
+    self:allocate()
+    [tutil.copy(`self.val, `rhs.val)]
   end
 
   terra Box:clear()

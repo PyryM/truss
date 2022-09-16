@@ -181,6 +181,15 @@ function m.vec(T, options)
     return self.size
   end
 
+  terra Vec:copy(rhs: &Vec)
+    self:clear()
+    for idx = 0, rhs:length() do
+      var src = rhs:get_ref(idx)
+      var dest = self:push_new()
+      [utils.copy(`dest, `src)]
+    end
+  end
+
   return Vec
 end
 
