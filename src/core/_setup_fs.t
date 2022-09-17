@@ -35,8 +35,6 @@ const char* trussfs_list_get(trussfs_ctx* ctx, uint64_t list_handle, uint64_t in
 local fs_c = ffi.load("lib/trussfs")
 local INVALID_HANDLE = 0xFFFFFFFFFFFFFFFFull;
 
-log.info("Invalid handle:", INVALID_HANDLE)
-
 local function split_version(v)
   local patch = v % 100
   local minor = math.floor(v / 100) % 100
