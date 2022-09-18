@@ -113,6 +113,8 @@ local terra main(argc: int, argv: &&int8): int
 
   terra_c.lua_pushlstring(L, [truss.version], [#truss.version])
   terra_c.lua_setfield(L, LUA_GLOBALSINDEX, "_TRUSS_VERSION")
+  terra_c.lua_pushlstring(L, [truss.version_emoji], [#truss.version_emoji])
+  terra_c.lua_setfield(L, LUA_GLOBALSINDEX, "_TRUSS_VERSION_EMOJI")
 
   -- set embeds
   [embed_core_files(L)]

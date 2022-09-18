@@ -9,8 +9,8 @@ for k, v in pairs(_G) do bare_env[k] = v end
 
 truss = {}
 truss.bare_env = bare_env
-truss.version = _TRUSS_VERSION or "0.3.0"
-truss.version_emoji = _TRUSS_VERSION_EMOJI or "⚗️"
+truss.version = _TRUSS_VERSION
+truss.version_emoji = _TRUSS_VERSION_EMOJI
 truss._builtins = {}
 
 function truss._declare_builtin(name, libtable)
@@ -46,16 +46,20 @@ local function _docore(fn, optional)
   end
   table.insert(truss._COREFILES, fn)
   assert(func, "Core load failure: " .. fn .. " -> " .. (err or ""))
-  func()
+  return func()
 end
 
+if not (truss.version and truss.version_emoji) then
+  local ver = _docore("VERSION.lua")
+  truss.version, truss.version_emoji = ver.VERSION, ver.VERSION_EMOJI
+end
 _docore("_setup_utils.t")
 _docore("_setup_log.t")
---_docore("_setup_api.t")
 _docore("_setup_fs.t")
 _docore("_setup_user_config.t")
 _docore("_setup_require.t")
 if not truss.config.no_auto_libraries then
+  require("core/VERSION.lua"):check()
   require("native/timing.t").install(truss)
 end
 _docore("_entry.t")

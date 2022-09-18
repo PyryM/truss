@@ -70,6 +70,7 @@ log = truss._declare_builtin("log", {
 log.colors = {
   alert = term.color(term.BLACK, term.WHITE),
   warn = term.color(term.YELLOW),
+  bigwarn = term.color(term.BLACK, term.YELLOW),
   build = term.color(term.YELLOW),
   error = term.color(term.RED),
   fatal = term.color(term.BLACK, term.RED),
