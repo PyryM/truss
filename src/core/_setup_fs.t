@@ -34,9 +34,11 @@ const char* trussfs_list_get(trussfs_ctx* ctx, uint64_t list_handle, uint64_t in
 ]]
 local fs_c
 if jit.os == 'Windows' then
-  fs_c = ffi.load("lib/trussfs")
+  fs_c = ffi.load("lib/trussfs.dll")
+elseif jit.os == 'OSX' or jit.os == 'Darwin' then
+  fs_c = ffi.load("lib/libtrussfs.dylib")
 else
-  fs_c = ffi.load("lib/libtrussfs")
+  fs_c = ffi.load("lib/libtrussfs.so")
 end
 local INVALID_HANDLE = 0xFFFFFFFFFFFFFFFFull;
 
