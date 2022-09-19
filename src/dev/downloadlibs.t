@@ -28,6 +28,10 @@ local function init()
   else
     exec_cmd('rm libs.zip')
   end
+ 
+  if jit.os == "Linux" then
+    exec_cmd('chmod +x bin/*')
+  end
 end
 
 return {init = init}
