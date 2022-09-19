@@ -89,7 +89,8 @@ log.info("shader include path:", INCLUDEPATH)
 local function make_cmd(shader_type, backend, input_fn, output_fn)
   local binname = BINPATH
   if jit.os ~= "Windows" then
-    binname = "./" .. BINPATH
+    -- this is an absolute path, probably?
+    binname = "/" .. BINPATH
   end
   local args = { binname }
   extend_list(args, {
