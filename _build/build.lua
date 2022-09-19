@@ -18,10 +18,11 @@ local TERRA_NAME = ("terra-%s-%s"):format(TERRA_OS, TERRA_HASH)
 local TERRA_URL = ("%s/%s.%s"):format(TERRA_RELEASE, TERRA_NAME, ARCHIVE_EXT)
 print("Terra url:", TERRA_URL)
 
+local outfile = io.open("_build/_build_generated.sh", "wt")
+
 local function cmd(...)
   local str = table.concat({...}, " ")
-  print("exec:", str)
-  os.execute(str)
+  outfile:write(str)
 end
 
 local function cd(path)
@@ -33,19 +34,15 @@ local function mkdir(path)
 end
 
 local function cp(src, dest)
-  if jit.os == 'Windows' then
-    cmd('xcopy /E', src, dest)
-  else
-    cmd('cp -r', src, dest)
-  end
+  cmd('cp -r', src, dest)
 end
 
 local function run(bin, ...)
-  if jit.os == 'Windows' then
-    cmd(bin, ...)
-  else
-    cmd("./" .. bin, ...)
-  end
+  -- if jit.os == 'Windows' then
+  --   cmd(bin, ...)
+  -- else
+  cmd("./" .. bin, ...)
+  -- end
 end
 
 cmd 'sudo apt-get update -qq -y'
@@ -84,3 +81,5 @@ end
 run('terra', 'src/build/selfbuild.t')
 run('truss', 'dev/downloadlibs.t')
 run('truss', 'dev/buildshaders.t')
+
+outfile:close()
