@@ -8,7 +8,7 @@ if jit.os == "Windows" then
   ARCHIVE_EXT = "7z"
 elseif jit.os == "Linux" and jit.arch == "x64" then
   -- https://github.com/terralang/terra/releases/download/release-1.0.6/terra-Linux-x86_64-6184586.tar.xz
-  TERRA_OS = 
+  TERRA_OS = "Linux-x86_64"
   ARCHIVE_EXT = "tar.xz"
 else
   error("No Terra release for " .. jit.os .. " / " .. jit.arch)
