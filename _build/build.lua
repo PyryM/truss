@@ -41,7 +41,7 @@ local function cp(src, dest)
 end
 
 local function run(bin, ...)
-  if jit.os = 'Windows' then
+  if jit.os == 'Windows' then
     cmd(bin, ...)
   else
     cmd("./" .. bin, ...)
