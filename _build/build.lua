@@ -18,11 +18,11 @@ local TERRA_NAME = ("terra-%s-%s"):format(TERRA_OS, TERRA_HASH)
 local TERRA_URL = ("%s/%s.%s"):format(TERRA_RELEASE, TERRA_NAME, ARCHIVE_EXT)
 print("Terra url:", TERRA_URL)
 
-local outfile = io.open("_build/_build_generated.sh", "wt")
+local outfile = io.open("_build/build_generated.sh", "wt")
 
 local function cmd(...)
   local str = table.concat({...}, " ")
-  outfile:write(str)
+  outfile:write(str .. "\n")
 end
 
 local function cd(path)
