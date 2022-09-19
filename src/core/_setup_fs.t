@@ -32,7 +32,12 @@ void trussfs_list_free(trussfs_ctx* ctx, uint64_t list_handle);
 uint64_t trussfs_list_length(trussfs_ctx* ctx, uint64_t list_handle);
 const char* trussfs_list_get(trussfs_ctx* ctx, uint64_t list_handle, uint64_t index);
 ]]
-local fs_c = ffi.load("lib/trussfs")
+local fs_c
+if jit.os == 'Windows' then
+  fs_c = ffi.load("lib/trussfs")
+else
+  fs_c = ffi.load("lib/libtrussfs")
+end
 local INVALID_HANDLE = 0xFFFFFFFFFFFFFFFFull;
 
 local function split_version(v)
