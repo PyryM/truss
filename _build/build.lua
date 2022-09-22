@@ -73,12 +73,12 @@ if jit.os == 'Windows' then
   cp('_deps/trussfs/target/release/*.exp', 'lib/')
   cp('_deps/trussfs/target/release/*.pdb', 'lib/')
   ]]
-  run('mv bin/terra.exe', '.')
+  cmd('mv bin/terra.exe', '.')
   cp('lib/terra.dll', '.')
   cp('lib/lua51.dll', '.')
 elseif jit.os == 'Linux' then
   cp('_deps/trussfs/target/release/*.so', 'lib/')
-  run('mv bin/terra', '.')
+  cmd('mv bin/terra', '.')
 else
   -- OSX?
 end
