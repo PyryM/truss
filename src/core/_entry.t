@@ -48,7 +48,7 @@ local function guarded_call(f, ...)
   local args = {...}
   local happy, err = xpcall(
     function()
-      f(unpack(args))
+      return f(unpack(args))
     end,
     function(err)
       log.fatal(err)
@@ -57,11 +57,13 @@ local function guarded_call(f, ...)
   )
   if not happy then
     log.fatal("Uncaught exception at top level; stopping.")
-    truss.quit(-1)
+    truss.quit(1)
+  else
+    return err
   end
 end
 
-guarded_call(truss.main.init)
+local init_retval = guarded_call(truss.main.init)
 
 if truss.main.update then
   _core_update = function()
@@ -69,5 +71,5 @@ if truss.main.update then
   end
 else
   log.info("Main has no 'update', just stopping.")
-  _TRUSS_RUNNING = false
+  truss.quit(init_retval)
 end

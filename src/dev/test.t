@@ -267,19 +267,17 @@ function m.run_tests(dirpath, verbose, test_archives)
   elseif test_stats.errors > 0 then
     print("Tests had errors!")
   end
+  if test_stats.total_failed > 0 or test_stats.errors > 0 then
+    return 1
+  end
 end
 
 function m.init()
   if truss.args[3] then
-    m.run_tests(truss.args[3], true)
+    return m.run_tests(truss.args[3], true)
   else -- if no path specified, run all tests, but non-verbose
-    m.run_tests(nil, false)
+    return m.run_tests(nil, false)
   end
-end
-
-function m.update()
-  print("Tests completed.")
-  truss.quit()
 end
 
 return m
