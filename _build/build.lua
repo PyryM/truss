@@ -87,4 +87,5 @@ run('truss', 'dev/downloadlibs.t')
 
 outfile:close()
 
+os.execute("chmod +x " .. OUTSCRIPT)
 os.execute("./" .. OUTSCRIPT)
