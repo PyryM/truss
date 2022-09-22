@@ -87,4 +87,4 @@ run('truss', 'dev/downloadlibs.t')
 
 outfile:close()
 
-run("./" .. OUTSCRIPT)
+os.execute("./" .. OUTSCRIPT)
