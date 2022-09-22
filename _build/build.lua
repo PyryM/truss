@@ -1,6 +1,7 @@
 local TERRA_OS, ARCHIVE_EXT
 local TERRA_RELEASE = "https://github.com/terralang/terra/releases/download/release-1.0.6"
 local TERRA_HASH = "6184586"
+local OUTSCRIPT = "_build/build_generated.sh"
 
 if jit.os == "Windows" then
   -- https://github.com/terralang/terra/releases/download/release-1.0.6/terra-Windows-x86_64-6184586.7z
@@ -18,7 +19,7 @@ local TERRA_NAME = ("terra-%s-%s"):format(TERRA_OS, TERRA_HASH)
 local TERRA_URL = ("%s/%s.%s"):format(TERRA_RELEASE, TERRA_NAME, ARCHIVE_EXT)
 print("Terra url:", TERRA_URL)
 
-local outfile = io.open("_build/build_generated.sh", "wt")
+local outfile = io.open(OUTSCRIPT, "wt")
 
 local function cmd(...)
   local str = table.concat({...}, " ")
@@ -64,7 +65,6 @@ mkdir 'include/terra'
 cp('_deps/' .. TERRA_NAME .. '/include/*',  'include/')
 cp('_deps/' .. TERRA_NAME .. '/lib/*', 'lib/')
 cp('_deps/' .. TERRA_NAME .. '/bin/*', 'bin/')
-cp('bin/terra', '.')
 if jit.os == 'Windows' then
   cp('_deps/trussfs/target/release/*.dll', 'lib/')
   cp('_deps/trussfs/target/release/*.lib', 'lib/')
@@ -73,13 +73,18 @@ if jit.os == 'Windows' then
   cp('_deps/trussfs/target/release/*.exp', 'lib/')
   cp('_deps/trussfs/target/release/*.pdb', 'lib/')
   ]]
+  run('mv bin/terra.exe', '.')
+  cp('lib/terra.dll', '.')
+  cp('lib/lua51.dll', '.')
 elseif jit.os == 'Linux' then
   cp('_deps/trussfs/target/release/*.so', 'lib/')
+  run('mv bin/terra', '.')
 else
   -- OSX?
 end
 run('terra', 'src/build/selfbuild.t')
 run('truss', 'dev/downloadlibs.t')
-run('truss', 'dev/buildshaders.t')
 
 outfile:close()
+
+run("./" .. OUTSCRIPT)
