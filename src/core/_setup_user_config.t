@@ -5,7 +5,7 @@ local default_config = {
   cpu_features = "",
   cpu_opt_profile = {},
   paths = {{".", truss.working_dir}},
-  log_enabled = {"all", "~path", "~debug"},
+  log_enabled = {"all", "~path", "~debug", "~perf"},
   entrypoints = {main="main.t"},
   include_paths = {terralib.includepath, "include"},
   WORKDIR = truss.working_dir,
