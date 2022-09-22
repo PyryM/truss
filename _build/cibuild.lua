@@ -63,8 +63,8 @@ cd '..'
 cd '..'
 mkdir 'include/terra'
 cp('_deps/' .. TERRA_NAME .. '/include/*',  'include/')
-cp('_deps/' .. TERRA_NAME .. '/lib/*', 'lib/')
-cp('_deps/' .. TERRA_NAME .. '/bin/*', 'bin/')
+cp('_deps/' .. TERRA_NAME .. '/lib', 'lib')
+cp('_deps/' .. TERRA_NAME .. '/bin', 'bin')
 if jit.os == 'Windows' then
   cp('_deps/trussfs/target/release/*.dll', 'lib/')
   cp('_deps/trussfs/target/release/*.lib', 'lib/')
