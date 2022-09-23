@@ -28,11 +28,10 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-      - name: Install luajit on Linux
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update -qq -y
-          sudo apt-get install -qq -y luajit
+      # LuaJIT is used to run the setup script
+      - uses: leafo/gh-actions-lua@v9
+        with:
+          luaVersion: "luajit-2.1.0-beta3"
           
       # Run luajit build script
       - name: CI Build
