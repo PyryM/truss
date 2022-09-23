@@ -71,18 +71,10 @@ cp('_deps/' .. TERRA_NAME .. '/bin', 'bin')
 cp('_deps/include/*',  'include/')
 cp('_deps/lib/*', 'lib/')
 if jit.os == 'Windows' then
-  cp('_deps/trussfs/target/release/*.dll', 'lib/')
-  cp('_deps/trussfs/target/release/*.lib', 'lib/')
-  -- unsure whether exp and pdb are actually useful in windows
-  --[[
-  cp('_deps/trussfs/target/release/*.exp', 'lib/')
-  cp('_deps/trussfs/target/release/*.pdb', 'lib/')
-  ]]
   cmd('mv bin/terra.exe', '.')
   cp('lib/terra.dll', '.')
   cp('lib/lua51.dll', '.')
 elseif jit.os == 'Linux' then
-  cp('_deps/trussfs/target/release/*.so', 'lib/')
   cmd('mv bin/terra', '.')
 else
   -- OSX?
