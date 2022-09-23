@@ -3,14 +3,18 @@ local TERRA_RELEASE = "https://github.com/terralang/terra/releases/download/rele
 local TERRA_HASH = "6184586"
 local OUTSCRIPT = "_build/build_generated.sh"
 
+local TRUSSFS_URL = "https://github.com/PyryM/trussfs/releases/download/v0.1.1/"
+
 if jit.os == "Windows" then
   -- https://github.com/terralang/terra/releases/download/release-1.0.6/terra-Windows-x86_64-6184586.7z
   TERRA_OS = "Windows-x86_64"
   ARCHIVE_EXT = "7z"
+  TRUSSFS_URL = TRUSSFS_URL .. "trussfs_windows-latest.zip"
 elseif jit.os == "Linux" and jit.arch == "x64" then
   -- https://github.com/terralang/terra/releases/download/release-1.0.6/terra-Linux-x86_64-6184586.tar.xz
   TERRA_OS = "Linux-x86_64"
   ARCHIVE_EXT = "tar.xz"
+  TRUSSFS_URL = TRUSSFS_URL .. "trussfs_ubuntu-latest.zip"
 else
   error("No Terra release for " .. jit.os .. " / " .. jit.arch)
 end
@@ -51,20 +55,21 @@ cmd 'sudo apt-get install -qq -y libtinfo-dev'
 mkdir '_deps'
 cd '_deps'
 cmd(('curl -o terra.%s -L %s'):format(ARCHIVE_EXT, TERRA_URL))
+cmd(('curl -o trussfs.zip -L %s'):format(TRUSSFS_URL))
 if jit.os == "Windows" then
   cmd("7z e terra." .. ARCHIVE_EXT)
+  cmd("7z e trussfs.zip")
 else
   cmd("tar -xvf terra." .. ARCHIVE_EXT)
+  cmd("unzip trussfs.zip")
 end
-cmd 'git clone https://github.com/pyrym/trussfs'
-cd 'trussfs'
-cmd 'cargo build --release'
-cd '..'
 cd '..'
 mkdir 'include/terra'
 cp('_deps/' .. TERRA_NAME .. '/include/*',  'include/')
 cp('_deps/' .. TERRA_NAME .. '/lib', 'lib')
 cp('_deps/' .. TERRA_NAME .. '/bin', 'bin')
+cp('_deps/trussfs/include/*',  'include/')
+cp('_deps/trussfs/lib/*', 'lib/')
 if jit.os == 'Windows' then
   cp('_deps/trussfs/target/release/*.dll', 'lib/')
   cp('_deps/trussfs/target/release/*.lib', 'lib/')
