@@ -35,7 +35,7 @@ jobs:
           
       # Run luajit build script
       - name: CI Build
-        run: luajit _build/cibuild.lua
+        run: lua _build/cibuild.lua
 
       # Run tests
       - name: Run tests
