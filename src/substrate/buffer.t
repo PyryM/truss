@@ -1,6 +1,4 @@
-local bgfx = require("gfx/bgfx.t")
 local c = require("./clib.t")
-
 local SizedString = require("./commontypes.t").SizedString
 
 -- assume that LLVMs optimizations of a memcopy will outpeform
