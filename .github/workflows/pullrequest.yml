@@ -20,27 +20,23 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
 
-      - name: Install luajit on Linux
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update -qq -y
-          sudo apt-get install -qq -y luajit
+      # LuaJIT is used to run the setup script
+      - uses: leafo/gh-actions-lua@v9
+        with:
+          luaVersion: "luajit-2.1.0-beta3"
           
       # Run luajit build script
       - name: CI Build
-        run: luajit _build/cibuild.lua
+        run: lua _build/cibuild.lua
 
       # Run tests
       - name: Run tests

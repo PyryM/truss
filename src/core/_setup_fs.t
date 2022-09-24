@@ -61,7 +61,7 @@ local function assert_compatible_version(actual, target)
 end
 
 local fs_version = split_version(tonumber(fs_c.trussfs_version()))
-assert_compatible_version(fs_version, {0, 0, 4})
+assert_compatible_version(fs_version, {0, 1, 1})
 
 local fs_ctx = fs_c.trussfs_init()
 local fs = truss._declare_builtin("fs", {archives = {}, mounts = {}})
