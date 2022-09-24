@@ -3,7 +3,7 @@
 -- a 'boxed' value
 
 local m = {}
-local c = require("native/clib.t")
+local c = require("substrate/clib.t")
 local tutil = require("native/typeutils.t")
 
 function m.box(T, options)

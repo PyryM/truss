@@ -11,8 +11,9 @@ local lazy_mt = {
   end
 }
 
-function m.lazy_table(items)
-  return setmetatable({_items = items}, lazy_mt)
+function m.lazy_table(existing_items, lazy_items)
+  existing_items._items = lazy_items
+  return setmetatable(existing_items, lazy_mt)
 end
 
 return m

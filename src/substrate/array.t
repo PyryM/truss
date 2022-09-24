@@ -1,4 +1,5 @@
 local m = {}
+local lazy = require("./lazyload.t")
 
 m.Slice = terralib.memoize(function(T)
   local cfg = require("./cfg.t").freeze()
@@ -80,20 +81,6 @@ m.Array = terralib.memoize(function(T)
     self:copy_raw(rhs.ptr, rhs.size)
   end
 
-  terra Array:zero(count: size_t)
-    [ASSERT(`count <= self.capacity, "Tried to zero more than capacity!")]
-    [derive.clear_array(`self.data, `count)]
-    self.size = count
-  end
-
-  terra Array:fill(val: T, count: size_t)
-    [ASSERT(`count <= self.capacity, "Tried to fill more than capacity!")]
-    for idx = 0, count do
-      [derive.copy(`self.data + idx, `&val)]
-    end
-    self.size = count
-  end
-
   if derive.is_plain_data(T) then
     -- Copying raw bytes only makes sense if this is a POD type
     terra Array:copy_raw_bytes(data: &uint8, nbytes: size_t)
@@ -103,14 +90,26 @@ m.Array = terralib.memoize(function(T)
     end
   end
 
+  if derive.is_plain_data(T) 
+    terra Array:clear()
+      self.size = 0
+    end
+  elseif T:ispointer() then
+    terra Array:clear()
+      intrinsics.memset(self.data, 0, self.size * sizeof(T))
+      self.size = 0
+    end
+  else
+    terra Array:clear()
+      [derive.clear_array(`self.data, `self.size)]
+      self.size = 0
+    end
+  end
+
   terra Array:fill(val: T, count: size_t)
     [ASSERT(`count <= self.capacity, "Tried to fill more than capacity!")]
     [derive.fill_array(`self.data, `val, `count)]
     self.size = count
-  end
-
-  terra Array:clear()
-    self.size = 0
   end
 
   terra Array:push_new(): &T
@@ -130,6 +129,9 @@ m.Array = terralib.memoize(function(T)
   return Array
 end)
 
-m.exports = {"Array", "Slice"}
+local lazy_items = {
+  ByteArray = function() return m.Array(uint8) end,
+  ByteSlice = function() return m.Slice(uint8) end,
+}
 
-return m
+return lazy.lazy_table(m, lazy_items)
