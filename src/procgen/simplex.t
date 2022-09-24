@@ -38,7 +38,7 @@ local math = require("math")
 -- switch this to float if you want e.g., float based functions (faster?)
 local scalar_type = double
 
-local cmath = require("math/cmath.t")
+local cmath = require("substrate/clib.t").math
 local cmax, cmin, cfloor
 if scalar_type == double then
   cmax, cmin, cfloor = cmath.fmax, cmath.fmin, cmath.floor

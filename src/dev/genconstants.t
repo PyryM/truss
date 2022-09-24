@@ -4,7 +4,7 @@
 -- for bgfx
 
 local m = {}
-local clib = require("native/clib.t")
+local clib = require("substrate/clib.t")
 local ffi = require("ffi")
 
 local function make_c_func(funcname, defname)

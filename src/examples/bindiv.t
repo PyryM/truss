@@ -1,5 +1,5 @@
 local bit = require("bit")
-local clib = require("native/clib.t")
+local clib = require("substrate/clib.t")
 
 local terra bin_long_div(_n: uint32, _d: uint32): {uint32, uint32}
   var n: uint64 = _n

@@ -20,7 +20,7 @@ if binname == "truss" or binname == "truss.exe" then
   error("Cannot overwrite own binary while running")
 end
 
-local clib = require("native/clib.t")
+local clib = require("substrate/clib.t")
 
 local terra_c = terralib.includecstring[[
 #include "terra/terra.h"

@@ -7,7 +7,7 @@ local grid = require("graphics/grid.t")
 local ecs = require("ecs")
 
 local nanovg = require("gfx/nanovg.t")
-local clib = require("native/clib.t")
+local clib = require("substrate/clib.t")
 local nvgc = nanovg.C_raw
 
 local FONT_SIZE = 20

@@ -6,7 +6,7 @@ local m = {}
 
 local math = require("math")
 local vec4 = require("math/types.t").vec4_
-local clib = require("native/clib.t")
+local clib = require("substrate/clib.t")
 local cmath = clib.math
 local cio = clib.io
 

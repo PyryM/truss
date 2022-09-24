@@ -131,12 +131,12 @@ function m.dump_value(val, fname, ftype)
   end
 end
 
-function m.clear_fields(val)
-  return m.call_on_fields(val, "clear", m.init_default)
-end
-
 function m.init_fields(val)
   return m.call_on_fields(val, "init", m.init_default)
+end
+
+function m.release_fields(val)
+  return m.call_on_fields(val, "release")
 end
 
 function m.dump_fields(val)
@@ -168,11 +168,12 @@ function m.copy(dest, src)
   local T = dest.type or dest:gettype()
   assert(T:ispointer(), "derive.copy expects dest and src as pointers!")
   T = T.type
-  if m.is_plain_data(T) then
+  if T.methods and T.methods["copy"] then
+    return quote dest:copy(src) end
+  elseif m.is_plain_data(T) then
     return quote @dest = @src end
   else
-    assert(T.methods and T.methods["copy"], tostring(T) .. " missing :copy!")
-    return quote dest:copy(src) end
+    error("Don't know how to copy " .. tostring(T) .. ": type is not POD and has no .copy!")
   end
 end
 
@@ -180,35 +181,56 @@ function m.copy_array(dest, src, count)
   local T = dest.type or dest:gettype()
   assert(T:ispointer(), "derive.copy_array expects dest and src as pointers!")
   T = T.type
-  if m.is_plain_data(T) then
-    return quote
-      intrinsics.memcpy(dest, src, count * sizeof(T))
-    end
-  else
-    assert(T.methods and T.methods["copy"], tostring(T) .. " missing :copy!")
+  if T.methods and T.methods["copy"] then
     return quote
       for idx = 0, count do
         dest[idx]:copy(src + idx)
       end
     end
+  elseif m.is_plain_data(T) then
+    return quote
+      intrinsics.memcpy(dest, src, count * sizeof(T))
+    end
+  else
+    error("Don't know how to copy " .. tostring(T) .. ": type is not POD and has no .copy!")
   end
 end
 
-function m.clear_array(dest, count)
+function m.release_array_contents(dest, count)
   local T = dest.type or dest:gettype()
-  assert(T:ispointer(), "derive.clear_array expects dest as pointer!")
+  assert(T:ispointer(), "derive.release_array_contents expects dest as pointer!")
   T = T.type
-  if m.is_plain_data(T) then
+  if T.methods and T.methods["release"] then
+    return quote
+      for idx = 0, count do
+        dest[idx]:release()
+      end
+    end
+  elseif m.is_plain_data(T) or T:ispointer() then
     return quote
       intrinsics.memset(dest, 0, count * sizeof(T))
     end
   else
-    assert(T.methods and T.methods["clear"], tostring(T) .. " missing :clear!")
+    error("Don't know how to release " .. tostring(T) .. ": type is not POD and has no .release!")
+  end
+end
+
+function m.init_array_contents(dest, count)
+  local T = dest.type or dest:gettype()
+  assert(T:ispointer(), "derive.init_array_contents expects dest as pointer!")
+  T = T.type
+  if T.methods and T.methods["init"] then
     return quote
       for idx = 0, count do
-        dest[idx]:clear()
+        dest[idx]:init()
       end
     end
+  elseif m.is_plain_data(T) or T:ispointer() then
+    return quote
+      intrinsics.memset(dest, 0, count * sizeof(T))
+    end
+  else
+    error("Don't know how to init " .. tostring(T) .. ": type is not POD and has no .init!")
   end
 end
 
@@ -216,14 +238,7 @@ function m.fill_array(dest, val, count)
   local T = dest.type or dest:gettype()
   assert(T:ispointer(), "derive.fill_array expects dest as pointer!")
   T = T.type
-  if m.is_plain_data(T) then
-    return quote
-      for idx = 0, count do
-        dest[idx] = val
-      end
-    end
-  else
-    assert(T.methods and T.methods["copy"], tostring(T) .. " missing :copy!")
+  if T.methods and T.methods["copy"] then
     local VT = val.type or val:gettype()
     if VT:ispointer() then
       return quote
@@ -238,6 +253,13 @@ function m.fill_array(dest, val, count)
         end
       end
     end
+  elseif m.is_plain_data(T) then
+    return quote
+      for idx = 0, count do
+        dest[idx] = val
+      end
+    end
+  else
   end
 end
 
@@ -248,10 +270,10 @@ function m.derive_init(T)
   end
 end
 
-function m.derive_clear(T)
-  assert(not T.methods.clear, tostring(T) .. " already has :clear!")
-  terra T.methods.clear(self: &T)
-    [m.clear_fields(self)]
+function m.derive_release(T)
+  assert(not T.methods.release, tostring(T) .. " already has :release!")
+  terra T.methods.release(self: &T)
+    [m.release_fields(self)]
   end
 end
 

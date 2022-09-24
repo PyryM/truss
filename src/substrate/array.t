@@ -1,7 +1,7 @@
 local m = {}
 local lazy = require("./lazyload.t")
 
-m.Slice = terralib.memoize(function(T)
+m._Slice = function(T)
   local cfg = require("./cfg.t").freeze()
   local size_t = cfg.size_t
 
@@ -15,9 +15,10 @@ m.Slice = terralib.memoize(function(T)
   end
 
   return Slice
-end)
+end
+m.Slice = terralib.memoize(m._Slice)
 
-m.Array = terralib.memoize(function(T)
+m._Array = function(T)
   local cfg = require("./cfg.t").freeze()
   local derive = require("./derive.t")
   local intrinsics = require("./intrinsics.t")
@@ -38,6 +39,7 @@ m.Array = terralib.memoize(function(T)
   derive.derive_init(Array)
 
   terra Array:release()
+    [derive.release_array_contents(`self.data, `self.size)]
     [FREE(`self.data)]
     self:init()
   end
@@ -90,44 +92,47 @@ m.Array = terralib.memoize(function(T)
     end
   end
 
-  if derive.is_plain_data(T) 
-    terra Array:clear()
-      self.size = 0
+  terra Array:resize(newsize: size_t)
+    [ASSERT(`newsize <= self.capacity, "Cannot resize to larger than capacity!")]
+    if newsize < self.size then
+      [derive.release_array_contents(`self.data + newsize, `self.size - newsize)]
+    elseif newsize > self.size then
+      [derive.init_array_contents(`self.data + self.size, `newsize - self.size)]
     end
-  elseif T:ispointer() then
-    terra Array:clear()
-      intrinsics.memset(self.data, 0, self.size * sizeof(T))
-      self.size = 0
-    end
-  else
-    terra Array:clear()
-      [derive.clear_array(`self.data, `self.size)]
-      self.size = 0
-    end
+    self.size = newsize
   end
 
-  terra Array:fill(val: T, count: size_t)
-    [ASSERT(`count <= self.capacity, "Tried to fill more than capacity!")]
-    [derive.fill_array(`self.data, `val, `count)]
-    self.size = count
+  terra Array:fill(newsize: size_t, val: T)
+    [ASSERT(`newsize >= self.size, "Must :fill to at least existing size!")]
+    var startpos = self.size
+    self:resize(newsize)
+    [derive.fill_array(`self.data + startpos, `val, `newsize - startpos)]
+  end
+
+  terra Array:clear()
+    self:shrink(0)
   end
 
   terra Array:push_new(): &T
     [ASSERT(`self.size < self.count, "No capacity for a new element!")]
     var ret: &T = &(self.data[self.size])
     self.size = self.size + 1
+    [derive.init_array_contents(`ret, 1)]
     return ret
   end
 
-  terra Array:push_val(val: T)
-    [ASSERT(`self.size < self.count, "No capacity for a new element!")]
-    self.data[self.size] = val
-    self.size = self.size + 1
-    return true
+  if derive.is_plain_data(T) or T:ispointer() then
+    terra Array:push_val(val: T)
+      [ASSERT(`self.size < self.count, "No capacity for a new element!")]
+      self.data[self.size] = val
+      self.size = self.size + 1
+      return true
+    end
   end
 
   return Array
-end)
+end
+m.Array = terralib.memoize(m._Array)
 
 local lazy_items = {
   ByteArray = function() return m.Array(uint8) end,

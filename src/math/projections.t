@@ -3,7 +3,7 @@
 -- functions for creating various types of projecion matrices
 
 local m = {}
-local cmath = require("math/cmath.t")
+local cmath = require("substrate/clib.t").math
 
 function m.deg_to_rad(deg)
     return deg * math.pi / 180.0

@@ -2,7 +2,7 @@
 --
 -- colorspace conversion functions
 
-local cmath = require("native/clib.t").math
+local cmath = require("substrate/clib.t").math
 
 local m = {}
 
