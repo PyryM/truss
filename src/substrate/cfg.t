@@ -14,8 +14,7 @@ local function _make_assert()
     return quote 
       if not condition then
         clib.io.printf(fullmsg)
-        -- hmmm?
-        --clib.std.exit(2) 
+        clib.std.exit(2) 
       end
     end
   end

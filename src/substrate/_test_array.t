@@ -41,6 +41,9 @@ local function test_basic(t)
   v:push_val(111)
   t.ok(v.size == 1, "Vec now has 1 thing")
   t.expect(v.data[0], 111, "New 1st elem is correct")
+
+  v:release()
+  t.ok(true, "We released a vector without crashing.")
 end
 
 function m.run(test)
