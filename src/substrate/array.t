@@ -1,12 +1,16 @@
 local m = {}
 local lazy = require("./lazyload.t")
+local util = require("./util.t")
 
-m._Slice = function(T)
-  local cfg = require("./cfg.t").freeze()
-  local size_t = cfg.size_t
+m._Slice = function(T, options)
+  assert(T, "No type provided!")
+
+  options = options or {}
+  local cfg = options.cfg or require("./cfg.t").configure()
+  local size_t = assert(cfg.size_t, "No size_t!")
 
   local struct Slice {
-    ptr: &T;
+    data: &T;
     size: size_t;
   }
 
@@ -14,12 +18,19 @@ m._Slice = function(T)
     return self.size * sizeof(T)
   end
 
+  Slice.substrate = {
+    allow_move_by_memcpy = true
+  }
+  
+  util.set_template_name(Slice, "Slice", T)
+
   return Slice
 end
 m.Slice = terralib.memoize(m._Slice)
 
-m._Array = function(T)
-  local cfg = require("./cfg.t").freeze()
+m._Array = function(T, options)
+  options = options or {}
+  local cfg = options.cfg or require("./cfg.t").configure()
   local derive = require("./derive.t")
   local intrinsics = require("./intrinsics.t")
 
@@ -27,9 +38,12 @@ m._Array = function(T)
   local ALLOCATE = cfg.ALLOCATE
   local FREE = cfg.FREE
   local ASSERT = cfg.ASSERT
+  local LOG = cfg.LOG
 
   local Slice = m.Slice(T)
-  local Bytes = m.Slice(uint8)
+  local ByteSlice = m.Slice(uint8)
+
+  local clib = require("./clib.t")
 
   local struct Array {
     capacity: size_t;
@@ -51,14 +65,52 @@ m._Array = function(T)
     self.data = [ALLOCATE(T, `n)]
   end
 
-  terra Array:as_bytes(): Bytes
-    return Bytes{ptr = [&uint8](self.data), len = self.size*sizeof(T)}
+  if options.allow_growth then
+    terra Array:resize_capacity(new_capacity: size_t)
+      if new_capacity == self.capacity then return end
+      [LOG("Resizing capacity to %d", `new_capacity)]
+      var new_data = [ALLOCATE(T, `new_capacity)]
+      var ncopy = self.size
+      if ncopy > new_capacity then ncopy = new_capacity end
+      if ncopy > 0 then
+        [derive.move_array(`new_data, `self.data, `ncopy)]
+      end
+      [derive.release_array_contents(`self.data, `self.size)]
+      [FREE(`self.data)]
+      self.data = new_data
+      self.capacity = new_capacity
+      if self.size > self.capacity then
+        self.size = self.capacity
+      end
+    end
+
+    terra Array:fit_capacity(needed_capacity: size_t)
+      [LOG("Fitting capacity to %d", `needed_capacity)]
+      if needed_capacity < self.capacity / 2 then
+        self:resize_capacity(needed_capacity)
+      elseif needed_capacity > self.capacity then
+        var newcap = self.capacity
+        if newcap == 0 then newcap = needed_capacity end
+        while newcap < needed_capacity do
+          newcap = newcap * 2
+        end
+        self:resize_capacity(newcap)
+      end
+    end
+  else
+    terra Array:fit_capacity(needed_capacity: size_t)
+      [ASSERT(`needed_capacity < self.capacity, "Exceeded capacity!")]
+    end
+  end
+
+  terra Array:as_bytes(): ByteSlice
+    return ByteSlice{data = [&uint8](self.data), size = self.size*sizeof(T)}
   end
 
   terra Array:slice(start: size_t, stop: size_t): Slice
     [ASSERT(`start <= self.size and stop <= self.size, "OOB slice!")]
-    [ASSERT(`stop >= start, "slice stop must come after start!)]
-    return Slice{ptr = self.data+start, len = stop - start}
+    [ASSERT(`stop >= start, "slice stop must come after start!")]
+    return Slice{data = self.data+start, size = stop - start}
   end
 
   terra Array:swap(rhs: &Array)
@@ -80,20 +132,20 @@ m._Array = function(T)
   end
 
   terra Array:copy_slice(rhs: &Slice)
-    self:copy_raw(rhs.ptr, rhs.size)
+    self:copy_raw(rhs.data, rhs.size)
   end
 
   if derive.is_plain_data(T) then
     -- Copying raw bytes only makes sense if this is a POD type
     terra Array:copy_raw_bytes(data: &uint8, nbytes: size_t)
-      [ASSERT(`nbytes <= self.capacity * sizeof(T), "Tried to copy more bytes than capacity!)]
-      intrinsics.memcpy([&uint8]self.data, data, nbytes)
+      [ASSERT(`nbytes <= self.capacity * sizeof(T), "Tried to copy more bytes than capacity!")]
+      intrinsics.memcpy([&uint8](self.data), data, nbytes)
       self.size = nbytes / sizeof(T)
     end
   end
 
   terra Array:resize(newsize: size_t)
-    [ASSERT(`newsize <= self.capacity, "Cannot resize to larger than capacity!")]
+    self:fit_capacity(newsize)
     if newsize < self.size then
       [derive.release_array_contents(`self.data + newsize, `self.size - newsize)]
     elseif newsize > self.size then
@@ -110,29 +162,67 @@ m._Array = function(T)
   end
 
   terra Array:clear()
-    self:shrink(0)
+    self:resize(0)
   end
 
   terra Array:push_new(): &T
-    [ASSERT(`self.size < self.count, "No capacity for a new element!")]
+    self:fit_capacity(self.size + 1)
     var ret: &T = &(self.data[self.size])
     self.size = self.size + 1
     [derive.init_array_contents(`ret, 1)]
     return ret
   end
 
-  if derive.is_plain_data(T) or T:ispointer() then
-    terra Array:push_val(val: T)
-      [ASSERT(`self.size < self.count, "No capacity for a new element!")]
-      self.data[self.size] = val
-      self.size = self.size + 1
-      return true
+  -- Note: we're relying on return-type inference here
+  terra Array:get_ref(idx: size_t)
+    [ASSERT(`idx >= 0 and idx < self.size, "OOB array access!")]
+    escape
+      -- hmmmm
+      if T.methods and T.methods.get_ref then
+        emit(quote return self.data[idx]:get_ref() end)
+      else
+        emit(quote return self.data + idx end)
+      end
     end
   end
 
+  terra Array:print_something()
+    clib.io.printf("Something?\n")
+    [LOG("Something 2?")]
+  end
+
+  if derive.is_plain_data(T) or T:ispointer() then
+    log.build("Plain data push?")
+    terra Array:push_val(val: T)
+      self:fit_capacity(self.size + 1)
+      self.data[self.size] = val
+      self.size = self.size + 1
+    end
+
+    terra Array:get_val(idx: size_t): T
+      [ASSERT(`idx >= 0 and idx < self.size, "OOB array access!")]
+      return self.data[idx]
+    end
+  end
+
+  Array.substrate = {
+    -- not 100% sure about this inference
+    allow_move_by_memcpy = (T.substrate and T.substrate.allow_move_by_memcpy)
+                           or derive.is_plain_data(T) or T:ispointer() 
+  }
+
+  util.set_template_name(Array, options.typename or "Array", T)
+
   return Array
 end
-m.Array = terralib.memoize(m._Array)
+
+m.Array = terralib.memoize(function(T)
+  return m._Array(T, {allow_growth = false, typename = "Array"})
+end)
+
+m.Vec = terralib.memoize(function(T)
+  return m._Array(T, {allow_growth = true, typename = "Vec"})
+end)
 
 local lazy_items = {
   ByteArray = function() return m.Array(uint8) end,

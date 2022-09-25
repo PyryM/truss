@@ -7,7 +7,7 @@ local includers = {}
 local headers = {
   std = "stdlib.h",
   io = "stdio.h",
-  str = "string.h",
+  string = "string.h",
   math = "math.h",
   int = "stdint.h",
 }

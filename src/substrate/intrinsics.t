@@ -1,5 +1,8 @@
 local m = {}
 
+local clib = require("./clib.t")
+local size_t = clib.std.size_t
+
 local LLVM_TYPE_SUFFIX = {
   [float] = "f32",
   [double] = "f64",
@@ -12,28 +15,43 @@ local LLVM_TYPE_SUFFIX = {
 }
 
 local function intrinsic_name(basename, t)
-  if type(t) ~= "string" then t = LLVM_TYPE_SUFFIX[t] end
+  if type(t) ~= "string" then 
+    if t:ispointer() then
+      t = t.type
+    end
+    t = assert(LLVM_TYPE_SUFFIX[t], "no LLVM suffix for " .. tostring(t)) 
+  end
   return "llvm." .. basename .. "." .. t
 end
 
+
 m.memcpy = macro(function(dest, src, nbytes)
-  local t = x:gettype()
-  assert(t == y:gettype(), "intrinsic memcpy requires dest and src to have same type!")
-  local imemcpy = terralib.intrinsic(intrinsic_name("llvm.memcpy.p0.p0", t))
-  return `imemcpy(dest, src, nbytes, 0)
+  local t = dest:gettype()
+  assert(t == src:gettype(), "intrinsic memcpy requires dest and src to have same type!")
+  local imemcpy = terralib.intrinsic(
+    intrinsic_name("memcpy.p0.p0", t), 
+    {t, t, size_t, bool} -> {}
+  )
+  return `imemcpy(dest, src, nbytes, false)
 end)
 
 m.memmove = macro(function(dest, src, nbytes)
-  local t = x:gettype()
-  assert(t == y:gettype(), "intrinsic memmove requires dest and src to have same type!")
-  local imemmove = terralib.intrinsic(intrinsic_name("llvm.memmove.p0.p0", t))
-  return `imemmove(dest, src, nbytes, 0)
+  local t = dest:gettype()
+  assert(t == src:gettype(), "intrinsic memmove requires dest and src to have same type!")
+  local imemmove = terralib.intrinsic(
+    intrinsic_name("memmove.p0.p0", t), 
+    {t, t, size_t, bool} -> {}
+  )
+  return `imemmove(dest, src, nbytes, false)
 end)
 
 m.memset = macro(function(dest, value, nbytes)
-  local t = x:gettype()
-  local imemset = terralib.intrinsic(intrinsic_name("llvm.memset.p0", t))
-  return `imemset(dest, value, nbytes, 0)
+  local t = dest:gettype()
+  local imemset = terralib.intrinsic(
+    intrinsic_name("memset.p0", t), 
+    {t, int8, size_t, bool} -> {}
+  )
+  return `imemset(dest, value, nbytes, false)
 end)
 
 m.min = macro(function(x, y)

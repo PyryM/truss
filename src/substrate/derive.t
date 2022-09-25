@@ -177,63 +177,79 @@ function m.copy(dest, src)
   end
 end
 
-function m.copy_array(dest, src, count)
+function m.map_array_method(dest, src, count, methodname, fallback)
   local T = dest.type or dest:gettype()
-  assert(T:ispointer(), "derive.copy_array expects dest and src as pointers!")
+  assert(T:ispointer(), "derive.map_array expects dest and src as pointers!")
   T = T.type
-  if T.methods and T.methods["copy"] then
+  if T.methods and T.methods[methodname] then
     return quote
       for idx = 0, count do
-        dest[idx]:copy(src + idx)
+        var item = &dest[idx]
+        item.[methodname](item, &src[idx])
       end
     end
-  elseif m.is_plain_data(T) then
+  else
+    assert(fallback, "No fallback array mapper!")
+    return fallback(T, dest, src, count)
+  end
+end
+
+function m.iter_array_method(dest, count, methodname, fallback)
+  local T = dest.type or dest:gettype()
+  assert(T:ispointer(), "derive.iter_array_method expects dest!")
+  T = T.type
+  if T.methods and T.methods[methodname] then
+    return quote
+      for idx = 0, count do
+        var item = &dest[idx]
+        item.[methodname](item)
+      end
+    end
+  else
+    assert(fallback, "No fallback array mapper!")
+    return fallback(T, dest, count)
+  end
+end
+
+function m.copy_array(dest, src, count)
+  return m.map_array_method(dest, src, count, "copy", function(T, dest, src, count)
+    assert(m.is_plain_data(T), "Unable to determine how to copy type " .. tostring(T))
     return quote
       intrinsics.memcpy(dest, src, count * sizeof(T))
     end
-  else
-    error("Don't know how to copy " .. tostring(T) .. ": type is not POD and has no .copy!")
-  end
+  end)
+end
+
+function m.move_array(dest, src, count)
+  return m.map_array_method(dest, src, count, "move", function(T, dest, src, count)
+    local copyable = m.is_plain_data(T) or T:ispointer() 
+      or (T.substrate and T.subtrate.allow_move_by_memcpy)
+    assert(copyable, "Unable to determine how to move type " .. tostring(T))
+    return quote
+      intrinsics.memcpy(dest, src, count * sizeof(T))
+    end
+  end)
 end
 
 function m.release_array_contents(dest, count)
-  local T = dest.type or dest:gettype()
-  assert(T:ispointer(), "derive.release_array_contents expects dest as pointer!")
-  T = T.type
-  if T.methods and T.methods["release"] then
-    return quote
-      for idx = 0, count do
-        dest[idx]:release()
-      end
-    end
-  elseif m.is_plain_data(T) or T:ispointer() then
-    return quote
-      intrinsics.memset(dest, 0, count * sizeof(T))
-    end
-  else
-    error("Don't know how to release " .. tostring(T) .. ": type is not POD and has no .release!")
-  end
+  return m.iter_array_method(dest, count, "release", function(T, dest, count)
+    local does_not_need_release = m.is_plain_data(T) or T:ispointer() -- eh?
+    assert(does_not_need_release, "Unable to determine how to release type " .. tostring(T))
+    return quote end
+  end)
 end
 
 function m.init_array_contents(dest, count)
-  local T = dest.type or dest:gettype()
-  assert(T:ispointer(), "derive.init_array_contents expects dest as pointer!")
-  T = T.type
-  if T.methods and T.methods["init"] then
-    return quote
-      for idx = 0, count do
-        dest[idx]:init()
-      end
-    end
-  elseif m.is_plain_data(T) or T:ispointer() then
+  return m.iter_array_method(dest, count, "init", function(T, dest, count)
+    local init_by_zero = m.is_plain_data(T) or T:ispointer()
+    assert(init_by_zero, "Unable to determine how to init type " .. tostring(T))
     return quote
       intrinsics.memset(dest, 0, count * sizeof(T))
     end
-  else
-    error("Don't know how to init " .. tostring(T) .. ": type is not POD and has no .init!")
-  end
+  end)
 end
 
+-- HMM
 function m.fill_array(dest, val, count)
   local T = dest.type or dest:gettype()
   assert(T:ispointer(), "derive.fill_array expects dest as pointer!")
@@ -295,7 +311,5 @@ function m.add_method(T, methodname, method)
   method:setname(methodname)
   T.methods[methodname] = method
 end
-
-return m
 
 return m

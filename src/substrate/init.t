@@ -10,6 +10,7 @@ local function add_exports(srcmodule, names)
   end
 end
 
-add_exports("./array.t", {"Slice", "Array"})
+add_exports("./cfg.t", {"configure"})
+add_exports("./array.t", {"Slice", "Array", "Vec", "ByteSlice", "ByteArray"})
 
 return substrate

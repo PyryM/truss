@@ -14,7 +14,8 @@ local function _make_assert()
     return quote 
       if not condition then
         clib.io.printf(fullmsg)
-        clib.std.quit(2)
+        -- hmmm?
+        --clib.std.exit(2) 
       end
     end
   end
@@ -30,26 +31,50 @@ local function _fill_defaults(cfg)
   end
 
   if not (cfg.ALLOCATE and cfg.FREE) then
-    local alloc = require("./alloc.t").default_allocators(cfg)
-    cfg.ALLOCATE, cfg.FREE = alloc.ALLOCATE, alloc.FREE
+    local allocator = cfg.allocator
+    if not allocator then allocator = "malloc" end
+    if type(allocator) == 'string' then
+      local modulename = "./allocators/" .. allocator .. ".t"
+      allocator = assert(require(modulename), "Couldn't load allocator " .. modulename)
+    end
+    if type(allocator) == 'function' then
+      allocator = allocator(cfg)
+    end
+    cfg.allocator = allocator
+    cfg.ALLOCATE = assert(allocator.ALLOCATE, "allocator module has no ALLOCATE!")
+    cfg.FREE = assert(allocator.FREE, "allocator module has no FREE!")
   end
 
   if not cfg.LOG then
     cfg.LOG = require("./log.t").default_log(cfg)
   end
-end
 
-function m.freeze()
-  if not frozen then
-    _fill_defaults(cfg)
-    frozen = true
+  if not cfg.size_t then
+    cfg.size_t = assert(require("./clib.t").std.size_t)
   end
-  return cfg
 end
 
-function m.configure(options)
+function m._freeze()
+  _fill_defaults(cfg)
+  frozen = true
+end
+
+function m.configure(...)
+  local nargs = select('#', ...)
+  local options = select(1, ...)
+  if nargs == 0 then
+    if not frozen then
+      log.warn("substrate never configured; using default config")
+      m._freeze()
+    end
+    return cfg
+  end
+  assert(options, "substrate.configure passed nil configuration!")
   assert(not frozen, "substrate cannot be configured twice!")
   truss.extend_table(cfg, options)
+  m._freeze()
+  
+  return cfg
 end
 
 return m

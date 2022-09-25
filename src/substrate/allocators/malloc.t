@@ -1,9 +1,11 @@
-local m = {}
+-- substrate/allocators/malloc.t
+--
+-- basic malloc/free based allocator
 
-function m.default_allocators(cfg)
-  local c = require("./clib.t")
-
+local function build(cfg)
+  local c = require("substrate/clib.t")
   local alloc = {}
+
   function alloc.ALLOCATE(T, count)
     if count then
       return `[&T](c.std.malloc(sizeof(T)))
@@ -13,10 +15,10 @@ function m.default_allocators(cfg)
   end
 
   function alloc.FREE(ptr)
-    return quote c.std.free(v) end
+    return quote c.std.free(ptr) end
   end
 
   return alloc
 end
 
-return m
+return build
