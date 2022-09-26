@@ -6,7 +6,7 @@ local ByteBuffer = require("./buffer.t").ByteBuffer
 local SizedString = require("./commontypes.t").SizedString
 local wrap_c_str = require("./commontypes.t").wrap_c_str
 
-local c = require("./clib.t")
+local c = require("./libc.t")
 
 local m = {}
 

@@ -6,9 +6,9 @@ local m = {}
 
 local math = require("math")
 local vec4 = require("math/types.t").vec4_
-local clib = require("substrate/clib.t")
-local cmath = clib.math
-local cio = clib.io
+local libc = require("substrate/libc.t")
+local cmath = libc.math
+local cio = libc.io
 
 local struct index_list {
   n_indices: uint8;

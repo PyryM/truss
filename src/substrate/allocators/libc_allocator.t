@@ -3,7 +3,7 @@
 -- basic libc-based allocator
 
 local function build(cfg)
-  local c = require("substrate/clib.t")
+  local c = require("substrate/libc.t")
   local alloc = {}
 
   function alloc.ALLOCATE(T, count)

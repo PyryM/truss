@@ -1,9 +1,9 @@
-local clib = require("substrate/clib.t")
+local libc = require("substrate/libc.t")
 
 local terra x_div_x(x: uint32): uint32
   var y = x/x
   if x == 0 then
-    clib.io.printf("Got zero!\n")
+    libc.io.printf("Got zero!\n")
   end
   return y
 end

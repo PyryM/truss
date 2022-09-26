@@ -1,7 +1,7 @@
 local m = {}
 
-local clib = require("./clib.t")
-local size_t = clib.std.size_t
+local libc = require("./libc.t")
+local size_t = libc.std.size_t
 
 local LLVM_TYPE_SUFFIX = {
   [float] = "f32",

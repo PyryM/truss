@@ -3,7 +3,7 @@
 -- 4x4 matrix math functions
 
 local m = {}
-local CMath = require("substrate/clib.t").math
+local CMath = require("substrate/libc.t").math
 local class = require("class")
 local projections = require("math/projections.t")
 local mathtypes = require("math/types.t")

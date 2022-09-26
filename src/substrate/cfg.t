@@ -8,13 +8,13 @@ local function NOOP()
 end
 
 local function _make_assert()
-  local clib = require("./clib.t")
+  local libc = require("./libc.t")
   return function(condition, message)
     local fullmsg = "Assertion failure: " .. (message or "") .. "\n"
     return quote 
       if not condition then
-        clib.io.printf(fullmsg)
-        clib.std.exit(2) 
+        libc.io.printf(fullmsg)
+        libc.std.exit(2) 
       end
     end
   end
@@ -27,6 +27,14 @@ local function _fill_defaults(cfg)
     else
       cfg.ASSERT = _make_assert()
     end
+  end
+
+  if not cfg.LOG then
+    cfg.LOG = require("./log.t").default_log(cfg)
+  end
+
+  if not cfg.size_t then
+    cfg.size_t = assert(require("./libc.t").std.size_t)
   end
 
   if not (cfg.ALLOCATE and cfg.FREE) then
@@ -43,14 +51,6 @@ local function _fill_defaults(cfg)
     cfg.ALLOCATE = assert(allocator.ALLOCATE, "allocator module has no ALLOCATE!")
     cfg.ALLOCATE_ZEROED = assert(allocator.ALLOCATE_ZEROED, "allocator module has no ALLOCATE_ZEROED!")
     cfg.FREE = assert(allocator.FREE, "allocator module has no FREE!")
-  end
-
-  if not cfg.LOG then
-    cfg.LOG = require("./log.t").default_log(cfg)
-  end
-
-  if not cfg.size_t then
-    cfg.size_t = assert(require("./clib.t").std.size_t)
   end
 end
 

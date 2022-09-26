@@ -4,7 +4,7 @@
 -- for bgfx
 
 local m = {}
-local clib = require("substrate/clib.t")
+local libc = require("substrate/libc.t")
 local ffi = require("ffi")
 
 local function make_c_func(funcname, defname)
@@ -27,7 +27,7 @@ end
 local tempbuffer = terralib.new(uint8[255])
 
 local function format_ull_constant(val)
-  clib.io.sprintf(tempbuffer, "0x%llxULL", val)
+  libc.io.sprintf(tempbuffer, "0x%llxULL", val)
   return ffi.string(tempbuffer)
 end
 

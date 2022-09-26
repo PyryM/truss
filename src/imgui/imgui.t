@@ -5,7 +5,7 @@
 local build = require("build/build.t")
 local modutils = require("core/module.t")
 local class = require("class")
-local clib = require("substrate/clib.t")
+local libc = require("substrate/libc.t")
 local buffer = require("native/buffer.t")
 local m = {}
 

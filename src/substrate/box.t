@@ -81,6 +81,6 @@ m.Box = terralib.memoize(function(T)
   return m._Box(T)
 end)
 
-m.exported_names = {"box"}
+m.exported_names = {"Box"}
 
 return m

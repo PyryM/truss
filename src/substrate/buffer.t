@@ -1,4 +1,4 @@
-local c = require("./clib.t")
+local c = require("./libc.t")
 local SizedString = require("./commontypes.t").SizedString
 
 -- assume that LLVMs optimizations of a memcopy will outpeform

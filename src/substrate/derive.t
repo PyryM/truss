@@ -4,7 +4,7 @@
 
 local m = {}
 local intrinsics = require("./intrinsics.t")
-local clib = require("./clib.t")
+local libc = require("./libc.t")
 
 function m.has_method(T, name)
   return T.methods[name] ~= nil
@@ -99,6 +99,9 @@ m.DEFAULTS = {
 }
 
 function m.init_default(val, fname, ftype, defaults)
+  if ftype:ispointer() then
+    return quote val.[fname] = nil end
+  end
   defaults = defaults or m.DEFAULTS
   local default_val = defaults[ftype] or m.DEFAULTS[ftype]
   -- note explicit nil check because false is a valid default
@@ -117,9 +120,9 @@ function m.dump_value(val, fname, ftype)
   if ftype == bool then
     return quote 
       if val.[fname] then
-        clib.io.printf("%s: true\n", fname)
+        libc.io.printf("%s: true\n", fname)
       else
-        clib.io.printf("%s: false\n", fname)
+        libc.io.printf("%s: false\n", fname)
       end
     end
   end
@@ -131,10 +134,10 @@ function m.dump_value(val, fname, ftype)
 
   if fmt then
     local pstr = fname .. ": " .. fmt .. "\n"
-    return quote clib.io.printf(pstr, val.[fname]) end
+    return quote libc.io.printf(pstr, val.[fname]) end
   else
     local pstr = fname .. ": ?\n"
-    return quote clib.io.printf(pstr) end
+    return quote libc.io.printf(pstr) end
   end
 end
 
@@ -146,29 +149,12 @@ function m.release_fields(val)
   return m.call_on_fields(val, "release")
 end
 
-function m.dump_fields(val)
-  return m.call_on_fields(val, "dump", m.dump_value)
+function m.clear_fields(val)
+  return m.call_on_fields(val, "clear", m.init_default)
 end
 
-function m.copy_fields(dest, src)
-  local statements = {}
-  local T = dest.type or dest:gettype()
-  if T:ispointer() then T = T.type end
-  for fname, ftype in m.ifields(T) do
-    if ftype.methods then
-      assert(ftype.methods["copy"], tostring(ftype) .. " missing :copy!")
-      table.insert(statements, quote 
-        dest.[fname]:copy(&(src.[fname]))
-      end)
-    else
-      -- assume primitive
-      assert(not ftype:ispointer(), "Tried to shallow copy a pointer in " .. tostring(T) .. "." .. fname)
-      table.insert(statements, quote
-        dest.[fname] = src.[fname]
-      end)
-    end
-  end
-  return statements
+function m.dump_fields(val)
+  return m.call_on_fields(val, "dump", m.dump_value)
 end
 
 function m.copy(dest, src)
@@ -184,6 +170,45 @@ function m.copy(dest, src)
   end
 end
 
+function m.copy_fields(dest, src)
+  local statements = {}
+  local T = dest.type or dest:gettype()
+  if T:ispointer() then T = T.type end
+  for fname, ftype in m.ifields(T) do
+    if ftype.methods and ftype.methods["copy"] then
+      table.insert(statements, quote 
+        dest.[fname]:copy(&(src.[fname]))
+      end)
+    else
+      -- assume primitive
+      assert(not ftype:ispointer(), "Tried to shallow copy a pointer in " .. tostring(T) .. "." .. fname)
+      table.insert(statements, quote
+        dest.[fname] = src.[fname]
+      end)
+    end
+  end
+  return statements
+end
+
+-- TOOD: refactor w/ above
+function m.move_fields(dest, src)
+  local statements = {}
+  local T = dest.type or dest:gettype()
+  if T:ispointer() then T = T.type end
+  for fname, ftype in m.ifields(T) do
+    if ftype.methods and ftype.methods["move"] then
+      table.insert(statements, quote 
+        dest.[fname]:move(&(src.[fname]))
+      end)
+    elseif ftype:ispointer() or m.is_plain_data(ftype) then
+      table.insert(statements, quote
+        dest.[fname] = src.[fname]
+      end)
+    end
+  end
+  return statements
+end
+
 function m.map_array_method(dest, src, count, methodname, fallback)
   local T = dest.type or dest:gettype()
   assert(T:ispointer(), "derive.map_array expects dest and src as pointers!")
@@ -192,7 +217,7 @@ function m.map_array_method(dest, src, count, methodname, fallback)
     return quote
       for idx = 0, count do
         var item = &dest[idx]
-        item.[methodname](item, &src[idx])
+        item:[methodname](&src[idx])
       end
     end
   else
@@ -209,7 +234,7 @@ function m.iter_array_method(dest, count, methodname, fallback)
     return quote
       for idx = 0, count do
         var item = &dest[idx]
-        item.[methodname](item)
+        item:[methodname]()
       end
     end
   else
@@ -222,7 +247,7 @@ function m.copy_array(dest, src, count)
   return m.map_array_method(dest, src, count, "copy", function(T, dest, src, count)
     assert(m.is_plain_data(T), "Unable to determine how to copy type " .. tostring(T))
     return quote
-      intrinsics.memcpy(dest, src, count * sizeof(T))
+      intrinsics.memcpy([&uint8](dest), [&uint8](src), count * sizeof(T))
     end
   end)
 end
@@ -233,7 +258,7 @@ function m.move_array(dest, src, count)
       or (T.substrate and T.subtrate.allow_move_by_memcpy)
     assert(copyable, "Unable to determine how to move type " .. tostring(T))
     return quote
-      intrinsics.memcpy(dest, src, count * sizeof(T))
+      intrinsics.memcpy([&uint8](dest), [&uint8](src), count * sizeof(T))
     end
   end)
 end
@@ -251,7 +276,7 @@ function m.init_array_contents(dest, count)
     local init_by_zero = m.is_plain_data(T) or T:ispointer()
     assert(init_by_zero, "Unable to determine how to init type " .. tostring(T))
     return quote
-      intrinsics.memset(dest, 0, count * sizeof(T))
+      intrinsics.memset([&uint8](dest), 0, count * sizeof(T))
     end
   end)
 end
@@ -300,6 +325,13 @@ function m.derive_release(T)
   end
 end
 
+function m.derive_clear(T)
+  assert(not T.methods.clear, tostring(T) .. " already has :clear!")
+  terra T.methods.clear(self: &T)
+    [m.clear_fields(self)]
+  end
+end
+
 function m.derive_dump(T)
   assert(not T.methods.dump, tostring(T) .. " already has :dump!")
   terra T.methods.dump(self: &T)
@@ -311,6 +343,13 @@ function m.derive_copy(T)
   assert(not T.methods.copy, tostring(T) .. " already has :copy!")
   terra T.methods.copy(self: &T, rhs: &T)
     [m.copy_fields(self, rhs)]
+  end
+end
+
+function m.derive_move(T)
+  assert(not T.methods.move, tostring(T) .. " already has :move!")
+  terra T.methods.move(self: &T, rhs: &T)
+    [m.move_fields(self, rhs)]
   end
 end
 

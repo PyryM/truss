@@ -3,7 +3,7 @@
 -- misc utilities for dealing w/ terra types
 
 local m = {}
-local clib = require("./clib.t")
+local libc = require("./libc.t")
 
 function m.has_method(T, name)
   return T.methods[name] ~= nil
@@ -109,9 +109,9 @@ function m.dump_value(val, fname, ftype)
   if ftype == bool then
     return quote 
       if val.[fname] then
-        clib.io.printf("%s: true\n", fname)
+        libc.io.printf("%s: true\n", fname)
       else
-        clib.io.printf("%s: false\n", fname)
+        libc.io.printf("%s: false\n", fname)
       end
     end
   end
@@ -123,10 +123,10 @@ function m.dump_value(val, fname, ftype)
 
   if fmt then
     local pstr = fname .. ": " .. fmt .. "\n"
-    return quote clib.io.printf(pstr, val.[fname]) end
+    return quote libc.io.printf(pstr, val.[fname]) end
   else
     local pstr = fname .. ": ?\n"
-    return quote clib.io.printf(pstr) end
+    return quote libc.io.printf(pstr) end
   end
 end
 

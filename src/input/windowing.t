@@ -4,7 +4,7 @@
 
 local build = require("build/build.t")
 local SDL = require("./sdl.t")
-local c = require("substrate/clib.t")
+local c = require("substrate/libc.t")
 
 local bgfx = require("gfx/bgfx.t")
 

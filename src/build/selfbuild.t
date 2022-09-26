@@ -20,7 +20,7 @@ if binname == "truss" or binname == "truss.exe" then
   error("Cannot overwrite own binary while running")
 end
 
-local clib = require("substrate/clib.t")
+local libc = require("substrate/libc.t")
 
 local terra_c = terralib.includecstring[[
 #include "terra/terra.h"
@@ -69,7 +69,7 @@ local terra call_global_func(L: &terra_c.lua_State, name: &int8): bool
   terra_c.lua_getfield(L, LUA_GLOBALSINDEX, name)
   var runres = terra_c.lua_pcall(L, 0, 0, 0)
   if runres ~= 0 then
-    clib.io.printf(
+    libc.io.printf(
       "Error running [%s]: %s\n", name, terra_c.lua_tolstring(L, -1, nil))
     return false
   end
@@ -130,13 +130,13 @@ local terra main(argc: int, argv: &&int8): int
   -- run core
   var loadres = terra_c.terra_loadbuffer(L, coresrc, [#coresrc], "core.t")
   if loadres ~= 0 then
-    clib.io.printf("Error parsing core: %s\n", terra_c.lua_tolstring(L, -1, nil))
+    libc.io.printf("Error parsing core: %s\n", terra_c.lua_tolstring(L, -1, nil))
     return 1
   end
 
   var runres = terra_c.lua_pcall(L, 0, 0, 0)
   if runres ~= 0 then
-    clib.io.printf("Error running core: %s\n", terra_c.lua_tolstring(L, -1, nil))
+    libc.io.printf("Error running core: %s\n", terra_c.lua_tolstring(L, -1, nil))
     return 1
   end
 

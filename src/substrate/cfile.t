@@ -8,7 +8,7 @@ local wrap_c_str = require("./commontypes.t").wrap_c_str
 
 local m = {}
 
-local c = require("./clib.t")
+local c = require("./libc.t")
 
 local function default_print(fmt, ...)
   fmt = fmt .. "/n" -- convention is that dbgprint is always on newline

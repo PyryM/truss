@@ -33,6 +33,7 @@ function m._Array(T, options)
   local cfg = options.cfg or require("./cfg.t").configure()
   local derive = require("./derive.t")
   local intrinsics = require("./intrinsics.t")
+  local libc = require("./libc.t")
 
   local size_t = cfg.size_t
   local ALLOCATE = cfg.ALLOCATE
@@ -43,7 +44,6 @@ function m._Array(T, options)
   local Slice = m.Slice(T)
   local ByteSlice = m.Slice(uint8)
 
-  local clib = require("./clib.t")
 
   local struct Array {
     capacity: size_t;
@@ -68,7 +68,7 @@ function m._Array(T, options)
   if options.allow_growth then
     terra Array:resize_capacity(new_capacity: size_t)
       if new_capacity == self.capacity then return end
-      [LOG("Resizing capacity to %d", `new_capacity)]
+      --[LOG("Resizing capacity to %d", `new_capacity)]
       -- TODO: realloc this?
       var new_data = [ALLOCATE(T, `new_capacity)]
       var ncopy = self.size
@@ -86,7 +86,7 @@ function m._Array(T, options)
     end
 
     terra Array:fit_capacity(needed_capacity: size_t)
-      [LOG("Fitting capacity to %d", `needed_capacity)]
+      --[LOG("Fitting capacity to %d", `needed_capacity)]
       if needed_capacity < self.capacity / 2 then
         self:resize_capacity(needed_capacity)
       elseif needed_capacity > self.capacity then
@@ -187,11 +187,6 @@ function m._Array(T, options)
     end
   end
 
-  terra Array:print_something()
-    clib.io.printf("Something?\n")
-    [LOG("Something 2?")]
-  end
-
   if derive.is_plain_data(T) or T:ispointer() then
     log.build("Plain data push?")
     terra Array:push_val(val: T)
@@ -203,6 +198,19 @@ function m._Array(T, options)
     terra Array:get_val(idx: size_t): T
       [ASSERT(`idx >= 0 and idx < self.size, "OOB array access!")]
       return self.data[idx]
+    end
+
+    terra Array:push_bytes(bytes: &uint8, len: size_t)
+      [ASSERT(`len % sizeof(T) == 0, "len of pushed bytes is not a multiple of object type!")]
+      var nitems: size_t = len / sizeof(T)
+      self:fit_capacity(self.size + nitems)
+
+      intrinsics.memcpy(
+        [&uint8](self.data + self.size),
+        bytes, 
+        nitems * sizeof(T)
+      )
+      self.size = self.size + nitems
     end
   end
 
