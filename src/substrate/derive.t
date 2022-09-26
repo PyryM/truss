@@ -44,6 +44,13 @@ function m.is_plain_data(T)
   return true
 end
 
+function m.can_init_by_zeroing(T)
+  if T.methods and T.methods["init"] then 
+    return false 
+  end
+  return T:ispointer() or m.is_plain_data(T)
+end
+
 function m.call_if_present(val, fname, args)
   args = args or {}
   local T = val:gettype()

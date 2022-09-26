@@ -1,64 +1,62 @@
--- native/box.t
+-- substrate/box.t
 --
--- a 'boxed' value
+-- a 'boxed' value (owned, dynamically allocated pointer)
 
 local m = {}
-local c = require("substrate/clib.t")
-local tutil = require("native/typeutils.t")
+local lazy = require("./lazyload.t")
+local util = require("./util.t")
 
-function m.box(T, options)
+function m._Box(T, options)
+  assert(T, "No type provided!")
   options = options or {}
+  local cfg = options.cfg or require("./cfg.t").configure()
+  local size_t = assert(cfg.size_t, "No size_t!")
+  local derive = require("./derive.t")
+  local intrinsics = require("./intrinsics.t")
+
+  local FREE = cfg.FREE
+  local ASSERT = cfg.ASSERT
+  local LOG = cfg.LOG
 
   local struct Box {
     val: &T;
   }
 
-  -- TODO: refactor all these default allocators somewhere?
-  local allocate = options.allocate or function(T)
-    return `[&T](c.std.malloc(sizeof(T)))
-  end
-
-  local free = options.free or function(v)
-    return quote c.std.free(v) end
-  end
-
   terra Box:init()
     self.val = nil
   end
 
-  terra Box:allocate()
-    self:release()
-    self.val = [allocate(T)]
-    escape
-      if T.methods and T.methods.init then
-        emit(quote self.val:init() end)
-      end
-    end
-  end
-
   terra Box:release()
+    if self.val == nil then return end
     escape
       if T.methods and T.methods.release then
-        emit(quote 
-          if self.val ~= nil then self.val:release() end
-        end)
+        emit(quote self.val:release() end)
       end
     end
-    [free(`self.val)]
+    [FREE(`self.val)]
     self.val = nil
   end
 
-  terra Box:copy(rhs: &Box)
-    if not rhs:is_filled() then 
-      self:clear()
-      return 
+  if derive.can_init_by_zeroing(T) then
+    terra Box:allocate()
+      self:release()
+      self.val = [cfg.ALLOCATE_ZEROED(T)]
     end
-    self:allocate()
-    [tutil.copy(`self.val, `rhs.val)]
+  else
+    terra Box:allocate()
+      self:release()
+      self.val = [cfg.ALLOCATE(T)]
+      self.val:init()
+    end
   end
 
-  terra Box:clear()
+  terra Box:copy(rhs: &Box)
     self:release()
+    if not rhs:is_filled() then 
+      return
+    end
+    self.val = [cfg.ALLOCATE(T)]
+    [derive.copy(`self.val, `rhs.val)]
   end
 
   terra Box:get_ref(): &T
@@ -70,18 +68,19 @@ function m.box(T, options)
     return self.val ~= nil
   end
 
-  if options.name or T.name then
-    --Box:setname("Box_" .. (options.name or T.name))
-    Box.name = "Box_" .. (options.name or T.name) -- ????
-  end
+  Box.substrate = {
+    allow_move_by_memcpy = true
+  }
+
+  util.set_template_name(Box, options.typename or "Box", T)
 
   return Box
 end
 
-function m.build(options)
-  return terralib.memoize(function(T)
-    return m.box(T, options)
-  end)
-end
+m.Box = terralib.memoize(function(T)
+  return m._Box(T)
+end)
+
+m.exported_names = {"box"}
 
 return m

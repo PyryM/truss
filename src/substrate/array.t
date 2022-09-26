@@ -2,7 +2,7 @@ local m = {}
 local lazy = require("./lazyload.t")
 local util = require("./util.t")
 
-m._Slice = function(T, options)
+function m._Slice(T, options)
   assert(T, "No type provided!")
 
   options = options or {}
@@ -28,7 +28,7 @@ m._Slice = function(T, options)
 end
 m.Slice = terralib.memoize(m._Slice)
 
-m._Array = function(T, options)
+function m._Array(T, options)
   options = options or {}
   local cfg = options.cfg or require("./cfg.t").configure()
   local derive = require("./derive.t")
@@ -69,6 +69,7 @@ m._Array = function(T, options)
     terra Array:resize_capacity(new_capacity: size_t)
       if new_capacity == self.capacity then return end
       [LOG("Resizing capacity to %d", `new_capacity)]
+      -- TODO: realloc this?
       var new_data = [ALLOCATE(T, `new_capacity)]
       var ncopy = self.size
       if ncopy > new_capacity then ncopy = new_capacity end
@@ -227,6 +228,10 @@ end)
 local lazy_items = {
   ByteArray = function() return m.Array(uint8) end,
   ByteSlice = function() return m.Slice(uint8) end,
+}
+
+m.exported_names = {
+  "Vec", "Array", "Slice", "_Array", "_Slice", "ByteArray", "ByteSlice"
 }
 
 return lazy.lazy_table(m, lazy_items)

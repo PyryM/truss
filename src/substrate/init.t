@@ -2,15 +2,15 @@ local lazy = require("./lazyload.t")
 local exports = {}
 local substrate = lazy.lazy_table({}, exports)
 
-local function add_exports(srcmodule, names)
-  for _, name in ipairs(names) do
-    exports[name] = function()
-      return require(srcmodule)[name]
-    end
+local function add_exports(srcmodule)
+  local mod = require(srcmodule)
+  for _, name in ipairs(mod.exported_names) do
+    exports[name] = function() return mod[name] end
   end
 end
 
-add_exports("./cfg.t", {"configure"})
-add_exports("./array.t", {"Slice", "Array", "Vec", "ByteSlice", "ByteArray"})
+add_exports("./cfg.t")
+add_exports("./array.t")
+add_exports("./box.t")
 
 return substrate

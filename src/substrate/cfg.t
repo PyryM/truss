@@ -31,7 +31,7 @@ local function _fill_defaults(cfg)
 
   if not (cfg.ALLOCATE and cfg.FREE) then
     local allocator = cfg.allocator
-    if not allocator then allocator = "malloc" end
+    if not allocator then allocator = "libc_allocator" end
     if type(allocator) == 'string' then
       local modulename = "./allocators/" .. allocator .. ".t"
       allocator = assert(require(modulename), "Couldn't load allocator " .. modulename)
@@ -41,6 +41,7 @@ local function _fill_defaults(cfg)
     end
     cfg.allocator = allocator
     cfg.ALLOCATE = assert(allocator.ALLOCATE, "allocator module has no ALLOCATE!")
+    cfg.ALLOCATE_ZEROED = assert(allocator.ALLOCATE_ZEROED, "allocator module has no ALLOCATE_ZEROED!")
     cfg.FREE = assert(allocator.FREE, "allocator module has no FREE!")
   end
 
@@ -75,5 +76,7 @@ function m.configure(...)
   
   return cfg
 end
+
+m.exported_names = {"configure"}
 
 return m
