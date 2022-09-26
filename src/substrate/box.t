@@ -37,6 +37,10 @@ function m._Box(T, options)
     self.val = nil
   end
 
+  terra Box:clear()
+    self:release()
+  end
+
   if derive.can_init_by_zeroing(T) then
     terra Box:allocate()
       self:release()
