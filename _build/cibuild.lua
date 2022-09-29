@@ -50,8 +50,10 @@ local function run(bin, ...)
   -- end
 end
 
-cmd 'sudo apt-get update -qq -y'
-cmd 'sudo apt-get install -qq -y libtinfo-dev'
+if jit.os == "Linux" then
+  cmd 'sudo apt-get update -qq -y'
+  cmd 'sudo apt-get install -qq -y libtinfo-dev'
+end
 mkdir '_deps'
 cd '_deps'
 cmd(('curl -o terra.%s -L %s'):format(ARCHIVE_EXT, TERRA_URL))
@@ -85,4 +87,4 @@ run('truss', 'dev/downloadlibs.t')
 outfile:close()
 
 os.execute("chmod +x " .. OUTSCRIPT)
-os.execute("./" .. OUTSCRIPT)
+os.execute("bash " .. OUTSCRIPT)

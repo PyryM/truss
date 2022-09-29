@@ -4,6 +4,7 @@ models/
 /include/soloud/
 /include/bgfx/
 /depsbuild/
+/_build/build_generated.sh
 *.log
 *.exe
 *.pdb
@@ -12,6 +13,7 @@ models/
 *.exp
 *.dll
 *.zip
+*.7z
 *.cap
 *.bin
 *.ilk
