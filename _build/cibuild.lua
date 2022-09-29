@@ -50,30 +50,34 @@ local function run(bin, ...)
   -- end
 end
 
-cmd 'sudo apt-get update -qq -y'
-cmd 'sudo apt-get install -qq -y libtinfo-dev'
+if jit.os == "Linux" then
+  cmd 'sudo apt-get update -qq -y'
+  cmd 'sudo apt-get install -qq -y libtinfo-dev'
+end
 mkdir '_deps'
 cd '_deps'
 cmd(('curl -o terra.%s -L %s'):format(ARCHIVE_EXT, TERRA_URL))
 cmd(('curl -o trussfs.zip -L %s'):format(TRUSSFS_URL))
 if jit.os == "Windows" then
-  cmd("7z e terra." .. ARCHIVE_EXT)
-  cmd("7z e trussfs.zip")
+  cmd("7z x terra." .. ARCHIVE_EXT)
+  cmd("7z x trussfs.zip")
 else
   cmd("tar -xvf terra." .. ARCHIVE_EXT)
   cmd("unzip trussfs.zip")
 end
 cd '..'
 mkdir 'include/terra'
+mkdir 'lib'
+mkdir 'bin'
 cp('_deps/' .. TERRA_NAME .. '/include/*',  'include/')
-cp('_deps/' .. TERRA_NAME .. '/lib', 'lib')
-cp('_deps/' .. TERRA_NAME .. '/bin', 'bin')
+cp('_deps/' .. TERRA_NAME .. '/lib/*', 'lib/')
+cp('_deps/' .. TERRA_NAME .. '/bin/*', 'bin/')
 cp('_deps/include/*',  'include/')
 cp('_deps/lib/*', 'lib/')
 if jit.os == 'Windows' then
   cmd('mv bin/terra.exe', '.')
-  cp('lib/terra.dll', '.')
-  cp('lib/lua51.dll', '.')
+  cmd('mv bin/terra.dll', '.')
+  cmd('mv bin/lua51.dll', '.')
 elseif jit.os == 'Linux' then
   cmd('mv bin/terra', '.')
 else
@@ -85,4 +89,4 @@ run('truss', 'dev/downloadlibs.t')
 outfile:close()
 
 os.execute("chmod +x " .. OUTSCRIPT)
-os.execute("./" .. OUTSCRIPT)
+os.execute("bash " .. OUTSCRIPT)

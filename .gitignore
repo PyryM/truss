@@ -3,7 +3,8 @@ models/
 /include/terra/
 /include/soloud/
 /include/bgfx/
-/depsbuild/
+/_build/build_generated.sh
+/_deps/
 *.log
 *.exe
 *.pdb
@@ -12,6 +13,7 @@ models/
 *.exp
 *.dll
 *.zip
+*.7z
 *.cap
 *.bin
 *.ilk
