@@ -388,7 +388,7 @@ local function test_oneof(t)
 
   local box_msg = terralib.new(BoxOrPoint.ctype)
   box_msg:init()
-  local box = box_msg.box:get_ref()
+  local box = box_msg.box:get_or_allocate()
   box.w = 12.0
   box.h = 13.0
   box.d = 14.0
@@ -397,7 +397,7 @@ local function test_oneof(t)
 
   local point_msg = terralib.new(BoxOrPoint.ctype)
   point_msg:init()
-  local point = point_msg.point:get_ref()
+  local point = point_msg.point:get_or_allocate()
   point.x = 1000.0
   point.y = 2000.0
   t.expect(point_msg.point:is_filled(), true, "point has .point")
@@ -405,8 +405,8 @@ local function test_oneof(t)
 
   local msg_out = terralib.new(BoxOrPoint.ctype)
   msg_out:init()
-  msg_out.point:get_ref()
-  msg_out.box:get_ref()
+  msg_out.point:allocate()
+  msg_out.box:allocate()
   msg_out:clear()
   t.expect(msg_out.box:is_filled(), false, "cleared message has no .box")
   t.expect(msg_out.point:is_filled(), false, "cleared message has no .point")
@@ -415,7 +415,7 @@ local function test_oneof(t)
   t.ok(round_trip(buff, BoxOrPoint, box_msg, msg_out), "box_msg decoded OK")
   t.expect(msg_out.box:is_filled(), true, "box message has .box")
   do
-    local boxref = msg_out.box:get_ref()
+    local boxref = msg_out.box:get()
     t.expect(boxref.w, 12.0, "box.w is correct")
     t.expect(boxref.h, 13.0, "box.h is correct")
     t.expect(boxref.d, 14.0, "box.d is correct")

@@ -107,7 +107,7 @@ function m.prep_ctx(ctx)
   ctx.resolve_field = function(target, fieldinfo)
     local name = fieldinfo.name
     if fieldinfo.boxed then
-      return `target.[name]:get_ref()
+      return `target.[name]:get_or_allocate()
     else
       return `&(target.[name])
     end

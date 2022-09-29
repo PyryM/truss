@@ -134,7 +134,7 @@ function ProtoGen:_gen_dumper(message)
         end
       elseif finfo.boxed then
         if field:is_filled() then
-          ret[name] = dumper(field:get_ref())
+          ret[name] = dumper(field:get())
         end
       else
         ret[name] = dumper(field)

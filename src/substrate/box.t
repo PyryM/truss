@@ -63,7 +63,12 @@ function m._Box(T, options)
     [derive.copy(`self.val, `rhs.val)]
   end
 
-  terra Box:get_ref(): &T
+  terra Box:get(): (&T)
+    [ASSERT(`self.val ~= nil, "Box is empty!")]
+    return self.val
+  end
+
+  terra Box:get_or_allocate(): (&T)
     if self.val == nil then self:allocate() end
     return self.val
   end
