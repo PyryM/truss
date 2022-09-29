@@ -18,6 +18,7 @@ end
 add_exports("./cfg.t")
 add_exports("./array.t")
 add_exports("./box.t")
+add_exports("./string.t")
 add_namespace("./libc.t", "libc")
 add_namespace("./intrinsics.t", "intrinsics")
 add_namespace("./derive.t", "derive")

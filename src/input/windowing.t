@@ -4,15 +4,22 @@
 
 local build = require("build/build.t")
 local SDL = require("./sdl.t")
-local c = require("substrate/libc.t")
 
 local bgfx = require("gfx/bgfx.t")
 
-local commontypes = require("native/commontypes.t")
-local SizedString = commontypes.SizedString
-local wrap_c_str = commontypes.wrap_c_str
-local Rect32 = commontypes.Rect32
-local ByteBuffer = require("native/buffer.t").ByteBuffer
+local substrate = require("substrate")
+local c = substrate.libc
+
+local struct Rect32 {
+  x: int32;
+  y: int32;
+  w: int32;
+  h: int32;
+}
+
+local StringSlice = substrate.StringSlice
+local wrap_c_str = substrate.wrap_c_str
+local ByteArray = substrate.ByteArray
 
 local m = {}
 
@@ -45,43 +52,24 @@ local struct Evt {
 }
 m.Evt = Evt
 
-terra Evt:init()
-  self.event_type = 0
-  self.keycode = 0
-  self.scancode = 0
-  self.x = 0.0
-  self.y = 0.0
-  self.dx = 0.0
-  self.dy = 0.0
-  self.flags = 0
-end
+substrate.derive.derive_init(Evt)
 
 local MAX_CURSORS = 32
 
 local struct Cursor {
   cursor: &SDL.Cursor;
-  data: ByteBuffer;
-  mask: ByteBuffer;
+  data: ByteArray;
+  mask: ByteArray;
   w: int32;
   h: int32;
   hot_x: int32;
   hot_y: int32;
 }
 
--- TODO: autogen init functions?
-terra Cursor:init()
-  self.cursor = nil
-  -- self.data:init()
-  -- self.mask:init()
-  -- self.w = -1
-  -- self.h = -1
-  -- self.hot_x = -1
-  -- self.hot_y = -1
-end
+substrate.derive.derive_init(Cursor)
 
-terra Cursor:from_data(w: int32, h: int32, hx: int32, hy: int32, data: SizedString, mask: SizedString)
-  self.cursor = SDL.CreateCursor(data:as_u8(), mask:as_u8(),
-                                 w, h, hx, hy)
+terra Cursor:from_data(w: int32, h: int32, hx: int32, hy: int32, data: StringSlice, mask: StringSlice)
+  self.cursor = SDL.CreateCursor(data:as_u8(), mask:as_u8(), w, h, hx, hy)
 end
 
 terra Cursor:set_active()
@@ -134,16 +122,8 @@ local struct ControllerState {
   rt: float;
 }
 
-terra ControllerState:clear()
-  self.connected = 0
-  self.buttons = 0
-  self.lx = 0.0
-  self.ly = 0.0
-  self.rx = 0.0
-  self.ry = 0.0
-  self.lt = 0.0
-  self.rt = 0.0
-end
+substrate.derive.derive_init(ControllerState)
+substrate.derive.derive_clear(ControllerState)
 
 terra ControllerState:update_buttons(evt: &SDL.Event)
   var mask_bit: uint32 = 1 << evt.cbutton.button
@@ -172,10 +152,6 @@ terra ControllerState:update_axis(evt: &SDL.Event)
       self.rt = val
     end
   end
-end
-
-terra ControllerState:init()
-  self:clear()
 end
 
 local struct Controller {
@@ -427,15 +403,15 @@ terra Windowing:_convert_and_push(evt: &SDL.Event)
   self:_push_event(new_event)
 end
 
-terra Windowing:get_filedrop_path(): SizedString
+terra Windowing:get_filedrop_path(): StringSlice
   return wrap_c_str(self.filedrop_path)
 end
 
-terra Windowing:get_keycode_name(keycode: uint32): SizedString
+terra Windowing:get_keycode_name(keycode: uint32): StringSlice
   return wrap_c_str(SDL.GetKeyName(keycode))
 end
 
-terra Windowing:get_base_path(): SizedString
+terra Windowing:get_base_path(): StringSlice
   -- leaks a little bit of memory so don't abuse!
   return wrap_c_str(SDL.GetBasePath())
 end
@@ -509,7 +485,7 @@ terra Windowing:controller_is_connected(idx: uint32): bool
   return self.controllers[idx]:is_connected()
 end
 
-terra Windowing:controller_get_name(idx: uint32): SizedString
+terra Windowing:controller_get_name(idx: uint32): StringSlice
   if idx >= MAX_CONTROLLERS then return wrap_c_str("InvalidIndex") end
   if self.controllers[idx]:is_connected() then
     return wrap_c_str(SDL.GameControllerName(self.controllers[idx].handle))
@@ -576,12 +552,12 @@ terra Windowing:get_event_ref(idx: uint32): &Evt
   end
 end
 
-terra Windowing:get_clipboard(): SizedString
+terra Windowing:get_clipboard(): StringSlice
   if self.last_clipboard ~= nil then
     SDL.free(self.last_clipboard)
     self.last_clipboard = nil
   end
-  var ret: SizedString
+  var ret: StringSlice
   if SDL.HasClipboardText() > 0 then
     self.last_clipboard = SDL.GetClipboardText()
     return wrap_c_str(self.last_clipboard)
@@ -595,7 +571,7 @@ terra Windowing:set_clipboard(text: &int8)
   SDL.SetClipboardText(text)
 end
 
-terra Windowing:get_sdl_version(): SizedString
+terra Windowing:get_sdl_version(): StringSlice
   var version: SDL.version
   SDL.GetVersion(&version)
   c.io.snprintf(self.version_str, VERSION_STR_LEN, 

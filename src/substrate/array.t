@@ -18,6 +18,10 @@ function m._Slice(T, options)
     return self.size * sizeof(T)
   end
 
+  terra Slice:as_u8(): &uint8
+    return [&uint8](self.data)
+  end
+
   Slice.substrate = {
     allow_move_by_memcpy = true
   }
@@ -41,9 +45,8 @@ function m._Array(T, options)
   local ASSERT = cfg.ASSERT
   local LOG = cfg.LOG
 
-  local Slice = m.Slice(T)
+  local Slice = options.slice_t or m.Slice(T)
   local ByteSlice = m.Slice(uint8)
-
 
   local struct Array {
     capacity: size_t;
@@ -100,7 +103,11 @@ function m._Array(T, options)
     end
   else
     terra Array:fit_capacity(needed_capacity: size_t)
-      [ASSERT(`needed_capacity < self.capacity, "Exceeded capacity!")]
+      if self.capacity == 0 then
+        self:allocate(needed_capacity)
+      else
+        [ASSERT(`needed_capacity <= self.capacity, "Exceeded capacity!")]
+      end
     end
   end
 
@@ -123,7 +130,7 @@ function m._Array(T, options)
   end
 
   terra Array:copy_raw(data: &T, count: size_t)
-    [ASSERT(`count <= self.capacity, "Tried to copy more than capacity!")]
+    self:fit_capacity(count)
     [derive.copy_array(`self.data, `data, `count)]
     self.size = count
   end

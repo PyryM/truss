@@ -5,8 +5,8 @@
 local build = require("build/build.t")
 local modutils = require("core/module.t")
 local class = require("class")
-local libc = require("substrate/libc.t")
-local buffer = require("native/buffer.t")
+local substrate = require("substrate")
+local libc = substrate.libc
 local m = {}
 
 local imgui_c_raw = build.includec("bgfx/cimgui_terra.h")
@@ -29,7 +29,6 @@ modutils.reexport_renamed(imgui_c_raw, {Im="", ImGui="", ig=""}, true, C)
 
 function m.build(options)
   local FONTCOUNT = 2
-  local KeyBuffer = buffer.Buffer(int32)
 
   local struct ImGuiContext {
     width: int32;
@@ -42,7 +41,7 @@ function m.build(options)
     fontcount: uint32;
     reference_colors: float[16]; -- TODO: dehardcode?
     n_reference_colors: uint32;
-    key_map: KeyBuffer;
+    key_map: substrate.Array(int32);
   }
 
   if options.SDL then
@@ -68,7 +67,7 @@ function m.build(options)
       -- Keyboard mapping. 
       self.key_map:init()
       self.key_map:allocate(1024)
-      self.key_map:fill(0)
+      self.key_map:fill(self.key_map.capacity, 0)
       var map = self.key_map.data
       map[SDL.SCANCODE_TAB] = IG.Key_Tab 
       map[SDL.SCANCODE_LEFT] = IG.Key_LeftArrow 
