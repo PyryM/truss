@@ -37,7 +37,9 @@ jobs:
       # Run luajit build script
       - name: CI Build
         run: lua _build/cibuild.lua
+        shell: bash
 
       # Run tests
       - name: Run tests
         run: ./truss dev/test.t
+        shell: bash
