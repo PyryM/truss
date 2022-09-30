@@ -34,6 +34,25 @@ if not truss.tic then
   function truss.toc(_t0) return 0 end
 end
 
+local function logged_pcall(f, ...)
+  local args = {...}
+  local _err = nil
+  local _res = {xpcall(
+    function()
+      return f(unpack(args))
+    end,
+    function(err)
+      _err = err
+      log.fatal(err)
+      log.fatal(debug.traceback())
+    end
+  )}
+  if not _res[1] then
+    _res[2] = _err
+  end
+  return unpack(_res)
+end
+
 function truss.create_require_root(options)
   options = options or {}
   local root = options.root or {}
@@ -131,7 +150,7 @@ function truss.create_require_root(options)
       end)
       setfenv(module_def, modenv)
       load_stack[#load_stack + 1] = loadmeta
-      local happy, evaluated_module = pcall(module_def)
+      local happy, evaluated_module = logged_pcall(module_def)
       load_stack[#load_stack] = nil
       loadmeta.dt = truss.toc(loadmeta.t0)
       if not happy then
@@ -187,7 +206,7 @@ function truss.create_require_root(options)
       f = loaded
     end
     setfenv(f, create_module_env("[anonymous_module]", "[anon]", {}))
-    return pcall(f, ...)
+    return logged_pcall(f, ...)
   end
 
   -- directly inserts a module
