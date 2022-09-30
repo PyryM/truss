@@ -32,10 +32,15 @@ function m._build(options)
     self:copy_slice(&slice)
   end
 
+  local as_string_slice = macro(function(arr)
+    return `StringSlice{data = [&char_t](arr.data), size = arr:size_bytes()}
+  end)
+
   _built = {
     String = String,
     StringSlice = StringSlice,
-    wrap_c_str = wrap_c_str
+    wrap_c_str = wrap_c_str,
+    as_string_slice = as_string_slice
   }
 
   return _built
@@ -44,11 +49,12 @@ end
 local lazy_items = {
   String = function() return m._build().String end,
   StringSlice = function() return m._build().StringSlice end,
-  wrap_c_str = function() return m._build().wrap_c_str end
+  wrap_c_str = function() return m._build().wrap_c_str end,
+  as_string_slice = function() return m._build().as_string_slice end,
 }
   
 m.exported_names = {
-  "String", "StringSlice", "wrap_c_str"
+  "String", "StringSlice", "wrap_c_str", "as_string_slice"
 }
 
 return lazy.lazy_table(m, lazy_items)

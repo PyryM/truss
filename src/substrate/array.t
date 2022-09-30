@@ -115,10 +115,18 @@ function m._Array(T, options)
     return ByteSlice{data = [&uint8](self.data), size = self.size*sizeof(T)}
   end
 
+  terra Array:size_bytes(): size_t
+    return self.size * sizeof(T)
+  end
+
   terra Array:slice(start: size_t, stop: size_t): Slice
     [ASSERT(`start <= self.size and stop <= self.size, "OOB slice!")]
     [ASSERT(`stop >= start, "slice stop must come after start!")]
     return Slice{data = self.data+start, size = stop - start}
+  end
+
+  terra Array:as_slice(): Slice
+    return Slice{data = self.data, size = self.size}
   end
 
   terra Array:swap(rhs: &Array)
@@ -162,11 +170,19 @@ function m._Array(T, options)
     self.size = newsize
   end
 
+  terra Array:resize_to_capacity()
+    self:resize(self.capacity)
+  end
+
   terra Array:fill(newsize: size_t, val: T)
     [ASSERT(`newsize >= self.size, "Must :fill to at least existing size!")]
     var startpos = self.size
     self:resize(newsize)
     [derive.fill_array(`self.data + startpos, `val, `newsize - startpos)]
+  end
+
+  terra Array:fill_to_capacity(val: T)
+    self:fill(self.capacity, val)
   end
 
   terra Array:clear()

@@ -17,6 +17,7 @@ function m._build(options)
   local libc = require("./libc.t")
   local derive = require("./derive.t")
   local ByteBuffer = require("./array.t").ByteBuffer
+  local ByteSlice = require("./array.t").ByteSlice
   local ASSERT = cfg.ASSERT
   local LOG = cfg.LOG
 
@@ -125,6 +126,10 @@ function m._build(options)
   terra File:write(data: &uint8, datasize: size_t)
     [ASSERT(`self.file ~= nil, "File is not open!")]
     c.io.fwrite(data, 1, datasize, self.file)
+  end
+
+  terra File:write_slice(data: ByteSlice)
+    self:write(data.data, data.size)
   end
 
   _built = {File = File}
