@@ -25,6 +25,21 @@ local function test_derives(t)
   temp:init()
   t.expect(temp.capacity, 0ULL, "After init capacity is 0")
   t.ok(isnull(int32)(temp.data), "After init data ptr is null")
+
+  local struct Recursive {
+    value: uint32;
+    sibling: &Recursive;
+  }
+
+  terra Recursive:release()
+    -- nothing to do
+  end
+
+  t.try(function()
+    local terra test(v: &Recursive, ct: uint32)
+      [derive.release_array_contents(`v, `ct)]
+    end
+  end, "Was able to derive array release for recursive type")
 end
 
 function m.run(test)

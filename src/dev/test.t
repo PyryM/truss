@@ -146,6 +146,26 @@ local function runpending()
   if pendingtests[1] ~= nil then pendingtests[1](runpending) end
 end
 
+-- TODO: refactor this elsewhere
+local function logged_pcall(f, ...)
+  local args = {...}
+  local _err = nil
+  local _res = {xpcall(
+    function()
+      return f(unpack(args))
+    end,
+    function(err)
+      _err = err
+      log.fatal(err)
+      log.fatal(debug.traceback())
+    end
+  )}
+  if not _res[1] then
+    _res[2] = _err
+  end
+  return unpack(_res)
+end
+
 function m.test(name, f, async)
   if type(name) == 'function' then
     gambiarrahandler = name
@@ -175,6 +195,10 @@ function m.test(name, f, async)
       else
         handler('fail', name, msg)
       end
+    end
+    funcs.try = function(f, msg)
+      local happy, err = logged_pcall(f)
+      funcs.ok(happy, msg)
     end
     funcs.expect = function(a, b, msg, err_printer)
       msg = msg or (debug.getinfo(2, 'S').short_src .. ":"

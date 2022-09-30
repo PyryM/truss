@@ -38,6 +38,7 @@ end
 function m.is_plain_data(T)
   if T:ispointer() then return false end
   if T:isprimitive() then return true end
+  if T:isarray() then return m.is_plain_data(T.type) end
   for _, ftype in m.ifields(T) do
     if not m.is_plain_data(ftype) then return false end
   end
@@ -228,6 +229,7 @@ end
 
 function m.iter_array_method(dest, count, methodname, fallback)
   local T = dest.type or dest:gettype()
+  log.crit("derive iter", methodname,  "for: ", tostring(T))
   assert(T:ispointer(), "derive.iter_array_method expects dest!")
   T = T.type
   if T.methods and T.methods[methodname] then
@@ -245,7 +247,9 @@ end
 
 function m.copy_array(dest, src, count)
   return m.map_array_method(dest, src, count, "copy", function(T, dest, src, count)
-    assert(m.is_plain_data(T), "Unable to determine how to copy type " .. tostring(T))
+    local copyable = m.is_plain_data(T) or T:ispointer() 
+      or (T.substrate and T.subtrate.allow_copy_by_memcpy)
+    assert(copyable, "Unable to determine how to copy type " .. tostring(T))
     return quote
       intrinsics.memcpy([&uint8](dest), [&uint8](src), count * sizeof(T))
     end
@@ -301,13 +305,14 @@ function m.fill_array(dest, val, count)
         end
       end
     end
-  elseif m.is_plain_data(T) then
+  elseif m.is_plain_data(T) or T:ispointer() then
     return quote
       for idx = 0, count do
         dest[idx] = val
       end
     end
   else
+    error("Unsure how to fill array of type " .. tostring(T))
   end
 end
 
