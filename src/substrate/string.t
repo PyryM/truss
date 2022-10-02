@@ -28,8 +28,7 @@ function m._build(options)
   end
 
   terra String:copy_cstr(str: &int8)
-    var slice = wrap_c_str(str)
-    self:copy_slice(&slice)
+    self:copy_slice(wrap_c_str(str))
   end
 
   local as_string_slice = macro(function(arr)

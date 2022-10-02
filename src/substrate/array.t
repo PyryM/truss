@@ -147,7 +147,7 @@ function m._Array(T, options)
     self:copy_raw(rhs.data, rhs.size)
   end
 
-  terra Array:copy_slice(rhs: &Slice)
+  terra Array:copy_slice(rhs: Slice)
     self:copy_raw(rhs.data, rhs.size)
   end
 
