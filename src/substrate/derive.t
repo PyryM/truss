@@ -229,7 +229,6 @@ end
 
 function m.iter_array_method(dest, count, methodname, fallback)
   local T = dest.type or dest:gettype()
-  log.crit("derive iter", methodname,  "for: ", tostring(T))
   assert(T:ispointer(), "derive.iter_array_method expects dest!")
   T = T.type
   if T.methods and T.methods[methodname] then
