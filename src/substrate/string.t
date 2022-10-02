@@ -15,7 +15,12 @@ function m._build(options)
   local libc = require("./libc.t")
 
   local char_t = int8
-  local StringSlice = require("./array.t").Slice(char_t)
+  local StringSlice = require("./array.t")._Slice(char_t)
+  terra StringSlice:equals_cstr(rhs: &int8): bool
+    if libc.string.strlen(rhs) ~= self.size then return false end
+    return libc.string.strncmp(self.data, rhs, self.size) == 0
+  end
+
   local String = require("./array.t")._Array(char_t, {
     cfg = cfg, slice_t = StringSlice
   })

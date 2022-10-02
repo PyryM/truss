@@ -3,55 +3,66 @@ local m = {}
 local libc = require("./libc.t")
 local size_t = libc.std.size_t
 
+-- "i" means "integer" not "signed"
+-- (unsure about whether this is safe)
 local LLVM_TYPE_SUFFIX = {
   [float] = "f32",
   [double] = "f64",
   [int8] = "i8",
-  [uint8] = "u8",
+  [uint8] = "i8",
   [int32] = "i32",
-  [uint32] = "u32",
+  [uint32] = "i32",
   [int64] = "i64",
-  [uint64] = "u64",
+  [uint64] = "i64",
 }
 
-local function intrinsic_name(basename, t)
+local function llvm_suffix(t)
   if type(t) ~= "string" then 
     if t:ispointer() then
       t = t.type
     end
     t = assert(LLVM_TYPE_SUFFIX[t], "no LLVM suffix for " .. tostring(t)) 
   end
-  return "llvm." .. basename .. "." .. t
+  return t
 end
 
+local function intrinsic_name(basename, t)
+  return "llvm." .. basename .. "." .. llvm_suffix(t)
+end
+
+local function ex_intrinsic_name(basename, argnames, argtypes)
+  local argfrags = {}
+  for idx = 1, #argtypes do
+    argfrags[idx] = (argnames[idx] or "") .. llvm_suffix(argtypes[idx])
+  end
+  return "llvm." .. basename .. "." .. table.concat(argfrags, ".")
+end
 
 m.memcpy = macro(function(dest, src, nbytes)
   local t = dest:gettype()
   assert(t == src:gettype(), "intrinsic memcpy requires dest and src to have same type!")
-  local imemcpy = terralib.intrinsic(
-    intrinsic_name("memcpy.p0.p0", t), 
-    {t, t, size_t, bool} -> {}
-  )
+  local iname = ex_intrinsic_name("memcpy", {"p0", "p0"}, {t, t, size_t})
+  local imemcpy = terralib.intrinsic(iname, {t, t, size_t, bool} -> {})
   return `imemcpy(dest, src, nbytes, false)
 end)
 
 m.memmove = macro(function(dest, src, nbytes)
   local t = dest:gettype()
   assert(t == src:gettype(), "intrinsic memmove requires dest and src to have same type!")
-  local imemmove = terralib.intrinsic(
-    intrinsic_name("memmove.p0.p0", t), 
-    {t, t, size_t, bool} -> {}
-  )
+  local iname = ex_intrinsic_name("memmove", {"p0", "p0"}, {t, t, size_t})
+  local imemmove = terralib.intrinsic(iname, {t, t, size_t, bool} -> {})
   return `imemmove(dest, src, nbytes, false)
 end)
 
 m.memset = macro(function(dest, value, nbytes)
+  -- TODO: figure out why intrinsic memset gets angry!
+  return `libc.string.memset(dest, value, nbytes)
+  --[[
   local t = dest:gettype()
-  local imemset = terralib.intrinsic(
-    intrinsic_name("memset.p0", t), 
-    {t, int8, size_t, bool} -> {}
-  )
+  local iname = ex_intrinsic_name("memset", {"p0"}, {t, size_t})
+  local imemset = terralib.intrinsic(iname, {t, uint8, size_t, bool} -> {})
   return `imemset(dest, value, nbytes, false)
+  ]]
 end)
 
 m.min = macro(function(x, y)
