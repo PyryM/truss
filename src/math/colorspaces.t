@@ -2,7 +2,7 @@
 --
 -- colorspace conversion functions
 
-local cmath = require("substrate/libc.t").math
+local cmath = require("substrate").libc.math
 
 local m = {}
 
@@ -64,6 +64,63 @@ terra m.rgb2lab(rgb: &float, lab: &float, normalized: bool)
   lab[0] = (116.0 * y) - 16.0
   lab[1] = 500.0 * (x - y)
   lab[2] = 200.0 * (y - z)
+end
+
+-- OKLab <-> srgb is public domain from Björn Ottosson
+-- https://bottosson.github.io/posts/oklab/
+
+local terra to_gamma(x: float): float
+  x = clamp(x, 0.0, 1.0)
+  if x >= 0.0031308 then
+    return 1.055 * cmath.powf(x, 1.0/2.4) - 0.055
+  else
+    return 12.92 * x
+  end
+end
+
+local terra to_linear(x: float): float
+  x = clamp(x, 0.0, 1.0)
+  if x >= 0.04045 then
+    return cmath.powf((x + 0.055)/(1 + 0.055), 2.4)
+  else 
+    return x / 12.92
+  end
+end
+
+terra m.rgbf2oklab(rgb: &float, lab: &float)
+  var r = to_linear(rgb[0])
+  var g = to_linear(rgb[1])
+  var b = to_linear(rgb[2])
+
+  var l: float = 0.4122214708*r + 0.5363325363*g + 0.0514459929*b
+	var m: float = 0.2119034982*r + 0.6806995451*g + 0.1073969566*b
+	var s: float = 0.0883024619*r + 0.2817188376*g + 0.6299787005*b
+
+  var l_ = cmath.cbrtf(l)
+  var m_ = cmath.cbrtf(m)
+  var s_ = cmath.cbrtf(s)
+
+  lab[0] = 0.2104542553*l_ + 0.7936177850*m_ - 0.0040720468*s_
+  lab[1] = 1.9779984951*l_ - 2.4285922050*m_ + 0.4505937099*s_
+  lab[2] = 0.0259040371*l_ + 0.7827717662*m_ - 0.8086757660*s_
+end
+
+terra m.oklab2rgbf(lab: &float, rgb: &float)
+  var L = lab[0]
+  var a = lab[1]
+  var b = lab[2]
+
+  var l_: float = L + 0.3963377774*a + 0.2158037573*b
+  var m_: float = L - 0.1055613458*a - 0.0638541728*b
+  var s_: float = L - 0.0894841775*a - 1.2914855480*b
+
+  var l = l_*l_*l_
+  var m = m_*m_*m_
+  var s = s_*s_*s_
+
+  rgb[0] = to_gamma( 4.0767416621*l - 3.3077115913*m + 0.2309699292*s)
+  rgb[1] = to_gamma(-1.2684380046*l + 2.6097574011*m - 0.3413193965*s)
+  rgb[2] = to_gamma(-0.0041960863*l - 0.7034186147*m + 1.7076147010*s)
 end
 
 -- turn    {255,255,255,255} \ 
