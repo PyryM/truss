@@ -38,17 +38,26 @@ local function ex_intrinsic_name(basename, argnames, argtypes)
   return "llvm." .. basename .. "." .. table.concat(argfrags, ".")
 end
 
+local function assert_same_type(fname, a, b)
+  local t0 = a:gettype()
+  local t1 = b:gettype()
+  if not t0 == t1 then
+    error("intrinsic " .. fname .. " requires args to have same type: "
+          .. tostring(t0) .. " vs. " .. tostring(t1))
+  end
+end
+
 m.memcpy = macro(function(dest, src, nbytes)
+  assert_same_type("memcpy", dest, src)
   local t = dest:gettype()
-  assert(t == src:gettype(), "intrinsic memcpy requires dest and src to have same type!")
   local iname = ex_intrinsic_name("memcpy", {"p0", "p0"}, {t, t, size_t})
   local imemcpy = terralib.intrinsic(iname, {t, t, size_t, bool} -> {})
   return `imemcpy(dest, src, nbytes, false)
 end)
 
 m.memmove = macro(function(dest, src, nbytes)
+  assert_same_type("memmove", dest, src)
   local t = dest:gettype()
-  assert(t == src:gettype(), "intrinsic memmove requires dest and src to have same type!")
   local iname = ex_intrinsic_name("memmove", {"p0", "p0"}, {t, t, size_t})
   local imemmove = terralib.intrinsic(iname, {t, t, size_t, bool} -> {})
   return `imemmove(dest, src, nbytes, false)
