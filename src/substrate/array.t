@@ -22,6 +22,10 @@ function m._Slice(T, options)
     return [&uint8](self.data)
   end
 
+  terra Slice:has_content(): bool
+    return (self.data ~= nil) and (self.size > 0)
+  end
+
   Slice.substrate = {
     allow_move_by_memcpy = true
   }
@@ -66,6 +70,10 @@ function m._Array(T, options)
     self.capacity = n
     self.size = 0
     self.data = [ALLOCATE(T, `n)]
+  end
+
+  terra Array:has_content(): bool
+    return (self.data ~= nil) and (self.size > 0)
   end
 
   if options.allow_growth then
@@ -172,6 +180,10 @@ function m._Array(T, options)
 
   terra Array:resize_to_capacity()
     self:resize(self.capacity)
+  end
+
+  terra Array:has_available_capacity(req: size_t): bool
+    return self.size + req <= self.capacity
   end
 
   terra Array:fill(newsize: size_t, val: T)
