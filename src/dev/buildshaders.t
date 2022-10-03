@@ -86,18 +86,32 @@ local INCLUDEPATH = truss.joinpath(truss.rootdir, "/include/bgfx/shader/")
 log.info("shaderc path:", BINPATH)
 log.info("shader include path:", INCLUDEPATH)
 
+local function guard_path(s)
+  -- shaderc does not like it if the includepath features a trailing slash
+  local lastchar = s:sub(-1,-1)
+  if lastchar == "/" or lastchar == "\\" then
+    s = s:sub(1,-2)
+  end
+  if s:find(" ") then 
+    return '"' .. s .. '"' 
+  else 
+    return s 
+  end
+end
+
 local function make_cmd(shader_type, backend, input_fn, output_fn)
   local binname = BINPATH
   if jit.os ~= "Windows" then
     -- this is an absolute path, probably?
     binname = "/" .. BINPATH
   end
+  binname = guard_path(binname)
   local args = { binname }
   extend_list(args, {
-    "-f", input_fn, 
-    "-o", output_fn,
+    "-f", guard_path(input_fn), 
+    "-o", guard_path(output_fn),
     "--type", shader_type,
-    "-i", INCLUDEPATH,
+    "-i", guard_path(INCLUDEPATH),
     "--platform", BACKEND_TO_BGFX_PLATFORM[backend]
   })
   if backend == "opengl" then
@@ -113,7 +127,13 @@ local function make_cmd(shader_type, backend, input_fn, output_fn)
     extend_list(args, {"-p", "spirv"})
   end
   extend_list(args, {"2>&1"})
-  return truss.normpath(table.concat(args, " "), true)
+  local cmdstr = table.concat(args, " ")
+  if jit.os == "Windows" then
+    -- yes, this is another outer level of quotes, but it's needed in Windows
+    -- for reasons I assure you
+    cmdstr = '"' .. cmdstr .. '"'
+  end
+  return cmdstr
 end
 
 local function do_cmd(cmd)
