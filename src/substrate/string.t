@@ -20,10 +20,12 @@ function m._build(options)
     if libc.string.strlen(rhs) ~= self.size then return false end
     return libc.string.strncmp(self.data, rhs, self.size) == 0
   end
+  StringSlice.name = "StringSlice"
 
   local String = require("./array.t")._Array(char_t, {
     cfg = cfg, slice_t = StringSlice
   })
+  String.name = "String"
 
   local terra wrap_c_str(str: &int8): StringSlice
     return StringSlice{
