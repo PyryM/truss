@@ -65,7 +65,7 @@ function m.create_cross_compilation_root(options)
       cross_target_name = target_name or "cross",
     },
   }
-  return root
+  return root, target
 end
 
 return m

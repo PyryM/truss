@@ -49,6 +49,19 @@ end
 
 m.memcpy = macro(function(dest, src, nbytes)
   assert_same_type("memcpy", dest, src)
+  return `libc.string.memcpy(dest, src, nbytes)
+end)
+
+m.memmove = macro(function(dest, src, nbytes)
+  assert_same_type("memmove", dest, src)
+  return `libc.string.memmove(dest, src, nbytes)
+end)
+
+-- TODO: figure out what it's complaining about with
+-- 'immarg' being incompatible with other attributes!
+--[[
+m.memcpy = macro(function(dest, src, nbytes)
+  assert_same_type("memcpy", dest, src)
   local t = dest:gettype()
   local iname = ex_intrinsic_name("memcpy", {"p0", "p0"}, {t, t, size_t})
   local imemcpy = terralib.intrinsic(iname, {t, t, size_t, bool} -> {})
@@ -62,6 +75,7 @@ m.memmove = macro(function(dest, src, nbytes)
   local imemmove = terralib.intrinsic(iname, {t, t, size_t, bool} -> {})
   return `imemmove(dest, src, nbytes, false)
 end)
+]]
 
 m.memset = macro(function(dest, value, nbytes)
   -- TODO: figure out why intrinsic memset gets angry!
