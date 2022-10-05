@@ -19,13 +19,15 @@ local common = require("examples/logos/logocommon.t")
 
 local MarchMat = gfx.define_base_material{
   name = "MarchMat",
-  program = {"vs_logo_bone_raymarch", "fs_logo_bone_raymarch"},
+  program = {"vs_logo_bone_raymarch", "fs_logo_copper_raymarch"},
   uniforms = {
     u_marchParams = 'vec', 
     u_scaleParams = 'vec',
     u_invModel = 'mat4',
     u_timeParams = 'vec',
     u_lightDir = 'vec',
+    u_diffuseColor = 'vec',
+    u_pbrParams = 'vec',
     s_volume = {kind = 'tex', sampler = 0, flags = {u = 'clamp', v = 'clamp', w = 'clamp'}}
   }, 
   state = {}
@@ -153,6 +155,8 @@ local function Logo(_ecs, name, options)
     u_scaleParams = {1.0, 1.0, 1.0, 1.0},
     u_timeParams = {0.0, 0.0, 0.0, 0.0},
     u_lightDir = {1.0, 0.0, 0.0, 0.0},
+    u_diffuseColor = {0.001, 0.001, 0.001, 1.0},
+    u_pbrParams = {1.0, 0.3, 0.02, 0.6},
     u_invModel = inv_model_mat,
   }
 
@@ -221,13 +225,13 @@ local function init()
     tooltip="SDF surface level"}
   db_builder:field{"light_size", "float", limits={0, 180}, format="%.1f deg",
     default=57, tooltip="area light size (cone half-angle)"}
-  db_builder:field{"light_power", "float", limits={0, 10}, default=1.3,
+  db_builder:field{"light_power", "float", limits={0, 10}, default=5.0,
     tooltip="multiply light strength"}
   db_builder:field{"num_rays", "int", limits={1, 32}, default=8,
     tooltip="how many rays to cast for ambient occlusiion"}
   db_builder:field{"step", "float", limits={0.001, 0.1}, default=0.005,
     tooltip="raymarch minimum step size"}
-  db_builder:field{"normstep", "float", limits={0.001, 0.1}, default=0.001,
+  db_builder:field{"normstep", "float", limits={0.001, 0.1}, default=0.01,
     tooltip="how far to step in SDF to estimate normals"}
   db_builder:field{"static_noise", "bool", default=false}
 
