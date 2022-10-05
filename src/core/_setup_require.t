@@ -97,16 +97,21 @@ function truss.create_require_root(options)
     return root._loaders.default
   end
 
+  -- sentinel value to detect cyclical requires
+  local CYCLICAL = {} 
+
   function root.require(modname, options)
     options = options or {}
     modname = truss.normpath(modname, false)
-    if loaded_libs[modname] == false then
+    if loaded_libs[modname] == CYCLICAL then
       error("require [" .. modname .. "] : cyclical require")
       return nil
+    elseif loaded_libs[modname] == false then
+      error("require [" .. modname .. "] : module previously had errors")
     end
     if loaded_libs[modname] == nil or options.force then
       local oldmodule = loaded_libs[modname] -- only relevant if force==true
-      loaded_libs[modname] = false -- prevent possible infinite recursion
+      loaded_libs[modname] = CYCLICAL -- prevent possible infinite recursion
 
       -- if the filename is actually a directory, try to load init.t
       local filename = modname
@@ -124,25 +129,25 @@ function truss.create_require_root(options)
       
       local funcsource = truss.read_script(fullpath)
       if not funcsource then
-        error("require('" .. filename .. "'): file does not exist.")
         loadmeta.error = "missing"
-        return nil
+        loaded_libs[modname] = false
+        error("require('" .. filename .. "'): file does not exist.")
       end
       local loader = select_loader(fullpath)
       if not loader then
-        error("No loader for " .. fullpath)
         loadmeta.error = "no_loader"
-        return nil
+        loaded_libs[modname] = false
+        error("No loader for " .. fullpath)
       end
       local module_def, loaderror = truss.loadstring(funcsource, filename, loader)
       if not module_def then
-        error("require('" .. modname .. "'): syntax error: " .. loaderror)
         loadmeta.error = "syntax"
-        return nil
+        loaded_libs[modname] = false
+        error("require('" .. modname .. "'): syntax error: " .. loaderror)
       end
       local modenv = options.env or create_module_env(modname, filename, options)
       rawset(modenv, "_preregister", function(v)
-        if loaded_libs[modname] then
+        if loaded_libs[modname] and loaded_libs[modname] ~= CYCLICAL then
           error("Multiple preregs for [" .. modname .. "]")
         end
         loaded_libs[modname] = v
@@ -154,14 +159,18 @@ function truss.create_require_root(options)
       load_stack[#load_stack] = nil
       loadmeta.dt = truss.toc(loadmeta.t0)
       if not happy then
+        loaded_libs[modname] = false
         error("Module [" .. modname .. "] error:\n" .. tostring(evaluated_module))
       end
       rawset(modenv, "_preregister", nil)
       if not (evaluated_module or options.allow_globals) then 
+        loaded_libs[modname] = false
         error("Module [" .. modname .. "] did not return a table!")
       end
       local modtab = evaluated_module or modenv
-      if loaded_libs[modname] and (loaded_libs[modname] ~= modtab) then
+      local _loaded = loaded_libs[modname]
+      if _loaded and (_loaded ~= CYCLICAL) and (_loaded ~= modtab) then
+        loaded_libs[modname] = false
         error("Module [" .. modname .. "] did not return preregistered table!")
       end
       loaded_libs[modname] = modtab

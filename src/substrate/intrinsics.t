@@ -57,6 +57,10 @@ m.memmove = macro(function(dest, src, nbytes)
   return `libc.string.memmove(dest, src, nbytes)
 end)
 
+m.memset = macro(function(dest, value, nbytes)
+  return `libc.string.memset(dest, value, nbytes)
+end)
+
 -- TODO: figure out what it's complaining about with
 -- 'immarg' being incompatible with other attributes!
 --[[
@@ -75,18 +79,14 @@ m.memmove = macro(function(dest, src, nbytes)
   local imemmove = terralib.intrinsic(iname, {t, t, size_t, bool} -> {})
   return `imemmove(dest, src, nbytes, false)
 end)
-]]
 
 m.memset = macro(function(dest, value, nbytes)
-  -- TODO: figure out why intrinsic memset gets angry!
-  return `libc.string.memset(dest, value, nbytes)
-  --[[
   local t = dest:gettype()
   local iname = ex_intrinsic_name("memset", {"p0"}, {t, size_t})
   local imemset = terralib.intrinsic(iname, {t, uint8, size_t, bool} -> {})
   return `imemset(dest, value, nbytes, false)
-  ]]
 end)
+]]
 
 m.min = macro(function(x, y)
   local t = x:gettype()
