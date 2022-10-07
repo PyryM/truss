@@ -28,7 +28,9 @@ function m._build(options)
   derive.derive_init(File)
 
   terra File:close()
-    libc.io.fclose(self.file)
+    if self.file ~= nil then
+      libc.io.fclose(self.file)
+    end
     self.file = nil
     self.size = 0
   end
