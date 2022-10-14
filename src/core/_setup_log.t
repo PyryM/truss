@@ -124,4 +124,7 @@ truss.error = error
 local fancy_tag = term.color(term.BLACK, term.CYAN) .. 
   "[ truss " .. truss.version .. " " .. truss.version_emoji .. " ]" .. term.RESET
 log("crit", fancy_tag .. " on Terra " .. terralib.version .. " / " .. jit.version)
-log.info("OS: " .. (jit.os or "?") .. "; ARCH: " .. (jit.arch or "?"))
+log.info(
+  "OS: " .. (jit.os or "?") .. 
+  "; ARCH: " .. (jit.arch or "?") .. 
+  "; LLVM: " .. (terralib.llvm_version or 0)/10)
