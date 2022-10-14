@@ -21,6 +21,20 @@ function m._build(options)
   local ASSERT = cfg.ASSERT
   local LOG = cfg.LOG
 
+  -- HACK! SEEK_ etc. might be weirdly defined macros
+  local function get_or_default(const_name, default)
+    local v = rawget(libc.io, const_name)
+    if v == nil then
+      log.bigwarn(const_name, "is missing or a weird macro! Using default:", default)
+      v = default
+    end
+    return v
+  end
+
+  local SEEK_SET = get_or_default("SEEK_SET", 0)
+  local SEEK_CUR = get_or_default("SEEK_CUR", 1)
+  local SEEK_END = get_or_default("SEEK_END", 2)
+
   local struct File {
     file: &libc.io.FILE;
     size: size_t;
@@ -51,16 +65,16 @@ function m._build(options)
       return false
     end
     if not write then
-      libc.io.fseek(self.file, 0, libc.io.SEEK_END)
+      libc.io.fseek(self.file, 0, SEEK_END)
       self.size = libc.io.ftell(self.file)
-      libc.io.fseek(self.file, 0, libc.io.SEEK_SET)
+      libc.io.fseek(self.file, 0, SEEK_SET)
     end
     return true
   end
 
   terra File:seek_end(): size_t
     if self.file == nil then return 0 end
-    libc.io.fseek(self.file, 0, libc.io.SEEK_END)
+    libc.io.fseek(self.file, 0, SEEK_END)
     return libc.io.ftell(self.file)
   end
 
@@ -94,7 +108,7 @@ function m._build(options)
       [LOG("Buffer too small: %d < %d", `target.capacity, len)]
       return false
     end
-    libc.io.fseek(self.file, pos, libc.io.SEEK_SET)
+    libc.io.fseek(self.file, pos, SEEK_SET)
     libc.io.fread(target.data, 1, len, self.file)
     target.size = len
     return true
@@ -114,12 +128,12 @@ function m._build(options)
 
   terra File:seek(pos: size_t)
     [ASSERT(`self.file ~= nil, "File is not open!")]
-    libc.io.fseek(self.file, pos, libc.io.SEEK_SET)
+    libc.io.fseek(self.file, pos, SEEK_SET)
   end
 
   terra File:write_append(data: &uint8, datasize: size_t)
     [ASSERT(`self.file ~= nil, "File is not open!")]
-    libc.io.fseek(self.file, 0, libc.io.SEEK_END)
+    libc.io.fseek(self.file, 0, SEEK_END)
     self.size = libc.io.ftell(self.file)
     libc.io.fwrite(data, 1, datasize, self.file)
     self.size = self.size + datasize
