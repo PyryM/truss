@@ -69,11 +69,11 @@ local BACKEND_TO_BGFX_PLATFORM = {
 
 local BACKEND_SETS = {
   windows = {"directx", "vulkan"},
-  windows_all = {"directx", "vulkan", "metal", "opengl"},
+  windows_all = {"directx", "vulkan", "metal", "opengl", "opengles"},
   osx = {"metal"},
-  osx_all = {"metal", "vulkan", "opengl"},
+  osx_all = {"metal", "vulkan", "opengl", "opengles"},
   linux = {"vulkan"},
-  linux_all = {"vulkan", "opengl"},
+  linux_all = {"vulkan", "opengl", "opengles"},
   web = {"opengles", "vulkan"},
 }
 
