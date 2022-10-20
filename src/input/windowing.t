@@ -350,6 +350,8 @@ terra Windowing:_convert_and_push(evt: &SDL.Event)
       new_event.flags = evt.wheel.which
     case SDL.WINDOWEVENT then
       new_event.flags = evt.window.event
+      new_event.x = evt.window.data1
+      new_event.y = evt.window.data2
     case SDL.TEXTINPUT then
       limited_string_copy(new_event.keyname, evt.text.text, 4)
       -- IMPORTANT: scancode comes immediately after keyname in the struct,
