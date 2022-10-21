@@ -1,0 +1,64 @@
+# Build + release binaries
+
+name: Release Binaries
+
+# Controls when the workflow will run
+on:
+  push:
+    tags:
+      - '*'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # LuaJIT is used to run the setup script
+      - uses: leafo/gh-actions-lua@master
+        with:
+          luaVersion: "luajit-2.1.0-beta3"
+          
+      - name: CI Build
+        run: lua _build/cibuild.lua
+        shell: bash
+        
+      - name: Build Shaders
+        run: ./truss dev/buildshaders.t
+        shell: bash
+        
+      - name: Remove build cruft
+        run: |
+          rm -r -f .git
+          rm .gitignore
+          rm -r -f _deps
+
+      - name: Zip Archive (linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          zip -r "truss_${{ matrix.os }}.zip" .
+          
+      - name: Zip Archive (windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          7z a "truss_${{ matrix.os }}.zip" .
+          
+      - name: Publish Release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: truss_${{ matrix.os }}.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
