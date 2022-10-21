@@ -45,6 +45,7 @@ jobs:
           rm -r -f .git
           rm .gitignore
           rm -r -f _deps
+        shell: bash
 
       - name: Zip Archive (linux)
         if: matrix.os == 'ubuntu-latest'
