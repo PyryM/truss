@@ -43,6 +43,8 @@ jobs:
       - name: Remove build cruft
         run: |
           rm -r -f .git
+          rm -r -f .github
+          rm -r -f .lua
           rm .gitignore
           rm -r -f _deps
         shell: bash
