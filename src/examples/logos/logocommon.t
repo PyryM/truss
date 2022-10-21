@@ -108,6 +108,19 @@ function m.make_logo_column_edges()
   return edges
 end
 
+function m.make_logo_column_partial_edges(frac)
+  frac = frac or 0.1
+  local edges = {}
+  for _, e in ipairs(m.make_logo_column_edges()) do
+    local a, b = unpack(e)
+    local ma = math.Vector():lincomb(b, a, frac)
+    local mb = math.Vector():lincomb(a, b, frac)
+    table.insert(edges, {a, ma})
+    table.insert(edges, {b, mb})
+  end
+  return edges
+end
+
 function m.dump_text_caps(printfunc)
   local texcaps = {}
   printfunc = printfunc or print

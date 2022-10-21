@@ -7,7 +7,7 @@ local grid = require("graphics/grid.t")
 local ecs = require("ecs")
 
 local nanovg = require("gfx/nanovg.t")
-local clib = require("native/clib.t")
+local libc = require("substrate/libc.t")
 local nvgc = nanovg.C_raw
 
 local FONT_SIZE = 20
@@ -18,13 +18,13 @@ local myapp
 
 local terra fillcolor(ctx: &nvgc.NVGcontext, r: float, g: float, b: float, a: float)
   var color = nvgc.nvgRGBAf(r, g, b, a)
-  -- clib.io.printf("color.r: %f\n", color.rgba[0])
+  -- libc.io.printf("color.r: %f\n", color.rgba[0])
   nvgc.nvgFillColor(ctx, color)
 end
 
 local terra strokecolor(ctx: &nvgc.NVGcontext, r: float, g: float, b: float, a: float)
   var color = nvgc.nvgRGBAf(r, g, b, a)
-  -- clib.io.printf("color.r: %f\n", color.rgba[0])
+  -- libc.io.printf("color.r: %f\n", color.rgba[0])
   nvgc.nvgStrokeColor(ctx, color)
 end
 

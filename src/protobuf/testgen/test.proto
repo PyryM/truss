@@ -1,0 +1,67 @@
+// test.proto:
+// include every type we care about
+
+syntax = "proto3";
+
+message AllInt {
+  int32 one = 1;
+  int64 two = 2;
+
+  sint32 three = 3;
+  sint64 four = 4;
+
+  fixed32 five = 5;
+  fixed64 six = 6;
+
+  sfixed32 seven = 7;
+  sfixed64 eight = 8;
+
+  uint32 nine = 9;
+  uint64 ten = 10;
+}
+
+message AllFloat {
+  float one = 1;
+  double two = 2;
+}
+
+message AllBag {
+  bool one = 1;
+  string two = 2;
+  bytes three = 3;
+}
+
+message Mixed {
+  AllInt one = 1;
+  AllFloat two = 2;
+  AllBag three = 3;
+}
+
+message MixedSimple {
+  bool isAThing = 1;
+  string thingKind = 2;
+  float quality = 3;
+}
+
+message RepeatSimple {
+  repeated float vertices = 1;
+  repeated sint64 faces = 2;
+}
+
+message RepeatMixed {
+  string camelOne = 1;
+
+  repeated AllInt two = 2;
+  repeated AllFloat camThree = 11;
+  repeated AllBag Four = 33;
+}
+
+message NestSimple {
+  message Stuff {
+    repeated string one = 1;
+    repeated float two = 2;
+  }
+
+  repeated Stuff stuff = 1;
+  repeated bytes bloooobbbbs = 11324124;
+}

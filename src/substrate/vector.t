@@ -2,7 +2,7 @@
 --
 -- think 'dynamic array' not 'xyz'
 
-local c = require("native/clib.t")
+local c = require("substrate/libc.t")
 local utils = require("native/typeutils.t")
 local m = {}
 

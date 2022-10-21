@@ -2,11 +2,13 @@
 --
 -- terra targa reading/writing
 
-local ByteBuffer = require("./buffer.t").ByteBuffer
-local SizedString = require("./commontypes.t").SizedString
-local wrap_c_str = require("./commontypes.t").wrap_c_str
-
-local c = require("./clib.t")
+local substrate = require("substrate")
+local ByteArray = substrate.ByteArray
+local StringSlice = substrate.StringSlice
+local wrap_c_str = substrate.wrap_c_str
+local c = substrate.libc
+local cfg = substrate.configure()
+local LOG = cfg.LOG
 
 local m = {}
 
@@ -27,7 +29,7 @@ local struct TGAImage {
   width: uint32;
   height: uint32;
   bytes_per_pixel: uint32;
-  data: ByteBuffer;
+  data: ByteArray;
 }
 
 terra TGAImage:init()
@@ -40,19 +42,17 @@ terra TGAImage:_invalidate(): bool
   self.width = 0
   self.height = 0
   self.data:release()
-  self.data:init()
   return false
 end
 
 terra TGAImage:release()
-  self.data:release()
   self:_invalidate()
 end
 
 local function check_bounds(pos, len, req)
   return quote
     if pos + req > len then
-      c.io.printf("TGA bound check error!\n")
+      [LOG("TGA bound check error! %d + %d > %d", pos, req, len)]
       return false 
     end
   end
@@ -62,7 +62,7 @@ terra TGAImage:_decode_rle(src: &uint8, srclen: uint32): bool
   var bytes_per_pixel = self.bytes_per_pixel
   var dest_data = self.data.data
   var destpos: uint32 = 0
-  var total_bytes = self.width * self.height * 4
+  var total_bytes = self.data.capacity
   var srcpos: uint32 = 0
   while (destpos < total_bytes) and (srcpos < srclen) do
     var header: uint8 = src[srcpos]
@@ -114,7 +114,7 @@ terra TGAImage:_decode_uncompressed(src: &uint8, srclen: uint32): bool
   return true
 end
 
-terra TGAImage:parse(src: &ByteBuffer): bool
+terra TGAImage:parse(src: &ByteArray): bool
   if src.datasize < sizeof(TGAHeader) then
     return self:_invalidate()
   end
@@ -140,7 +140,7 @@ terra TGAImage:parse(src: &ByteBuffer): bool
   var req_size: uint32 = src_size + sizeof(TGAHeader) + header.idlength
 
   self.data:allocate(self.width * self.height * 4) -- always output RGBA
-  self.data:fill(255)
+  self.data:fill(self.data.capacity, 255)
 
   var image_data_size: int32 = src.datasize - (sizeof(TGAHeader) + header.idlength)
   var image_data: &uint8 = src.data + (sizeof(TGAHeader) + header.idlength)

@@ -1,5 +1,4 @@
--- examples/logos/alien.t
--- run if you call truss.exe without any args and without a custom main.t
+-- examples/logos/copper.t
 
 local app = require("app/app.t")
 local geometry = require("geometry")
@@ -20,67 +19,56 @@ local common = require("examples/logos/logocommon.t")
 
 local MarchMat = gfx.define_base_material{
   name = "MarchMat",
-  program = {"vs_logo_bone_raymarch", "fs_logo_bone_raymarch"},
+  program = {"vs_logo_bone_raymarch", "fs_logo_copper_raymarch"},
   uniforms = {
     u_marchParams = 'vec', 
     u_scaleParams = 'vec',
     u_invModel = 'mat4',
     u_timeParams = 'vec',
     u_lightDir = 'vec',
+    u_diffuseColor = 'vec',
+    u_pbrParams = 'vec',
     s_volume = {kind = 'tex', sampler = 0, flags = {u = 'clamp', v = 'clamp', w = 'clamp'}}
   }, 
   state = {}
 }
 
-local terra sphere_sdf(oldval: float, x: float, y: float, z: float): float
-  var vlength = cmath.sqrt((x*x) + (y*y) + (z*z))
-  return vlength - 0.8
-end
-
-local function sphere_diff(x0, y0, z0, rad)
-  local terra diff_sdf(oldval: float, x: float, y: float, z: float): float
-    var dx = x - x0
-    var dy = y - y0
-    var dz = z - z0
-    var vlength = cmath.sqrt((dx*dx) + (dy*dy) + (dz*dz))
-    var sdfval: float = vlength - rad
-    return cmath.fmax(oldval, -sdfval)
-  end
-  return diff_sdf
-end
-
-local terra clamp(v: float, minv: float, maxv: float): float
-  if v < minv then return minv elseif v > maxv then return maxv end
-  return v
-end
-
-local terra mix(x: float, y: float, a: float): float
-  return x + a*(y-x)
-end
-
-local terra soft_union(d1: float, d2: float, k: float): float
-  var h = clamp(0.5 + 0.5*(d2-d1)/k, 0.0, 1.0)
-  return mix(d2, d1, h) - k*h*(1.0-h)
-end
-
-local function softmax_capsule(p0, p1, rad, k)
+local function union_cylinder(p0, p1, rad)
   local V3 = tmath.Vec3f
   local ax, ay, az = unpack(p0:to_array())
   local bx, by, bz = unpack(p1:to_array())
 
   return terra(oldval: float, x: float, y: float, z: float): float
-    --vec3 pa = p - a, ba = b - a;
     var pa: V3
     pa:set(x - ax, y - ay, z - az)
     var ba: V3
     ba:set(bx - ax, by - ay, bz - az) 
-    --float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
-    var h: float = pa:dot(&ba) / ba:dot(&ba)
-    if h < 0.0 then h = 0.0 elseif h > 1.0 then h = 1.0 end
-    var distvec: V3 = pa - (ba * h)
-    var newdist: float = distvec:length() - rad
-    --return cmath.fmin(oldval, newdist)
-    return soft_union(oldval, newdist, k)
+
+    var baba = ba:dot(&ba)
+    var paba = pa:dot(&ba)
+    
+    var x = (pa*baba - ba*paba):length() - rad*baba
+    var y: float = cmath.fabs(paba - baba*0.5) - baba*0.5
+    
+    var x2: float = x*x
+    var y2: float = y*y*baba
+    
+    var d: float = 0.0
+    if cmath.fmax(x, y) < 0.0 then
+      d = -1.0 * cmath.fmin(x2, y2)
+    else
+      if x > 0.0 then
+        d = d + x2
+      end
+      if y > 0.0 then
+        d = d + y2 
+      end
+    end
+    var ddd = cmath.sqrtf(cmath.fabs(d)) / baba
+    if d < 0.0 then
+      ddd = -ddd
+    end
+    return cmath.fmin(oldval, ddd)
   end
 end
 
@@ -120,10 +108,14 @@ end
 
 local function generate_logo_3d_tex(resolution, cb)
   local edge_funcs = {}
-  for idx, edge in ipairs(common.make_logo_column_edges()) do
+  for _, edge in ipairs(common.make_logo_column_edges()) do
     --if idx > 1 then break end
-    edge_funcs[idx] = softmax_capsule(edge[1], edge[2], 0.025, 0.03)
+    table.insert(edge_funcs, union_cylinder(edge[1], edge[2], 0.025))
   end
+  for _, edge in ipairs(common.make_logo_column_partial_edges(0.25)) do
+    table.insert(edge_funcs, union_cylinder(edge[1], edge[2], 0.04))
+  end
+
   print(#edge_funcs)
 
   local sdftex = gfx.Texture3d{
@@ -163,6 +155,8 @@ local function Logo(_ecs, name, options)
     u_scaleParams = {1.0, 1.0, 1.0, 1.0},
     u_timeParams = {0.0, 0.0, 0.0, 0.0},
     u_lightDir = {1.0, 0.0, 0.0, 0.0},
+    u_diffuseColor = {0.001, 0.001, 0.001, 1.0},
+    u_pbrParams = {1.0, 0.3, 0.02, 0.6},
     u_invModel = inv_model_mat,
   }
 
@@ -227,17 +221,17 @@ local function init()
   db_builder:field{"rotate_view", "bool", default = true}
   db_builder:field{"rotate_model", "bool", default = true}
   db_builder:field{"view_speed", "float", limits={0, 10.0}, default=1.0}
-  db_builder:field{"thresh", "float", limits={0.48,0.8}, default=0.522,
+  db_builder:field{"thresh", "float", limits={0.48,0.8}, default=0.5,
     tooltip="SDF surface level"}
   db_builder:field{"light_size", "float", limits={0, 180}, format="%.1f deg",
     default=57, tooltip="area light size (cone half-angle)"}
-  db_builder:field{"light_power", "float", limits={0, 10}, default=1.3,
+  db_builder:field{"light_power", "float", limits={0, 10}, default=5.0,
     tooltip="multiply light strength"}
   db_builder:field{"num_rays", "int", limits={1, 32}, default=8,
     tooltip="how many rays to cast for ambient occlusiion"}
   db_builder:field{"step", "float", limits={0.001, 0.1}, default=0.005,
     tooltip="raymarch minimum step size"}
-  db_builder:field{"normstep", "float", limits={0.001, 0.1}, default=0.001,
+  db_builder:field{"normstep", "float", limits={0.001, 0.1}, default=0.01,
     tooltip="how far to step in SDF to estimate normals"}
   db_builder:field{"static_noise", "bool", default=false}
 
