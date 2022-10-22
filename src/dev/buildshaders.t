@@ -266,8 +266,10 @@ local function init()
       print(errstr)
       print(colored("red", "^^^ Errors during shader compilation."))
     end
+    return 1
   else
     print(colored("green", "All shaders compiled successfully."))
+    return 0
   end
 end
 
