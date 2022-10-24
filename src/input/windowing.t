@@ -24,20 +24,6 @@ local ByteArray = substrate.ByteArray
 local m = {}
 
 local MAX_EVENTS = 128
-local ETYPES = { 
-  -- Note this is just a subset of the SDL enum for reference
-  QUIT = 0x100,
-  WINDOWEVENT = 0x200,
-  SYSWMEVENT = 0x201,
-  KEYDOWN = 0x300,
-  KEYUP = 0x301,
-  TEXTEDITING = 0x302,
-  TEXTINPUT = 0x303,
-  MOUSEMOTION = 0x400,
-  MOUSEBUTTONDOWN = 0x401,
-  MOUSEBUTTONUP = 0x402,
-  MOUSEWHEEL = 0x403
-}
 
 local struct Evt {
   event_type: uint32;
@@ -397,6 +383,11 @@ terra Windowing:_convert_and_push(evt: &SDL.Event)
       if not self.push_controller_events then return end
       new_event.flags = evt.cbutton.which
       new_event.scancode = evt.cbutton.button
+    case SDL.MULTIGESTURE then
+      new_event.x = evt.mgesture.x
+      new_event.y = evt.mgesture.y
+      new_event.dx = evt.mgesture.dTheta
+      new_event.dy = evt.mgesture.dDist
     end
   else
     return
