@@ -33,12 +33,21 @@ uint64_t trussfs_list_length(trussfs_ctx* ctx, uint64_t list_handle);
 const char* trussfs_list_get(trussfs_ctx* ctx, uint64_t list_handle, uint64_t index);
 ]]
 local fs_c
-if jit.os == 'Windows' then
-  fs_c = ffi.load("lib/trussfs.dll")
-elseif jit.os == 'OSX' or jit.os == 'Darwin' then
-  fs_c = ffi.load("lib/libtrussfs.dylib")
-else
-  fs_c = ffi.load("lib/libtrussfs.so")
+do
+  local prefix, ext
+  if jit.os == 'Windows' then
+    prefix, ext = "lib/", ".dll"
+  elseif _TRUSS_EMBEDDED then
+    -- truss binary should have rpath/runpath set, so link bare libarary name
+    -- (Windows has no rpath so have to always use actual file path above)
+    prefix, ext = "", ""
+  elseif jit.os == 'OSX' or jit.os == 'Darwin' then
+    prefix, ext = "lib/lib", ".dylib"
+  else
+    -- assume linux-ish
+    prefix, ext = "lib/lib", ".so"
+  end
+  fs_c = ffi.load(prefix .. "trussfs" .. ext)
 end
 local INVALID_HANDLE = 0xFFFFFFFFFFFFFFFFull;
 
