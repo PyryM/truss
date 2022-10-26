@@ -35,12 +35,12 @@ const char* trussfs_list_get(trussfs_ctx* ctx, uint64_t list_handle, uint64_t in
 local fs_c
 do
   local prefix, ext
-  if jit.os == 'Windows' then
-    prefix, ext = "lib/", ".dll"
-  elseif _TRUSS_EMBEDDED then
-    -- truss binary should have rpath/runpath set, so link bare libarary name
-    -- (Windows has no rpath so have to always use actual file path above)
+  if _LINKED_TRUSSFS_VERSION then
+    -- trussfs is already linked in so we should be able to dlopen
+    -- the bare library name and have it used the linked one
     prefix, ext = "", ""
+  elseif jit.os == 'Windows' then
+    prefix, ext = "lib/", ".dll"
   elseif jit.os == 'OSX' or jit.os == 'Darwin' then
     prefix, ext = "lib/lib", ".dylib"
   else

@@ -49,6 +49,21 @@ end
 
 local coresrc = find_core_file("core.t")
 
+local function link_trussfs(L)
+  if jit.os == "Windows" then 
+    return quote end
+  end
+  local trussfs_c = terralib.includecstring[[
+  #include <stdint.h>
+  uint64_t trussfs_version();
+  ]]
+  return quote
+    var vnum = trussfs_c.trussfs_version()
+    terra_c.lua_pushnumber(L, vnum)
+    terra_c.lua_setfield(L, LUA_GLOBALSINDEX, "_LINKED_TRUSSFS_VERSION")
+  end
+end
+
 local function embed_core_files(state_q)
   local embed_statements = {}
   for fn, content in pairs(embeds) do
@@ -118,6 +133,7 @@ local terra main(argc: int, argv: &&int8): int
 
   -- set embeds
   [embed_core_files(L)]
+  [link_trussfs(L)]
 
   -- set args
   push_args(L, argc, argv)
@@ -148,7 +164,9 @@ require("build/binexport.t").export_binary{
   libpath = "lib",
   libs = {
     all = {"terra"},
-    Windows = {"lua51"}
+    Windows = {"lua51"},
+    Linux = {"trussfs"},
+    OSX = {"trussfs"},
   },
   syslibs = {
     Windows = {"user32"}
