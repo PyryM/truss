@@ -1740,6 +1740,7 @@ typedef struct SDL_SysWMinfo
         {
             void* window;                /**< The window handle */
             void* hdc;                    /**< The window device context */
+            void* hinstance;
         } win;
         struct
         {
