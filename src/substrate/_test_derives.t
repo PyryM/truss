@@ -95,6 +95,35 @@ local function test_derives(t)
 
     return InstancePile
   end, "Regression from microgfx compiles")
+
+  t.try(function()
+    local struct Foo {
+      a: float;
+    }
+    terra Foo:dump()
+      substrate.libc.io.printf("FOO!\n")
+    end
+    local struct VecEh {
+      x: float;
+      y: float;
+      z: float;
+    }
+    local struct LineEh {
+      p0: VecEh;
+      p1: VecEh;
+      f: Foo;
+    }
+    derive.derive_dump(LineEh)
+    local testo = terralib.new(LineEh)
+    testo.p0.x = 1.0
+    testo.p0.y = 2.0
+    testo.p0.z = 3.0
+    testo.p1.x = 4.0
+    testo.p1.y = 5.0
+    testo.p1.z = 6.0
+    testo.f.a = 12.0
+    testo:dump()
+  end, "Dumped a recursive struct")
 end
 
 function m.run(test)

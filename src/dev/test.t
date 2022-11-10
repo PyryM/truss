@@ -9,6 +9,7 @@ local term = assert(require("term"))
 
 local test_stats = {passed = 0, failed = 0, errors = 0,
                     total_passed = 0, total_failed = 0,
+                    total_time_ms = 0.0,
                     verbose = false}
 
 local function TERMINAL_HANDLER(e, test, msg)
@@ -30,13 +31,22 @@ local function TERMINAL_HANDLER(e, test, msg)
   elseif e == 'begin' then
   test_stats.passed = 0
   test_stats.failed = 0
+  test_stats.t0 = truss.tic()
   elseif e == 'end' then
     local p, f = test_stats.passed, test_stats.failed
     local color = term.color(term.GREEN)
     if f > 0 then color = term.color(term.RED) end
-    print(color .. "[" .. p .. " / " .. (p+f) .. "] " .. test .. term.RESET)
+    local dt = truss.toc(test_stats.t0) * 1000.0
+    local msg = ("%s[%d / %d](%0.2f ms) %s%s"):format(
+      color, 
+      p, p+f, dt,
+      test,
+      term.RESET
+    )
+    print(msg)
     test_stats.total_passed = test_stats.total_passed + test_stats.passed
     test_stats.total_failed = test_stats.total_failed + test_stats.failed
+    test_stats.total_time_ms = test_stats.total_time_ms + dt
   end
 end
 
@@ -285,6 +295,7 @@ function m.run_tests(dirpath, verbose, test_archives)
   print(make_header("TOTAL"))
   print("PASSED: " .. test_stats.total_passed)
   print("FAILED: " .. test_stats.total_failed)
+  print(("TIME: %0.2f s"):format(test_stats.total_time_ms / 1000.0))
   if test_stats.total_failed == 0 and test_stats.errors == 0 then
     local slots = require("dev/slots.t")
     print("Good job! " .. slots.do_slots(true))

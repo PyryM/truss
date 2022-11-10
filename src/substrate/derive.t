@@ -117,29 +117,49 @@ m.FORMATS = {
   [float] = "%g", [double] = "%g", [&int8] = "%s"
 }
 
-function m.dump_value(val, fname, ftype) 
-  if ftype == bool then
+function m.dump_value(val, T)
+  if not T then
+    T = assert(val.type or val:gettype(),
+      "Coulnd't determine type of " .. tostring(val))
+  end
+  if T == bool then
     return quote 
-      if val.[fname] then
-        libc.io.printf("%s: true\n", fname)
+      if val == true then
+        libc.io.printf("true\n")
       else
-        libc.io.printf("%s: false\n", fname)
+        libc.io.printf("false\n")
       end
     end
   end
 
-  local fmt = m.FORMATS[ftype]
-  if (not fmt) and ftype:ispointer() then
+  local fmt = m.FORMATS[T]
+  if (not fmt) and T:ispointer() then
     fmt = "%p"
   end
 
   if fmt then
-    local pstr = fname .. ": " .. fmt .. "\n"
-    return quote libc.io.printf(pstr, val.[fname]) end
+    local pstr = fmt .. "\n"
+    return quote libc.io.printf(pstr, val) end
+  elseif T:isstruct() then
+    if T.methods.dump then
+      return quote val:dump() end
+    else
+      return quote 
+        [m.dump_fields(val)]
+      end
+    end
   else
-    local pstr = fname .. ": ?\n"
-    return quote libc.io.printf(pstr) end
-  end
+    local typestr = (tostring(T) or "?") .. "\n"
+    return quote libc.io.printf(typestr) end
+  end  
+end
+
+function m.dump_field_value(val, fname, ftype)
+  local statements = {
+    quote libc.io.printf("%s: ", fname) end,
+    m.dump_value(`val.[fname], ftype)
+  }
+  return quote [statements] end
 end
 
 function m.init_fields(val)
@@ -155,7 +175,7 @@ function m.clear_fields(val)
 end
 
 function m.dump_fields(val)
-  return m.call_on_fields(val, "dump", m.dump_value)
+  return m.call_on_fields(val, "dump", m.dump_field_value)
 end
 
 function m.copy(dest, src)
