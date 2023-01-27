@@ -119,6 +119,28 @@ function m._Array(T, options)
     end
   end
 
+  terra Array:resize(newsize: size_t)
+    self:fit_capacity(newsize)
+    if newsize < self.size then
+      [derive.release_array_contents(`self.data + newsize, `self.size - newsize)]
+    elseif newsize > self.size then
+      [derive.init_array_contents(`self.data + self.size, `newsize - self.size)]
+    end
+    self.size = newsize
+  end
+
+  terra Array:resize_to_capacity()
+    self:resize(self.capacity)
+  end
+
+  terra Array:has_available_capacity(req: size_t): bool
+    return self.size + req <= self.capacity
+  end
+
+  terra Array:clear()
+    self:resize(0)
+  end
+
   terra Array:as_bytes(): ByteSlice
     return ByteSlice{data = [&uint8](self.data), size = self.size*sizeof(T)}
   end
@@ -145,18 +167,34 @@ function m._Array(T, options)
     rhs.data = temp_data
   end
 
-  terra Array:copy_raw(data: &T, count: size_t)
-    self:fit_capacity(count)
-    [derive.copy_array(`self.data, `data, `count)]
-    self.size = count
-  end
+  local is_pod_or_pointer = derive.is_plain_data(T) or T:ispointer()
+  local is_copyable = is_pod_or_pointer or (T.methods and T.methods.copy)
 
-  terra Array:copy(rhs: &Array)
-    self:copy_raw(rhs.data, rhs.size)
-  end
+  if is_copyable then
+    terra Array:copy_raw(data: &T, count: size_t)
+      self:fit_capacity(count)
+      [derive.copy_array(`self.data, `data, `count)]
+      self.size = count
+    end
 
-  terra Array:copy_slice(rhs: Slice)
-    self:copy_raw(rhs.data, rhs.size)
+    terra Array:copy(rhs: &Array)
+      self:copy_raw(rhs.data, rhs.size)
+    end
+
+    terra Array:copy_slice(rhs: Slice)
+      self:copy_raw(rhs.data, rhs.size)
+    end
+
+    terra Array:fill(newsize: size_t, val: T)
+      [ASSERT(`newsize >= self.size, "Must :fill to at least existing size!")]
+      var startpos = self.size
+      self:resize(newsize)
+      [derive.fill_array(`self.data + startpos, `val, `newsize - startpos)]
+    end
+
+    terra Array:fill_to_capacity(val: T)
+      self:fill(self.capacity, val)
+    end
   end
 
   if derive.is_plain_data(T) then
@@ -166,39 +204,6 @@ function m._Array(T, options)
       intrinsics.memcpy([&uint8](self.data), data, nbytes)
       self.size = nbytes / sizeof(T)
     end
-  end
-
-  terra Array:resize(newsize: size_t)
-    self:fit_capacity(newsize)
-    if newsize < self.size then
-      [derive.release_array_contents(`self.data + newsize, `self.size - newsize)]
-    elseif newsize > self.size then
-      [derive.init_array_contents(`self.data + self.size, `newsize - self.size)]
-    end
-    self.size = newsize
-  end
-
-  terra Array:resize_to_capacity()
-    self:resize(self.capacity)
-  end
-
-  terra Array:has_available_capacity(req: size_t): bool
-    return self.size + req <= self.capacity
-  end
-
-  terra Array:fill(newsize: size_t, val: T)
-    [ASSERT(`newsize >= self.size, "Must :fill to at least existing size!")]
-    var startpos = self.size
-    self:resize(newsize)
-    [derive.fill_array(`self.data + startpos, `val, `newsize - startpos)]
-  end
-
-  terra Array:fill_to_capacity(val: T)
-    self:fill(self.capacity, val)
-  end
-
-  terra Array:clear()
-    self:resize(0)
   end
 
   terra Array:push_new(): &T

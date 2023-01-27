@@ -35,7 +35,13 @@ end
 
 -- checks whether a type T is an aggregate of types
 -- without any pointers/dynamic allocations
-function m.is_plain_data(T)
+m.is_plain_data = terralib.memoize(function(T)
+  print("ispod?", T)
+  if T.field then
+    -- a union?
+    print("Union?", T.field, T.type)
+    return m.is_plain_data(T.type)
+  end
   if T:ispointer() then return false end
   if T:isprimitive() then return true end
   if T:isarray() then return m.is_plain_data(T.type) end
@@ -43,7 +49,7 @@ function m.is_plain_data(T)
     if not m.is_plain_data(ftype) then return false end
   end
   return true
-end
+end)
 
 function m.can_init_by_zeroing(T)
   if T.methods and T.methods["init"] then 
