@@ -87,7 +87,10 @@ function m._Array(T, options)
       if ncopy > 0 then
         [derive.move_array(`new_data, `self.data, `ncopy)]
       end
-      [derive.release_array_contents(`self.data, `self.size)]
+      if self.size > ncopy then
+        var nrelease = self.size - ncopy
+        [derive.release_array_contents(`self.data + ncopy, `nrelease)]
+      end
       [FREE(`self.data)]
       self.data = new_data
       self.capacity = new_capacity
