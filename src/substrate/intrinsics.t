@@ -90,7 +90,7 @@ end)
 
 m.min = macro(function(x, y)
   local t = x:gettype()
-  if LLVM_TYPE_SUFFIX[t] then
+  if false and LLVM_TYPE_SUFFIX[t] then
     return `[terralib.intrinsic(intrinsic_name("minnum", t), {t, t} -> t)](x, y)
   else
     return `terralib.select(x < y, x, y)
@@ -99,7 +99,7 @@ end)
 
 m.max = macro(function(x, y)
   local t = x:gettype()
-  if LLVM_TYPE_SUFFIX[t] then
+  if false and LLVM_TYPE_SUFFIX[t] then
     return `[terralib.intrinsic(intrinsic_name("maxnum", t), {t, t} -> t)](x, y)
   else
     return `terralib.select(x > y, x, y)
