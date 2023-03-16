@@ -1,4 +1,4 @@
-local build = require("./build.t")
+local build = require("build/build.t")
 local m = {}
 
 local HEADERS = {
