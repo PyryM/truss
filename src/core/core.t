@@ -60,6 +60,6 @@ _docore("_setup_user_config.t")
 _docore("_setup_require.t")
 if not truss.config.no_auto_libraries then
   require("core/VERSION.lua"):check()
-  require("native/timing.t").install(truss)
+  require("osnative/timing.t").install(truss)
 end
 _docore("_entry.t")
