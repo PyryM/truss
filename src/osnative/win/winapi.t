@@ -8,6 +8,13 @@ assert(
 )
 
 local C = build.includecstring([[
+  // will this... work?
+  #include <stdint.h>
+  #include <windows.h>
+]])
+
+--[=[
+local C = build.includecstring([[
 #include <stdint.h>
 
 typedef uint32_t UINT,*PUINT,*LPUINT;
@@ -33,6 +40,7 @@ typedef uint32_t * ULONG_PTR;
 typedef int BOOL;
 
 typedef CHAR *LPSTR;
+typedef CONST CHAR *LPCSTR;
 
 typedef void* HANDLE;
 typedef HANDLE HINSTANCE;
@@ -96,7 +104,34 @@ BOOL SetConsoleOutputCP(UINT wCodePageID);
 
 BOOL QueryPerformanceFrequency(int64_t* lpFrequency);
 BOOL QueryPerformanceCounter(int64_t* lpPerformanceCount);
+
+typedef struct _FILETIME {
+  DWORD dwLowDateTime;
+  DWORD dwHighDateTime;
+} FILETIME, *PFILETIME, *LPFILETIME;
+
+#define MAX_PATH 260
+
+typedef struct _WIN32_FIND_DATAA {
+  DWORD    dwFileAttributes;
+  FILETIME ftCreationTime;
+  FILETIME ftLastAccessTime;
+  FILETIME ftLastWriteTime;
+  DWORD    nFileSizeHigh;
+  DWORD    nFileSizeLow;
+  DWORD    dwReserved0;
+  DWORD    dwReserved1;
+  CHAR     cFileName[MAX_PATH];
+  CHAR     cAlternateFileName[14];
+  DWORD    dwFileType;
+  DWORD    dwCreatorType;
+  WORD     wFinderFlags;
+} WIN32_FIND_DATAA, *PWIN32_FIND_DATAA, *LPWIN32_FIND_DATAA;
+
+HANDLE FindFirstFileA(LPCSTR lpFileName, LPWIN32_FIND_DATAA lpFindFileData);
+);
 ]])
+]=]
 m.C = C
 
 return m

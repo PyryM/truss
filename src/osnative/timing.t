@@ -1,6 +1,6 @@
--- native/timing.t
+-- osnative/timing.t
 --
--- high-performance timing junk
+-- os-specifric precision timers
 
 local build = require("build/build.t")
 local m = {}
@@ -8,6 +8,9 @@ local m = {}
 local target = build.target_name()
 
 if target == "Windows" then
+  -- Note: we manually do this rather than requiring
+  -- win/winapi.t because that might include the entire
+  -- winapi!
   local C = build.includecstring[[
   #include "stdint.h"
   typedef int BOOL;
@@ -26,7 +29,6 @@ if target == "Windows" then
     C.QueryPerformanceCounter(&ret)
     return ret
   end
---elseif truss.os == "OSX" then
 else
   local C, timespec_t
   if build.is_native() then -- 64 bit native system
