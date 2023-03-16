@@ -4,6 +4,7 @@
 
 local m = {}
 local lua = require("./lua.t")
+local build = require("build/build.t")
 
 -- TODO: move this into its own module?
 local function map_files(f, path, dir_filter, file_filter)
@@ -46,22 +47,29 @@ local function embed_files(L, table_name, files)
   end
 end
 
-local function link_trussfs(L)
-  if jit.os == "Windows" then 
+local function setup_unicode_terminal()
+  if build.target_name() == "Windows" then
+    -- Make sure the Windows console is set to use the Unicode codepage
+    -- (so that we can print emojis)
+    --
+    -- This is equivalent to `os.execute("chcp 65001")` except it doesn't
+    -- leave an annoying message in the terminal.
+    local UNICODE_CODEPAGE = 65001
+    local winapi = terralib.includecstring[[
+    #include <stdint.h>
+    typedef uint32_t UINT;
+    typedef int BOOL;
+    BOOL SetConsoleOutputCP(UINT wCodePageID);
+    ]]
+    return quote
+      winapi.SetConsoleOutputCP(UNICODE_CODEPAGE)
+    end
+  else
     return quote end
-  end
-  local trussfs_c = terralib.includecstring[[
-  #include <stdint.h>
-  uint64_t trussfs_version();
-  ]]
-  return quote
-    var vnum = trussfs_c.trussfs_version()
-    terra_c.lua_pushnumber(L, vnum)
-    terra_c.lua_setfield(L, LUA_GLOBALSINDEX, "_LINKED_TRUSSFS_VERSION")
   end
 end
 
-local LUA_BOOT = [[
+local LUA_BOOT = [=[
 local _load = loadstring or load
 
 local function embedded_loader(modname)
@@ -78,23 +86,48 @@ for modname, _ in pairs(_EMBEDDED_FILES) do
   package.preload[modname] = embedded_loader
 end
 
+--[[
+if fs_listdir then
+  -- eh?
+  print("FILES:")
+  local files = fs_listdir(".", false, true)
+  for _, f in ipairs(files) do
+    print(f)
+  end
+end
+
+if fs_workdir then
+  local workdir, bindir = fs_workdir()
+  print("workdir:", workdir)
+  print("bindir:", bindir)
+end
+]]
+
 if _MAIN and #_MAIN > 0 then
   local main = require(_MAIN)
   main:run()
 end
-]]
+]=]
 
 function m.generate_main(options)
-  local LuaState = lua.build(options).LuaState
+  local LOG = options.LOG or require("substrate").configure().LOG
+  options.LOG = LOG
+  local luabuilt = lua.build(options)
+  local LuaState = luabuilt.LuaState
   local files = assert(options.embedded_files, "No embedded files provided!")
   local lua_main = options.main or "main"
 
+  local compat = require("./node_compat.t")
+
   local terra main(argc: int, argv: &&int8): int
+    [setup_unicode_terminal()]
+
     var L: LuaState
     L:init()
 
     [embed_files(L, "_EMBEDDED_FILES", files)]
-    [link_trussfs(L)]
+    --[link_trussfs(L, LOG)]
+    [compat.install_compat_functions(`L, luabuilt, options)]
 
     L:set_global_cstring("_MAIN", lua_main)
     L:set_global_array_of_strings("_CMDARGS", argc, argv)
@@ -157,17 +190,17 @@ function m.export_binary(options)
     main = options.main
   }
 
-  require("./binexport.t").export_binary{
+  require("build/binexport.t").export_binary{
     name = assert(options.name, ".name required!"),
     libpath = options.libpath or "lib",
     libs = {
       all = {},
-      Windows = {lua_win_lib},
+      Windows = {lua_win_lib, "trussfs"},
       Linux = {lua_posix_lib, "trussfs"},
       OSX = {lua_posix_lib, "trussfs"},
     },
     syslibs = {
-      Windows = {"user32"}
+      Windows = {"user32", "BCrypt", "ws2_32", "userenv", "advapi32"}
     },
     platform = {
       Linux = {rpath = "lib/"},

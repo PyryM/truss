@@ -169,6 +169,11 @@ function m.build(options)
     return libs
   end
 
+  terra LuaState:wrap(L: &lua_State)
+    self.L = L
+    self.status = 1
+  end
+
   terra LuaState:create(): bool
     self.status = 0
     self.L = C.luaL_newstate()
@@ -209,6 +214,23 @@ function m.build(options)
   terra LuaState:register_api_func(funcname: &int8, func: C.lua_CFunction)
     C.lua_pushcclosure(self.L, func, 0)
     C.lua_setglobal(self.L, funcname)
+  end
+
+  terra LuaState:set_registry_pointer(name: &int8, ptr: &opaque)
+    C.lua_pushlightuserdata(self.L, ptr)
+    C.lua_setfield(self.L, C.LUA_REGISTRYINDEX, name)
+  end
+
+  terra LuaState:get_registry_pointer(name:  &int8): &opaque
+    var top = C.lua_gettop(self.L)
+    C.lua_getfield(self.L, C.LUA_REGISTRYINDEX, name)
+    if C.lua_type(self.L, -1) ~= C.LUA_TLIGHTUSERDATA then
+      C.lua_settop(self.L, top)
+      return nil
+    end
+    var ret = C.lua_touserdata(self.L, -1)
+    C.lua_settop(self.L, top)
+    return ret
   end
 
   terra LuaState:set_global_cstring(gname: &int8, str: &int8)
@@ -257,9 +279,10 @@ function m.build(options)
   end
 
   terra LuaState:get_global_double(gname: &int8): double
+    var top = C.lua_gettop(self.L)
     C.lua_getglobal(self.L, gname)
     var ret: double = C.lua_tonumber(self.L, -1)
-    C.lua_settop(self.L, 0) -- clear stack
+    C.lua_settop(self.L, top) -- clear stack
     return ret
   end
 
