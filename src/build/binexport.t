@@ -4,6 +4,31 @@
 
 local m = {}
 
+local function unique_merge(dest, addition)
+  local seen = {}
+  for _, v in ipairs(dest) do
+    seen[v] = true
+  end
+  for i, v in ipairs(addition) do
+    if not seen[v] then
+      table.insert(dest, v)
+      seen[v] = true
+    end
+  end
+end
+
+function m.merge_sets(dest, addition)
+  if not addition then return dest end
+  for k, v in pairs(addition) do
+    if dest[k] then
+      unique_merge(dest[k], v)
+    else
+      dest[k] = v
+    end
+  end
+  return dest
+end
+
 local EXE_SUFFIXES = {
   Windows = ".exe"
 }

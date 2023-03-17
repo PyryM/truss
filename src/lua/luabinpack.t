@@ -86,23 +86,6 @@ for modname, _ in pairs(_EMBEDDED_FILES) do
   package.preload[modname] = embedded_loader
 end
 
---[[
-if fs_listdir then
-  -- eh?
-  print("FILES:")
-  local files = fs_listdir(".", false, true)
-  for _, f in ipairs(files) do
-    print(f)
-  end
-end
-
-if fs_workdir then
-  local workdir, bindir = fs_workdir()
-  print("workdir:", workdir)
-  print("bindir:", bindir)
-end
-]]
-
 if _MAIN and #_MAIN > 0 then
   local main = require(_MAIN)
   main:run()
@@ -117,7 +100,13 @@ function m.generate_main(options)
   local files = assert(options.embedded_files, "No embedded files provided!")
   local lua_main = options.main or "main"
 
-  local compat = require("./node_compat.t")
+  local install_api_funcs = options.install_api or function(L, _lua, _options)
+    if _options.compat then
+      return require("./node_compat.t").install_compat_functions(L, _lua, _options)
+    else
+      return quote end
+    end
+  end
 
   local terra main(argc: int, argv: &&int8): int
     [setup_unicode_terminal()]
@@ -127,7 +116,7 @@ function m.generate_main(options)
 
     [embed_files(L, "_EMBEDDED_FILES", files)]
     --[link_trussfs(L, LOG)]
-    [compat.install_compat_functions(`L, luabuilt, options)]
+    [install_api_funcs(`L, luabuilt, options)]
 
     L:set_global_cstring("_MAIN", lua_main)
     L:set_global_array_of_strings("_CMDARGS", argc, argv)
@@ -187,21 +176,25 @@ function m.export_binary(options)
   local main = m.generate_main{
     embedded_files = embedded_files,
     lua_version = options.lua_version or "jit",
-    main = options.main
+    main = options.main,
+    install_api = options.install_api,
   }
 
-  require("build/binexport.t").export_binary{
+  local bexport = require("build/binexport.t")
+  local merge_sets = bexport.merge_sets
+
+  bexport.export_binary{
     name = assert(options.name, ".name required!"),
     libpath = options.libpath or "lib",
-    libs = {
+    libs = merge_sets({
       all = {},
-      Windows = {lua_win_lib, "trussfs"},
-      Linux = {lua_posix_lib, "trussfs"},
-      OSX = {lua_posix_lib, "trussfs"},
-    },
-    syslibs = {
-      Windows = {"user32", "BCrypt", "ws2_32", "userenv", "advapi32"}
-    },
+      Windows = {lua_win_lib},
+      Linux = {lua_posix_lib},
+      OSX = {lua_posix_lib},
+    }, options.libs),
+    syslibs = merge_sets({
+      Windows = {"user32"}
+    }, options.syslibs),
     platform = {
       Linux = {rpath = "lib/"},
       OSX = {rpath = "lib/"}
