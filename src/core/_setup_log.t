@@ -72,6 +72,7 @@ log.colors = {
   warn = term.color(term.YELLOW),
   bigwarn = term.color(term.BLACK, term.YELLOW),
   build = term.color(term.YELLOW),
+  xbuild = term.color(term.BLACK, term.YELLOW),
   error = term.color(term.RED),
   fatal = term.color(term.BLACK, term.RED),
   todo = term.color(term.BLACK, term.YELLOW),

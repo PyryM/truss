@@ -40,8 +40,12 @@ local function iter_walk_files(path, dir_filter, file_filter)
 end
 
 local function embed_files(L, table_name, files)
+  local total_size = 0
+  for _, f in pairs(files) do
+    total_size = total_size + #f
+  end
   local count, keys, vals = lua.create_const_dict(files)
-  log.crit("Embed count:", count)
+  log.xbuild("Embedded", count, "files ->", total_size, "bytes")
   return quote
     L:set_global_dict_of_strings(table_name, count, keys, vals)
   end
@@ -69,7 +73,7 @@ local function setup_unicode_terminal()
   end
 end
 
-local LUA_BOOT = [=[
+local LUA_INIT = [=[
 local _load = loadstring or load
 
 local function embedded_loader(modname)
@@ -82,7 +86,6 @@ local function embedded_loader(modname)
 end
 
 for modname, _ in pairs(_EMBEDDED_FILES) do
-  print("PRELOAD:", modname)
   package.preload[modname] = embedded_loader
 end
 
@@ -98,6 +101,7 @@ function m.generate_main(options)
   local luabuilt = lua.build(options)
   local LuaState = luabuilt.LuaState
   local files = assert(options.embedded_files, "No embedded files provided!")
+  local lua_init_script = options.init_script or LUA_BOOT
   local lua_main = options.main or "main"
 
   local install_api_funcs = options.install_api or function(L, _lua, _options)
@@ -115,14 +119,13 @@ function m.generate_main(options)
     L:init()
 
     [embed_files(L, "_EMBEDDED_FILES", files)]
-    --[link_trussfs(L, LOG)]
     [install_api_funcs(`L, luabuilt, options)]
 
     L:set_global_cstring("_MAIN", lua_main)
     L:set_global_array_of_strings("_CMDARGS", argc, argv)
     L:set_global_double("_RETURN_CODE", 0.0)
 
-    if not L:do_cstring(LUA_BOOT) then
+    if not L:do_cstring(lua_init_script) then
       return 1
     end
 
@@ -132,30 +135,22 @@ function m.generate_main(options)
   return main
 end
 
-local function split_path(path)
-  local p0, p1, filepart = path:find("/([^/]*)$")
-  if not p0 then return "", path end
-  return path:sub(1, p0), filepart
-end
-
 local function module_name(path, filepart)
   path = path .. filepart
-  log.info(path)
-  path = path:gsub("%.lua$", ""):gsub("/", ".")
-  return path
+  return path:gsub("%.lua$", ""):gsub("/", ".")
 end
 
 local function gather_files(rootdir)
   local files = {}
   for fullpath in iter_walk_files(rootdir) do
-    local path, filepart = split_path(fullpath)
+    local path, filepart = truss.splitpath(fullpath)
     if filepart:match("%.lua$") then
       path = path:gsub("^" .. rootdir .. "/?", "")
       if path == "/" then path = "" end
       local modname = module_name(path, filepart)
       local modsrc = truss.read_file(fullpath)
       files[modname] = modsrc
-      log.info("Adding", modname, ":", #modsrc, "bytes")
+      log.debug("Adding", modname, ":", #modsrc, "bytes")
     end
   end
   return files
@@ -168,7 +163,7 @@ local LUA_LIBS = {
 }
 
 function m.export_binary(options)
-  local embedded_files = gather_files(assert(options.root_dir, "No root_dir!"))
+  local embedded_files = gather_files(assert(options.root_dir, "No root_dir"))
   local lua_version = options.lua_version or "jit"
   local libinfo = assert(LUA_LIBS[lua_version], "Invalid lua version: " .. lua_version)
   local lua_win_lib, lua_posix_lib = unpack(libinfo)
@@ -178,6 +173,7 @@ function m.export_binary(options)
     lua_version = options.lua_version or "jit",
     main = options.main,
     install_api = options.install_api,
+    init_script = options.init_script,
   }
 
   local bexport = require("build/binexport.t")
