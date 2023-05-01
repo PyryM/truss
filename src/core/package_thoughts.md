@@ -1,5 +1,12 @@
 ## Package thoughts
 
+* need to figure out how truss standard libraries get added:
+  * just have one 'truss' package, e.g., require("truss/foo/bar.t")
+  * add each as like require("truss.foo/bar.t")
+  * no truss prefix at all? require("foo/bar.t")
+* how should core be exposed? might want to include raw files from it...
+  * or just have builtins individually as like `truss.fs` and no explicit core
+
 * preload 'core': e.g., log, fs, etc. that don't
   depend on rest of truss
 

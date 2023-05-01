@@ -30,7 +30,7 @@ function core.create_root(core, options)
   end
 
   if options.include_core ~= false then
-    root.add_singleton_package('core', core)
+    root.add_singleton_package('truss.core', core)
   end
 
   if options.include_default_libs ~= false then
@@ -51,7 +51,7 @@ function core.create_root(core, options)
   if options.include_builtins ~= false then
     -- make 'builtins' requireable
     for name, builtin in pairs(core._builtins) do
-      root.add_singleton_package(name, builtin)
+      root.add_singleton_package("truss." .. name, builtin)
     end
   end
 
