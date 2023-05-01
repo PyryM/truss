@@ -13,6 +13,13 @@ function core.fixscript(script)
 end
 
 local function pkg_init()
+  local core = root.core
+
+  pkg.loaders = {
+    t = terralib.load,
+    lua = load
+  }
+
   function pkg.create_module_require(package_filepath)
     return function(path)
       return root.relative_require(pkg.name, package_filepath, path)
@@ -20,7 +27,7 @@ local function pkg_init()
   end
 
   function pkg.create_module_env(package_filepath)
-    local modenv = root.core.extend_table({}, root.module_env)
+    local modenv = core.extend_table({}, root.module_env)
     modenv._module_name = module_name
     modenv._path = pkg.name .. "/" .. package_filepath
     modenv.require = pkg.create_module_require(package_filepath)
@@ -38,7 +45,7 @@ local function pkg_init()
   end
 
   function pkg.select_loader(subpath)
-    local ext = root.core.get_file_extension(subpath)
+    local ext = core.get_file_extension(subpath)
     return pkg.assert(pkg.loaders[ext], subpath, "No loader for " .. ext)
   end
 
@@ -59,7 +66,7 @@ local function pkg_init()
     if not source then 
       return nil 
     end
-    source = root.core.fixscript(source)
+    source = core.fixscript(source)
     local loader = pkg.select_loader(canonical_subpath)
     local module_def, loaderror = core.loadstring(source, canonical_subpath, loader)
     if not module_def then 
