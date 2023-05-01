@@ -1,7 +1,12 @@
 
 
-function core.canonize_package_path(path)
-  return path
+function core.split_package_path(path)
+  local pkg_name, subpath = path:match("^([^/])+/(.*)$")
+  if pkg_name then
+    return pkg_name, subpath
+  else
+    return path, ""
+  end
 end
 
 function core.create_root(core, options)
@@ -13,22 +18,79 @@ function core.create_root(core, options)
     packages = options.packages or {},
     preload = options.preload or {},
   }
-  loaded['core'] = core
 
-  local CYCLICAL_SENTRY = {} -- just needs to be a unique table
+  function root.add_raw_package(pkg, name)
+    name = assert(name or pkg.name, "package requires name")
+    assert(not root.packages[name], "package name collision on " .. name)
+    root.packages[name] = pkg
+  end
+
+  function root.add_singleton_package(name, t)
+    root.add_raw_package(core.singleton_package(name, t))
+  end
+
+  if options.include_core ~= false then
+    root.add_singleton_package('core', core)
+  end
+
+  if options.include_default_libs ~= false then
+    -- hmmmmmmm
+    root.add_singleton_package("lua.ffi", require("ffi"))
+    root.add_singleton_package("lua.bit", require("bit"))
+    root.add_singleton_package("lua.jit", jit)
+    root.add_singleton_package("lua.string", string)
+    root.add_singleton_package("lua.io", io)
+    root.add_singleton_package("lua.os", os)
+    root.add_singleton_package("lua.table", table)
+    root.add_singleton_package("lua.math", math)
+    root.add_singleton_package("lua.package", package)
+    root.add_singleton_package("lua.debug", debug)
+    root.add_singleton_package("lua.coroutine", coroutine)
+  end
+
+  if options.include_builtins ~= false then
+    -- make 'builtins' requireable
+    for name, builtin in pairs(core._builtins) do
+      root.add_singleton_package(name, builtin)
+    end
+  end
+
+  -- unique tables to indicate load conditions
+  local CYCLICAL_SENTRY = {} 
+  local ERROR_SENTRY = {}
+
+  function root.relative_require(package_name, package_filepath, require_path)
+    local reqstack = core.fs.splitpath(require_path)
+    if (reqstack[1] ~= ".") and (reqstack[1] ~= "..") then
+      -- assume regular absolute require path?
+      return root.require(require_path)
+    end
+    error("Relative paths NYI!")
+    local pathstack = core.extend_list(
+      {package_name}, 
+      core.fs.splitpath(package_filepath)
+    )
+    local stackpos = #pathstack - 1
+  end
 
   function root.require(path)
-    path = core.canonize_package_path(path)
-    local loaded = root.loaded[path]
+    local pkg_name, subpath = core.split_package_path(path)
+    local pkg = root.resolve_package(pkg_name)
+    if not pkg then return nil end
+    subpath = pkg.resolve_path(subpath)
+    local canonical_path = pkg_name .. "/" .. subpath
+    local loaded = root.loaded[canonical_path]
     if loaded == CYCLICAL_SENTRY then 
-      error("Cyclical require for [" .. path .. "]")
-    elseif loaded then 
+      error("Cyclical require for [" .. canonical_path .. "]")
+    elseif loaded == ERROR_SENTRY then 
+      log.warn(("require('%s'): previous errors"):format(canonical_path))
+      return nil
+    elseif loaded ~= nil then
       return loaded 
     end
-    root.loaded[path] = CYCLICAL_SENTRY
-    local pkg, subpath = root.resolve_package(path)
-    if pkg then loaded = pkg.internal_require(subpath) end
-    root.loaded[path] = loaded
+    root.loaded[canonical_path] = CYCLICAL_SENTRY
+    loaded = pkg.internal_require(subpath)
+    root.loaded[canonical_path] = loaded or ERROR_SENTRY
     return loaded
   end
 

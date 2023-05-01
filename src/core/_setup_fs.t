@@ -92,6 +92,14 @@ function fs.list_real_path(target, realroot, subpath, recursive)
   end
 end
 
+function fs.splitpath(path)
+  local parts = {}
+  for part in path:gmatch("[^/\\]+") do
+    table.insert(parts, part)
+  end
+  return parts
+end
+
 function fs.splitbase(p)
   local base, file = p:match("^(.*[/\\])([^/\\]*)$")
   if not base then return "", file end
@@ -191,8 +199,8 @@ end
 function ArchiveRootMount:listdir(subpath, recursive)
   local target = {}
   for path, entry in pairs(self.files) do
-    local base, file = split_base_and_file(path)
-    local dirpath = split_prefix(base, subpath)
+    local base, file = fs.splitbase(path)
+    local dirpath = fs.splitbase(base, subpath)
     if dirpath and (recursive or dirpath == "" or dirpath == "/") then
       table.insert(target, {
         is_file = true, 
@@ -308,7 +316,7 @@ end
 truss.fs = fs
 truss.working_dir = normpath(ffi.string(fs_c.trussfs_working_dir(fs_ctx)) .. PATHSEP, true)
 truss.binary_path = ffi.string(fs_c.trussfs_binary_dir(fs_ctx))
-truss.binary_dir, truss.binary_name = split_base_and_file(truss.binary_path)
+truss.binary_dir, truss.binary_name = fs.splitbase(truss.binary_path)
 truss.binary_dir = normpath(truss.binary_dir .. PATHSEP, true)
 truss.root_dir = truss.binary_dir
 
