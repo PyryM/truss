@@ -81,6 +81,7 @@ log.colors = {
   debug = term.color(term.MAGENTA),
   path = term.color(term.MAGENTA),
   perf = term.color(term.CYAN),
+  pkg = term.color(term.MAGENTA)
 }
 log.colortags = {}
 for name, color in pairs(log.colors) do

@@ -1,5 +1,26 @@
 ## Package thoughts
 
+* preload 'core': e.g., log, fs, etc. that don't
+  depend on rest of truss
+
+* truss root constructor takes in 'core'
+
+* actually, just make a whole *truss root* a thing you can fork!
+
+* Merge 'require root' and 'package root' into a single thing
+* (e.g., in cross compilation, we need a whole new package tree!)
+* Clone a root: copy *loaders only* and not loaded packages
+
+a package/truss root has:
+.require(...) (callable with both . and :?)
+.read_file(...)
+.list_dir(...)
+.fork(...) (produce a fork with no loaded packages, e.g. for cross-compilation)
+
+.loaded (loaded packages)
+.preload (not yet loaded packages)
+
+
 * Flat list of packages
 * Mount directory -> add packages
 * e.g., add_packages_directory(joinpath(workdir, "src"))

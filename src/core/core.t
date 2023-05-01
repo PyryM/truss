@@ -1,30 +1,37 @@
 -- core.t
--- defines truss library functions, sets up require system
+-- defines core library functions, sets up require system
 
--- remove strict mode if running in terra
-setmetatable(_G, nil)
+local GLOBALS = setmetatable({}, {
+  __index = function(t, k) return rawget(_G, k) end
+})
 
 local bare_env = {}
-for k, v in pairs(_G) do bare_env[k] = v end
+local core_env = {}
+for k, v in pairs(_G) do 
+  bare_env[k] = v 
+  core_env[k] = v
+end
 
-truss = {}
-truss.bare_env = bare_env
-truss.version = _TRUSS_VERSION
-truss.version_emoji = _TRUSS_VERSION_EMOJI
-truss._builtins = {}
+local core = {}
+core.bare_env = bare_env
+core.core_env = core_env
+core.version = GLOBALS._TRUSS_VERSION
+core.version_emoji = GLOBALS._TRUSS_VERSION_EMOJI
+core._builtins = {}
+core_env.core = core
 
-function truss._declare_builtin(name, libtable)
+function core._declare_builtin(name, libtable)
   libtable = libtable or {}
-  truss._builtins[name] = libtable
-  truss[name] = libtable
+  core._builtins[name] = libtable
+  core[name] = libtable
   return libtable
 end
 
-function TODO()
+function core.TODO()
   error("TODO not implemented!")
 end
 
-function truss.loadstring(str, strname, loader)
+function core.loadstring(str, strname, loader)
   local s = str
   local generator_func = function()
     local s2 = s
@@ -34,32 +41,40 @@ function truss.loadstring(str, strname, loader)
   return (loader or terralib.load)(generator_func, '@' .. strname)
 end
 
-truss._COREPATH = _COREPATH or "src/core/"
-truss._COREFILES = {}
-local function _docore(fn, optional)
-  local interned = _TRUSS_EMBEDDED and _TRUSS_EMBEDDED[fn]
+core._COREPATH = GLOBALS._COREPATH or "src/core/"
+core._COREFILES = {}
+local embeds = GLOBALS._TRUSS_EMBEDDED
+local function _docore(fn)
+  local interned = embeds and embeds[fn]
   local func, err
   if interned then
-    func, err = truss.loadstring(interned, fn)
+    func, err = core.loadstring(interned, fn)
   else
-    func, err = terralib.loadfile(truss._COREPATH .. fn)
+    func, err = terralib.loadfile(core._COREPATH .. fn)
   end
-  table.insert(truss._COREFILES, fn)
+  table.insert(core._COREFILES, fn)
   assert(func, "Core load failure: " .. fn .. " -> " .. (err or ""))
+  setfenv(func, core_env)
   return func()
 end
 
-if not (truss.version and truss.version_emoji) then
+if not (core.version and core.version_emoji) then
   local ver = _docore("VERSION.lua")
-  truss.version, truss.version_emoji = ver.VERSION, ver.VERSION_EMOJI
+  core.version, core.version_emoji = ver.VERSION, ver.VERSION_EMOJI
 end
 _docore("_setup_utils.t")
 _docore("_setup_log.t")
 _docore("_setup_fs.t")
 _docore("_setup_user_config.t")
 _docore("_setup_require.t")
-if not truss.config.no_auto_libraries then
+if not core.config.no_auto_libraries then
   require("core/VERSION.lua"):check()
-  require("osnative/timing.t").install(truss)
+  require("osnative/timing.t").install(core)
 end
 _docore("_entry.t")
+
+if embeds then
+  rawset(_G, "core", core)
+end
+
+return core
