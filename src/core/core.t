@@ -70,11 +70,11 @@ _docore("_setup_base_package.t")
 _docore("_setup_packages.t")
 _docore("_setup_user_config.t")
 
--- if not core.config.no_auto_libraries then
---   require("core/VERSION.lua"):check()
---   require("osnative/timing.t").install(core)
--- end
--- _docore("_entry.t")
+if not core.config.no_auto_libraries then
+  core.require("core/VERSION.lua"):check()
+  core.require("osnative/timing.t").install(core)
+end
+_docore("_entry.t")
 
 
 if embeds then

@@ -5,7 +5,7 @@
 -- (MIT license)
 
 local m = {}
-local term = assert(require("term"))
+local term = assert(truss.term)
 
 local test_stats = {passed = 0, failed = 0, errors = 0,
                     total_passed = 0, total_failed = 0,
