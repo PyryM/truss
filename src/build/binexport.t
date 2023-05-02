@@ -62,7 +62,7 @@ function m.linker_flags(target, libpath, platform_opts, libs, syslibs)
 
   local libprefix, syslibprefix, libsuffix = "", "", ""
   if target == "Windows" then
-    libprefix = truss.normpath(libpath .. "\\", true)
+    libprefix = truss.fs.normpath(libpath .. "\\")
     libsuffix = ".lib"
   else
     libprefix = "-l"

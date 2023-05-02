@@ -13,10 +13,12 @@ for k, v in pairs(_G) do
 end
 
 local core = {}
+core.ffi = require("ffi")
 core.bare_env = bare_env
 core.core_env = core_env
 core.version = GLOBALS._TRUSS_VERSION
 core.version_emoji = GLOBALS._TRUSS_VERSION_EMOJI
+core.GLOBALS = GLOBALS
 core._builtins = {}
 core_env.core = core
 
@@ -54,27 +56,29 @@ local function _docore(fn)
   end
   table.insert(core._COREFILES, fn)
   assert(func, "Core load failure: " .. fn .. " -> " .. (err or ""))
-  setfenv(func, core_env)
-  return func()
+  func().install(core)
 end
 
 if not (core.version and core.version_emoji) then
-  local ver = _docore("VERSION.lua")
-  core.version, core.version_emoji = ver.VERSION, ver.VERSION_EMOJI
+  _docore("VERSION.lua")
 end
 _docore("_setup_utils.t")
 _docore("_setup_log.t")
 _docore("_setup_fs.t")
+-- _docore("_setup_require.t")
+_docore("_setup_base_package.t")
+_docore("_setup_packages.t")
 _docore("_setup_user_config.t")
-_docore("_setup_require.t")
-if not core.config.no_auto_libraries then
-  require("core/VERSION.lua"):check()
-  require("osnative/timing.t").install(core)
-end
-_docore("_entry.t")
+
+-- if not core.config.no_auto_libraries then
+--   require("core/VERSION.lua"):check()
+--   require("osnative/timing.t").install(core)
+-- end
+-- _docore("_entry.t")
+
 
 if embeds then
-  rawset(_G, "core", core)
+  rawset(_G, "truss", core)
 end
 
 return core

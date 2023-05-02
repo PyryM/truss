@@ -13,4 +13,8 @@ function VERSION:check()
   return true
 end
 
+function VERSION.install(core)
+  core.version, core.version_emoji = VERSION.VERSION, VERSION.VERSION_EMOJI
+end
+
 return VERSION
