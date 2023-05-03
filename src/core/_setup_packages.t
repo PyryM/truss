@@ -17,7 +17,6 @@ local function install(core)
       core = core,
       loaded = options.loaded or {}, 
       packages = options.packages or {},
-      preload = options.preload or {},
       package_env = core.core_env,
       module_env = core.bare_env,
     }
@@ -25,7 +24,7 @@ local function install(core)
     function root.add_raw_package(pkg, name)
       name = assert(name or pkg.name, "package requires name")
       assert(not root.packages[name], "package name collision on " .. name)
-      root.packages[name] = pkg
+      root.packages[name] = {loaded=pkg}
     end
 
     function root.add_singleton_package(name, t)
@@ -76,21 +75,23 @@ local function install(core)
       return root.require(newpath)
     end
 
-    function root.resolve_package(name)
-      local package = root.packages[name]
-      if package then return package end
-      local loader = root.preload[name]
-      if not loader then return nil end
-      log.pkg('Loading [' .. name .. ']')
-      package = loader()
-      root.packages[name] = package
-      return package
+    function root.load_package(name)
+      local pkg = root.packages[name]
+      if not pkg then return nil end
+      local body = pkg.body
+      if not body then
+        local loader = assert(pkg.loader, "Missing .loader for " .. name)
+        log.pkg('Loading [' .. name .. ']')
+        body = assert(loader(), name .. " load failure!")
+        pkg.body = body
+      end
+      return body
     end
 
     function root._require(path, notfound)
       local pkg_name, subpath = core.split_package_path(path)
       log.debug(("pkg: %s, subpath: %s"):format(pkg_name, subpath))
-      local pkg = root.resolve_package(pkg_name)
+      local pkg = root.load_package(pkg_name)
       if not pkg then 
         return notfound("No package [" .. pkg_name .. "]")
       end
@@ -139,7 +140,7 @@ local function install(core)
 
     local function infer_name(source)
       if type(source) == 'string' then
-        local parts = core.fs.splitpath(filename)
+        local parts = core.fs.splitpath(source)
         return parts[#parts]
       elseif type(source) == 'table' then
         return assert(source.name, "package doesn't have a .name!")
@@ -157,25 +158,25 @@ local function install(core)
       end
     end
 
-    function root.add_package(name, source)
-      if not source then
-        source = name
-        name = infer_name(source)
-        log.debug("Inferred name:", source, "->", name)
+    -- TODO: reconsider this signature
+    function root.add_package(info)
+      if type(info) == 'string' then info = {source_path = info} end
+      if not info.name then
+        info.name = assert(
+          (info.body and info.body.name) or infer_name(info.source_path), 
+          "Couldn't infer package name!"
+        )
+        log.debug("Inferred name:", info.name)
       end
-
-      if type(source) == 'string' then
-        log.debug("Adding package from dir:", name, source)
-        root.preload[name] = dir_preload(name, source)
-      elseif type(source) == 'function' then
-        log.debug("Adding package from function:", name)
-        root.preload[name] = source
-      elseif type(source) == 'table' then
-        log.debug("Adding package directly:", name)
-        root.packages[name] = source
-      else
-        error("Can't add a package of type " .. type(package))
+      if not (info.body or info.loader) then
+        local source = info.source or info.source_path
+        if source then
+          info.loader = dir_preload(info.name, source)
+        else
+          error("package " .. info.name .. " has no body or loader or source path!")
+        end
       end
+      root.packages[info.name] = info
     end
 
     function root.add_packages_dir(path)
@@ -188,7 +189,11 @@ local function install(core)
           local dir = base:mountdir(item.path)
           local name = item.file
           log.debug("Adding package:", name, item.path)
-          root.add_package(name, dir_preload(name, dir))
+          root.add_package{
+            name = name, 
+            source = dir,
+            source_path = dir:realpath("")
+          }
         end
       end
     end
