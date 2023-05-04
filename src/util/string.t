@@ -41,6 +41,14 @@ function m.split_lines(str)
   return m.split("\n", str)
 end
 
+function m.begins_with(str, prefix)
+  return str:sub(1, #prefix) == prefix
+end
+
+function m.ends_with(str, suffix)
+  return str:sub(-(#suffix)) == suffix
+end
+
 -- base64 conversion
 local _b64_lut = nil
 local letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="

@@ -104,7 +104,6 @@ local function install(core)
     end
 
     local function log_not_found(msg)
-      log.warn(msg)
       return nil, msg
     end
 

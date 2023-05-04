@@ -1,3 +1,15 @@
+local sutil = require("util/string.t")
+
+local function simplify_path(path)
+  if sutil.begins_with(path, truss.working_dir) then
+    return truss.fs.joinpath("$WORKDIR", path:sub(#truss.working_dir))
+  elseif sutil.begins_with(path, truss.binary_dir) then
+    return truss.fs.joinpath("$BINDIR", path:sub(#truss.binary_dir))
+  else
+    return path
+  end
+end
+
 local function print_info()
   print("=========== Packages ==========")
   local pnames = {}
@@ -12,7 +24,7 @@ local function print_info()
   for _, name in ipairs(pnames) do
     local pkg = truss.packages[name]
     local body = pkg.body
-    local path = pkg.source_desc or pkg.source_path or "unknown"
+    local path = simplify_path(pkg.source_desc or pkg.source_path or "unknown")
     if body then
       print(LOADED .. name .. RESET .. ": " .. path)
     else
