@@ -8,7 +8,7 @@ local function load_config(truss)
     cpu_opt_profile = {},
     --paths = {{".", truss.working_dir}},
     package_dirs = {truss.fs.joinpath(truss.binary_dir, "src")},
-    packages = {{"HERE", truss.working_dir}},
+    packages = {{"@cwd", truss.working_dir}},
     log_enabled = {"all"}, --"~path", "~debug", "~perf"},
     entrypoints = {main="main.t"},
     include_paths = {terralib.includepath, "include"},
@@ -116,7 +116,10 @@ local function load_config(truss)
 
   for _, package_pair in ipairs(config.packages) do
     local name, path = unpack(package_pair)
-    truss.add_package(name, path)
+    truss.add_package{
+      name = name, 
+      source_path = path
+    }
   end
 end
 

@@ -360,7 +360,7 @@ local function install(core)
   core.binary_dir = fs.normpath(core.binary_dir .. fs.PATHSEP, true)
   core.root_dir = core.binary_dir
 
-  log.info("trussfs version:", table.concat(fs_version, "."))
+  log.info("trussfs version:", core.format_version(fs_version))
   log.info("Working dir:", core.working_dir)
   log.info("Binary dir:", core.binary_dir)
   log.info("Binary:", core.binary_name)
