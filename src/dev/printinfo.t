@@ -33,4 +33,4 @@ local function print_info()
   end
 end
 
-return {init = print_info}
+return {init = print_info, print_info = print_info}
