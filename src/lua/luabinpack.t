@@ -5,17 +5,18 @@
 local m = {}
 local lua = require("./lua.t")
 local build = require("build/build.t")
+local sutil = require("util/string.t")
 
 -- TODO: move this into its own module?
-local function map_files(f, path, dir_filter, file_filter)
-  for _, entry in ipairs(truss.list_dir(path, false)) do
+local function map_files(f, mount, dir_filter, file_filter)
+  for _, entry in ipairs(mount:listdir("", false)) do
     if entry.is_file then -- non-archived file
       if file_filter == nil or (file_filter and file_filter(entry.file, entry.path)) then
-        f(entry.path)
+        f(mount, entry)
       end
     elseif not entry.is_file then
       if dir_filter == nil or (dir_filter and dir_filter(entry.path)) then
-        map_files(f, entry.path, dir_filter, file_filter)
+        map_files(f, mount:mountdir(entry.path), dir_filter, file_filter)
       end
     end
   end
@@ -33,9 +34,9 @@ local function filter_file_prefixes(prefixes)
   end
 end
 
-local function iter_walk_files(path, dir_filter, file_filter)
+local function iter_walk_files(mount, dir_filter, file_filter)
   return coroutine.wrap(function() 
-    map_files(coroutine.yield, path, dir_filter, file_filter)
+    map_files(coroutine.yield, mount, dir_filter, file_filter)
   end)
 end
 
@@ -135,22 +136,25 @@ function m.generate_main(options)
   return main
 end
 
-local function module_name(path, filepart)
-  path = path .. filepart
-  return path:gsub("%.lua$", ""):gsub("/", ".")
+local function module_name(path)
+  return path:gsub("%.lua$", ""):gsub("[/\\]", ".")
 end
 
 local function gather_files(rootdir)
+  rootdir = truss.fs.normpath(rootdir, true)
   local files = {}
-  for fullpath in iter_walk_files(rootdir) do
-    local path, filepart = truss.splitpath(fullpath)
+  local mounted = truss.fs.mount(rootdir)
+  for submount, entry in iter_walk_files(mounted) do
+    local fullpath = submount:realpath(entry.path)
+    local path, filepart = truss.fs.splitbase(fullpath)
     if filepart:match("%.lua$") then
-      path = path:gsub("^" .. rootdir .. "/?", "")
-      if path == "/" then path = "" end
-      local modname = module_name(path, filepart)
-      local modsrc = truss.read_file(fullpath)
+      local readpath = fullpath
+      if sutil.begins_with(readpath, rootdir) then
+        readpath = readpath:sub(#rootdir+1)
+      end
+      local modname = module_name(readpath)
+      local modsrc = assert(mounted:read(readpath), 'Could not read "' .. readpath .. '"')
       files[modname] = modsrc
-      log.debug("Adding", modname, ":", #modsrc, "bytes")
     end
   end
   return files

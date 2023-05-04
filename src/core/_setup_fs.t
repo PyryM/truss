@@ -107,9 +107,9 @@ local function install(core)
     return parts
   end
 
-  function fs.splitbase(p)
-    local base, file = p:match("^(.*[/\\])([^/\\]*)$")
-    if not base then return "", file end
+  function fs.splitbase(path)
+    local base, file = path:match("^(.*[/\\])([^/\\]*)$")
+    if not base then return "", path end
     return base, file
   end
 
@@ -396,15 +396,19 @@ local function install(core)
       end
     end
     return pathstack
-  end  
-
-  -- terra has issues with line numbering with dos line endings (\r\n), so
-  -- this function loads a string and then gets rid of carriage returns (\r)
-  function core.read_script(path)
-    local str = core.read_file(path)
-    if not str then return nil end
-    return str:gsub("\r", "")
   end
+
+  function fs.listdir(path, recursive)
+    return fs.mount(path):listdir("", recursive)
+  end
+
+  -- -- terra has issues with line numbering with dos line endings (\r\n), so
+  -- -- this function loads a string and then gets rid of carriage returns (\r)
+  -- function core.read_script(path)
+  --   local str = core.read_file(path)
+  --   if not str then return nil end
+  --   return str:gsub("\r", "")
+  -- end
 end
 
 return {install = install}
