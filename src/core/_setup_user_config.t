@@ -1,6 +1,6 @@
 -- runs the user config file
 
-local function install(truss)
+local function load_config(truss)
   local log = truss.log
   local default_config = {
     cpu_triple = "native",
@@ -111,13 +111,13 @@ local function install(truss)
   truss.using_system_headers = true -- assume this is true?
 
   for _, dir in ipairs(config.package_dirs) do
-    truss.root.add_packages_dir(dir)
+    truss.add_packages_dir(dir)
   end
 
   for _, package_pair in ipairs(config.packages) do
     local name, path = unpack(package_pair)
-    truss.root.add_package(name, path)
+    truss.add_package(name, path)
   end
 end
 
-return {install = install}
+return {load_config = load_config}

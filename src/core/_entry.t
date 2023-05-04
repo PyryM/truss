@@ -1,4 +1,4 @@
-local function install(truss)
+local function entry(truss)
   local log = truss.log
   if not truss.GLOBALS._TRUSS_RUNNING then return end
 
@@ -82,4 +82,4 @@ local function install(truss)
   end
 end
 
-return {install = install}
+return {entry = entry}

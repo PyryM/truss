@@ -10,51 +10,34 @@ local function install(core)
     end
   end
 
-  function core.create_root(core, options)
+  function core.create_root(options)
     local fs = assert(core.fs, "fs is not optional!")
 
-    local root = {
+    local root = core.extend_table({}, core)
+    root = core.extend_table(root, {
       core = core,
       loaded = options.loaded or {}, 
       packages = options.packages or {},
       package_env = core.core_env,
       module_env = core.bare_env,
-    }
+      script_loaders = options.script_loaders or {
+        t = terralib.load,
+        lua = load
+      }
+    })
 
-    function root.add_raw_package(pkg, name)
-      name = assert(name or pkg.name, "package requires name")
+    function root.add_raw_package(name, info)
       assert(not root.packages[name], "package name collision on " .. name)
-      root.packages[name] = {loaded=pkg}
+      root.packages[name] = info
     end
 
-    function root.add_singleton_package(name, t)
-      root.add_raw_package(core.singleton_package(name, t))
-    end
-
-    if options.include_core ~= false then
-      root.add_singleton_package('truss', core)
-    end
-
-    if options.include_default_libs ~= false then
-      -- hmmmmmmm
-      root.add_singleton_package("ffi", require("ffi"))
-      root.add_singleton_package("lua.bit", require("bit"))
-      root.add_singleton_package("lua.jit", jit)
-      root.add_singleton_package("lua.string", string)
-      root.add_singleton_package("lua.io", io)
-      root.add_singleton_package("lua.os", os)
-      root.add_singleton_package("lua.table", table)
-      root.add_singleton_package("lua.math", math)
-      root.add_singleton_package("lua.package", package)
-      root.add_singleton_package("lua.debug", debug)
-      root.add_singleton_package("lua.coroutine", coroutine)
-    end
-
-    if options.include_builtins ~= false then
-      -- make 'builtins' requireable
-      for name, builtin in pairs(core._builtins) do
-        root.add_singleton_package("truss." .. name, builtin)
-      end
+    function root.add_singleton_package(name, t, source_desc)
+      local pkg = {
+        name = name,
+        body = core.singleton_package(name, t),
+        source_desc = source_desc or "manually added"
+      }
+      root.add_raw_package(name, pkg)
     end
 
     -- unique tables to indicate load conditions
@@ -216,6 +199,8 @@ local function install(core)
       end
     end
 
+    -- hmmmm
+    --[[
     function root.resolve(path)
       local proto, subpath = root.parse_truss_path(fn)
       local loader = root.data_sources[proto]
@@ -242,13 +227,40 @@ local function install(core)
     function root.read_file_buffer(fn)
       return root.string_as_buffer(root.read_file(fn))
     end
+    ]]
+
+    -- if options.include_core ~= false then
+    --   root.add_singleton_package('truss', core)
+    -- end
+
+    if options.include_default_libs ~= false then
+      -- hmmmmmmm
+      root.add_singleton_package("ffi", require("ffi"), "builtin")
+      root.add_singleton_package("lua.bit", require("bit"), "builtin")
+      root.add_singleton_package("lua.jit", jit, "builtin")
+      root.add_singleton_package("lua.string", string, "builtin")
+      root.add_singleton_package("lua.io", io, "builtin")
+      root.add_singleton_package("lua.os", os, "builtin")
+      root.add_singleton_package("lua.table", table, "builtin")
+      root.add_singleton_package("lua.math", math, "builtin")
+      root.add_singleton_package("lua.package", package, "builtin")
+      root.add_singleton_package("lua.debug", debug, "builtin")
+      root.add_singleton_package("lua.coroutine", coroutine, "builtin")
+    end
+
+    if options.include_class ~= false then
+      root.add_singleton_package("class", core.class, "builtin")
+    end
+
+    if options.include_builtins ~= false then
+      -- make 'builtins' requireable
+      for name, builtin in pairs(core._builtins) do
+        root.add_singleton_package("truss." .. name, builtin, "builtin")
+      end
+    end
 
     return root
   end
-
-  core.root = core.create_root(core, {})
-  core.require = core.root.require
-  core.add_package = core.root.add_package
 end
 
 return {install = install}

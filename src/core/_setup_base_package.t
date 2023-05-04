@@ -18,29 +18,23 @@ local function install(core)
   end
 
   local function pkg_init()
-    local core = root.core
-
-    pkg.loaders = {
-      t = terralib.load,
-      lua = load
-    }
+    pkg.script_loaders = assert(truss.script_loaders)
 
     function pkg.create_module_require(package_filepath)
       return function(path)
-        return root.relative_require(pkg.name, package_filepath, path)
+        return truss.relative_require(pkg.name, package_filepath, path)
       end
     end
 
     function pkg.create_module_env(package_filepath)
-      local modenv = core.extend_table({}, assert(root.module_env))
+      local modenv = truss.extend_table({}, assert(truss.module_env))
       modenv._module_name = package_filepath
       modenv._path = pkg.name .. "/" .. package_filepath
       modenv.require = pkg.create_module_require(package_filepath)
       modenv._G = modenv
-      modenv._root = root
-      modenv.truss = core
-      modenv.log = core.log
-      setmetatable(modenv, core.disallow_globals_mt)
+      modenv.truss = truss
+      modenv.log = truss.log
+      setmetatable(modenv, truss.disallow_globals_mt)
       return modenv
     end
 
@@ -52,17 +46,17 @@ local function install(core)
     end
 
     function pkg.select_loader(subpath)
-      local ext = core.fs.file_extension(subpath)
-      return pkg.pkg_assert(pkg.loaders[ext], subpath, "No loader for " .. ext)
+      local ext = truss.fs.file_extension(subpath)
+      return pkg.assert(pkg.script_loaders[ext], subpath, "No loader for " .. ext)
     end
 
-    function pkg.pkg_error(path, msg)
+    function pkg.error(path, msg)
       error(table.concat{"[", pkg.name, "/", path, "]: ", msg})
     end
 
-    function pkg.pkg_assert(val, path, msg)
+    function pkg.assert(val, path, msg)
       if val == nil then
-        pkg.pkg_error(path, msg)
+        pkg.error(path, msg)
       end
       return val
     end
@@ -73,20 +67,20 @@ local function install(core)
       if not source then 
         return nil 
       end
-      source = core.fixscript(source)
+      source = truss.fixscript(source)
       local loader = pkg.select_loader(canonical_subpath)
-      local module_def, loaderror = core.loadstring(source, canonical_subpath, loader)
+      local module_def, loaderror = truss.loadstring(source, canonical_subpath, loader)
       if not module_def then 
-        pkg.pkg_error(canonical_subpath, loaderror) 
+        pkg.error(canonical_subpath, loaderror) 
       end
       local modenv = pkg.create_module_env(canonical_subpath)
       setfenv(module_def, modenv)
       local happy, evaluated_module = log.pcall(module_def)
       if not happy then 
-        pkg.pkg_error(canonical_subpath, evaluated_module) 
+        pkg.error(canonical_subpath, evaluated_module) 
       end
       if not evaluated_module then 
-        pkg.pkg_error(canonical_subpath, "did not return a table!") 
+        pkg.error(canonical_subpath, "did not return a table!") 
       end
       return evaluated_module
     end
@@ -108,16 +102,20 @@ local function install(core)
     local pkg = {
       fs = fs,
       name = name,
-      root = root
     }
-    setmetatable(pkg, {__index = assert(root.package_env)}) --?
-    pkg.pkg = pkg
-    setfenv(pkg_init, pkg)
+    local pkg_env = {
+      truss = root,
+      pkg = pkg,
+    }
+    setmetatable(pkg_env, {
+      __index = assert(root.package_env),
+    }) --?
+    setfenv(pkg_init, pkg_env)
     pkg_init()
     local package_dot_t = fs:read("package.t")
     if package_dot_t then
       log.debug("Found package.t")
-      core.dostring(core.fixscript(package_dot_t), name .. "/package.t", pkg)
+      core.dostring(core.fixscript(package_dot_t), name .. "/package.t", pkg_env)
     else
       log.debug("Did not find a package.t")
     end

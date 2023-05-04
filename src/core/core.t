@@ -56,29 +56,29 @@ local function _docore(fn)
   end
   table.insert(core._COREFILES, fn)
   assert(func, "Core load failure: " .. fn .. " -> " .. (err or ""))
-  func().install(core)
+  local res = func()
+  if res.install then res.install(core) end
+  return res
 end
 
 if not (core.version and core.version_emoji) then
   _docore("VERSION.lua")
 end
 _docore("_setup_utils.t")
+core.class = _docore("30log.lua")
 _docore("_setup_log.t")
 _docore("_setup_fs.t")
--- _docore("_setup_require.t")
 _docore("_setup_base_package.t")
 _docore("_setup_packages.t")
-_docore("_setup_user_config.t")
+local load_config = _docore("_setup_user_config.t").load_config
+local entry = _docore("_entry.t").entry
 
-if not core.config.no_auto_libraries then
-  core.require("core/VERSION.lua"):check()
-  core.require("osnative/timing.t").install(core)
-end
-_docore("_entry.t")
-
-
+local truss = core.create_root{}
 if embeds then
   rawset(_G, "truss", core)
 end
 
-return core
+load_config(truss)
+entry(truss)
+
+return truss
