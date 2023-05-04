@@ -1,22 +1,6 @@
 local function install(core)
   local log = core.log
 
-  core.disallow_globals_mt = {
-    __newindex = function (t,k,v)
-      local mname = rawget(t, "_path") or "???"
-      error("Module " .. mname .. " tried to create global '" .. k .. "'")
-    end,
-    __index = function (t,k)
-      local mname = rawget(t, "_path") or "???"
-      error("Module " .. mname .. " tried to access nil global '" .. k .. "'")
-    end
-  }
-
-  function core.fixscript(str)
-    if not str then return nil end
-    return str:gsub("\r", "")
-  end
-
   local function pkg_init()
     pkg.script_loaders = assert(truss.script_loaders)
 
@@ -34,7 +18,7 @@ local function install(core)
       modenv._G = modenv
       modenv.truss = truss
       modenv.log = truss.log
-      setmetatable(modenv, truss.disallow_globals_mt)
+      setmetatable(modenv, truss.strict_metatable)
       return modenv
     end
 
@@ -83,6 +67,17 @@ local function install(core)
         pkg.error(canonical_subpath, "did not return a table!") 
       end
       return evaluated_module
+    end
+
+    function pkg.list_files()
+      local listing = {}
+      for _, info in ipairs(pkg.fs:listdir("", true)) do
+        if info.is_file then
+          local modpath = info.path:gsub("[\\/]+", "/")
+          table.insert(listing, modpath)
+        end
+      end
+      return listing
     end
   end
 

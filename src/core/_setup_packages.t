@@ -235,16 +235,16 @@ local function install(core)
     if options.include_default_libs ~= false then
       -- hmmmmmmm
       root.add_singleton_package("ffi", require("ffi"), "builtin")
-      root.add_singleton_package("lua.bit", require("bit"), "builtin")
-      root.add_singleton_package("lua.jit", jit, "builtin")
-      root.add_singleton_package("lua.string", string, "builtin")
-      root.add_singleton_package("lua.io", io, "builtin")
-      root.add_singleton_package("lua.os", os, "builtin")
-      root.add_singleton_package("lua.table", table, "builtin")
-      root.add_singleton_package("lua.math", math, "builtin")
-      root.add_singleton_package("lua.package", package, "builtin")
-      root.add_singleton_package("lua.debug", debug, "builtin")
-      root.add_singleton_package("lua.coroutine", coroutine, "builtin")
+      root.add_singleton_package("bit", require("bit"), "builtin")
+      -- root.add_singleton_package("lua.jit", jit, "builtin")
+      -- root.add_singleton_package("lua.string", string, "builtin")
+      -- root.add_singleton_package("lua.io", io, "builtin")
+      -- root.add_singleton_package("lua.os", os, "builtin")
+      -- root.add_singleton_package("lua.table", table, "builtin")
+      -- root.add_singleton_package("lua.math", math, "builtin")
+      -- root.add_singleton_package("lua.package", package, "builtin")
+      -- root.add_singleton_package("lua.debug", debug, "builtin")
+      -- root.add_singleton_package("lua.coroutine", coroutine, "builtin")
     end
 
     if options.include_class ~= false then
