@@ -20,6 +20,8 @@ describe("arithmetic", () => {
 });
 ]]
 
+local sutil = require("util/string.t")
+
 local function NYI()
   assert(false, "NYI!")
 end
@@ -171,6 +173,100 @@ compare.exact_equals = {
 }
 ]]
 
+local matchers = {}
+
+function matchers:to_be(val)
+  self:_result(self.value == val)
+end
+
+function matchers:to_equal(val)
+  self:_result(deepequal(self.value, val))
+end
+
+function matchers:to_string_equal(val)
+  self:toEqual(val)
+end
+
+function matchers:to_be_nil()
+  self:toBe(nil)
+end
+
+function matchers:to_be_null()
+  self:toBeNil()
+end
+
+function matchers:to_be_undefined()
+  self:toBeNil()
+end
+
+function matchers:to_be_NaN()
+  local isnan = (type(self.value) == 'number') and (self.value ~= self.value)
+  self:_result(isnan)
+end
+
+function matchers:to_be_undefined()
+  self:_not():toBeUndefined()
+end
+
+function matchers:to_be_falsy()
+  self:_result(not self.value)
+end
+
+function matchers:to_be_truthy()
+  self:_result(not not self.value)
+end
+
+function matchers:to_contain(val)
+  self:_result(contains(self.value, val))
+end
+
+function matchers:to_throw(expected_error)
+  local happy, errmsg = pcall(self.value)
+  local msg_ok = true
+  if expected_error then
+    msg_ok = errmsg and errmsg:find(expected_error)
+    msg_ok = not not msg_ok -- coerce to bool
+  end
+  self:_result((not happy) and msg_ok)
+end
+
+function matchers:to_have_length(len)
+  self:_result(#self.value == len)
+end
+
+function matchers:to_have_property(path, value)
+  local propval = get_prop(self.value, path)
+  if value then
+    self:_result(strict_deepequal(propval, value))
+  else
+    self:_result(propval ~= nil)
+  end
+end
+
+function matchers:to_be_close(val)
+  self:_result(is_close(self.value, val))
+end
+
+function matchers:to_be_greater_than(val)
+  self:_result(self.value > val)
+end
+
+function matchers:to_be_greater_than_or_equal(val)
+  self:_result(self.value >= val)
+end
+
+function matchers:to_be_less_than(val)
+  self:_result(self.value < val)
+end
+
+function matchers:to_be_less_than_or_equal(val)
+  self:_result(self.value <= val)
+end
+
+function matchers:to_be_in_range(min, max)
+  self:_result(self.value >= min and self.value <= max)
+end
+
 local Expectation = truss.nanoclass()
 Expectation.__index = function(self, k)
   if k == 'not' then
@@ -193,6 +289,15 @@ local function checkself(self)
   )
 end
 
+for name, matcher in pairs(matchers) do
+  local mfunc = function(self, ...)
+    checkself(self)
+    return matcher(self, ...)
+  end
+  Expectation[name] = mfunc
+  Expectation[sutil.camel_case(name)] = mfunc
+end
+
 function Expectation:_result(is_ok)
   if self.inverted then
     is_ok = not is_ok
@@ -203,118 +308,6 @@ end
 function Expectation:_not()
   self.inverted = not self.inverted
   return self
-end
-
-function Expectation:toBe(val)
-  checkself(self)
-  self:_result(self.value == val)
-end
-
-function Expectation:toEqual(val)
-  checkself(self)
-  self:_result(deepequal(self.value, val))
-end
-
-function Expectation:toStrictEqual(val)
-  checkself(self)
-  self:toEqual(val)
-end
-
-function Expectation:toBeNil()
-  checkself(self)
-  self:toBe(nil)
-end
-
-function Expectation:toBeNull()
-  checkself(self)
-  self:toBeNil()
-end
-
-function Expectation:toBeUndefined()
-  checkself(self)
-  self:toBeNil()
-end
-
-function Expectation:toBeNaN()
-  checkself(self)
-  local isnan = (type(self.value) == 'number') and (self.value ~= self.value)
-  self:_result(isnan)
-end
-
-function Expectation:toBeDefined()
-  checkself(self)
-  self:_not():toBeUndefined()
-end
-
-function Expectation:toBeFalsy()
-  checkself(self)
-  self:_result(not self.value)
-end
-
-function Expectation:toBeTruthy()
-  checkself(self)
-  self:_result(not not self.value)
-end
-
-function Expectation:toContain(val)
-  checkself(self)
-  self:_result(contains(self.value, val))
-end
-
-function Expectation:toThrow(expected_error)
-  checkself(self)
-  local happy, errmsg = pcall(self.value)
-  local msg_ok = true
-  if expected_error then
-    msg_ok = errmsg and errmsg:find(expected_error)
-    msg_ok = not not msg_ok -- coerce to bool
-  end
-  self:_result((not happy) and msg_ok)
-end
-
-function Expectation:toHaveLength(len)
-  checkself(self)
-  self:_result(#self.value == len)
-end
-
-function Expectation:toHaveProperty(path, value)
-  checkself(self)
-  local propval = get_prop(self.value, path)
-  if value then
-    self:_result(strict_deepequal(propval, value))
-  else
-    self:_result(propval ~= nil)
-  end
-end
-
-function Expectation:toBeCloseTo(val)
-  checkself(self)
-  self:_result(is_close(self.value, val))
-end
-
-function Expectation:toBeGreaterThan(val)
-  checkself(self)
-  self:_result(self.value > val)
-end
-
-function Expectation:toBeGreaterThanOrEqual(val)
-  checkself(self)
-  self:_result(self.value >= val)
-end
-
-function Expectation:toBeLessThan(val)
-  checkself(self)
-  self:_result(self.value < val)
-end
-
-function Expectation:toBeLessThanOrEqual(val)
-  checkself(self)
-  self:_result(self.value <= val)
-end
-
-function Expectation:toBeInRange(min, max)
-  checkself(self)
-  self:_result(self.value >= min and self.value <= max)
 end
 
 function jape.expect(val)

@@ -20,8 +20,8 @@ local function test_srand(jape)
       maxval = math.max(maxval, b)
       minval = math.min(minval, b)
     end
-    expect(maxval):toBe(255)
-    expect(minval):toBe(0)
+    expect(maxval):to_be(255)
+    expect(minval):to_be(0)
   end)
 
   test("range-limited generation", function()
@@ -30,17 +30,17 @@ local function test_srand(jape)
       local b = gen:rand_unsigned(257)
       maxval = math.max(maxval, b)
     end
-    expect(maxval):toBe(256)
+    expect(maxval):to_be(256)
   end)
 
   test("degenerate cases", function()
-    expect(gen:rand_unsigned(1)):toBe(0)
-    expect(gen:rand_unsigned(0)):toBe(0)
+    expect(gen:rand_unsigned(1)):to_be(0)
+    expect(gen:rand_unsigned(0)):to_be(0)
   end)
 
   test("big value generation", function()
     local val = gen:rand_unsigned(100000)
-    expect(val):toBeLessThan(100000)
+    expect(val):to_be_less_than(100000)
   end)
 
   test("uniformity", function()
@@ -50,7 +50,7 @@ local function test_srand(jape)
       counts[b] = counts[b] + 1
     end
     for idx = 1, 4 do
-      expect(counts[idx]):toBeInRange(8000, 12000)
+      expect(counts[idx]):to_be_in_range(8000, 12000)
     end
   end)
 end
