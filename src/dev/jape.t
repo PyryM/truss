@@ -240,6 +240,8 @@ local function describe(groupname, tests)
 end
 
 local function init_tests()
+  -- TODO: arg handling?
+  
 end
 
 local function update_tests()
