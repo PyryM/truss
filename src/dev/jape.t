@@ -419,7 +419,7 @@ function jape.initialize()
   jape.reset_stats()
   log.push_scope()
   log.clear_enabled()
-  log.set_enabled({"crit", "fatal", "warn"})
+  log.set_enabled({"crit", "fatal", "error", "warn"})
 end
 
 function jape.finalize()
@@ -431,15 +431,14 @@ function jape.finalize()
 end
 
 function jape.run_tests(testlist)
+  enter_scope("top")
   for _, test_path in ipairs(testlist) do
     local tests = truss.try_require(test_path)
     if tests then
-      log.info("Running tests for", info.name)
       (tests.run or tests.init)(jape)
-    else
-      log.info("No tests for", info.name)
     end
   end
+  leave_scope("top")
   return (jape.stats.failed == 0) and (jape.stats.errors == 0)
 end
 
