@@ -133,13 +133,22 @@ end
 local function skip_test(name)
 end
 
-local function test_result(is_ok)
+local function format_failure(msg, ...)
+  local args = {}
+  for idx = 1, select('#', ...) do
+    args[idx] = deepprint(select(idx, ...))
+  end
+  return msg:format(unpack(args))
+end
+
+local function test_result(is_ok, msg, ...)
   local cur = assert(jape.current_test, "no current test?")
   cur.count = cur.count + 1
   if is_ok then
     cur.successes = cur.successes + 1
   else
     cur.failures = cur.failures + 1
+    print("FAILED [" .. cur.name .. "]: " .. format_failure(msg, ...))
   end
 end
 
@@ -176,48 +185,48 @@ compare.exact_equals = {
 local matchers = {}
 
 function matchers:to_be(val)
-  self:_result(self.value == val)
+  self:_result(self.value == val, "%s == %s", self.value, val)
 end
 
 function matchers:to_equal(val)
-  self:_result(deepequal(self.value, val))
+  self:_result(deepequal(self.value, val), "deepeq(%s, %s)", self.value, val)
 end
 
-function matchers:to_string_equal(val)
-  self:toEqual(val)
+function matchers:to_strict_equal(val)
+  self:to_equal(val)
 end
 
 function matchers:to_be_nil()
-  self:toBe(nil)
+  self:to_be(nil)
 end
 
 function matchers:to_be_null()
-  self:toBeNil()
+  self:to_be_nil()
 end
 
 function matchers:to_be_undefined()
-  self:toBeNil()
+  self:to_be_nil()
 end
 
 function matchers:to_be_NaN()
   local isnan = (type(self.value) == 'number') and (self.value ~= self.value)
-  self:_result(isnan)
+  self:_result(isnan, "%s is NaN", self.value)
 end
 
-function matchers:to_be_undefined()
-  self:_not():toBeUndefined()
+function matchers:to_be_defined()
+  self:_not():to_be_nil()
 end
 
 function matchers:to_be_falsy()
-  self:_result(not self.value)
+  self:_result(not self.value, "%s is falsy", self.value)
 end
 
 function matchers:to_be_truthy()
-  self:_result(not not self.value)
+  self:_result(not not self.value, "%s is truthy", self.value)
 end
 
 function matchers:to_contain(val)
-  self:_result(contains(self.value, val))
+  self:_result(contains(self.value, val), "%s contains %s", self.value, val)
 end
 
 function matchers:to_throw(expected_error)
@@ -227,44 +236,47 @@ function matchers:to_throw(expected_error)
     msg_ok = errmsg and errmsg:find(expected_error)
     msg_ok = not not msg_ok -- coerce to bool
   end
-  self:_result((not happy) and msg_ok)
+  self:_result((not happy) and msg_ok, "function throws")
 end
 
 function matchers:to_have_length(len)
-  self:_result(#self.value == len)
+  self:_result(#self.value == len, "len(%s) == %s", self.value, len)
 end
 
 function matchers:to_have_property(path, value)
   local propval = get_prop(self.value, path)
   if value then
-    self:_result(strict_deepequal(propval, value))
+    self:_result(strict_deepequal(propval, value), "%s has property", self.value)
   else
-    self:_result(propval ~= nil)
+    self:_result(propval ~= nil, "%s has property", self.value)
   end
 end
 
 function matchers:to_be_close(val)
-  self:_result(is_close(self.value, val))
+  self:_result(is_close(self.value, val), "%s is close to %s", self.value, val)
 end
 
 function matchers:to_be_greater_than(val)
-  self:_result(self.value > val)
+  self:_result(self.value > val, "%s > %s", self.value, val)
 end
 
 function matchers:to_be_greater_than_or_equal(val)
-  self:_result(self.value >= val)
+  self:_result(self.value >= val, "%s >= %s", self.value, val)
 end
 
 function matchers:to_be_less_than(val)
-  self:_result(self.value < val)
+  self:_result(self.value < val, "%s < %s", self.value, val)
 end
 
 function matchers:to_be_less_than_or_equal(val)
-  self:_result(self.value <= val)
+  self:_result(self.value <= val, "%s <= %s", self.value, val)
 end
 
 function matchers:to_be_in_range(min, max)
-  self:_result(self.value >= min and self.value <= max)
+  self:_result(
+    self.value >= min and self.value <= max,
+    "%s <= %s <= %s", min, self.value, max
+  )
 end
 
 local Expectation = truss.nanoclass()
@@ -298,11 +310,12 @@ for name, matcher in pairs(matchers) do
   Expectation[sutil.camel_case(name)] = mfunc
 end
 
-function Expectation:_result(is_ok)
+function Expectation:_result(is_ok, msg, ...)
   if self.inverted then
     is_ok = not is_ok
+    msg = "not (" .. msg .. ")"
   end
-  test_result(is_ok)
+  test_result(is_ok, msg, ...)
 end
 
 function Expectation:_not()
