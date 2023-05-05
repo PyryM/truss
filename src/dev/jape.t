@@ -336,11 +336,18 @@ function jape.describe(groupname, tests)
   leave_group()
 end
 
-function jape.init()
-  -- TODO: arg handling?
-  local pkginfo = require("dev/pkginfo.t")
-  for _, info in ipairs(pkginfo.list_packages()) do
-    local test_path = info.name .. "/" .. "_tests.t"
+function jape.reset_stats()
+  jape.stats = {
+    passed = 0, 
+    failed = 0, 
+    errors = 0, 
+    count = 0
+  }
+end
+
+function jape.run_tests(testlist)
+  jape.reset_stats()
+  for _, test_path in ipairs(testlist) do
     local tests = truss.try_require(test_path)
     if tests then
       log.info("Running tests for", info.name)
@@ -348,6 +355,20 @@ function jape.init()
     else
       log.info("No tests for", info.name)
     end
+  end
+  return (jape.stats.failed == 0) and (jape.stats.errors == 0)
+end
+
+function jape.init()
+  -- TODO: arg handling?
+  local pkginfo = require("dev/pkginfo.t")
+  local testlist = {}
+  for _, info in ipairs(pkginfo.list_packages()) do
+    local test_path = info.name .. "/" .. "_tests.t"
+    table.insert(testlist, test_path)
+  end
+  if not jape.run_tests(testlist) then
+    return 1
   end
 end
 
