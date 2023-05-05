@@ -45,15 +45,19 @@ local function install(core)
       return val
     end
 
+    function pkg.get_source(canonical_subpath)
+      local source = pkg.fs:read(canonical_subpath)
+      if source then return truss.fixscript(source) end
+    end
+
     function pkg.internal_require(canonical_subpath)
       local modname = pkg.name .. "/" .. canonical_subpath
-      local source = pkg.fs:read(canonical_subpath)
+      local source = pkg.get_source(canonical_subpath)
       if not source then 
         return nil 
       end
-      source = truss.fixscript(source)
       local loader = pkg.select_loader(canonical_subpath)
-      local module_def, loaderror = truss.loadstring(source, canonical_subpath, loader)
+      local module_def, loaderror = truss.loadstring(source, modname, loader)
       if not module_def then 
         pkg.error(canonical_subpath, loaderror) 
       end

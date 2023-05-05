@@ -33,6 +33,9 @@ function core.TODO()
   error("TODO not implemented!")
 end
 
+-- core.retain_source = false
+-- core.source_map = {}
+
 function core.loadstring(str, strname, loader)
   local s = str
   local generator_func = function()
@@ -40,7 +43,9 @@ function core.loadstring(str, strname, loader)
     s = nil
     return s2
   end
-  return (loader or terralib.load)(generator_func, '@' .. strname)
+  local fname = '@' .. strname
+  --if core.retain_source then core.source_map[fname] = str end
+  return (loader or terralib.load)(generator_func, fname)
 end
 
 core._COREPATH = GLOBALS._COREPATH or "src/core/"
@@ -50,7 +55,7 @@ local function _docore(fn)
   local interned = embeds and embeds[fn]
   local func, err
   if interned then
-    func, err = core.loadstring(interned, fn)
+    func, err = core.loadstring(interned, "core/" .. fn)
   else
     func, err = terralib.loadfile(core._COREPATH .. fn)
   end

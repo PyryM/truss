@@ -98,8 +98,34 @@ end
 local jape = {}
 jape.pre_funcs = {}
 jape.post_funcs = {}
+jape.scopes = truss.Stack:new()
+
+local function enter_scope(kind, name)
+  if jape.scopes:size() == 0 then
+    jape.initialize()
+  end
+  jape.scopes:push({kind, name})
+end
+
+local function leave_scope(kind, name)
+  local top = jape.scopes:peek()
+  local curkind = top and top[1]
+  if curkind ~= kind then
+    log.warn(
+      ("Scope mismatch: current is %s, tried to leave %s"):format(
+        tostring(curkind, kind)
+      )
+    )
+    return
+  end
+  jape.scopes:pop()
+  if jape.scopes:size() == 0 then
+    jape.finalize()
+  end
+end
 
 local function enter_group(name)
+  enter_scope("group", name)
   jape.current_group = name
 end
 
@@ -107,10 +133,12 @@ local function leave_group()
   jape.current_group = nil
   jape.pre_funcs = {}
   jape.post_funcs = {}
+  leave_scope("group")
 end
 
 local function enter_test(name)
-  jape.current_test = {name = name, count = 0, successes = 0, failures = 0, errors = 0}
+  enter_scope("test", name)
+  jape.current_test = {name = name, count = 0, passed = 0, failed = 0}
   for _, func in ipairs(jape.pre_funcs) do
     func()
   end
@@ -121,16 +149,20 @@ local function leave_test()
     func()
   end
   local cur = jape.current_test
-  local success = cur.successes == cur.count
+  local success = cur.passed == cur.count
   if success then
+    jape.stats.passed = jape.stats.passed + 1
     print(cur.name, "[OK]")
   else
+    jape.stats.failed = jape.stats.failed + 1
     print(cur.name, "[FAIL]")
   end
   jape.current_test = nil
+  leave_scope("test")
 end
 
 local function skip_test(name)
+  jape.stats.skipped = jape.stats.skipped + 1
 end
 
 local function format_failure(msg, ...)
@@ -141,14 +173,49 @@ local function format_failure(msg, ...)
   return msg:format(unpack(args))
 end
 
+local function find_failure_origin()
+  for idx = 1, 100 do
+    local info = debug.getinfo(idx, "Sl")
+    if not info then break end
+    if not info.short_src:find("jape.t", 1, true) then
+      local source = info.source
+      if source:sub(1,1) == "@" then
+        source = truss.get_source(info.source:sub(2))
+      end
+      if source then
+        local lines = sutil.split_lines(source)
+        source = lines[info.currentline]
+      end
+      return info.short_src, info.currentline, source or "?"
+    end
+  end
+  return "unknown", 0, ""
+end
+
+
 local function test_result(is_ok, msg, ...)
-  local cur = assert(jape.current_test, "no current test?")
+  local cur = jape.current_test
+  if not cur then
+    log.warn("No current test!")
+    return
+  end
   cur.count = cur.count + 1
-  if is_ok then
-    cur.successes = cur.successes + 1
+  local failed = (not is_ok) or (is_ok == "error")
+  local fail_trace = nil
+  if failed then
+    local sourcefile, linenum, sourceline = find_failure_origin()
+    fail_trace = sourcefile .. ": " .. linenum .. "> " .. sourceline
+  end
+  if is_ok == "error" then
+    cur.failed = cur.failed + 1
+    print("ERROR [" .. cur.name .. "]: " .. msg)
+    print("at " .. fail_trace)
+  elseif is_ok then
+    cur.passed = cur.passed + 1
   else
-    cur.failures = cur.failures + 1
+    cur.failed = cur.failed + 1
     print("FAILED [" .. cur.name .. "]: " .. format_failure(msg, ...))
+    print("at " .. fail_trace)
   end
 end
 
@@ -160,7 +227,8 @@ Test.__call = function(self, name, testfunc)
   enter_test(name)
   local happy, errmsg = pcall(testfunc, jape)
   if not happy then
-    log.error("Test", name, "had errors:", errmsg)
+    --log.error("Test", name, "had errors:", errmsg)
+    test_result("error", errmsg)
   end
   leave_test()
 end
@@ -341,12 +409,28 @@ function jape.reset_stats()
     passed = 0, 
     failed = 0, 
     errors = 0, 
+    skipped = 0,
     count = 0
   }
 end
 
-function jape.run_tests(testlist)
+function jape.initialize()
+  log.crit("Initializing Jape!")
   jape.reset_stats()
+  log.push_scope()
+  log.clear_enabled()
+  log.set_enabled({"crit", "fatal", "warn"})
+end
+
+function jape.finalize()
+  log.crit("Finalizing Jape!")
+  print("PASSED: " .. jape.stats.passed)
+  print("FAILED: " .. jape.stats.failed + jape.stats.errors)
+  print("SKIPPED: " .. jape.stats.skipped)
+  log.pop_scope()
+end
+
+function jape.run_tests(testlist)
   for _, test_path in ipairs(testlist) do
     local tests = truss.try_require(test_path)
     if tests then

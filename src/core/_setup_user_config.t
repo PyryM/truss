@@ -77,14 +77,8 @@ local function load_config(truss)
   elseif log_enabled == false then
     log_enabled = {"~all"}
   end
-  log.enabled = {}
-  for _, level in ipairs(log_enabled) do
-    if level:sub(1,1) == "~" then
-      log.enabled[level:sub(2,-1)] = false
-    else
-      log.enabled[level] = true
-    end
-  end
+  log.clear_enabled()
+  log.set_enabled(log_enabled)
 
   log.info("Rootdir:", truss.rootdir)
 

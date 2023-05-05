@@ -64,11 +64,35 @@ local function install(core)
     return "[" .. term.pad(s, n or 7) .. "]"
   end
 
-  -- log can remain a global for now
   local log = core._declare_builtin("log", {
     enabled = {all = true}, --debug = false, path = false, perf = false}, 
+    _enabled_stack = core.Stack:new(),
     printing_to_term = true
   })
+
+  function log.push_scope()
+    log._enabled_stack:push(log.enabled)
+    log.enabled = core.extend_table({}, log.enabled)
+  end
+
+  function log.pop_scope()
+    log.enabled = log._enabled_stack:pop() or {}
+  end
+
+  function log.clear_enabled()
+    log.enabled = {}
+  end
+
+  function log.set_enabled(enabled)
+    for _, level in ipairs(enabled) do
+      if level:sub(1,1) == "~" then
+        log.enabled[level:sub(2,-1)] = false
+      else
+        log.enabled[level] = true
+      end
+    end
+  end
+
   core.log = log
   log.colors = {
     alert = term.color(term.BLACK, term.WHITE),

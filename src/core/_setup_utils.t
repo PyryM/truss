@@ -13,6 +13,28 @@ local function install(core)
     return t
   end
 
+  local Stack = core.nanoclass()
+  function Stack:init()
+    self.items = {}
+  end
+  function Stack:push(item)
+    local items = self.items
+    items[#items + 1] = item
+  end
+  function Stack:pop()
+    local items = self.items
+    local last = items[#items]
+    items[#items] = nil
+    return last
+  end
+  function Stack:peek()
+    return self.items[#self.items]
+  end
+  function Stack:size()
+    return #self.items
+  end
+  core.Stack = Stack
+
   local library_extensions = {Windows = ".dll", Linux = ".so", OSX = ".dylib", 
                               BSD = ".so", POSIX = ".so", Other = ""}
   local libary_prefixes = {Windows = "", Linux = "lib", OSX = "lib",

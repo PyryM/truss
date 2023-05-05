@@ -71,14 +71,33 @@ local function install(core)
       return body
     end
 
-    function root._require(path, notfound)
+    function root.resolve_package(path, notfound)
       local pkg_name, subpath = core.split_package_path(path)
       log.debug(("pkg: %s, subpath: %s"):format(pkg_name, subpath))
       local pkg = root.load_package(pkg_name)
-      if not pkg then 
+      if not pkg then return nil end
+      subpath = pkg.resolve_path(subpath)
+      return pkg, pkg_name, subpath
+    end
+
+    function root.get_source(path)
+      local pkg, pkg_name, subpath = root.resolve_package(path)
+      if not pkg then return nil end
+      return pkg.get_source(subpath)
+    end
+
+    function root._require(path, notfound)
+      -- local pkg_name, subpath = core.split_package_path(path)
+      -- log.debug(("pkg: %s, subpath: %s"):format(pkg_name, subpath))
+      -- local pkg = root.load_package(pkg_name)
+      -- if not pkg then 
+      --   return notfound("No package [" .. pkg_name .. "]")
+      -- end
+      -- subpath = pkg.resolve_path(subpath)
+      local pkg, pkg_name, subpath = root.resolve_package(path)
+      if not pkg then
         return notfound("No package [" .. pkg_name .. "]")
       end
-      subpath = pkg.resolve_path(subpath)
       local canonical_path = pkg_name .. "/" .. subpath
       local loaded = root.loaded[canonical_path]
       if loaded == CYCLICAL_SENTRY then 
@@ -111,15 +130,6 @@ local function install(core)
       return root._require(path, log_not_found)
     end
 
-    function root.readfile(path)
-    end
-
-    function root.listdir(path)
-    end
-
-    function root.fork(options)
-    end
-
     local function infer_name(source)
       if type(source) == 'string' then
         local parts = core.fs.splitpath(source)
@@ -140,7 +150,6 @@ local function install(core)
       end
     end
 
-    -- TODO: reconsider this signature
     function root.add_package(info)
       if type(info) == 'string' then info = {source_path = info} end
       if not info.name then
@@ -180,82 +189,13 @@ local function install(core)
       end
     end
 
-    -- root.file_loaders = {}
-    -- root.file_loaders.file = function(_, path)
-      
-    -- end
-    function root.parse_truss_path(path)
-      local proto, proto_path = path:match("^([^:]+):(.*)$")
-      if proto then
-        local fchar = proto_path:sub(1,1)
-        if jit.os == "Windows" and fchar == "\\" then
-          -- a path like "C:\foo\bar.txt"
-          return "file", path
-        end
-        return proto, proto_path
-      else -- assume file
-        return "file", path
-      end
-    end
-
-    -- hmmmm
-    --[[
-    function root.resolve(path)
-      local proto, subpath = root.parse_truss_path(fn)
-      local loader = root.data_sources[proto]
-      return loader, subpath
-    end
-
-    function root.readfile(fn)
-      local loader, subpath = root.resolve(fn)
-      if not loader then return nil end
-      return loader:read(subpath)
-    end
-
-    function root.listdir(path, recursive)
-      local loader, subpath = root.resolve(path)
-      if not loader then return nil end
-      return loader:listdir(subpath, recursive)
-    end
-
-    function root.string_as_buffer(str)
-      if not str then return nil end
-      return {data = terralib.cast(&uint8, str), str = str, size = #str}
-    end
-
-    function root.read_file_buffer(fn)
-      return root.string_as_buffer(root.read_file(fn))
-    end
-    ]]
-
-    -- if options.include_core ~= false then
-    --   root.add_singleton_package('truss', core)
-    -- end
-
     if options.include_default_libs ~= false then
-      -- hmmmmmmm
       root.add_singleton_package("ffi", require("ffi"), "builtin")
       root.add_singleton_package("bit", require("bit"), "builtin")
-      -- root.add_singleton_package("lua.jit", jit, "builtin")
-      -- root.add_singleton_package("lua.string", string, "builtin")
-      -- root.add_singleton_package("lua.io", io, "builtin")
-      -- root.add_singleton_package("lua.os", os, "builtin")
-      -- root.add_singleton_package("lua.table", table, "builtin")
-      -- root.add_singleton_package("lua.math", math, "builtin")
-      -- root.add_singleton_package("lua.package", package, "builtin")
-      -- root.add_singleton_package("lua.debug", debug, "builtin")
-      -- root.add_singleton_package("lua.coroutine", coroutine, "builtin")
     end
 
     if options.include_class ~= false then
       root.add_singleton_package("class", core.class, "builtin")
-    end
-
-    if options.include_builtins ~= false then
-      -- make 'builtins' requireable
-      for name, builtin in pairs(core._builtins) do
-        root.add_singleton_package("truss." .. name, builtin, "builtin")
-      end
     end
 
     return root

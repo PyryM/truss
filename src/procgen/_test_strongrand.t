@@ -8,7 +8,6 @@ local function test_srand(jape)
 
   local gen
   jape.before_each(function()
-    log.warn("Creating new strongrand!")
     gen = srand.StrongRandom("some test seed")
   end)
 
@@ -36,6 +35,14 @@ local function test_srand(jape)
   test("degenerate cases", function()
     expect(gen:rand_unsigned(1)):to_be(0)
     expect(gen:rand_unsigned(0)):to_be(0)
+  end)
+
+  test("breaks", function()
+    expect(false):to_be_truthy()
+  end)
+
+  test("breaks2", function()
+    expect(10):to_be(12)
   end)
 
   test("big value generation", function()
