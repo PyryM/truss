@@ -1,39 +1,42 @@
 local m = {}
 
-local function test_file(t)
+local function test_files(jape)
   local substrate = require("substrate")
   local File = substrate.File
   local ByteArray = substrate.ByteArray
   local StringSlice = substrate.StringSlice
   local ffi = require("ffi")
+  local test, expect = jape.test, jape.expect
 
   local function as_string(buff)
     return ffi.string(buff.data, buff.size)
   end
 
-  local function test_read(filedesc, filecontents)
-    local dest = terralib.new(ByteArray)
-    dest:init()
-    dest:allocate(2^16)
-  
-    local filename = os.tmpname()
-    t.print("tempname: " .. filename)
-    local outfile = io.open(filename, "wb")
-  
-    outfile:write(filecontents)
-    outfile:close()
-  
-    local infile = terralib.new(File)
-    infile:init()
-    t.ok(infile:open(filename, false), filedesc .. ": opened")
-  
-    infile:read_all_into(dest, false)
-    t.expect(tonumber(dest.size), #filecontents, filedesc .. ": read back correct size")
-    t.expect(as_string(dest), filecontents, filedesc .. ": read back correct file contents")
-  
-    infile:close()
-    os.remove(filename)
-    dest:release()
+  local function test_read(desc, filecontents)
+    -- TODO: setup and teardown?
+    test(desc, function()
+      local dest = terralib.new(ByteArray)
+      dest:init()
+      dest:allocate(2^16)
+    
+      local filename = os.tmpname()
+      local outfile = io.open(filename, "wb")
+    
+      outfile:write(filecontents)
+      outfile:close()
+    
+      local infile = terralib.new(File)
+      infile:init()
+      expect(infile:open(filename, false)):to_be_truthy()
+    
+      infile:read_all_into(dest, false)
+      expect(tonumber(dest.size)):to_be(#filecontents)
+      expect(as_string(dest)):to_be(filecontents)
+    
+      infile:close()
+      os.remove(filename)
+      dest:release()
+    end)
   end
 
   test_read("text", [[
@@ -49,8 +52,8 @@ local function test_file(t)
   test_read("all zeros", zeros)
 end
 
-function m.run(test)
-  test("file basics", test_file)
+function m.init(jape)
+  (jape or require("dev/jape.t")).describe("test files", test_files)
 end
 
 return m

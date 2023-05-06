@@ -37,14 +37,6 @@ local function test_srand(jape)
     expect(gen:rand_unsigned(0)):to_be(0)
   end)
 
-  test("breaks", function()
-    expect(false):to_be_truthy()
-  end)
-
-  test("breaks2", function()
-    expect(10):to_be(12)
-  end)
-
   test("big value generation", function()
     local val = gen:rand_unsigned(100000)
     expect(val):to_be_less_than(100000)

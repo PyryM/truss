@@ -304,7 +304,8 @@ function matchers:to_throw(expected_error)
     msg_ok = errmsg and errmsg:find(expected_error)
     msg_ok = not not msg_ok -- coerce to bool
   end
-  self:_result((not happy) and msg_ok, "function throws")
+  local throw_msg = ((not happy) and tostring(errmsg)) or "false"
+  self:_result((not happy) and msg_ok, "function throws: " .. throw_msg)
 end
 
 function matchers:to_have_length(len)
