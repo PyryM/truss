@@ -1,58 +1,5 @@
 local function entry(truss)
   local log = truss.log
-  if not truss.GLOBALS._TRUSS_RUNNING then return end
-
-  local args = truss.GLOBALS._TRUSS_ARGS
-  truss.args = args or {}
-
-  local main_module
-  if args then
-    main_module = args[2] or "main"
-    if truss.config and truss.config.entrypoints[main_module] then
-      main_module = truss.config.entrypoints[main_module]
-    end
-    log.info("Main entrypoint:", tostring(main_module))
-  end
-
-  if main_module then
-    truss.main = truss.require(main_module)
-  end
-
-  if not truss.main then 
-    log.info("No main module to run.")
-    _TRUSS_RUNNING = false
-    return 
-  end
-
-  -- register a function to be called right before truss quits
-  truss._cleanup_functions = {}
-  function truss.on_quit(f)
-    truss._cleanup_functions[f] = f
-  end
-
-  local function on_update(f)
-    rawset(_G, '_core_update', f)
-  end
-
-  -- the true quit function
-  local function _truss_quit()
-    log.info("Shutdown: calling cleanup functions")
-    for _, f in pairs(truss._cleanup_functions) do f() end
-    if _TRUSS_RETURN_CODE ~= 0 then
-      log.error("Error code: [" .. tostring(_TRUSS_RETURN_CODE) .. "]")
-    end
-    _TRUSS_RUNNING = false
-    on_update(nil)
-    log.info("💤 Goodbye.")
-  end
-
-  -- gracefully quit truss with an optional error code
-  function truss.quit(code)
-    log.info("Shutdown requested from Lua")
-    if code then _TRUSS_RETURN_CODE = code end
-    on_update(_truss_quit)
-  end
-
   local function guarded_call(f, ...)
     local args = {...}
     local happy, err = xpcall(
@@ -72,12 +19,67 @@ local function entry(truss)
     end
   end
 
-  local init_retval = guarded_call(truss.main.init)
+  if not truss.GLOBALS._TRUSS_RUNNING then return end
+  if not truss.config then
+    log.warn("truss not configured, not running entry")
+    _TRUSS_RUNNING = false
+    return
+  end
 
-  if truss.main.update then
-    on_update(function() guarded_call(truss.main.update) end)
-  else
-    log.info("Main has no 'update', just stopping.")
+  local args = truss.GLOBALS._TRUSS_ARGS or {}
+  truss.args = args
+
+  local entry_name = args[2]
+  log.info("entrypoint:", tostring(entry_name))
+  local entry_func = truss.config.entrypoints.DEFAULT
+  if entry_name and truss.config.entrypoints[entry_name] then
+    entry_func = truss.config.entrypoints[entry_name]
+  end
+  if not entry_func then
+    log.error("No valid entrypoint specified.")
+    _TRUSS_RUNNING = false
+    return
+  end
+    
+  -- register a function to be called right before truss quits
+  truss._cleanup_functions = {}
+  function truss.on_quit(f)
+    truss._cleanup_functions[f] = f
+  end
+
+  function truss.on_update(f)
+    truss._update_func = f
+  end
+
+  -- the true quit function
+  local function _truss_quit()
+    log.info("Shutdown: calling cleanup functions")
+    for _, f in pairs(truss._cleanup_functions) do f() end
+    if _TRUSS_RETURN_CODE ~= 0 then
+      log.error("Error code: [" .. tostring(_TRUSS_RETURN_CODE) .. "]")
+    end
+    _TRUSS_RUNNING = false
+    truss.on_update(nil)
+    log.info("💤 Goodbye.")
+  end
+
+  -- gracefully quit truss with an optional error code
+  function truss.quit(code)
+    log.info("Shutdown requested from Lua")
+    if code then _TRUSS_RETURN_CODE = code end
+    truss.on_update(_truss_quit)
+  end
+
+  rawset(_G, '_core_update', function(...)
+    if truss._update_func then
+      guarded_call(truss._update_func, ...)
+    end
+  end)
+
+  local init_retval = guarded_call(entry_func)
+
+  if not truss._update_func then
+    log.info("No on_update was set, stopping.")
     truss.quit(init_retval)
   end
 end

@@ -75,7 +75,7 @@ local function install(core)
       local pkg_name, subpath = core.split_package_path(path)
       log.debug(("pkg: %s, subpath: %s"):format(pkg_name, subpath))
       local pkg = root.load_package(pkg_name)
-      if not pkg then return nil end
+      if not pkg then return nil, pkg_name, subpath end
       subpath = pkg.resolve_path(subpath)
       return pkg, pkg_name, subpath
     end

@@ -436,7 +436,9 @@ function jape.run_tests(testlist)
   for _, test_path in ipairs(testlist) do
     local tests = truss.try_require(test_path)
     if tests then
-      (tests.run or tests.init)(jape)
+      -- try to be as generous as possible re: what the entrypoint
+      -- is named.
+      (tests.run or tests.main or tests.init)(jape)
     end
   end
   leave_scope("top")

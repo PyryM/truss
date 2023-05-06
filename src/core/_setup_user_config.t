@@ -6,16 +6,11 @@ local function load_config(truss)
     cpu_triple = "native",
     cpu_features = "",
     cpu_opt_profile = {},
-    --paths = {{".", truss.working_dir}},
     package_dirs = {truss.fs.joinpath(truss.binary_dir, "src")},
     packages = {{"@cwd", truss.working_dir}},
     log_enabled = {"all"}, --"~path", "~debug", "~perf"},
-    entrypoints = {main="main.t"},
+    entrypoints = {},
     include_paths = {terralib.includepath, "include"},
-    WORKDIR = truss.working_dir,
-    BINDIR = truss.binary_dir,
-    BINARY = truss.binary_name,
-    rootdir = truss.binary_dir,
   }
   if truss.working_dir ~= truss.binary_dir then
     --table.insert(default_config.paths, {".", truss.binary_dir})
@@ -32,20 +27,51 @@ local function load_config(truss)
     log.error(table.concat(config_options, "\n"))
   end
 
+  local config_env = {
+    WORKDIR = truss.working_dir,
+    BINDIR = truss.binary_dir,
+    BINARY = truss.binary_name,
+    require = truss.require,
+    log = log,
+  }
   local config = truss.extend_table({}, default_config)
+  config.entrypoints.DEFAULT = function()
+    local modname = truss.args[2]
+    if not modname then
+      log.fatal("No module specified to run!")
+      return
+    end
+    local mod = truss.require(modname)
+    if mod.main then
+      return mod.main()
+    elseif mod.init then
+      log.warn(
+        "Module [" .. modname .. "] is using deprecated 'init'.",
+        "Consider renaming entrypoint to 'main'."
+      )
+      return mod.init()
+    else
+      log.fatal("Module [" .. modname .. "] has no 'main' to run.")
+    end
+  end
 
   local configfn = truss.fs.joinpath(truss.working_dir, "trussconfig.lua")
   local configfile = io.open(configfn)
 
   if configfile then
     log.info("Using configfile [" .. configfn .. "]")
-    setmetatable(config, {
+    setmetatable(config_env, {
       __index = function(t, k)
-        if _G[k] then return _G[k] end
+        local val = config[k] or _G[k]
+        if val ~= nil then return val end
         error('Config file referenced "' .. k .. '" which does not exist.')
       end,
       __newindex = function(t, k, v)
-        log.error('Tried to set invalid config option "' .. k .. '"')
+        if config[k] ~= nil then
+          config[k] = v
+          return
+        end
+        log.fatal('Tried to set invalid config option "' .. k .. '"')
         list_config_options()
         error('Invalid config option "' .. k .. '"')
       end
@@ -66,7 +92,6 @@ local function load_config(truss)
     log.info("No config file at [" .. configfn .. "]; using defaults.")
   end
 
-  truss.rootdir = config.rootdir
   truss.config = config
 
   local log_enabled = config.log_enabled
@@ -79,8 +104,6 @@ local function load_config(truss)
   end
   log.clear_enabled()
   log.set_enabled(log_enabled)
-
-  log.info("Rootdir:", truss.rootdir)
 
   if config.cpu_triple ~= "native" or config.cpu_features ~= "" then
     local triple = config.cpu_triple
