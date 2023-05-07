@@ -445,7 +445,7 @@ function jape.run_tests(testlist)
   return (jape.stats.failed == 0) and (jape.stats.errors == 0)
 end
 
-function jape.init()
+function jape.main()
   -- TODO: arg handling?
   local pkginfo = require("dev/pkginfo.t")
   local testlist = {}
@@ -464,11 +464,6 @@ end
 
 function jape.after_each(f)
   table.insert(jape.post_funcs, f)
-end
-
-function jape.update()
-  -- todo?
-  truss.quit()
 end
 
 return jape
