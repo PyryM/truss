@@ -60,6 +60,17 @@ local function install(core)
   core.library_extension = library_extensions[core.os] or ""
   core.library_prefix = libary_prefixes[core.os] or ""
 
+  function core.eval(source, env)
+    -- first, see if it will compile as an expression
+    local func, err = loadstring("return " .. source)
+    if not func then
+      func, err = loadstring(source)
+    end
+    if not func then error(err) end
+    if env then setfenv(func, env) end
+    return func()
+  end
+
   function core.dostring(source, name, env)
     local func, err = core.loadstring(source, name)
     if not func then error(err) end

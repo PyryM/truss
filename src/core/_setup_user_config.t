@@ -8,9 +8,32 @@ local function load_config(truss)
     cpu_opt_profile = {},
     package_dirs = {truss.fs.joinpath(truss.binary_dir, "src")},
     packages = {{"@cwd", truss.working_dir}},
+    include_paths = {terralib.includepath, "include"},
     log_enabled = {"all"}, --"~path", "~debug", "~perf"},
     entrypoints = {},
-    include_paths = {terralib.includepath, "include"},
+    entry_runner = function(modname)
+      if not modname then
+        log.fatal("No module specified to run!")
+        return false
+      end
+      local mod = truss.try_require(modname)
+      if not mod then
+        log.fatal("Couldn't find [" .. modname .. "]")
+        return false
+      end
+      if mod.main then
+        return mod.main()
+      elseif mod.init then
+        log.warn(
+          "Module [" .. modname .. "] is using deprecated 'init'.",
+          "Consider renaming entrypoint to 'main'."
+        )
+        return mod.init()
+      else
+        log.fatal("Module [" .. modname .. "] has no 'main' to run.")
+        return false
+      end
+    end
   }
   if truss.working_dir ~= truss.binary_dir then
     --table.insert(default_config.paths, {".", truss.binary_dir})
@@ -20,11 +43,13 @@ local function load_config(truss)
   local function list_config_options()
     local config_options = {}
     for k, _ in pairs(default_config) do
-      if k:upper() ~= k then table.insert(config_options, k) end
+      table.insert(config_options, k)
     end
     table.sort(config_options)
-    log.error("Valid config options:")
-    log.error(table.concat(config_options, "\n"))
+    log.continuing("Valid config options:")
+    for _, v in ipairs(config_options) do 
+      log.continuing("  ", v) 
+    end
   end
 
   local config_env = {
@@ -33,27 +58,9 @@ local function load_config(truss)
     BINARY = truss.binary_name,
     require = truss.require,
     log = log,
+    truss = truss,
   }
   local config = truss.extend_table({}, default_config)
-  config.entrypoints.DEFAULT = function()
-    local modname = truss.args[2]
-    if not modname then
-      log.fatal("No module specified to run!")
-      return
-    end
-    local mod = truss.require(modname)
-    if mod.main then
-      return mod.main()
-    elseif mod.init then
-      log.warn(
-        "Module [" .. modname .. "] is using deprecated 'init'.",
-        "Consider renaming entrypoint to 'main'."
-      )
-      return mod.init()
-    else
-      log.fatal("Module [" .. modname .. "] has no 'main' to run.")
-    end
-  end
 
   local configfn = truss.fs.joinpath(truss.working_dir, "trussconfig.lua")
   local configfile = io.open(configfn)
@@ -82,7 +89,7 @@ local function load_config(truss)
     if not configfunc then
       error("Error parsing config file:", configerr)
     end
-    setfenv(configfunc, config)
+    setfenv(configfunc, config_env)
     local happy, err = pcall(configfunc)
     if not happy then
       error("Error running config file: " .. err)

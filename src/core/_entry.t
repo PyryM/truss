@@ -29,16 +29,14 @@ local function entry(truss)
   local args = truss.GLOBALS._TRUSS_ARGS or {}
   truss.args = args
 
-  local entry_name = args[2]
+  local entry_name = args[2] or "DEFAULT"
   log.info("entrypoint:", tostring(entry_name))
-  local entry_func = truss.config.entrypoints.DEFAULT
-  if entry_name and truss.config.entrypoints[entry_name] then
-    entry_func = truss.config.entrypoints[entry_name]
+  local entry_runner = truss.config.entry_runner
+  if truss.config.entrypoints[entry_name] then
+    entry_name = truss.config.entrypoints[entry_name]
   end
-  if not entry_func then
-    log.error("No valid entrypoint specified.")
-    _TRUSS_RUNNING = false
-    return
+  if type(entry_name) == 'function' then
+    entry_runner = entry_name
   end
     
   -- register a function to be called right before truss quits
@@ -76,7 +74,16 @@ local function entry(truss)
     end
   end)
 
-  local init_retval = guarded_call(entry_func)
+
+  local happy, init_retval = pcall(entry_runner, entry_name)
+  if not happy then
+    log.fatal("Error in entrypoint:" .. tostring(init_retval))
+    _TRUSS_RUNNING = false
+    return
+  elseif init_retval == false then
+    _TRUSS_RUNNING = false
+    return
+  end
 
   if not truss._update_func then
     log.info("No on_update was set, stopping.")

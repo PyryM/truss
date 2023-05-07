@@ -112,7 +112,11 @@ local function install(core)
   }
   log.colortags = {}
   for name, color in pairs(log.colors) do
-    log.colortags[name] = color .. term.padtag(name) .. term.RESET
+    log.colortags[name] = {
+      color = color,
+      tag = term.padtag(name),
+      colortag = color .. term.padtag(name) .. term.RESET
+    }
   end
 
   local function stringify_args(...)
@@ -128,12 +132,26 @@ local function install(core)
     local enabled = log.enabled[level]
     if enabled == nil then enabled = log.enabled['all'] end
     if not enabled then return end
+    local leveltag = log.colortags[level] or {
+      tag = term.padtag(level),
+      colortag = term.padtag(level)
+    }
+    log._last_level = leveltag
     if log.logfile then
-      log.logfile:write("[" .. level .. "] " .. table.concat({...}, " "))
+      log.logfile:write(table.concat({level.tag, ...}, " "))
     end
     if not log.printing_to_term then return end
-    local tag = log.colortags[level] or ("[" .. level .. "]")
-    print(tag, ...)
+    print(leveltag.colortag, ...)
+  end
+
+  local DOTDOTDOT = term.pad("...", 9)
+  function log.continuing(...)
+    local last = log._last_level
+    if not last then 
+      print("...", body)
+      return
+    end
+    print(table.concat{last.color, DOTDOTDOT, term.RESET}, ...)
   end
 
   for level, _ in pairs(log.colors) do
