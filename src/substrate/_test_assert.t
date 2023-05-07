@@ -15,7 +15,7 @@ local function test_asserts(jape)
   end)
 
   -- TODO: subprocess for failing asserts
-  test.skip("failed assert works", function()
+  test:skip("failed assert works", function()
     expect(function()
       assert_positive(-10)
     end):to_terminate()

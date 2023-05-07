@@ -160,7 +160,7 @@ local function install(core)
     return s:sub(#prefix+1)
   end
 
-  local RawMount = core.nanoclass()
+  local RawMount = core.nanoclass("RawMount")
   function RawMount:init(srcpath)
     self.path = srcpath
   end
@@ -197,8 +197,8 @@ local function install(core)
     return not fs.file_extension(subpath)
   end
 
-  local ArchiveRootMount = core.nanoclass()
-  local ArchiveDirMount = core.nanoclass()
+  local ArchiveRootMount = core.nanoclass("ArchiveMount")
+  local ArchiveDirMount = core.nanoclass("ArchiveDirMount")
 
   function ArchiveRootMount:init(srcpath)
     self.archive = srcpath

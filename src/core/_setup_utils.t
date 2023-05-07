@@ -2,9 +2,15 @@ local function install(core)
   local ffi = core.ffi
   core.os = ffi.os
 
-  function core.nanoclass(t)
-    t = t or {}
+  local callable_mt = {
+    __call = function(t, ...)
+      return t:new(...)
+    end
+  }
+  function core.nanoclass(name)
+    local t = {name = name}
     t.__index = t
+    setmetatable(t, callable_mt)
     function t:new(...)
       local ret = setmetatable({}, t)
       ret:init(...)
@@ -13,7 +19,7 @@ local function install(core)
     return t
   end
 
-  local Stack = core.nanoclass()
+  local Stack = core.nanoclass("Stack")
   function Stack:init()
     self.items = {}
   end
@@ -32,6 +38,18 @@ local function install(core)
   end
   function Stack:size()
     return #self.items
+  end
+  function Stack:__len()
+    return #self.items
+  end
+  function Stack:__index(idx)
+    if type(idx) == 'number' then
+      local items = rawget(self, 'items')
+      if idx < 0 then idx = #items + 1 + idx end
+      return items[idx]
+    else
+      return Stack[idx]
+    end
   end
   core.Stack = Stack
 

@@ -21,6 +21,25 @@ describe("arithmetic", () => {
 ]]
 
 local sutil = require("util/string.t")
+local term = truss.term
+
+local COLORS = {
+  OK = term.boldcolor(term.GREEN),
+  FAIL = term.boldcolor(term.RED),
+  SKIP = term.color(term.CYAN)
+}
+local BADGES = {
+  OK = "✓ ok",
+  FAIL = "✗ fail",
+  SKIP = "(skip)"
+}
+
+local function fmt_cond(cond, text)
+  return table.concat{
+    COLORS[cond], BADGES[cond], term.RESET,
+    ": ", text
+  }
+end
 
 local function NYI()
   assert(false, "NYI!")
@@ -98,7 +117,7 @@ end
 local jape = {}
 jape.pre_funcs = {}
 jape.post_funcs = {}
-jape.scopes = truss.Stack:new()
+jape.scopes = truss.Stack()
 
 local function enter_scope(kind, name)
   if jape.scopes:size() == 0 then
@@ -125,6 +144,7 @@ local function leave_scope(kind, name)
 end
 
 local function enter_group(name)
+  print("---", name, "---")
   enter_scope("group", name)
   jape.current_group = name
 end
@@ -152,10 +172,10 @@ local function leave_test()
   local success = cur.passed == cur.count
   if success then
     jape.stats.passed = jape.stats.passed + 1
-    print(cur.name, "[OK]")
+    print(fmt_cond("OK", cur.name))
   else
     jape.stats.failed = jape.stats.failed + 1
-    print(cur.name, "[FAIL]")
+    print(fmt_cond("FAIL", cur.name))
   end
   jape.current_test = nil
   leave_scope("test")
@@ -163,6 +183,7 @@ end
 
 local function skip_test(name)
   jape.stats.skipped = jape.stats.skipped + 1
+  print(fmt_cond("SKIP", name))
 end
 
 local function format_failure(msg, ...)
@@ -219,7 +240,7 @@ local function test_result(is_ok, msg, ...)
   end
 end
 
-local Test = truss.nanoclass()
+local Test = truss.nanoclass("Test")
 function Test:init()
 end
 
@@ -348,7 +369,7 @@ function matchers:to_be_in_range(min, max)
   )
 end
 
-local Expectation = truss.nanoclass()
+local Expectation = truss.nanoclass("Expectation")
 Expectation.__index = function(self, k)
   if k == 'not' then
     return Expectation._not(self)
@@ -436,8 +457,8 @@ function jape.run_tests(testlist)
   for _, test_path in ipairs(testlist) do
     local tests = truss.try_require(test_path)
     if tests then
-      -- try to be as generous as possible re: what the entrypoint
-      -- is named.
+      -- try to be as generous as possible re: what the entrypoint is named.
+      print("=>", test_path)
       (tests.run or tests.main or tests.init)(jape)
     end
   end

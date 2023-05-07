@@ -66,7 +66,7 @@ local function install(core)
 
   local log = core._declare_builtin("log", {
     enabled = {all = true}, --debug = false, path = false, perf = false}, 
-    _enabled_stack = core.Stack:new(),
+    _enabled_stack = core.Stack(),
     printing_to_term = true
   })
 
