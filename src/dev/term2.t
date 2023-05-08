@@ -52,7 +52,7 @@ end
 
 function BlockPrinter:_get_gutter()
   local frags = {}
-  for idx = 1, #self.scopes do
+  for idx = 1, self.scopes:size() do
     frags[idx] = self.scopes[idx].vertical
   end
   return table.concat(frags)

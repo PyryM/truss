@@ -115,20 +115,37 @@ local function get_prop(t, path, v)
 end
 
 local jape = {}
-jape.pre_funcs = {}
-jape.post_funcs = {}
 jape.scopes = truss.Stack()
+
+local function for_each_scope(f)
+  for idx = 1, jape.scopes:size() do
+    f(jape.scopes[idx])
+  end
+end
+
+local function invoke_callbacks(name, reverse, ...)
+  for idx = 1, jape.scopes:size() do
+    local scope = (reverse and jape.scopes[-idx]) or jape.scopes[idx]
+    for _, cb in ipairs(scope.callbacks[name]) do
+      cb(...)
+    end
+  end
+end
 
 local function enter_scope(kind, name)
   if jape.scopes:size() == 0 then
     jape.initialize()
   end
-  jape.scopes:push({kind, name})
+  jape.scopes:push({
+    kind = kind, 
+    name = name,
+    callbacks = {before_each = {}, after_each = {}}
+  })
 end
 
 local function leave_scope(kind, name)
-  local top = jape.scopes:peek()
-  local curkind = top and top[1]
+  local top = jape.scopes[-1]
+  local curkind = top and top.kind
   if curkind ~= kind then
     log.warn(
       ("Scope mismatch: current is %s, tried to leave %s"):format(
@@ -151,23 +168,17 @@ end
 
 local function leave_group()
   jape.current_group = nil
-  jape.pre_funcs = {}
-  jape.post_funcs = {}
   leave_scope("group")
 end
 
 local function enter_test(name)
   enter_scope("test", name)
   jape.current_test = {name = name, count = 0, passed = 0, failed = 0}
-  for _, func in ipairs(jape.pre_funcs) do
-    func()
-  end
+  invoke_callbacks("before_each", false)
 end
 
 local function leave_test()
-  for _, func in ipairs(jape.post_funcs) do
-    func()
-  end
+  invoke_callbacks("after_each", true)
   local cur = jape.current_test
   local success = cur.passed == cur.count
   if success then
@@ -278,7 +289,7 @@ function matchers:to_be(val)
 end
 
 function matchers:to_equal(val)
-  self:_result(deepequal(self.value, val), "deepeq(%s, %s)", self.value, val)
+  self:_result(deepeq(self.value, val), "deepeq(%s, %s)", self.value, val)
 end
 
 function matchers:to_strict_equal(val)
@@ -470,21 +481,33 @@ function jape.main()
   -- TODO: arg handling?
   local pkginfo = require("dev/pkginfo.t")
   local testlist = {}
-  for _, info in ipairs(pkginfo.list_packages()) do
-    local test_path = info.name .. "/" .. "_tests.t"
-    table.insert(testlist, test_path)
+  if truss.args[3] then
+    local testname = truss.args[3]
+    if not truss.fs.file_extension(testname) then
+      testname = testname .. "/_tests.t"
+    end
+    testlist = {testname}
+  else
+    for _, info in ipairs(pkginfo.list_packages()) do
+      local test_path = info.name .. "/_tests.t"
+      table.insert(testlist, test_path)
+    end
   end
   if not jape.run_tests(testlist) then
     return 1
   end
 end
 
+local function cur_scope()
+  return assert(jape.scopes[-1], "Not inside a Jape scope!")
+end
+
 function jape.before_each(f)
-  table.insert(jape.pre_funcs, f)
+  table.insert(cur_scope().callbacks.before_each, f)
 end
 
 function jape.after_each(f)
-  table.insert(jape.post_funcs, f)
+  table.insert(cur_scope().callbacks.after_each, f)
 end
 
 return jape
