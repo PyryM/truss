@@ -149,11 +149,11 @@ local function install(core)
 
   core.strict_metatable = {
     __newindex = function(t, k, v)
-      local mname = rawget(t, "_path") or "(nil)"
+      local mname = rawget(t, "_PATH") or "(nil)"
       error("Module " .. mname .. " tried to create global '" .. k .. "'")
     end,
     __index = function(t, k)
-      local mname = rawget(t, "_path") or "(nil)"
+      local mname = rawget(t, "_PATH") or "(nil)"
       error("Module " .. mname .. " tried to access nil global '" .. k .. "'")
     end
   }

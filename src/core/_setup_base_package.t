@@ -12,8 +12,12 @@ local function install(core)
 
     function pkg.create_module_env(package_filepath)
       local modenv = truss.extend_table({}, assert(truss.module_env))
-      modenv._module_name = package_filepath
-      modenv._path = pkg.name .. "/" .. package_filepath
+      modenv._PATH = pkg.name .. "/" .. package_filepath
+      modenv._PKG = pkg
+      if pkg.fs then
+        modenv._PKGPATH = pkg.fs:realpath()
+        modenv._FILEPATH = pkg.fs:realpath(package_filepath)
+      end
       modenv.require = pkg.create_module_require(package_filepath)
       modenv._G = modenv
       modenv.truss = truss
@@ -104,6 +108,7 @@ local function install(core)
     }
     local pkg_env = {
       truss = root,
+      require = root.require,
       pkg = pkg,
     }
     setmetatable(pkg_env, {
