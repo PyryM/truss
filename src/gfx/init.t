@@ -4,9 +4,10 @@
 
 local moduleutils = require("core/module.t")
 
--- this allows submodules to require("gfx") without
--- causing an infinite recursion
-local gfx = _preregister{}
+-- we've moved the actual table into its own module
+-- so that submodules can require it without causing
+-- an infinite recursion with this init.t
+local gfx = require("./_gfx.t")
 
 moduleutils.include_submodules({
   "gfx/common.t",

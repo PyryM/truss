@@ -285,13 +285,13 @@ local function init()
       font_size = 100, text = truss.version
     }
   end)
+
+  truss.on_update(function()
+    if dbstate.rotate_view and not gif_mode then
+      myapp.camera.orbit_control:move_theta(dbstate.view_speed * math.pi * 2.0 / 120.0)
+    end
+    myapp:update()
+  end)
 end
 
-local function update()
-  if dbstate.rotate_view and not gif_mode then
-    myapp.camera.orbit_control:move_theta(dbstate.view_speed * math.pi * 2.0 / 120.0)
-  end
-  myapp:update()
-end
-
-return {init = init, update = update, app = myapp}
+return {init = init, app = myapp}

@@ -17,6 +17,7 @@ local ecs = require("ecs")
 local async = require("async")
 local class = require("class")
 local common = require("examples/logos/logocommon.t")
+local timing = require("osnative/timing.t")
 
 local function ter_edge_dist_func(p0, p1)
   local x0, y0, z0 = p0:components()
@@ -65,12 +66,12 @@ local function gen_cell(data, x, y, z, dg, funclist)
     z_start = z*dg, z_end = (z+1)*dg + 1
   }
   mc.mc_data_from_terra(data, zero, limits)
-  local t0 = truss.tic()
+  local t0 = timing.tic()
   for _, f in ipairs(funclist) do
     mc.mc_data_from_terra(data, f, limits)
-    if truss.toc(t0)*1000.0 > 10.0 then
+    if timing.toc(t0)*1000.0 > 10.0 then
       async.await_frames(1)
-      t0 = truss.tic()
+      t0 = timing.tic()
     end
   end
   mc.mc_data_from_terra(data, recenter, limits)
@@ -214,13 +215,13 @@ local function init()
   end)
 
   common.dump_text_caps()
+
+  truss.on_update(function()
+    if not gif_mode then
+      myapp.camera.orbit_control:move_theta(math.pi * 2.0 / 120.0)
+    end
+    myapp:update()
+  end)
 end
 
-local function update()
-  if not gif_mode then
-    myapp.camera.orbit_control:move_theta(math.pi * 2.0 / 120.0)
-  end
-  myapp:update()
-end
-
-return {init = init, update = update, app = myapp}
+return {init = init, app = myapp}

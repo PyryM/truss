@@ -4,6 +4,7 @@
 
 local m = {}
 local math = require("math")
+local timing = require("osnative/timing.t")
 local Vector = math.Vector
 local vec4 = require("math/types.t").vec4_
 
@@ -11,7 +12,7 @@ m.verbose = false
 m.MAXFACES = 21845 -- each face needs 3 vertices, to fit into 16 bit index
             -- buffer we can have at most floor(2^16 / 3) faces
 
-local tic, toc = truss.tic, truss.toc
+local tic, toc = timing.tic, timing.toc
 
 function m.load_stl(filename, invert)
   error("Not ported to truss 0.3+ yet!")

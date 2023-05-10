@@ -246,7 +246,7 @@ function Bus:get_fft()
 end
 
 local function _load_wav(filename, ptr, loader)
-  local data = truss.read_file_buffer(filename)
+  local data = truss.fs.read_buffer(filename)
   if not data then
     error("Unable to load wavefile " .. filename 
                 .. ": low-level error (file doesn't exist?)")

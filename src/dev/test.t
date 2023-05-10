@@ -31,12 +31,12 @@ local function TERMINAL_HANDLER(e, test, msg)
   elseif e == 'begin' then
   test_stats.passed = 0
   test_stats.failed = 0
-  test_stats.t0 = truss.tic()
+  test_stats.t0 = timing.tic()
   elseif e == 'end' then
     local p, f = test_stats.passed, test_stats.failed
     local color = term.color(term.GREEN)
     if f > 0 then color = term.color(term.RED) end
-    local dt = truss.toc(test_stats.t0) * 1000.0
+    local dt = timing.toc(test_stats.t0) * 1000.0
     local msg = ("%s[%d / %d](%0.2f ms) %s%s"):format(
       color, 
       p, p+f, dt,

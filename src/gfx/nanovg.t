@@ -72,8 +72,7 @@ function NVGContext:load_font(filename, alias)
     error("Font with alias [" .. alias .. "] already exists.")
   end
 
-  local data = truss.read_file(filename)
-  if not data then error("Font didn't exist.") end
+  local data = assert(truss.fs.read(filename), "Font didn't exist.")
   log.debug("data size?", #data)
 
   -- final 0 argument indicates that nanovg should not free the data

@@ -5,6 +5,7 @@
 local class = require("class")
 local math = require("math")
 local bgfx = require("./bgfx.t")
+local gfx = require("./_gfx.t")
 local m = {}
 
 local View = class("View")
@@ -18,7 +19,7 @@ function View:init(options)
   self._projmat = math.Matrix4():identity()
   self._viewmat = math.Matrix4():identity()
   self._sequential = false
-  self._rendertarget = require("gfx").BACKBUFFER
+  self._rendertarget = gfx.BACKBUFFER
   self.props = options.props or options
   self.name = options.name or "View"
   self:set(options)
@@ -146,7 +147,6 @@ function View:get_dimensions()
   if self._rendertarget and self._rendertarget.width then
     return self._rendertarget.width, self._rendertarget.height
   else
-    local gfx = require("gfx")
     return gfx.backbuffer_width, gfx.backbuffer_height
   end
 end

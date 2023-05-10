@@ -160,6 +160,31 @@ local function install(core)
     return s:sub(#prefix+1)
   end
 
+  function fs.read(realpath)
+    log.path("Reading from real path:", realpath)
+    -- binary/text read mode distinction is critical on Windows where
+    -- opening in text mode will truncate files with interior 0s
+    local f = io.open(realpath, "rb")
+    if not f then return nil end
+    local data = f:read("*a")
+    f:close()
+    return data
+  end
+
+  function fs.as_buffer(str)
+    if not str then return nil end
+    assert(type(str) == 'string', "as buffer requires string input!")
+    return {
+      str = str, 
+      data = terralib.cast(&uint8, str),
+      size = #str
+    }
+  end
+
+  function fs.read_buffer(realpath)
+    return fs.as_buffer(fs.read(realpath))
+  end
+
   local RawMount = core.nanoclass("RawMount")
   function RawMount:init(srcpath)
     self.path = srcpath
@@ -171,14 +196,11 @@ local function install(core)
 
   function RawMount:read(subpath)
     local realpath = self:realpath(subpath)
-    log.path("Reading from real path:", realpath)
-    -- binary/text read mode distinction is critical on Windows where
-    -- opening in text mode will truncate files with interior 0s
-    local f = io.open(realpath, "rb")
-    if not f then return nil end
-    local data = f:read("*a")
-    f:close()
-    return data
+    return fs.read(realpath)
+  end
+
+  function RawMount:read_buffer(subpath)
+    return fs.as_buffer(self:read(subpath))
   end
 
   function RawMount:listdir(subpath, recursive)
@@ -353,18 +375,6 @@ local function install(core)
     return _list_and_free(list)
   end
 
-  core.fs = fs
-  core.working_dir = fs.normpath(ffi.string(fs_c.trussfs_working_dir(fs_ctx)) .. fs.PATHSEP, true)
-  core.binary_path = ffi.string(fs_c.trussfs_binary_dir(fs_ctx))
-  core.binary_dir, core.binary_name = fs.splitbase(core.binary_path)
-  core.binary_dir = fs.normpath(core.binary_dir .. fs.PATHSEP, true)
-  core.root_dir = core.binary_dir
-
-  log.info("trussfs version:", core.format_version(fs_version))
-  log.info("Working dir:", core.working_dir)
-  log.info("Binary dir:", core.binary_dir)
-  log.info("Binary:", core.binary_name)
-
   function fs.file_extension(path)
     if type(path) == "table" then
       path = path[#path]
@@ -401,6 +411,19 @@ local function install(core)
   function fs.listdir(path, recursive)
     return fs.mount(path):listdir("", recursive)
   end
+
+  core.fs = fs
+  core.working_dir = fs.normpath(ffi.string(fs_c.trussfs_working_dir(fs_ctx)) .. fs.PATHSEP, true)
+  core.binary_path = ffi.string(fs_c.trussfs_binary_dir(fs_ctx))
+  core.binary_dir, core.binary_name = fs.splitbase(core.binary_path)
+  core.binary_dir = fs.normpath(core.binary_dir .. fs.PATHSEP, true)
+  core.working_dir_mount = fs.mount(core.working_dir)
+  core.binary_dir_mount = fs.mount(core.binary_dir)
+
+  log.info("trussfs version:", core.format_version(fs_version))
+  log.info("Working dir:", core.working_dir)
+  log.info("Binary dir:", core.binary_dir)
+  log.info("Binary:", core.binary_name)
 
   -- -- terra has issues with line numbering with dos line endings (\r\n), so
   -- -- this function loads a string and then gets rid of carriage returns (\r)

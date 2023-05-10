@@ -26,9 +26,11 @@ end
 -- copy all public exports from a list of modules into a destination table
 -- ex: include_submodules({"foo/bar.t", "foo/baz.t"}, foo)
 function m.include_submodules(srclist, dest)
+  dest = dest or {}
   for _, srcname in ipairs(srclist) do
     m.reexport(require(srcname), dest)
   end
+  return dest
 end
 
 -- (hmmmm)

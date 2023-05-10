@@ -9,6 +9,7 @@ local geometry = require("geometry")
 local pbr = require("shaders/pbr.t")
 local compiled = require("gfx/compiled.t")
 local bgfx = require("gfx/bgfx.t")
+local timing = require("osnative/timing.t")
 
 local width, height
 local view
@@ -232,7 +233,7 @@ function update()
   --local drawfunc = draw_box_hand_compiled
   local drawfunc = draw_box_compiled
 
-  local t0 = truss.tic()
+  local t0 = timing.tic()
   for row = 1, 50 do
     for col = 1, 50 do
       local x, y = (col - 25)/10, (row - 25)/10
@@ -240,7 +241,7 @@ function update()
       drawfunc(x, y, theta)
     end
   end
-  local dt = truss.toc(t0)
+  local dt = timing.toc(t0)
 
   bgfx.dbg_text_clear(0, false)
   bgfx.dbg_text_printf(2, 1, 0x6f, "dt: " .. dt * 1000.0)

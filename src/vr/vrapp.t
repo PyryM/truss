@@ -9,6 +9,7 @@ local sdl = require("addon/sdl.t")
 local sdl_input = require("input/sdl_input.t")
 local openvr = require("vr/openvr.t")
 local vrcomps = require("vr/components.t")
+local timing = require("osnative/timing.t")
 
 local ecs = require("ecs")
 local graphics = require("graphics")
@@ -20,13 +21,13 @@ local VRApp = class("VRApp")
 function VRApp:init(options)
   self.evt = ecs.EventEmitter()
 
-  local t0 = truss.tic()
+  local t0 = timing.tic()
   self.options = options or {}
   openvr.init{
     legacy_input = (options.legacy_input ~= false),
     new_input = options.new_input
   }
-  log.info("up to openvr init: " .. tostring(truss.toc(t0) * 1000.0))
+  log.info("up to openvr init: " .. tostring(timing.toc(t0) * 1000.0))
 
   local vw, vh = 800, 1280
   if openvr.available then
@@ -53,11 +54,11 @@ function VRApp:init(options)
 
   log.info("gfx init!")
   self:gfx_init()
-  log.info("up to bgfx init: " .. tostring(truss.toc(t0) * 1000.0))
+  log.info("up to bgfx init: " .. tostring(timing.toc(t0) * 1000.0))
 
   log.info("got this far3?")
   self:ecs_init()
-  log.info("up to ecs init: " .. tostring(truss.toc(t0) * 1000.0))
+  log.info("up to ecs init: " .. tostring(timing.toc(t0) * 1000.0))
 
   if options.new_input then
     self:register_actions(options)

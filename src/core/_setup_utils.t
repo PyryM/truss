@@ -85,7 +85,9 @@ local function install(core)
     if #basedir > 0 then basedir = basedir .. "/" end
     local fullpath = basedir .. core.library_prefix .. 
                     libname .. core.library_extension
-    log.build("Linking " .. fullpath)
+    if core.log then
+      core.log.build("Linking " .. fullpath)
+    end
     terralib.linklibrary(fullpath)
   end
 

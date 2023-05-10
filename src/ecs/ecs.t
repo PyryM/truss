@@ -4,6 +4,7 @@
 
 local class = require("class")
 local entity = require("./entity.t")
+local timing = require("osnative/timing.t")
 
 local m = {}
 
@@ -14,7 +15,7 @@ function ECS:init()
   self._update_order = {}
   self.timings = {}
   self._current_timings = {}
-  self._t0 = truss.tic()
+  self._t0 = timing.tic()
   self._lastdt = 0
   self._nextid = 0
   self.entities = {}
@@ -52,7 +53,7 @@ end
 function ECS:_start_timing()
   if self.timing_enabled == false then return end
 
-  self._t0 = truss.tic()
+  self._t0 = timing.tic()
   self.timings = self._current_timings
   self._current_timings = {}
   self._lastdt = 0
@@ -61,7 +62,7 @@ end
 function ECS:insert_timing_event(evt_type, evt_info)
   if self.timing_enabled == false then return end
 
-  local cumulative_dt = truss.toc(self._t0)
+  local cumulative_dt = timing.toc(self._t0)
   local dt = cumulative_dt - self._lastdt
   self._lastdt = cumulative_dt
   table.insert(self._current_timings, {name = evt_type, info = evt_info,

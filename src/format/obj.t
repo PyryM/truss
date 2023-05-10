@@ -3,19 +3,20 @@
 -- reads/writes wavefront .obj files
 
 local class = require("class")
+local timing = require("osnative/timing.t")
 local m = {}
 
 m.verbose = false
 
 function m.load_obj(filename, invert)
-  local starttime = truss.tic()
+  local starttime = timing.tic()
   local srcstr = truss.read_file(filename)
   if not srcstr then
     log.error("Error: unable to open file " .. filename)
     return nil
   end
   local ret = m.parse_obj(srcstr, invert)
-  local dtime = truss.toc(starttime)
+  local dtime = timing.toc(starttime)
   log.info("Loaded " .. filename .. " in " .. (dtime*1000.0) .. " ms")
   return ret
 end

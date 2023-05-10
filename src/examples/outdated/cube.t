@@ -6,6 +6,7 @@
 local bgfx = require("gfx/bgfx.t")
 local sdl = require("addon/sdl.t")
 local math = require("math")
+local timing = require("osnative/timing.t")
 
 struct BGRAColor {
   b: uint8;
@@ -171,7 +172,7 @@ function update()
   frame = frame + 1
   time = time + 1.0 / 60.0
 
-  local start = truss.tic()
+  local start = timing.tic()
 
   -- Deal with input events
   sdl.handle_minimal_events()
@@ -195,5 +196,5 @@ function update()
   -- process submitted rendering primitives.
   bgfx.bgfx_frame()
 
-  frametime = truss.toc(start)
+  frametime = timing.toc(start)
 end
