@@ -10,7 +10,11 @@ function m.setup_lua_package(pkg, options)
   assert(pkg.fs, "pkg must have an fs!")
   options = options or {}
 
-  pkg._builtin_modules = options.builtin_modules or {truss = truss}
+  pkg._builtin_modules = options.builtin_modules or {
+    truss = truss,
+    ffi = require("ffi"),
+    bit = require("bit")
+  }
 
   -- basically the only change is how requires are handled
   function pkg.create_module_require(_package_filepath)
@@ -22,8 +26,9 @@ function m.setup_lua_package(pkg, options)
       if pkg._builtin_modules[path] then
         return pkg._builtin_modules[path]
       end
-      path = pkg.name .. "/" .. path:gsub(".", "/") .. ".lua"
-      return truss.require(path)
+      local truss_path = pkg.name .. "/" .. path:gsub("%.", "/") .. ".lua"
+      log.debug("MODIFIED PATH:", path, "->", truss_path)
+      return truss.require(truss_path)
     end
   end
 
