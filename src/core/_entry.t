@@ -79,9 +79,12 @@ local function entry(truss)
   if not happy then
     log.fatal("Error in entrypoint:" .. tostring(init_retval))
     _TRUSS_RUNNING = false
+    _TRUSS_RETURN_CODE = 1
     return
   elseif init_retval == false then
+    log.fatal("Entrypoint returned false")
     _TRUSS_RUNNING = false
+    _TRUSS_RETURN_CODE = 1
     return
   end
 
