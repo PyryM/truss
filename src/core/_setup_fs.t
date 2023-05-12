@@ -240,7 +240,7 @@ local function install(core)
   end
 
   function ArchiveRootMount:read(subpath)
-    local desc = self.files[normpath(subpath, false)]
+    local desc = self.files[fs.normpath(subpath, false)]
     if not desc then return nil end
     return fs._read_archive_index(self.archive, desc.idx)
   end
