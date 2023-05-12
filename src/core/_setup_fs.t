@@ -2,31 +2,46 @@
 
 local TRUSS_FS_HEADER = [[
 typedef struct trussfs_ctx trussfs_ctx;
+typedef uint64_t listhandle_t;
+typedef uint64_t archivehandle_t;
+typedef uint64_t watcherhandle_t;
 
 uint64_t trussfs_version();
 trussfs_ctx* trussfs_init();
 void trussfs_shutdown(trussfs_ctx* ctx);
+
+const char* trussfs_get_error(trussfs_ctx* ctx);
+void trussfs_clear_error(trussfs_ctx* ctx);
 
 uint64_t trussfs_recursive_makedir(trussfs_ctx* ctx, const char* path);
 
 const char* trussfs_working_dir(trussfs_ctx* ctx);
 const char* trussfs_binary_dir(trussfs_ctx* ctx);
 
-uint64_t trussfs_archive_mount(trussfs_ctx* ctx, const char* path);
-void trussfs_archive_free(trussfs_ctx* ctx, uint64_t archive_handle);
-uint64_t trussfs_archive_list(trussfs_ctx* ctx, uint64_t archive_handle);
-uint64_t trussfs_archive_filesize_name(trussfs_ctx* ctx, uint64_t archive_handle, const char* name);
-uint64_t trussfs_archive_filesize_index(trussfs_ctx* ctx, uint64_t archive_handle, uint64_t index);
-int64_t trussfs_archive_read_name(trussfs_ctx* ctx, uint64_t archive_handle, const char* name, uint8_t* dest, uint64_t dest_size);
-int64_t trussfs_archive_read_index(trussfs_ctx* ctx, uint64_t archive_handle, uint64_t index, uint8_t* dest, uint64_t dest_size);
+bool trussfs_is_handle_valid(uint64_t handle);
 
-uint64_t trussfs_list_dir(trussfs_ctx* ctx, const char* path, bool files_only, bool include_metadata);
+watcherhandle_t trussfs_watcher_create(trussfs_ctx* ctx, const char* path, bool recursive);
+bool trussfs_watcher_augment(trussfs_ctx* ctx, watcherhandle_t watcher, const char* path, bool recursive);
+void trussfs_watcher_free(trussfs_ctx* ctx, watcherhandle_t watcher);
+listhandle_t trussfs_watcher_poll(trussfs_ctx* ctx, watcherhandle_t watcher);
 
-uint64_t trussfs_split_path(trussfs_ctx* ctx, const char* path);
+archivehandle_t trussfs_archive_mount(trussfs_ctx* ctx, const char* path);
+void trussfs_archive_free(trussfs_ctx* ctx, archivehandle_t archive);
+listhandle_t trussfs_archive_list(trussfs_ctx* ctx, archivehandle_t archive);
+uint64_t trussfs_archive_filesize_name(trussfs_ctx* ctx, archivehandle_t archive, const char* name);
+uint64_t trussfs_archive_filesize_index(trussfs_ctx* ctx, archivehandle_t archive, uint64_t index);
+int64_t trussfs_archive_read_name(trussfs_ctx* ctx, archivehandle_t archive, const char* name, uint8_t* dest, uint64_t dest_size);
+int64_t trussfs_archive_read_index(trussfs_ctx* ctx, archivehandle_t archive, uint64_t index, uint8_t* dest, uint64_t dest_size);
 
-void trussfs_list_free(trussfs_ctx* ctx, uint64_t list_handle);
-uint64_t trussfs_list_length(trussfs_ctx* ctx, uint64_t list_handle);
-const char* trussfs_list_get(trussfs_ctx* ctx, uint64_t list_handle, uint64_t index);
+listhandle_t trussfs_list_dir(trussfs_ctx* ctx, const char* path, bool files_only, bool include_metadata);
+
+listhandle_t trussfs_split_path(trussfs_ctx* ctx, const char* path);
+
+listhandle_t trussfs_list_new(trussfs_ctx* ctx);
+void trussfs_list_free(trussfs_ctx* ctx, listhandle_t list);
+uint64_t trussfs_list_length(trussfs_ctx* ctx, listhandle_t list);
+const char* trussfs_list_get(trussfs_ctx* ctx, listhandle_t list, uint64_t index);
+uint64_t trussfs_list_push(trussfs_ctx* ctx, listhandle_t list, const char* item);
 ]]
 
 local function install(core)
@@ -56,7 +71,7 @@ local function install(core)
   local INVALID_HANDLE = 0xFFFFFFFFFFFFFFFFull;
 
   local fs_version = core.parse_version_int(tonumber(fs_c.trussfs_version()))
-  core.assert_compatible_version("trussfs", fs_version, {maj=0, min=1, pat=1})
+  core.assert_compatible_version("trussfs", fs_version, {maj=0, min=2, pat=0})
 
   local fs_ctx = fs_c.trussfs_init()
   local fs = core._declare_builtin("fs", {archives = {}, version=fs_version})
@@ -224,7 +239,8 @@ local function install(core)
 
   function ArchiveRootMount:init(srcpath)
     self.archive = srcpath
-    fs._mount_archive(srcpath)
+    local arch = fs._mount_archive(srcpath)
+    log.fatal("ARCH:", arch)
     self.files = {}
     self.dirs = {}
     for _, filedesc in ipairs(fs._list_archive(srcpath)) do
@@ -336,6 +352,7 @@ local function install(core)
   function fs._read_archive_index(archive_fn, file_idx)
     if not fs.archives[archive_fn] then return nil end
     local handle = fs.archives[archive_fn]
+    log.crit(archive_fn, handle, file_idx)
     local fsize = tonumber(fs_c.trussfs_archive_filesize_index(fs_ctx, handle, file_idx))
     local scratch = fs._get_scratch(fsize)
     local outsize = fs_c.trussfs_archive_read_index(fs_ctx, handle, file_idx, scratch.data, scratch.size)
@@ -343,9 +360,21 @@ local function install(core)
     return ffi.string(scratch.data, outsize)
   end
 
+  local function assert_valid_handle(handle, msg)
+    if fs_c.trussfs_is_handle_valid(handle) then
+      return handle
+    else
+      error(msg or "Invalid trussfs handle")
+    end
+  end
+
   function fs._mount_archive(fn)
+    log.fatal("MOUNTING:", fn)
     if not fs.archives[fn] then
-      fs.archives[fn] = fs_c.trussfs_archive_mount(fs_ctx, fn)
+      fs.archives[fn] = assert_valid_handle(
+        fs_c.trussfs_archive_mount(fs_ctx, fn),
+        'Failed to mount archive "' .. fn .. '"'
+      )
     end
     return fs.archives[fn]
   end
@@ -367,11 +396,14 @@ local function install(core)
   end
 
   function fs._list_archive(handle)
+    log.fatal("LISTING ARCH:", handle)
     if type(handle) == 'string' then
       handle = fs.archives[handle]
     end
+    log.fatal("LISTING ARCH:", handle)
     if not handle then return nil end
     local list = fs_c.trussfs_archive_list(fs_ctx, handle)
+    log.fatal("LIST:", list)
     return _list_and_free(list)
   end
 
