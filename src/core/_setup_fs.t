@@ -237,13 +237,26 @@ local function install(core)
   local ArchiveRootMount = core.nanoclass("ArchiveMount")
   local ArchiveDirMount = core.nanoclass("ArchiveDirMount")
 
+  local function assert_valid_handle(handle, msg)
+    if fs_c.trussfs_is_handle_valid(handle) then
+      return handle
+    else
+      error(msg or "Invalid trussfs handle")
+    end
+  end
+
   function ArchiveRootMount:init(srcpath)
-    self.archive = srcpath
-    local arch = fs._mount_archive(srcpath)
-    log.fatal("ARCH:", arch)
+    self.path = srcpath
+    self._handle = assert_valid_handle(
+      fs_c.trussfs_archive_mount(fs_ctx, srcpath),
+      'Failed to mount archive "' .. srcpath .. '"'
+    )
     self.files = {}
     self.dirs = {}
-    for _, filedesc in ipairs(fs._list_archive(srcpath)) do
+    local raw_file_list = _list_and_free(
+      fs_c.trussfs_archive_list(fs_ctx, self._handle)
+    )
+    for _, filedesc in ipairs(raw_file_list) do
       local idx, size, kind, path = filedesc:match("^(%d+) (%d+) (%a+):(.*)$")
       idx = assert(tonumber(idx), "archive index is not a number!")
       size = assert(tonumber(size), "archive filesize is not a number!")
@@ -258,7 +271,13 @@ local function install(core)
   function ArchiveRootMount:read(subpath)
     local desc = self.files[fs.normpath(subpath, false)]
     if not desc then return nil end
-    return fs._read_archive_index(self.archive, desc.idx)
+    local handle = assert(self._handle, "archive has nil handle?")
+    local file_idx = assert(desc.idx, "file has no index?")
+    local fsize = tonumber(fs_c.trussfs_archive_filesize_index(fs_ctx, handle, file_idx))
+    local scratch = fs._get_scratch(fsize)
+    local outsize = fs_c.trussfs_archive_read_index(fs_ctx, handle, file_idx, scratch.data, scratch.size)
+    if outsize <= 0 then return nil end
+    return ffi.string(scratch.data, outsize)
   end
 
   function ArchiveRootMount:listdir(subpath, recursive)
@@ -286,9 +305,11 @@ local function install(core)
   end
 
   function ArchiveRootMount:release()
-    fs._release_archive(self.archive)
+    fs.archives[self.path] = nil
+    fs_c.trussfs_archive_free(fs_ctx, self._handle)
+    self._handle = nil
     self.files = nil
-    self.archive = nil
+    self.path = nil
   end
 
   function ArchiveDirMount:init(parent, dir)
@@ -332,8 +353,6 @@ local function install(core)
     end
   end
 
-  -- TODO: release archives?
-
   function fs.recursive_makedir(rawpath)
     fs_c.trussfs_recursive_makedir(fs_ctx, assert(rawpath))
   end
@@ -347,64 +366,6 @@ local function install(core)
       }
     end
     return fs._scratch
-  end
-
-  function fs._read_archive_index(archive_fn, file_idx)
-    if not fs.archives[archive_fn] then return nil end
-    local handle = fs.archives[archive_fn]
-    log.crit(archive_fn, handle, file_idx)
-    local fsize = tonumber(fs_c.trussfs_archive_filesize_index(fs_ctx, handle, file_idx))
-    local scratch = fs._get_scratch(fsize)
-    local outsize = fs_c.trussfs_archive_read_index(fs_ctx, handle, file_idx, scratch.data, scratch.size)
-    if outsize <= 0 then return nil end
-    return ffi.string(scratch.data, outsize)
-  end
-
-  local function assert_valid_handle(handle, msg)
-    if fs_c.trussfs_is_handle_valid(handle) then
-      return handle
-    else
-      error(msg or "Invalid trussfs handle")
-    end
-  end
-
-  function fs._mount_archive(fn)
-    log.fatal("MOUNTING:", fn)
-    if not fs.archives[fn] then
-      fs.archives[fn] = assert_valid_handle(
-        fs_c.trussfs_archive_mount(fs_ctx, fn),
-        'Failed to mount archive "' .. fn .. '"'
-      )
-    end
-    return fs.archives[fn]
-  end
-
-  function fs._release_archive(handle)
-    if type(handle) == 'string' then
-      local fn = handle
-      handle = fs.archives[fn]
-      fs.archives[fn] = nil
-    else
-      for fn, _handle in pairs(fs.archives) do
-        if handle == _handle then
-          fs.archives[fn] = nil
-        end
-      end
-    end
-    if not handle then return end
-    fs_c.trussfs_archive_free(fs_ctx, handle)
-  end
-
-  function fs._list_archive(handle)
-    log.fatal("LISTING ARCH:", handle)
-    if type(handle) == 'string' then
-      handle = fs.archives[handle]
-    end
-    log.fatal("LISTING ARCH:", handle)
-    if not handle then return nil end
-    local list = fs_c.trussfs_archive_list(fs_ctx, handle)
-    log.fatal("LIST:", list)
-    return _list_and_free(list)
   end
 
   function fs.file_extension(path)

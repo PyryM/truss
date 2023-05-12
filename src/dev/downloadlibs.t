@@ -21,11 +21,7 @@ end
 
 local function init()
   local libs_url = LIB_URL_PATH .. assert(ARCHIVE_NAMES[truss.os], "No prebuilt libs for current OS!")
-  if truss.args[3] == "extract" then
-    log.crit("Only extracting!")
-  else
-    exec_cmd(('curl -o libs.zip -L "%s"'):format(libs_url))
-  end
+  exec_cmd(('curl -o libs.zip -L "%s"'):format(libs_url))
   futil.extract_archive("libs.zip")
   if truss.os == "Windows" then
     exec_cmd('del libs.zip')
