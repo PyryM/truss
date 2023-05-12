@@ -16,6 +16,7 @@ local function install(core)
     local root = core.extend_table({}, core)
     root = core.extend_table(root, {
       core = core,
+      config = options.config,
       loaded = options.loaded or {}, 
       packages = options.packages or {},
       package_env = core.core_env,
@@ -25,6 +26,15 @@ local function install(core)
         lua = load
       }
     })
+
+    function root.fork_root()
+      local newroot = core.create_root({
+        config = root.config,
+        config_native = false,
+        config_packages = true,
+      })
+      return newroot
+    end
 
     function root.add_raw_package(name, info)
       assert(not root.packages[name], "package name collision on " .. name)
@@ -196,6 +206,13 @@ local function install(core)
 
     if options.include_class ~= false then
       root.add_singleton_package("class", core.class, "builtin")
+    end
+
+    if options.config_native then
+      options.config:apply_native_config(root)
+    end
+    if options.config_packages then
+      options.config:apply_packages(root)
     end
 
     return root

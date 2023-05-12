@@ -75,15 +75,18 @@ _docore("_setup_log.t")
 _docore("_setup_fs.t")
 _docore("_setup_base_package.t")
 _docore("_setup_packages.t")
-local load_config = _docore("_setup_user_config.t").load_config
+_docore("_setup_user_config.t")
 local entry = _docore("_entry.t").entry
 
-local truss = core.create_root{}
+local truss = core.create_root{
+  config = core.load_config(),
+  config_native = true,
+  config_packages = true,
+}
 if embeds then
   rawset(_G, "truss", core)
 end
 
-load_config(truss)
 entry(truss)
 
 return truss

@@ -75,7 +75,7 @@ local function entry(truss)
   end)
 
 
-  local happy, init_retval = pcall(entry_runner, entry_name)
+  local happy, init_retval = pcall(entry_runner, truss, entry_name)
   if not happy then
     log.fatal("Error in entrypoint:" .. tostring(init_retval))
     _TRUSS_RUNNING = false

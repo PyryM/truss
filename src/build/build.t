@@ -79,14 +79,13 @@ function m.create_cross_compilation_root(options)
     target_name = target_name or options.triple
   end
 
-  local root = truss.create_require_root{
-    root = {
-      cross_args = options.include_args,
-      cross_target = target,
-      cross_target_name = target_name or "cross",
-    },
+  local cross_root = truss.fork_root()
+  cross_root.require("build/build.t").configure{
+    cross_target = target,
+    cross_target_name = target_name or "cross",
+    cross_args = options.include_args,
   }
-  return root, target
+  return cross_root, target
 end
 
 return m
