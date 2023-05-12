@@ -52,7 +52,8 @@ local function hex_equal(buff, hexstr)
   return as_hex(buff) == hexstr
 end
 
-local function test_parser(t)
+local function test_parser(jape)
+  local test, expect = jape.test, jape.expect
   local ehproto = [[
   enum Eh {
     EH_ZERO = 0;
@@ -94,52 +95,52 @@ local function test_parser(t)
     repeated AllFloat two = 2;
   }
   ]]
-  local schemas, constants = parser.parse(proto, {
-    import_resolver = function(path) 
-      print("Importing:", path)
-      return ehproto 
-    end
-  })
-  t.expect(schemas, {
-    Eh = {
-      name = "Eh",
-      is_enum = true
-    },
-    Bag = {
-      name = "Bag",
-      fields = {
-        {name = "one", kind = "bool", idx = 1},
-        {name = "three", kind = "bytes", idx = 3},
-        {name = "four", kind = "enum", idx = 4},
+  test("schema parsing", function()
+    local schemas, constants = parser.parse(proto, {
+      import_resolver = function(path) 
+        print("Importing:", path)
+        return ehproto 
+      end
+    })
+    expect(schemas):to_equal({
+      Eh = {
+        name = "Eh",
+        is_enum = true
+      },
+      Bag = {
+        name = "Bag",
+        fields = {
+          {name = "one", kind = "bool", idx = 1},
+          {name = "three", kind = "bytes", idx = 3},
+          {name = "four", kind = "enum", idx = 4},
+        }
+      },
+      Thinger = {
+        name = "Thinger",
+        fields = {
+          {name = "two", kind = "AllFloat", repeated = true, idx = 2}
+        }
+      },
+      Nested = {
+        name = "Nested",
+        fields = {
+          {name = "loop", kind = "bool", idx = 1}
+        }
+      },
+      OneOf = {
+        name = "OneOf",
+        fields = {
+          {name = "a", kind = "bool", idx = 1, boxed = true},
+          {name = "b", kind = "bytes", idx = 2, boxed = true},
+          {name = "c", kind = "bool", idx = 3},
+        }
       }
-    },
-    Thinger = {
-      name = "Thinger",
-      fields = {
-        {name = "two", kind = "AllFloat", repeated = true, idx = 2}
-      }
-    },
-    Nested = {
-      name = "Nested",
-      fields = {
-        {name = "loop", kind = "bool", idx = 1}
-      }
-    },
-    OneOf = {
-      name = "OneOf",
-      fields = {
-        {name = "a", kind = "bool", idx = 1, boxed = true},
-        {name = "b", kind = "bytes", idx = 2, boxed = true},
-        {name = "c", kind = "bool", idx = 3},
-      }
-    }
-  })
+    })
+  end)
 end
 
-local function test_fundamentals(t)
-  local function assert_buff_eq(src, target, msg)
-    t.expect(as_hex(src), target, msg)
-  end
+local function test_fundamentals(jape)
+  local test, expect = jape.test, jape.expect
 
   local buff = allocate_buff()
   local examples = {
@@ -153,16 +154,20 @@ local function test_fundamentals(t)
     { 9223372036854775806ULL, 'feffffffffffffff7f'},
     {18446744073709551615ULL, 'ffffffffffffffffff01'}
   }
+  jape.before_each(function()
+    buff:clear()
+  end)
   for _, p in ipairs(examples) do
     local raw, encoded = unpack(p)
-    buff:clear()
-    local nwritten = buff.buff:write_varint_u64(raw)
-    local name = tostring(raw)
-    t.ok(nwritten > 0, "varint encoding of " .. name .. " : wrote >0 bytes")
-    assert_buff_eq(buff.buff, encoded, "varint encoding of " .. name .. ": correct value")
-    buff.buff.pos = 0
-    local decoded = buff.buff:read_varint_u64()
-    --t.expect(decoded, raw + 0ULL, "varint decoding")
+    test('varint ' .. encoded, function()
+      local nwritten = buff.buff:write_varint_u64(raw)
+      local name = tostring(raw)
+      expect(nwritten):to_be_greater_than(0)
+      expect(as_hex(buff.buff)):to_be(encoded)
+      buff.buff.pos = 0
+      local decoded = buff.buff:read_varint_u64()
+      expect(decoded):to_be(raw + 0ULL)
+    end)
   end
 end
 
@@ -208,7 +213,8 @@ set_fields = function(cmsg, fields)
   end
 end
 
-local function test_primitives(t)
+local function test_primitives(jape)
+  local test, expect = jape.test, jape.expect
   local function assert_buff_eq(src, target, msg)
     t.expect(as_hex(src), target, msg)
   end
@@ -287,25 +293,28 @@ local function test_primitives(t)
   end
 
   local test_cases = require("./testgen/test_cases.t")
+  local test_counts = {}
   for idx, sample in ipairs(test_cases) do
     local mname = sample.message
     if msgs[mname] then
-      prep_test_case(sample.truth, mname)
-      local cmsg = msgs[mname].cmsg
-      cmsg:clear()
-      set_fields(cmsg, sample.truth)
-      buff:clear()
-      local nbytes = msgs[mname].msg.encoder(buff.enc, cmsg)
-      buff.enc:compress(buff.buff)
-      assert_buff_eq(buff.buff, sample.serial, ("Encode %s case %d"):format(mname, idx))
-      
-      cmsg:clear()
-      buff:clear()
-      from_hex(buff.buff, sample.serial)
-      local decoded_ok = msgs[mname].msg.decoder(buff.buff, cmsg)
-      t.ok(decoded_ok, ("Decode %s case %d"):format(mname, idx))
-      --assert_struct_equal(cmsg, sample.truth, ("Decode %s case %d (value)"):format(mname, idx))
-      t.expect(msgs[mname].dump(cmsg), sample.truth, ("Decode %s case %d (value)"):format(mname, idx))
+      test_counts[mname] = (test_counts[mname] or 0) + 1
+      test(mname .. " sample " .. test_counts[mname], function()
+        prep_test_case(sample.truth, mname)
+        local cmsg = msgs[mname].cmsg
+        cmsg:clear()
+        set_fields(cmsg, sample.truth)
+        buff:clear()
+        local nbytes = msgs[mname].msg.encoder(buff.enc, cmsg)
+        buff.enc:compress(buff.buff)
+        expect(as_hex(buff.buff)):to_be(sample.serial)
+        cmsg:clear()
+        buff:clear()
+        from_hex(buff.buff, sample.serial)
+        local decoded_ok = msgs[mname].msg.decoder(buff.buff, cmsg)
+        expect(decoded_ok):to_be(true)
+        --assert_struct_equal(cmsg, sample.truth, ("Decode %s case %d (value)"):format(mname, idx))
+        expect(msgs[mname].dump(cmsg)):to_equal(sample.truth)
+      end)
     end
   end
 end
@@ -320,7 +329,8 @@ local function round_trip(buff, Msg, msg_in, msg_out)
   return Msg.decoder(buff.buff, msg_out)
 end
 
-local function test_enums(t)
+local function test_enums(jape)
+  local test, expect = jape.test, jape.expect
   local schemas = [[
   syntax = "proto3";
   enum Eh {
@@ -351,13 +361,22 @@ local function test_enums(t)
 
   local buff = allocate_buff()
 
-  t.ok(round_trip(buff, two_enums_msg, msg, msg_out), "TwoEnums decoded OK")
-  t.expect(two_enums_msg.dump(msg), two_enums_msg.dump(msg_out), "Round trip OK")
-  t.expect(msg_out.a, pg.enum.EH_TWELVE, "Enum a OK")
-  t.expect(msg_out.b, pg.enum.BLEH_BANANA, "Enum b OK")
+  test("TwoEnums decoded", function()
+    expect(round_trip(buff, two_enums_msg, msg, msg_out)):to_be_truthy()
+  end)
+  test("Round trip", function()
+    expect(two_enums_msg.dump(msg)):to_equal(two_enums_msg.dump(msg_out))
+  end)
+  test("Enum A", function()
+    expect(msg_out.a):to_equal(pg.enum.EH_TWELVE)
+  end)
+  test("Enum B", function()
+    expect(msg_out.b):to_equal(pg.enum.BLEH_BANANA)
+  end)
 end
 
-local function test_oneof(t)
+local function test_oneof(jape)
+  local test, expect = jape.test, jape.expect
   local schemas = [[
   syntax = "proto3";
   message Point {
@@ -386,50 +405,74 @@ local function test_oneof(t)
   local BoxOrPoint = pg:get("BoxOrPoint")
   print(BoxOrPoint.ctype:layoutstring())
 
-  local box_msg = terralib.new(BoxOrPoint.ctype)
-  box_msg:init()
-  local box = box_msg.box:get_or_allocate()
-  box.w = 12.0
-  box.h = 13.0
-  box.d = 14.0
-  t.expect(box_msg.point:is_filled(), false, "box has no .point")
-  t.expect(box_msg.box:is_filled(), true, "box has .box")
-
-  local point_msg = terralib.new(BoxOrPoint.ctype)
-  point_msg:init()
-  local point = point_msg.point:get_or_allocate()
-  point.x = 1000.0
-  point.y = 2000.0
-  t.expect(point_msg.point:is_filled(), true, "point has .point")
-  t.expect(point_msg.box:is_filled(), false, "point has no .box")
-
-  local msg_out = terralib.new(BoxOrPoint.ctype)
-  msg_out:init()
-  msg_out.point:allocate()
-  msg_out.box:allocate()
-  msg_out:clear()
-  t.expect(msg_out.box:is_filled(), false, "cleared message has no .box")
-  t.expect(msg_out.point:is_filled(), false, "cleared message has no .point")
-
-  local buff = allocate_buff()
-  t.ok(round_trip(buff, BoxOrPoint, box_msg, msg_out), "box_msg decoded OK")
-  t.expect(msg_out.box:is_filled(), true, "box message has .box")
-  do
-    local boxref = msg_out.box:get()
-    t.expect(boxref.w, 12.0, "box.w is correct")
-    t.expect(boxref.h, 13.0, "box.h is correct")
-    t.expect(boxref.d, 14.0, "box.d is correct")
+  local function make_box()
+    local box_msg = terralib.new(BoxOrPoint.ctype)
+    box_msg:init()
+    local box = box_msg.box:get_or_allocate()
+    box.w = 12.0
+    box.h = 13.0
+    box.d = 14.0
+    return box_msg
   end
-  t.expect(msg_out.point:is_filled(), false, "box message does not have .point")
-  t.expect(BoxOrPoint.dump(box_msg), BoxOrPoint.dump(msg_out), "Round trip box_msg")
 
-  t.ok(round_trip(buff, BoxOrPoint, point_msg, msg_out), "point_msg decoded OK")
-  t.expect(msg_out.box:is_filled(), false, "point message does not have .box")
-  t.expect(msg_out.point:is_filled(), true, "point message does have .point")
-  t.expect(BoxOrPoint.dump(point_msg), BoxOrPoint.dump(msg_out), "Round trip point_msg")
+  local function make_point()
+    local point_msg = terralib.new(BoxOrPoint.ctype)
+    point_msg:init()
+    local point = point_msg.point:get_or_allocate()
+    point.x = 1000.0
+    point.y = 2000.0
+    return point_msg
+  end
+
+  test("Box oneof", function()
+    local box_msg = make_box()
+    expect(box_msg.point:is_filled()):to_be(false)
+    expect(box_msg.box:is_filled()):to_be(true)
+  end)
+
+  test("Point oneof", function()
+    local point_msg = make_point()
+    expect(point_msg.point:is_filled()):to_be(true)
+    expect(point_msg.box:is_filled()):to_be(false)
+  end)
+
+  test("Cleared oneof", function()
+    local msg_out = terralib.new(BoxOrPoint.ctype)
+    msg_out:init()
+    msg_out.point:allocate()
+    msg_out.box:allocate()
+    msg_out:clear()
+    expect(msg_out.box:is_filled()):to_be(false)
+    expect(msg_out.point:is_filled()):to_be(false)
+  end)
+
+  test("Round trip oneof", function()
+    local point_msg = make_point()
+    local box_msg = make_box()
+    local msg_out = terralib.new(BoxOrPoint.ctype)
+    msg_out:init()
+
+    local buff = allocate_buff()
+    expect(round_trip(buff, BoxOrPoint, box_msg, msg_out)):to_be_truthy()
+    expect(msg_out.box:is_filled()):to_be(true)
+    do
+      local boxref = msg_out.box:get()
+      expect(boxref.w):to_equal(12.0)
+      expect(boxref.h):to_equal(13.0)
+      expect(boxref.d):to_equal(14.0)
+    end
+    expect(msg_out.point:is_filled()):to_be(false)
+    expect(BoxOrPoint.dump(box_msg)):to_equal(BoxOrPoint.dump(msg_out))
+  
+    expect(round_trip(buff, BoxOrPoint, point_msg, msg_out)):to_be_truthy()
+    expect(msg_out.box:is_filled()):to_be(false)
+    expect(msg_out.point:is_filled()):to_be(true)
+    expect(BoxOrPoint.dump(point_msg)):to_equal(BoxOrPoint.dump(msg_out))
+  end)
 end
 
-local function test_basic_encoding(t)
+local function test_basic_encoding(jape)
+  local test, expect = jape.test, jape.expect
   local schemas = {
     Point = {
       name = "Point",
@@ -458,33 +501,36 @@ local function test_basic_encoding(t)
   local line_message = pg:get("Line")
   local Line = line_message.ctype
   print(Line:layoutstring())
-  
-  local msg = terralib.new(Line)
-  local msg_out = terralib.new(Line)
-  msg.p0.x = 12
-  msg.p0.y = 13
-  msg.p0.z = 14
-  msg.p1.x = 15
-  msg.p1.y = 16
-  msg.p1.z = 17
-
-  local buff = allocate_buff()
-  buff:clear()
-  local line_encoder = line_message.encoder
-  local nbytes = line_encoder(buff.enc, msg)
-  buff.enc:compress(buff.buff)
-  print(nbytes, buff.buff.pos)
-  print(as_hex(buff.buff))
 
   -- HACK: can we avoid this somehow?
-  buff.buff.len = buff.buff.pos
-  buff.buff.pos = 0
-  local decoded_ok = line_message.decoder(buff.buff, msg_out)
-  t.ok(decoded_ok, "Line message decoded OK")
-  t.expect(line_message.dump(msg), line_message.dump(msg_out), "Round trip submessage")
+  test("basic encodings", function()
+    local msg = terralib.new(Line)
+    local msg_out = terralib.new(Line)
+    msg.p0.x = 12
+    msg.p0.y = 13
+    msg.p0.z = 14
+    msg.p1.x = 15
+    msg.p1.y = 16
+    msg.p1.z = 17
+
+    local buff = allocate_buff()
+    buff:clear()
+    local line_encoder = line_message.encoder
+    local nbytes = line_encoder(buff.enc, msg)
+    buff.enc:compress(buff.buff)
+    print(nbytes, buff.buff.pos)
+    print(as_hex(buff.buff))
+
+    buff.buff.len = buff.buff.pos
+    buff.buff.pos = 0
+    local decoded_ok = line_message.decoder(buff.buff, msg_out)
+    expect(decoded_ok):to_be_truthy()
+    expect(line_message.dump(msg)):to_equal(line_message.dump(msg_out))
+  end)
 end
 
-local function test_big_field_indices(t)
+local function test_big_field_indices(jape)
+  local test, expect = jape.test, jape.expect
   local schemas = {
     Silly = {
       name = "Silly",
@@ -494,22 +540,26 @@ local function test_big_field_indices(t)
     }
   }
 
-  local pg = gen.ProtoGen()
-  pg:add_schemas(schemas)
-
-  local Silly = pg:get("Silly")
-  Silly.decoder:compile()
-  print(Silly.decoder:prettystring())
-  print(Silly.decoder:disas())
+  test("big indices compile", function()
+    expect(function()
+      local pg = gen.ProtoGen()
+      pg:add_schemas(schemas)
+      local Silly = pg:get("Silly")
+      Silly.decoder:compile()
+      print(Silly.decoder:prettystring())
+      print(Silly.decoder:disas())
+    end):_not():to_throw()
+  end)
 end
 
-function m.run(test)
-  test("parser", test_parser)
-  test("fundamentals", test_fundamentals)
-  test("basic encoding", test_basic_encoding)
-  test("primitives", test_primitives)
-  test("test_enums", test_enums)
-  test("test_oneof", test_oneof)
+function m.main(jape)
+  jape = jape or require("dev/jape.t")
+  jape.describe("parser", test_parser)
+  jape.describe("fundamentals", test_fundamentals)
+  jape.describe("basic encoding", test_basic_encoding)
+  jape.describe("primitives", test_primitives)
+  jape.describe("test_enums", test_enums)
+  jape.describe("test_oneof", test_oneof)
   --test("silly big indices", test_big_field_indices)
 end
 

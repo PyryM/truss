@@ -41,6 +41,14 @@ function m.split_lines(str)
   return m.split("\n", str)
 end
 
+function m.begins_with(str, prefix)
+  return str:sub(1, #prefix) == prefix
+end
+
+function m.ends_with(str, suffix)
+  return str:sub(-(#suffix)) == suffix
+end
+
 -- base64 conversion
 local _b64_lut = nil
 local letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
@@ -160,6 +168,30 @@ terra m.b64encode_terra(src: &uint8, srclen: uint32,
   dest[destpos] = 0
 
   return destpos
+end
+
+function m.snake_case(s)
+  local s_first = s:sub(1,1):upper()
+  local s_rem = s:sub(2, -1)
+  local s = s_first .. s_rem
+  local frags = {}
+  for v in s:gmatch("[%u%d]+%l*") do
+    table.insert(frags, v:lower())
+  end
+  return table.concat(frags, "_")
+end
+
+function m.capitalize(s)
+  return s:sub(1,1):upper() .. s:sub(2)
+end
+
+function m.camel_case(s, capitalize_first)
+  local parts = m.split("_", s)
+  local start_idx = (capitalize_first and 1) or 2
+  for idx = start_idx, #parts do
+    parts[idx] = m.capitalize(parts[idx])
+  end
+  return table.concat(parts)
 end
 
 function m.b64decode_raw(src, srclen, dest, destlen)

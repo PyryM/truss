@@ -430,6 +430,8 @@ function m.init(width, height)
 end
 
 function m.install()
+  log.bigwarn("TODO: FIX MINICONSOLE?")
+  if true then return end
   if truss.main.fallback_update then
     log.info("miniconsole.install : fallback already present.")
     return

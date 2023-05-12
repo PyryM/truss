@@ -2,6 +2,8 @@
 --
 -- basic gfx stuff
 
+local gfx = require("./_gfx.t") 
+local timing = require("osnative/timing.t")
 local bgfx = require("./bgfx.t")
 local ffi = require("ffi")
 
@@ -14,13 +16,12 @@ m._safe_wait_frames = 3
 m._bgfx_initted = false
 
 function m.load_file_to_bgfx(filename)
-  local data = truss.read_file_buffer(filename)
+  local data = truss.fs.read_buffer(filename)
   if not data then return nil end
   return bgfx.copy(data.data, data.size)
 end
 
 function m.reset_gfx(options)
-  local gfx = require("gfx")
   if not m._bgfx_initted then 
     truss.error("Cannot reset before init!")
     return
@@ -125,9 +126,7 @@ function m.init_gfx(options)
     error("init_gfx: not headless and no window provided!")
   end
 
-  local gfx = require("gfx") -- so we can set module level values
-
-  local t0 = truss.tic()
+  local t0 = timing.tic()
   if m._bgfx_initted then
     truss.error("Tried to init gfx twice.")
     return
@@ -241,7 +240,7 @@ function m.init_gfx(options)
   gfx.short_backend_name = m._translate_backend_type(backend_type)
   log.info("Renderer name: " .. backend_name)
   log.info("Short renderer name: " .. gfx.short_backend_name)
-  local dt = truss.toc(t0) * 1000.0
+  local dt = timing.toc(t0) * 1000.0
   log.info(string.format("bgfx init took %.2f ms.", dt))
   
   gfx.BACKBUFFER = require("gfx/rendertarget.t").BackbufferTarget()

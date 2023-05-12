@@ -1,35 +1,35 @@
 local sutil = require "util/string.t"
 local argparse = require "util/argparse.t"
-local term = require "term"
-local fs = require "fs"
+local term = truss.term
+local fs = truss.fs
 
 local function is_loose_shader(entry)
   if not entry.ospath then return false end -- archived
   if not entry.is_file then return false end
   local fn = entry.file
-  return (truss.file_extension(fn) == "sc") and (fn ~= "varying.def.sc")
+  return (fs.file_extension(fn) == "sc") and (fn ~= "varying.def.sc")
+end
+
+local function listdir(dir)
+  local mount = fs.mount(dir)
+  return mount:listdir("")
 end
 
 local function find_loose_shaders(dir, workdir_only)
   local shaders = {}
-  local skipped = 0
-  for _, entry in ipairs(truss.list_dir(dir)) do
+  for _, entry in ipairs(listdir(dir)) do
     if is_loose_shader(entry) then 
-      if (not workdir_only) or entry.mountroot:find(truss.working_dir) then
-        table.insert(shaders, entry) 
-      else
-        skipped = skipped + 1
-      end
+      table.insert(shaders, entry) 
     end
   end
-  return shaders, skipped
+  return shaders
 end
 
 local function find_shader_dirs(rootdir)
   local dirs = {}
-  for _, entry in ipairs(truss.list_dir(rootdir)) do
-    if entry.ospath and (not entry.is_file) then
-      table.insert(dirs, entry.path)
+  for _, entry in ipairs(listdir(rootdir)) do
+    if not entry.is_file then
+      table.insert(dirs, entry.ospath)
     end
   end
   return dirs
@@ -80,8 +80,8 @@ local BACKEND_SETS = {
 -- assume everyone has unicode these days
 local CHARS = {vert = "│", term = "└"}
 
-local BINPATH = truss.joinpath(truss.rootdir, "/bin/shadercRelease")
-local INCLUDEPATH = truss.joinpath(truss.rootdir, "/include/bgfx/shader/")
+local BINPATH = fs.joinpath(truss.binary_dir, "/bin/shadercRelease")
+local INCLUDEPATH = fs.joinpath(truss.binary_dir, "/include/bgfx/shader/")
 
 log.info("shaderc path:", BINPATH)
 log.info("shader include path:", INCLUDEPATH)
@@ -156,7 +156,7 @@ local function make_outdirs(backends)
   local made_dirs = {}
   for _, backend in ipairs(backends) do
     local lang = BACKEND_SHORTNAMES[backend]
-    local outdir = truss.joinpath(SHADER_DIR, lang)
+    local outdir = fs.joinpath(SHADER_DIR, lang)
     if not made_dirs[outdir] then
       log.info("Creating directory:", outdir)
       fs.recursive_makedir(outdir)
@@ -171,7 +171,7 @@ local function do_file(fn, path, backends)
   local errlangs = ""
   for _, backend in ipairs(backends) do
     local lang = BACKEND_SHORTNAMES[backend]
-    local outfn = truss.joinpath(SHADER_DIR, lang, fn:sub(1,-4)..".bin")
+    local outfn = fs.joinpath(SHADER_DIR, lang, fn:sub(1,-4)..".bin")
     local cmd = make_cmd(prefix, backend, path, outfn)
     local res = do_cmd(cmd)
     if #res > 2 then
@@ -196,7 +196,11 @@ local function colored(color, text)
   return term.color(term[color:upper()]) .. text .. term.RESET
 end
 
-local function init()
+local function main()
+  log.push_scope()
+  log.clear_enabled()
+  log.set_enabled({"crit", "fatal", "error", "warn"})
+
   local args = argparse.parse()
   local backends
 
@@ -214,13 +218,13 @@ local function init()
   local total_errors = 0
   local shader_dirs
   if args['-i'] then
-    shader_dirs = {truss.joinpath(SHADER_DIR, "raw", args['-i'])}
+    shader_dirs = {fs.joinpath(SHADER_DIR, "raw", args['-i'])}
   else
-    shader_dirs = find_shader_dirs(truss.joinpath(SHADER_DIR, "raw"))
+    shader_dirs = find_shader_dirs(fs.joinpath(SHADER_DIR, "raw"))
   end
   local skipped_dirs = 0
   for _, dir in ipairs(shader_dirs) do
-    local loose_shaders, nskipped = find_loose_shaders(dir, true)
+    local loose_shaders = find_loose_shaders(dir, true)
     if #loose_shaders > 0 then
       print(dir)
       local nerrs, nshaders = 0, 0
@@ -243,14 +247,10 @@ local function init()
       else 
         count_str = colored('green', count_str) 
       end
-      if nskipped > 0 then
-        local skipstr = ("(%d skipped)"):format(nskipped)
-        count_str = count_str .. " " .. colored('cyan', skipstr)
-      end
       print(CHARS.term .. " " .. count_str)
       total_errors = total_errors + nerrs
-    elseif nskipped > 0 then
-      skipped_dirs = skipped_dirs + 1
+    else
+      print("Zero loose shaders in", dir)
     end
   end
   if skipped_dirs > 0 then
@@ -258,6 +258,7 @@ local function init()
   end
   print("Done.")
   local errstr = concat(errors, '\n')
+  local retval = 0
   if total_errors > 0 then
     if args['-o'] then
       print(colored("red", "Errors during compilation; see " .. args['-o']))
@@ -266,11 +267,12 @@ local function init()
       print(errstr)
       print(colored("red", "^^^ Errors during shader compilation."))
     end
-    return 1
+    retval = 1
   else
     print(colored("green", "All shaders compiled successfully."))
-    return 0
   end
+  --log.pop_scope()
+  return retval
 end
 
-return {init = init}
+return {main = main}

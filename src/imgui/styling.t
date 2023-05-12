@@ -1,4 +1,4 @@
-local IG = require("imgui").C
+local IG = require("./imgui.t").C
 
 local m = {}
 

@@ -3,6 +3,7 @@
 -- shader management functions
 
 local bgfx = require("./bgfx.t")
+local gfx = require("./_gfx.t")
 local m = {}
 
 m._programs = {}
@@ -20,7 +21,7 @@ local subpaths = {
 }
 
 function m.get_shader_path()
-  local gfx = require("gfx")
+
 
   local rendertype = gfx.short_backend_name
   local subpath = subpaths[rendertype]
@@ -31,8 +32,6 @@ end
 
 function m.load_shader(shadername)
   if not m._shaders[shadername] then
-    local gfx = require("gfx")
-
     local shader_path = m.get_shader_path() .. shadername .. ".bin"
     local shader_data = gfx.load_file_to_bgfx(shader_path)
     if not shader_data then

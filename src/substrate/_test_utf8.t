@@ -25,20 +25,26 @@ local one_char_tests = {
   {"𐍈", 0x10348, 4, "f0908d88"}
 }
 
-local function test_decode(t)
+local function test_decode(jape)
   local utf8 = require("./utf8.t")
+  local test, expect = jape.test, jape.expect
 
   for _, ex in ipairs(one_char_tests) do
     local str, codepoint, nbytes, hex = unpack(ex)
-    t.expect(pretty_byte_string(str), hex, "Example itself is well formed")
-    local decoded = utf8.decode_codepoint(conv_str(str), #str, 0)
-    t.expect(decoded._0, nbytes, "Correct number of bytes read (" .. str .. ")")
-    t.expect(decoded._1, codepoint, "Correct codepoint recovered (" .. str .. ")")
+    test("test " .. str .. " is well formed", function()
+      expect(pretty_byte_string(str)):to_be(hex)
+    end)
+    
+    test(str .. " decoding", function()
+      local decoded = utf8.decode_codepoint(conv_str(str), #str, 0)
+      expect(decoded._0):to_be(nbytes)
+      expect(decoded._1):to_be(codepoint)
+    end)
   end
 end
 
-function m.run(test)
-  test("utf8 decode", test_decode)
+function m.init(jape)
+  (jape or require("dev/jape.t")).describe("utf8 decode", test_decode)
 end
 
 return m

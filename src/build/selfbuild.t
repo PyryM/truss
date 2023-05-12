@@ -1,9 +1,11 @@
 -- builds truss binary with truss or terra
-local _truss = rawget(_G, "truss")
-if not _truss then
+local truss = rawget(_G, "truss")
+if not truss then
   -- we're running in terra, so bootstrap into truss
-  terralib.loadfile("src/core/core.t")()
+  truss = terralib.loadfile("src/core/core.t")()
 end
+local log = truss.log
+local require = truss.require
 
 if not truss.using_system_headers then
   log.fatal("self-build cannot use bundled compat headers")

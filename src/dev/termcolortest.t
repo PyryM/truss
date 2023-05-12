@@ -42,11 +42,13 @@ local function gradient(a, b, nsteps, blocksize)
   return table.concat(blocks)
 end
 
-local function init()
+local function main()
+  log.crit("_PKGPATH:", _PKGPATH)
+  log.crit("_FILEPATH:", _FILEPATH)
   log.crit(gradient(0xFFAA00FF, 0xFF0000FF))
   log.crit(gradient(0x00FFFFFF, 0x00FF00FF))
   log.crit(gradient(0xFFFFFFFF, 0x000000FF))
   log.crit(gradient(0xCC11FFFF, 0x0000FFFF))
 end
 
-return {init = init}
+return {main = main}

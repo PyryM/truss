@@ -2,11 +2,12 @@
 
 local class = require("class")
 local async = require("async")
-local gfx = require("gfx")
+local gfx = require("./_gfx.t")
 local gfx_common = require("./common.t")
 local gfx_compiled = require("./compiled.t")
 local math = require("math")
 local bgfx = require("./bgfx.t")
+local timing = require("osnative/timing.t")
 
 local m = {}
 
@@ -270,7 +271,7 @@ function ImmediateContext:begin_phase(phasename)
   local newphase = {
     name = phasename or ("Phase" .. self._phasecount),
     resources = {},
-    start_time = truss.tic(),
+    start_time = timing.tic(),
     max_mem = self:get_memory_usage()
   }
   table.insert(self._phase_stack, newphase)
@@ -296,7 +297,7 @@ function ImmediateContext:end_phase(phasename)
       resource:destroy()
     end
   end
-  curphase.total_time = truss.toc(curphase.start_time)
+  curphase.total_time = timing.toc(curphase.start_time)
   if stack_size >= 2 then
     local parent = self._phase_stack[stack_size-1]
     parent.max_mem = math.max(parent.max_mem, curphase.max_mem)

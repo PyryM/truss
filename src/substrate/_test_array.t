@@ -1,21 +1,11 @@
 local m = {}
 
-local function test_basic(t)
+local function test_arrays(jape)
+  local test, expect = jape.test, jape.expect
   local substrate = require("substrate")
   local libc = require("substrate/libc.t")
 
   local IntVec = substrate.Vec(int32)
-  local v = terralib.new(IntVec)
-  v:init()
-  t.ok(v.size == 0, "New vec has zero length")
-  v:push_val(11)
-  v:push_val(12)
-  v:push_val(13)
-  t.ok(v.size == 3, "Vec now has three things")
-  t.expect(v.data[0], 11, "1st pushed is correct")
-  t.expect(v.data[1], 12, "2nd pushed is correct")
-  t.expect(v.data[2], 13, "3rd pushed is correct")
-
   local terra check_bytes(v: &IntVec, cmp: &int32, n: uint32): bool
     var bb = v:as_bytes()
     if bb.size ~= sizeof(int32)*n then 
@@ -32,21 +22,43 @@ local function test_basic(t)
     return true
   end
 
-  local temp = terralib.new(int32[3])
-  temp[0], temp[1], temp[2] = 11, 12, 13
-  t.ok(check_bytes(v, temp, 3), "Bytes are right")
+  local v
+  jape.before_each(function()
+    v = terralib.new(IntVec)
+    v:init()
+    v:push_val(11)
+    v:push_val(12)
+    v:push_val(13)
+  end)
 
-  v:clear()
-  v:push_val(111)
-  t.ok(v.size == 1, "Vec now has 1 thing")
-  t.expect(v.data[0], 111, "New 1st elem is correct")
+  jape.after_each(function()
+    v:release()
+    v = nil
+  end)
 
-  v:release()
-  t.ok(true, "We released a vector without crashing.")
+  test("pushing", function()
+    expect(v.size):to_be(3)
+    expect(v.data[0]):to_be(11)
+    expect(v.data[1]):to_be(12)
+    expect(v.data[2]):to_be(13)
+  end)
+
+  test("bytes", function()
+    local temp = terralib.new(int32[3])
+    temp[0], temp[1], temp[2] = 11, 12, 13
+    expect(check_bytes(v, temp, 3)):to_be_truthy()
+  end)
+
+  test("clearing", function()
+    v:clear()
+    v:push_val(111)
+    expect(v.size):to_be(1)
+    expect(v.data[0]):to_be(111)
+  end)
 end
 
-function m.run(test)
-  test("vector basic", test_basic)
+function m.init(jape)
+  (jape or require("dev/jape.t")).describe("arrays", test_arrays)
 end
 
 return m

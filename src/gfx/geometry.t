@@ -7,7 +7,8 @@ local math = require("math")
 local bufferutils = require("./bufferutils.t")
 local bgfx = require("./bgfx.t")
 local gfx_common = require("./common.t")
-local gfx = nil -- need to delay load
+local gfx = require("./_gfx.t")
+local mem = require("core/memory.t")
 
 local Quaternion = math.Quaternion
 local Matrix4 = math.Matrix4
@@ -265,9 +266,9 @@ function StaticGeometry:allocate(n_verts, n_indices, vertinfo)
   end
 
   self.vertinfo = vertinfo
-  self.verts = truss.allocate(vertinfo.ttype[n_verts])
+  self.verts = mem.allocate(vertinfo.ttype[n_verts])
   self.n_verts = n_verts
-  self.indices = truss.allocate(index_type[n_indices])
+  self.indices = mem.allocate(index_type[n_indices])
   self.n_indices = n_indices
   self.vert_data_size = sizeof(vertinfo.ttype[n_verts])
   self.index_data_size = sizeof(index_type[n_indices])
@@ -291,7 +292,7 @@ end
 DynamicGeometry.get_compute_vertex_view = StaticGeometry.get_compute_vertex_view
 
 function StaticGeometry:copy(src)
-  if not src.allocated then truss.error("Cannot copy unallocated geometry") end
+  if not src.allocated then error("Cannot copy unallocated geometry") end
   self:allocate(src.n_verts, src.n_indices, src.vertinfo)
   for i = 0, (self.n_verts - 1) do
     self.verts[i] = src.verts[i]
@@ -319,7 +320,6 @@ function StaticGeometry:deallocate()
   -- several frames later, so instead schedule the deletion by moving
   -- the buffer references into closure 'upvalues' that are cleared later
   if not self.committed then return self end
-  gfx = gfx or require("gfx")
   gfx.schedule(function()
     verts, indices = nil, nil
   end)
@@ -397,7 +397,6 @@ function StaticGeometry:from_data(modeldata, vertinfo, no_commit)
     nindices = nindices * 3                      -- assume triangles
   end
   if not vertinfo then
-    gfx = gfx or require("gfx")
     vertinfo = gfx.guess_vertex_type(modeldata)
   end
   self:allocate(#(modeldata.attributes.position), nindices, vertinfo)
@@ -435,7 +434,6 @@ function DynamicGeometry:_mem_ref(data, datasize)
   --
   -- In single threaded mode we can safely just pass in a reference to
   -- the memory.
-  gfx = gfx or require("gfx")
   if self.force_unsafe_updates or gfx.single_threaded then
     return bgfx.make_ref(data, datasize)
   else

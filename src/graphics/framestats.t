@@ -4,6 +4,7 @@
 
 local class = require("class")
 local bgfx = require("gfx/bgfx.t")
+local timing = require("osnative/timing.t")
 local m = {}
 
 local DebugTextStats = class("DebugTextStats")
@@ -11,7 +12,7 @@ m.DebugTextStats = DebugTextStats
 
 function DebugTextStats:init()
   self.mount_name = "DebugTextStats"
-  self.start_time = truss.tic()
+  self.start_time = timing.tic()
 end
 
 function DebugTextStats:find_evt(name, info)

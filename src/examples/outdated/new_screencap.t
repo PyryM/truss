@@ -8,6 +8,7 @@ local ecs = require("ecs")
 local math = require("math")
 local graphics = require("graphics")
 local geometry = require("geometry")
+local timing = require("osnative/timing.t")
 
 local flat = require("material/flat.t")
 
@@ -38,12 +39,12 @@ function init()
   screencap.start_capture()
 end
 
-local t0 = truss.tic()
+local t0 = timing.tic()
 function update()
   local newcaptex = screencap.capture_screen()
   if newcaptex then
-    print("Frame delta: " .. truss.toc(t0) * 1000.0)
-    t0 = truss.tic()
+    print("Frame delta: " .. timing.toc(t0) * 1000.0)
+    t0 = timing.tic()
     captex = newcaptex
     live_mat.uniforms.s_texAlbedo:set(newcaptex)
   end

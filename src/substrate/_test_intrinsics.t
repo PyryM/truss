@@ -25,28 +25,42 @@ local function build_memops(T)
   return ops
 end
 
-local function test_intrinsic_memops(t)
+local function test_intrinsic_memops(jape)
+  local test, expect = jape.test, jape.expect
   local T = int32
   local N = 512
-  local mem = terralib.new(T[N])
-  local mem2 = terralib.new(T[N])
-  for idx = 0, N-1 do
-    mem[idx] = idx
-    mem2[idx] = 0
-  end
+
+  local mem, mem2
+  
+  jape.before_each(function()
+    mem = terralib.new(T[N])
+    mem2 = terralib.new(T[N])
+    for idx = 0, N-1 do
+      mem[idx] = idx
+      mem2[idx] = 0
+    end
+  end)
 
   local ops = build_memops(T)
 
-  ops.memcpy(mem2, mem, N)
-  t.ok(ops.compare(mem, mem2, N), "memcopy")
-  ops.memset(mem2, 0, N)
-  local allzero = true
-  for idx = 0, N-1 do
-    if mem2[idx] ~= 0 then allzero = false end
-  end
-  t.ok(allzero, "memset 0")
-  ops.memmove(mem2, mem, N)
-  t.ok(ops.compare(mem, mem2, N), "memmove")
+  test("memcopy", function()
+    ops.memcpy(mem2, mem, N)
+    expect(ops.compare(mem, mem2, N)):to_be_truthy()
+  end)
+
+  test("memset", function()
+    ops.memset(mem2, 0, N)
+    local allzero = true
+    for idx = 0, N-1 do
+      if mem2[idx] ~= 0 then allzero = false end
+    end
+    expect(allzero):to_be_truthy()
+  end)
+
+  test("memmove", function()
+    ops.memmove(mem2, mem, N)
+    expect(ops.compare(mem, mem2, N)):to_be_truthy()
+  end)
 end
 
 local function gen_memops_tests(T, N)
@@ -73,17 +87,21 @@ local function gen_memops_tests(T, N)
   return main
 end
 
-local function test_intrinsic_compiled(t)
-  t.try(function()
+local function test_intrinsic_compiled(jape)
+  local test, expect = jape.test, jape.expect
+  test("compiled intrinsics", function()
     local testutils = require("dev/testutils.t")
     local memtest = gen_memops_tests(int32, 512)
-    testutils.build_and_run_test("intrinsic_memops", memtest)
-  end, "Compiled intrinsic memory ops")
+    expect(
+      testutils.build_and_run_test("intrinsic_memops", memtest)
+    ):to_be(0)
+  end)
 end
 
-function m.run(test)
-  test("intrinsic memory ops", test_intrinsic_memops)
-  test("intrinsic compiled memory ops", test_intrinsic_compiled)
+function m.init(jape)
+  jape = jape or require("dev/jape.t")
+  jape.describe("intrinsic memory ops", test_intrinsic_memops)
+  jape.describe("intrinsic compiled memory ops", test_intrinsic_compiled)
 end
 
 return m

@@ -289,7 +289,10 @@ function m.create_default_context(options)
   }
   local ctx = terralib.new(ImGuiContext)
   ctx:init()
-  local fira = truss.read_file_buffer("font/FiraSans-Regular.ttf")
+  local fontpath = options.font
+    or truss.fs.joinpath(truss.binary_dir, "font/FiraSans-Regular.ttf")
+  local fira = assert(truss.fs.read_buffer(fontpath), 
+                      "Couldn't read font: " .. fontpath)
   table.insert(m._memory_leaked_fonts, fira)
   log.debug("font:", fira.data, fira.size)
   ctx:push_font(fira.data, fira.size, 0.0)

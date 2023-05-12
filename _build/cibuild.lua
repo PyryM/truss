@@ -1,9 +1,9 @@
 local TERRA_OS, ARCHIVE_EXT
-local TERRA_RELEASE = "https://github.com/terralang/terra/releases/download/release-1.0.6"
-local TERRA_HASH = "6184586"
+local TERRA_RELEASE = "https://github.com/terralang/terra/releases/download/release-1.1.0"
+local TERRA_HASH = "be89521"
 local OUTSCRIPT = "_build/build_generated.sh"
 
-local TRUSSFS_URL = "https://github.com/PyryM/trussfs/releases/download/v0.1.1/"
+local TRUSSFS_URL = "https://github.com/PyryM/trussfs/releases/download/v0.2.0/"
 
 if jit.os == "Windows" then
   -- https://github.com/terralang/terra/releases/download/release-1.0.6/terra-Windows-x86_64-6184586.7z

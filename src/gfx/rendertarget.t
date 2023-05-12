@@ -122,7 +122,7 @@ function RenderTarget:init(options)
     truss.error("RenderTarget no longer takes (w,h) as arguments.")
   end
   if options.backbuffer then
-    local gfx = require("gfx")
+    local gfx = require("./_gfx.t")
     self.is_backbuffer = true
     self.has_color = true
     self.has_depth = true

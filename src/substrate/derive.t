@@ -35,7 +35,21 @@ end
 
 -- checks whether a type T is an aggregate of types
 -- without any pointers/dynamic allocations
+-- (results are cached for performance reasons)
+local queried_pod_types = {}
 function m.is_plain_data(T)
+  if queried_pod_types[T] == nil then
+    queried_pod_types[T] = m._is_plain_data(T)
+  end
+  return queried_pod_types[T]
+end
+
+function m._is_plain_data(T)
+  if T.field then
+    -- a union?
+    print("Union?", T.field, T.type)
+    return m.is_plain_data(T.type)
+  end
   if T:ispointer() then return false end
   if T:isprimitive() then return true end
   if T:isarray() then return m.is_plain_data(T.type) end

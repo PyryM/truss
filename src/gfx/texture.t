@@ -131,7 +131,7 @@ function Texture:read_back(mip, callback)
   end
   bgfx.read_texture(self._handle, self.cdata, mip or 0)
   if callback then
-    require("gfx").schedule(callback)
+    require("./_gfx.t").schedule(callback)
   end
 end
 
@@ -357,7 +357,7 @@ local function load_texture_image(filename, flags, sampler_flags)
 end
 
 local function load_texture_bgfx(filename, flags, sampler_flags)
-  local msg = truss.read_file_buffer(filename)
+  local msg = truss.fs.read_buffer(filename)
   if not msg then error("Texture load error: " .. filename) end
   local bmem = bgfx.copy(msg.data, msg.size)
   local info = terralib.new(bgfx.texture_info_t)

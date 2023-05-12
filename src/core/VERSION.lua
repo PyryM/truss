@@ -1,5 +1,5 @@
 local VERSION = {
-  VERSION = "0.3.1",
+  VERSION = "0.4.0α",
   VERSION_EMOJI = "⚗️",
 }
 
@@ -11,6 +11,10 @@ function VERSION:check()
     return false
   end
   return true
+end
+
+function VERSION.install(core)
+  core.version, core.version_emoji = VERSION.VERSION, VERSION.VERSION_EMOJI
 end
 
 return VERSION

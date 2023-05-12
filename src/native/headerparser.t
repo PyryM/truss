@@ -64,8 +64,14 @@ function m.parse_header_string(s)
 end
 
 function m.parse_header_file(fn)
-  local s = truss.read_file(truss.joinvpath("include", fn))
-  return m.parse_header_string(s)
+  for _, path in ipairs(truss.config.include_paths) do
+    local fn = truss.fs.joinpath(path, fn)
+    local s = truss.fs.read(fn)
+    if s then
+      return m.parse_header_string(s)
+    end
+  end
+  error("Couldn't locate header: '" .. fn .. "'")
 end
 
 return m

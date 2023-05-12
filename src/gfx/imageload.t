@@ -13,7 +13,7 @@ end
 
 function m.load_image_from_file(fn)
   assert(build.is_native(), "cannot actually call image load functions in cross-compilation context!")
-  local data = truss.read_file_buffer(fn)
+  local data = truss.fs.read_buffer(fn)
   if data == nil then return nil end
   local imdata = terralib.new(C.bgfx_util_imagedata)
   imdata.data = nil
