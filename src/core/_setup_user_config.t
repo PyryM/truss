@@ -10,7 +10,7 @@ local function install(truss)
       package_dirs = {truss.fs.joinpath(truss.binary_dir, "src")},
       packages = {{"@cwd", truss.working_dir}},
       include_paths = {terralib.includepath, "include"},
-      log_enabled = {"all"}, --"~path", "~debug", "~perf"},
+      log_enabled = {"all", "~path", "~debug", "~perf", "~pkg"},
       entrypoints = {},
       entry_runner = function(root, modname)
         if not modname then

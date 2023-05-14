@@ -17,4 +17,12 @@ function VERSION.install(core)
   core.version, core.version_emoji = VERSION.VERSION, VERSION.VERSION_EMOJI
 end
 
+function VERSION.main()
+  log.push_scope()
+  log.set_enabled{"~debug", "~pkg"}
+  if VERSION:check() then
+    log.crit("truss binary and packages are consistent")
+  end
+end
+
 return VERSION
