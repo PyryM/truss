@@ -18,6 +18,8 @@ uint64_t trussfs_recursive_makedir(trussfs_ctx* ctx, const char* path);
 const char* trussfs_working_dir(trussfs_ctx* ctx);
 const char* trussfs_binary_dir(trussfs_ctx* ctx);
 
+const char* trussfs_readline(trussfs_ctx* ctx, const char* prompt);
+
 bool trussfs_is_handle_valid(uint64_t handle);
 
 watcherhandle_t trussfs_watcher_create(trussfs_ctx* ctx, const char* path, bool recursive);
@@ -71,7 +73,7 @@ local function install(core)
   local INVALID_HANDLE = 0xFFFFFFFFFFFFFFFFull;
 
   local fs_version = core.parse_version_int(tonumber(fs_c.trussfs_version()))
-  core.assert_compatible_version("trussfs", fs_version, {maj=0, min=2, pat=0})
+  core.assert_compatible_version("trussfs", fs_version, {maj=0, min=3, pat=0})
 
   local fs_ctx = fs_c.trussfs_init()
   local fs = core._declare_builtin("fs", {archives = {}, version=fs_version})
@@ -366,6 +368,14 @@ local function install(core)
       }
     end
     return fs._scratch
+  end
+
+  function fs.readline(prompt)
+    local res = fs_c.trussfs_readline(fs_ctx, prompt or ">")
+    if res == nil then
+      error("Readline error: " .. ffi.string(fs_c.trussfs_get_error(fs_ctx)))
+    end
+    return ffi.string(res)
   end
 
   function fs.file_extension(path)
