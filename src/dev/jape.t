@@ -200,7 +200,7 @@ end
 local function format_failure(msg, ...)
   local args = {}
   for idx = 1, select('#', ...) do
-    args[idx] = deepprint(select(idx, ...))
+    args[idx] = deepprint( (select(idx, ...)) )
   end
   return msg:format(unpack(args))
 end
@@ -341,7 +341,7 @@ function matchers:to_throw(expected_error)
 end
 
 function matchers:to_have_length(len)
-  self:_result(#self.value == len, "len(%s) == %s", self.value, len)
+  self:_result(#self.value == len, "length %d == %d", #self.value, len)
 end
 
 function matchers:to_have_property(path, value)

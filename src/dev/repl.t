@@ -56,15 +56,52 @@ local function eval(source, env)
   print_result(pcall(func))
 end
 
+local function repl_loop(env, cond)
+  cond = cond or {quit = false}
+  while not cond.quit do
+    local line, err = truss.fs.readline(">> ")
+    if line then
+      eval(line, env)
+    elseif err == "Interrupted" or err == "EOF" then
+      return err
+    else
+      error(err)
+    end
+  end
+  return cond.quit
+end
+
+local function embed(...)
+  local cond = {quit = false}
+  local env = {}
+  function env.done()
+    cond.quit = true
+  end
+  function env.locals(level)
+    local list = {}
+    for idx = 1, 255 do
+      local name, value = debug.getlocal((level or 0) + 6, idx)
+      if not name then break end
+      list[name] = value
+    end
+    return list
+  end
+  setmetatable(env, {
+    __index = function(t, k)
+      return rawget(_G, k)
+    end
+  })
+  log.crit("EMBED:", ...)
+  return repl_loop(env, cond)
+end
+
 local function main(env)
   env = env or setmetatable({}, {
     __index = function(t, k)
       return rawget(_G, k)
     end
   })
-  while true do
-    eval(truss.fs.readline(">> "), env)
-  end
+  log.crit(repl_loop(env))
 end
 
-return {main = main}
+return {main = main, embed = embed}

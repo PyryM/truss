@@ -373,7 +373,7 @@ local function install(core)
   function fs.readline(prompt)
     local res = fs_c.trussfs_readline(fs_ctx, prompt or ">")
     if res == nil then
-      error("Readline error: " .. ffi.string(fs_c.trussfs_get_error(fs_ctx)))
+      return false, ffi.string(fs_c.trussfs_get_error(fs_ctx))
     end
     return ffi.string(res)
   end
