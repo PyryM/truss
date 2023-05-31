@@ -71,11 +71,19 @@ local function repl_loop(env, cond)
   return cond.quit
 end
 
+local full_quit = false
+
 local function embed(...)
+  if full_quit then return end
   local cond = {quit = false}
   local env = {}
   function env.done()
     cond.quit = true
+  end
+  function env.quit()
+    cond.quit = true
+    full_quit = true
+    truss.quit()
   end
   function env.locals(level)
     local list = {}
